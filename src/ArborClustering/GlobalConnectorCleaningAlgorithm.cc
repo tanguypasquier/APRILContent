@@ -33,7 +33,6 @@
 #include "ArborUtility/ReferenceVectorAlgorithmTools.h"
 #include "ArborUtility/OrderParameterAlgorithmTools.h"
 
-
 #include "Pandora/AlgorithmHeaders.h"
 
 namespace arbor_content
