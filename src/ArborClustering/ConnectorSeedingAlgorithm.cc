@@ -50,7 +50,7 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Run()
 	}
 	else if(1 == m_seedingStrategy)
 	{
-
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->AlignConnectors(orderedCaloHitList));
 	}
 	else
 	{
