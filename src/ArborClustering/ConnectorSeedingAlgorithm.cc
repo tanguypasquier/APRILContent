@@ -57,8 +57,6 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Run()
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 	}
 
-
-
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
