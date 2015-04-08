@@ -67,6 +67,7 @@ public:
 	 */
 	pandora::StatusCode SplitCluster(const pandora::Algorithm &parentAlgorithm, const pandora::Cluster *const pCluster,
 			const Connector *const pConnector, const pandora::Cluster *&pClusterFragment) const;
+
     /**
 	 *  @brief  Read the algorithm settings
 	 *
