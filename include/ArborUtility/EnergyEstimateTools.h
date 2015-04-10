@@ -120,6 +120,15 @@ public:
 class LinearInputEnergyEstimate : public EnergyEstimateToolBase
 {
 public:
+    /**
+     *  @brief  Factory class for instantiating algorithm tool
+     */
+    class Factory : public pandora::AlgorithmToolFactory
+    {
+    public:
+        pandora::AlgorithmTool *CreateAlgorithmTool() const;
+    };
+
 	pandora::StatusCode ComputeEnergy(const pandora::CaloHitList &caloHitList, float &energyEstimate) const;
 	pandora::StatusCode GetEnergyResolution(float energyPoint, float &energyResolution) const;
 
@@ -145,6 +154,15 @@ private:
 class LinearEnergyEstimate : public EnergyEstimateToolBase
 {
 public:
+    /**
+     *  @brief  Factory class for instantiating algorithm tool
+     */
+    class Factory : public pandora::AlgorithmToolFactory
+    {
+    public:
+        pandora::AlgorithmTool *CreateAlgorithmTool() const;
+    };
+
 	pandora::StatusCode ComputeEnergy(const pandora::CaloHitList &caloHitList, float &energyEstimate) const;
 	pandora::StatusCode GetEnergyResolution(float energyPoint, float &energyResolution) const;
 
@@ -182,6 +200,15 @@ private:
 class CombinedQuadraticEnergyEstimate : public EnergyEstimateToolBase
 {
 public:
+    /**
+     *  @brief  Factory class for instantiating algorithm tool
+     */
+    class Factory : public pandora::AlgorithmToolFactory
+    {
+    public:
+        pandora::AlgorithmTool *CreateAlgorithmTool() const;
+    };
+
 	pandora::StatusCode ComputeEnergy(const pandora::CaloHitList &caloHitList, float &energyEstimate) const;
 	pandora::StatusCode GetEnergyResolution(float energyPoint, float &energyResolution) const;
 
@@ -196,6 +223,31 @@ private:
 	float                     m_resolutionConstantFactor;
 	float                     m_resolutionEnergySquareFactor;
 };
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline pandora::AlgorithmTool *LinearInputEnergyEstimate::Factory::CreateAlgorithmTool() const
+{
+	return new LinearInputEnergyEstimate();
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline pandora::AlgorithmTool *LinearEnergyEstimate::Factory::CreateAlgorithmTool() const
+{
+	return new LinearEnergyEstimate();
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline pandora::AlgorithmTool *CombinedQuadraticEnergyEstimate::Factory::CreateAlgorithmTool() const
+{
+	return new CombinedQuadraticEnergyEstimate();
+}
 
 } 
 
