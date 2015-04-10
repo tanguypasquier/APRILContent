@@ -30,8 +30,8 @@
 #include "ArborObjects/CaloHit.h"
 #include "ArborObjects/Connector.h"
 
-#include "ArborUtility/ReferenceVectorAlgorithmTools.h"
-#include "ArborUtility/OrderParameterAlgorithmTools.h"
+#include "ArborUtility/ReferenceVectorTools.h"
+#include "ArborUtility/OrderParameterTools.h"
 
 #include "Pandora/AlgorithmHeaders.h"
 
