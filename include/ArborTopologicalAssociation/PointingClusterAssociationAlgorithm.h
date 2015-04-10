@@ -30,7 +30,9 @@
 #define POINTINGCLUSTERASSOCIATIONALGORITHM_H
 
 #include "Pandora/Algorithm.h"
+#include "Pandora/PandoraInputTypes.h"
 
+namespace pandora { class ClusterFitResult; }
 
 namespace arbor_content
 {
