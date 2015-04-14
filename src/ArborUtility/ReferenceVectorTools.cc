@@ -99,11 +99,11 @@ pandora::StatusCode SimpleReferenceVectorTool::GetMeanDirection(const CaloHit *c
 
 pandora::StatusCode SimpleReferenceVectorTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-	m_backwardConnectorWeight = 1.f;
+	m_backwardConnectorWeight = 2.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"BackwardConnectorWeight", m_backwardConnectorWeight));
 
-	m_forwardConnectorWeight = 1.f;
+	m_forwardConnectorWeight = 3.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"ForwardConnectorWeight", m_forwardConnectorWeight));
 
