@@ -226,7 +226,7 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::PerformInterceptCluster
 	float impactParameter = 0.f;
 
 	if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetClosestDistanceBetweenLines(daughterClusterCentroid, daughterClusterFitResult.GetDirection(),
-			daughterClusterCentroid, daughterClusterFitResult.GetDirection(), impactParameter))
+			parentClusterCentroid, parentClusterFitResult.GetDirection(), impactParameter))
 		return pandora::STATUS_CODE_SUCCESS;
 
 	if(impactParameter > m_interceptImpactParameterCut || impactParameter > bestImpactParameter)
@@ -236,7 +236,7 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::PerformInterceptCluster
 	pandora::CartesianVector projectionOnDaughterClusterAxis(0.f, 0.f, 0.f);
 
 	if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetCrossingPointsBetweenLines(daughterClusterCentroid, daughterClusterFitResult.GetDirection(),
-			parentClusterCentroid, daughterClusterFitResult.GetDirection(), projectionOnDaughterClusterAxis, projectionOnParentClusterAxis))
+			parentClusterCentroid, parentClusterFitResult.GetDirection(), projectionOnDaughterClusterAxis, projectionOnParentClusterAxis))
 		return pandora::STATUS_CODE_SUCCESS;
 
 	float closestDistanceApproach = 0.f;
