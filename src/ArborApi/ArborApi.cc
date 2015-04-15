@@ -27,35 +27,26 @@
 
 
 #include "ArborApi/ArborApi.h"
-
 #include "ArborObjects/CaloHit.h"
 
 namespace arbor_content
 {
 
-
-RectangularCaloHitFactory::RectangularCaloHitFactory(const ArborApi::CaloHitParameters &parameters) :
-		m_parameters(parameters)
-{
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode RectangularCaloHitFactory::Create(const pandora::CaloHit *&pObject, const PandoraApi::RectangularCaloHit::Parameters &parameters) const
+pandora::StatusCode CaloHitFactory::Create(const pandora::CaloHit *&pObject, const PandoraApi::CaloHit::Parameters &parameters) const
 {
 	pObject = NULL;
 	const arbor_content::CaloHit *pArborCaloHit = NULL;
 
 	try
 	{
-		pArborCaloHit = new arbor_content::CaloHit(parameters, m_parameters);
+		pArborCaloHit = new arbor_content::CaloHit(parameters);
 
 		if(NULL == pArborCaloHit)
 			return pandora::STATUS_CODE_FAILURE;
 	}
 	catch(pandora::StatusCodeException &statusCodeException)
 	{
-		std::cout << "PointingCaloHitFactory: failed to create a arbor_content::CaloHit object : " << statusCodeException.ToString() << std::endl;
+		std::cout << "CaloHitFactory: failed to create a arbor_content::CaloHit object : " << statusCodeException.ToString() << std::endl;
 
 		if(NULL != pArborCaloHit)
 			delete pArborCaloHit;
@@ -67,45 +58,6 @@ pandora::StatusCode RectangularCaloHitFactory::Create(const pandora::CaloHit *&p
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-PointingCaloHitFactory::PointingCaloHitFactory(const ArborApi::CaloHitParameters &parameters) :
-		m_parameters(parameters)
-{
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode PointingCaloHitFactory::Create(const pandora::CaloHit *&pObject, const PandoraApi::PointingCaloHit::Parameters &parameters) const
-{
-	pObject = NULL;
-	const arbor_content::CaloHit *pArborCaloHit = NULL;
-
-	try
-	{
-		pArborCaloHit = new arbor_content::CaloHit(parameters, m_parameters);
-
-		if(NULL == pArborCaloHit)
-			return pandora::STATUS_CODE_FAILURE;
-	}
-	catch(pandora::StatusCodeException &statusCodeException)
-	{
-		std::cout << "PointingCaloHitFactory: failed to create a arbor_content::CaloHit object : " << statusCodeException.ToString() << std::endl;
-
-		if(NULL != pArborCaloHit)
-			delete pArborCaloHit;
-
-		return statusCodeException.GetStatusCode();
-	}
-
-	pObject = pArborCaloHit;
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
 
 } 
 

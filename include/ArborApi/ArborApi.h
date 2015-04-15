@@ -37,70 +37,16 @@
 namespace arbor_content
 {
 
-/** 
- * @brief ArborApi class
- */ 
-class ArborApi 
+/**
+ *  @brief  CaloHitFactory class
+ */
+class CaloHitFactory : public pandora::ObjectFactory<const pandora::CaloHit, PandoraApi::CaloHit::Parameters>
 {
 public:
 	/**
-	 *
+	 *  @brief  Create an arbor calo hit from the calo hit parameters
 	 */
-	class CaloHitParameters
-	{
-	public:
-		InputSemiDigitalThreshold             m_semiDigitalThreshold;
-	};
-};
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-/**
- *
- */
-class RectangularCaloHitFactory : public pandora::ObjectFactory<pandora::CaloHit, PandoraApi::RectangularCaloHit::Parameters>
-{
-	/**
-	 *  @brief  Constructor
-	 *
-	 *  @param  parameters the additional parameters to pass to the arbor calo hit
-	 */
-	RectangularCaloHitFactory(const ArborApi::CaloHitParameters &parameters);
-
-	/**
-	 *  @brief  Create an arbor calo hit from the rectangular calo hit parameters
-	 */
-	pandora::StatusCode Create(const pandora::CaloHit *&pObject, const PandoraApi::RectangularCaloHit::Parameters &parameters) const;
-
-private:
-
-	const ArborApi::CaloHitParameters      m_parameters;
-};
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-/**
- *
- */
-class PointingCaloHitFactory : public pandora::ObjectFactory<pandora::CaloHit, PandoraApi::PointingCaloHit::Parameters>
-{
-	/**
-	 *  @brief  Constructor
-	 *
-	 *  @param  parameters the additional parameters to pass to the arbor calo hit
-	 */
-	PointingCaloHitFactory(const ArborApi::CaloHitParameters &parameters);
-
-	/**
-	 *  @brief  Create an arbor calo hit from the pointing calo hit parameters
-	 */
-	pandora::StatusCode Create(const pandora::CaloHit *&pObject, const PandoraApi::PointingCaloHit::Parameters &parameters) const;
-
-private:
-
-	const ArborApi::CaloHitParameters      m_parameters;
+	pandora::StatusCode Create(const pandora::CaloHit *&pObject, const PandoraApi::CaloHit::Parameters &parameters) const;
 };
 
 } 
