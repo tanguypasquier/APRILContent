@@ -28,7 +28,6 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborClustering/ConnectorClusteringAlgorithm.h"
-#include "ArborUtility/TreeClusteringTool.h"
 
 namespace arbor_content
 {
@@ -42,9 +41,6 @@ pandora::StatusCode ConnectorClusteringAlgorithm::Run()
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, *algorithmIter));
 	}
 
-	// create clusters from the tree structures
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, m_pTreeClusteringTool->BuildClusters(*this));
-
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
@@ -53,16 +49,7 @@ pandora::StatusCode ConnectorClusteringAlgorithm::Run()
 pandora::StatusCode ConnectorClusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithmList(*this, xmlHandle,
-			"connectorAlgorithm", m_connectorAlgorithmList));
-
-	pandora::AlgorithmTool *pAlgorithmTool = NULL;
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithmTool(*this, xmlHandle,
-				"TreeClustering", pAlgorithmTool));
-
-	m_pTreeClusteringTool = dynamic_cast<TreeClusteringTool *>(pAlgorithmTool);
-
-	if(NULL == m_pTreeClusteringTool)
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
+			"connectorAlgorithms", m_connectorAlgorithmList));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }

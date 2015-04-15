@@ -34,8 +34,6 @@
 namespace arbor_content
 {
 
-class TreeClusteringTool;
-
 /** 
  * @brief ConnectorClusteringAlgorithm class
  */ 
@@ -58,7 +56,6 @@ private:
 
 
 	pandora::StringVector        m_connectorAlgorithmList;
-	TreeClusteringTool          *m_pTreeClusteringTool;
 }; 
 
 //------------------------------------------------------------------------------------------------------------------------------------------
