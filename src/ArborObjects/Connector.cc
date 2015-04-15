@@ -49,21 +49,21 @@ Connector::~Connector()
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-const CaloHit *const Connector::GetFrom() const
+const CaloHit *Connector::GetFrom() const
 {
 	return m_pFromCaloHit;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-const CaloHit *const Connector::GetTo() const
+const CaloHit *Connector::GetTo() const
 {
 	return m_pToCaloHit;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-const arbor_content::CaloHit *const Connector::Get(ConnectorDirection direction) const
+const arbor_content::CaloHit *Connector::Get(ConnectorDirection direction) const
 {
 	return direction == BACKWARD_DIRECTION ? this->GetFrom() : this->GetTo();
 }

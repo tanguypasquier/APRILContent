@@ -55,17 +55,17 @@ public:
 	/**
 	 *  @brief  Get the 'from' arbor calo hit
 	 */
-	const arbor_content::CaloHit *const GetFrom() const;
+	const arbor_content::CaloHit *GetFrom() const;
 
 	/**
 	 *  @brief  Get the 'to' arbor calo hit
 	 */
-	const arbor_content::CaloHit *const GetTo() const;
+	const arbor_content::CaloHit *GetTo() const;
 
 	/**
 	 *  @brief  Get the 'to' or 'from' arbor calo hit (from (to) for BACKWARD_DIRECTION (FORWARD_DIRECTION))
 	 */
-	const arbor_content::CaloHit *const Get(ConnectorDirection direction) const;
+	const arbor_content::CaloHit *Get(ConnectorDirection direction) const;
 
 	/**
 	 *  @brief  Get the connector length
