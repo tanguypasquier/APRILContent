@@ -147,6 +147,9 @@ pandora::StatusCode GlobalConnectorCleaningAlgorithm::Clean(const pandora::Order
 		for(pandora::OrderedCaloHitList::const_iterator iter = orderedcaloHitList.begin(), endIter = orderedcaloHitList.end() ;
 				endIter != iter ; ++iter)
 		{
+			if(iter->second->empty())
+				continue;
+				
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->Clean(iter->second));
 		}
 	}
@@ -155,6 +158,9 @@ pandora::StatusCode GlobalConnectorCleaningAlgorithm::Clean(const pandora::Order
 		for(pandora::OrderedCaloHitList::const_reverse_iterator iter = orderedcaloHitList.rbegin(), endIter = orderedcaloHitList.rend() ;
 				endIter != iter ; ++iter)
 		{
+			if(iter->second->empty())
+				continue;
+
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->Clean(iter->second));
 		}
 	}
