@@ -264,11 +264,11 @@ pandora::StatusCode CombinedQuadraticEnergyEstimate::GetEnergyResolution(float e
 
 pandora::StatusCode CombinedQuadraticEnergyEstimate::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-	pandora::StatusCode statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle, "EnergyConstantParameters", m_energyConstantParameters);
+	pandora::StatusCode statusCodeValues = pandora::XmlHelper::ReadVectorOfValues(xmlHandle, "EnergyConstantParameters", m_energyConstantParameters);
 
-	if(statusCode != pandora::STATUS_CODE_SUCCESS)
+	if(statusCodeValues != pandora::STATUS_CODE_SUCCESS)
 	{
-		if(statusCode == pandora::STATUS_CODE_NOT_FOUND)
+		if(statusCodeValues == pandora::STATUS_CODE_NOT_FOUND)
 		{
 			m_energyConstantParameters.push_back(0.0385315);
 			m_energyConstantParameters.push_back(4.22584e-05);
@@ -281,24 +281,24 @@ pandora::StatusCode CombinedQuadraticEnergyEstimate::ReadSettings(const pandora:
 		    m_energyConstantParameters.push_back(1.41142e-08);
 		}
 		else
-			return statusCode;
+			return statusCodeValues;
 	}
 
 	if(9 != m_energyConstantParameters.size())
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle, "EnergyThresholdValues", m_energyThresholdValues);
+	statusCodeValues = pandora::XmlHelper::ReadVectorOfValues(xmlHandle, "EnergyThresholdValues", m_energyThresholdValues);
 
-	if(statusCode != pandora::STATUS_CODE_SUCCESS)
+	if(statusCodeValues != pandora::STATUS_CODE_SUCCESS)
 	{
-		if(statusCode == pandora::STATUS_CODE_NOT_FOUND)
+		if(statusCodeValues == pandora::STATUS_CODE_NOT_FOUND)
 		{
 			m_energyThresholdValues.push_back(1);
 			m_energyThresholdValues.push_back(2);
 			m_energyThresholdValues.push_back(3);
 		}
 		else
-			return statusCode;
+			return statusCodeValues;
 	}
 
 	if(3 != m_energyThresholdValues.size())
