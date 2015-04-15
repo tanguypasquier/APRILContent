@@ -125,7 +125,7 @@ pandora::StatusCode CaloHitHelper::ExtractLeafCaloHitList(const pandora::CaloHit
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
-
+//--------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode CaloHitHelper::BuildCaloHitList(const CaloHit *const pCaloHit, ConnectorDirection direction,
 		pandora::CaloHitList &calohitList)
