@@ -16,37 +16,6 @@ SET( ${PROJECT_NAME}_VERSION_PATCH 00 )
 FIND_PACKAGE( ILCUTIL COMPONENTS ILCSOFT_CMAKE_MODULES REQUIRED )
 INCLUDE( ilcsoft_default_settings )
 
-# -------------- packages -------------
-FIND_PACKAGE( PandoraSDK 01.00.00 REQUIRED )
-
-FOREACH( pkg PandoraSDK )
-  IF( ${pkg}_FOUND )
-    INCLUDE_DIRECTORIES( ${${pkg}_INCLUDE_DIRS} )
-    LINK_LIBRARIES( ${${pkg}_LIBRARIES} )
-    ADD_DEFINITIONS ( ${${pkg}_DEFINITIONS} )
-  ENDIF()
-ENDFOREACH()
-
-#IF( ARBOR_MONITORING )
-#  FIND_PACKAGE( PandoraMonitoring REQUIRED )
-#  IF( PandoraMonitoring_FOUND )
-#    INCLUDE_DIRECTORIES( ${PandoraMonitoring_INCLUDE_DIRS} )
-#    LINK_LIBRARIES( ${PandoraMonitoring_LIBRARIES} )
-#    ADD_DEFINITIONS ( ${PandoraMonitoring_DEFINITIONS} )
-#    ADD_DEFINITIONS( "-DARBOR_MONITORING" )
-#  ENDIF()
-#ENDIF()
-
-OPTION( INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF )
-
-IF( INSTALL_DOC AND EXISTS "${PROJECT_SOURCE_DIR}/doc/CMakeLists.txt" )
-    ADD_SUBDIRECTORY( ./doc )
-ELSE()
-    MESSAGE( STATUS "INSTALL_DOC set to OFF" )
-    SET( INSTALL_DOC OFF )
-ENDIF()
-
-
 ### SOURCE ##################################################################
 
 #include directories
@@ -65,8 +34,67 @@ AUX_SOURCE_DIRECTORY( ./src/ArborTopologicalAssociation ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborTrackClusterAssociation ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborUtility ArborContent_SRCS )
 
-# require proper C++ and need long long for int64 for now
-ADD_DEFINITIONS( "-Wall -ansi -pedantic -Wno-long-long -Wno-sign-compare -fno-strict-aliasing" )
+### C++11 check #############################################################
+
+INCLUDE( CheckCXXCompilerFlag )
+
+UNSET( COMPILER_SUPPORTS_CXX11 CACHE )
+CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
+
+IF( NOT CMAKE_CXX_FLAGS )
+    SET( CMAKE_CXX_FLAGS "-std=c++11" )
+    SET( PROCEED_WITHOUT_CXX_FLAGS ON )
+ENDIF()
+
+UNSET( COMPILER_SUPPORTS_CXX_FLAGS CACHE )
+CHECK_CXX_COMPILER_FLAG( ${CMAKE_CXX_FLAGS} COMPILER_SUPPORTS_CXX_FLAGS )
+IF( NOT COMPILER_SUPPORTS_CXX_FLAGS )
+    MESSAGE( STATUS "The compiler ${CMAKE_CXX_COMPILER} does not support cxx flags ${CMAKE_CXX_FLAGS}" )
+    IF( NOT PROCEED_WITHOUT_CXX_FLAGS )
+        MESSAGE( FATAL_ERROR "CMake abort." )
+    ENDIF()
+    MESSAGE( STATUS "Proceed without cxx flags ${CMAKE_CXX_FLAGS}" )
+    UNSET( CMAKE_CXX_FLAGS )
+ENDIF()
+
+SET( CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -ansi -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
+
+# -------------- packages -------------
+FIND_PACKAGE( PandoraSDK 01.00.00 REQUIRED )
+
+FOREACH( pkg PandoraSDK )
+  IF( ${pkg}_FOUND )
+    INCLUDE_DIRECTORIES( ${${pkg}_INCLUDE_DIRS} )
+    LINK_LIBRARIES( ${${pkg}_LIBRARIES} )
+    ADD_DEFINITIONS ( ${${pkg}_DEFINITIONS} )
+  ENDIF()
+ENDFOREACH()
+
+IF( ARBOR_MONITORING )
+
+  FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Eve Geom RGL EG ) # minimum required ROOT version
+  INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
+  LINK_LIBRARIES( ${ROOT_LIBRARIES} ${ROOT_COMPONENT_LIBRARIES} )
+
+  FIND_PACKAGE( PandoraMonitoring REQUIRED )
+  
+  IF( PandoraMonitoring_FOUND )
+    INCLUDE_DIRECTORIES( ${PandoraMonitoring_INCLUDE_DIRS} )
+    LINK_LIBRARIES( ${PandoraMonitoring_LIBRARIES} )
+    ADD_DEFINITIONS ( ${PandoraMonitoring_DEFINITIONS} )
+    ADD_DEFINITIONS( "-DMONITORING" )
+  ENDIF()
+
+ENDIF()
+
+OPTION( INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF )
+
+IF( INSTALL_DOC AND EXISTS "${PROJECT_SOURCE_DIR}/doc/CMakeLists.txt" )
+    ADD_SUBDIRECTORY( ./doc )
+ELSE()
+    MESSAGE( STATUS "INSTALL_DOC set to OFF" )
+    SET( INSTALL_DOC OFF )
+ENDIF()
 
 ### LIBRARY #################################################################
 
