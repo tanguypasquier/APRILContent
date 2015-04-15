@@ -35,6 +35,7 @@
 #include "ArborClustering/ConnectorClusteringAlgorithm.h"
 #include "ArborClustering/ConnectorSeedingAlgorithm.h"
 #include "ArborClustering/GlobalConnectorCleaningAlgorithm.h"
+#include "ArborClustering/TreeClusteringAlgorithm.h"
 
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
@@ -45,17 +46,19 @@
 #include "ArborPlugins/ArborBFieldPlugin.h"
 #include "ArborPlugins/ArborPseudoLayerPlugin.h"
 
+#include "ArborTopologicalAssociation/TopologicalAssociationParentAlgorithm.h"
 #include "ArborTopologicalAssociation/PointingClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/EnergyDrivenTrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/TopologicalTrackClusterAssociationAlgorithm.h"
 
 #include "ArborPfoConstruction/PfoCreationAlgorithm.h"
 
+#include "ArborMonitoring/VisualMonitoringAlgorithm.h"
+
 #include "ArborUtility/EnergyEstimateTools.h"
 #include "ArborUtility/OrderParameterTools.h"
 #include "ArborUtility/ReferenceVectorTools.h"
 #include "ArborUtility/SplitClusterTool.h"
-#include "ArborUtility/TreeClusteringTool.h"
 #include "ArborUtility/EventPreparationAlgorithm.h"
 #include "ArborUtility/ClusterPreparationAlgorithm.h"
 #include "ArborUtility/TrackPreparationAlgorithm.h"
@@ -73,11 +76,14 @@ public:
 	d("ConnectorSeeding",                    arbor_content::ConnectorSeedingAlgorithm::Factory)       \
 	d("ConnectorClustering",                 arbor_content::ConnectorClusteringAlgorithm::Factory)    \
 	d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory)       \
-	d("GlobalConnectorCleaning",             arbor_content::GlobalConnectorCleaningAlgorithm::Factory)\
+	d("GlobalConnectorCleaning",             arbor_content::GlobalConnectorCleaningAlgorithm::Factory) \
+	d("TreeClustering",                      arbor_content::TreeClusteringAlgorithm::Factory) \
+	d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
 	d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory)      \
 	d("TopologicalTrackClusterAssociation",  arbor_content::TopologicalTrackClusterAssociationAlgorithm::Factory)       \
 	d("EnergyDrivenTrackClusterAssociation", arbor_content::EnergyDrivenTrackClusterAssociationAlgorithm::Factory) \
 	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
+	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
 	d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
 	d("ClusterPreparation",                  arbor_content::ClusterPreparationAlgorithm::Factory) \
 	d("TrackPreparation",                    arbor_content::TrackPreparationAlgorithm::Factory) \
@@ -88,10 +94,9 @@ public:
 	d("KappaOrderParameter",                 arbor_content::KappaOrderParameterTool::Factory) \
 	d("SimpleReferenceVector",               arbor_content::SimpleReferenceVectorTool::Factory) \
 	d("SplitCluster",                        arbor_content::SplitClusterTool::Factory) \
-	d("TreeClustering",                      arbor_content::TreeClusteringTool::Factory) \
 	d("LinearInputEnergyEstimate",           arbor_content::LinearInputEnergyEstimate::Factory) \
-	d("LinearEnergyEstimate",                arbor_content::LinearEnergyEstimate::Factory) \
-	d("CombinedQuadraticEnergyEstimate",     arbor_content::CombinedQuadraticEnergyEstimate::Factory)
+	d("CombinedQuadraticEnergyEstimate",     arbor_content::CombinedQuadraticEnergyEstimate::Factory) \
+	d("LinearEnergyEstimate",                arbor_content::LinearEnergyEstimate::Factory)
 
 
  /**
