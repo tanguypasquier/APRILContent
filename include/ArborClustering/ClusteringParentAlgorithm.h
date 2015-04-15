@@ -58,6 +58,7 @@ private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
+    std::string     m_connectorAlgorithmName;       ///< The name of the connector creation algorithm to run
     std::string     m_clusteringAlgorithmName;      ///< The name of the clustering algorithm to run
     std::string     m_associationAlgorithmName;     ///< The name of the topological association algorithm to run
 
