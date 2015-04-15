@@ -63,35 +63,6 @@ class CaloHit : public pandora::CaloHit
 {
 public:
 	/**
-	 *  @brief  Get the cell size 0 (U if rectangular, eta if pointing calo hit)
-	 */
-	float GetCellSize0() const;
-
-	/**
-	 *  @brief  Get the cell size 1 (V if rectangular, phi if pointing calo hit)
-	 */
-	float GetCellSize1() const;
-
-    /**
-     *  @brief  Get the typical length scale of cell, units mm
-     *
-     *  @return the typical length scale of cell
-     */
-    float GetCellLengthScale() const;
-
-    /**
-     *  @brief  Get the list of cartesian coordinates for the cell corners
-     *
-     *  @param  cartesianPointList to receive the cartesian coordinates of the cell corners
-     */
-    void GetCellCorners(pandora::CartesianPointList &cartesianPointList) const;
-
-    /**
-     *  @brief  Get the semi digital threshold
-     */
-    SemiDigitalThreshold GetSemiDigitalThreshold() const;
-
-	/**
 	 *  @brief  Whether the calo hit is connected with this one
 	 */
 	bool IsConnected(const arbor_content::CaloHit *const pCaloHit) const;
@@ -176,19 +147,14 @@ public:
 
 private:
 	/**
-	 *  @brief  Constructor
+	 *  @brief  Constructor with pandora calo hit parameters
 	 */
-	CaloHit(const PandoraApi::RectangularCaloHit::Parameters &parameters, const ArborApi::CaloHitParameters &arborParameters);
+	CaloHit(const PandoraApi::CaloHit::Parameters &parameters);
 
 	/**
-	 *  @brief  Constructor
+	 *  @brief  Constructor for calo hit fragmentation
 	 */
-	CaloHit(const PandoraApi::PointingCaloHit::Parameters &parameters, const ArborApi::CaloHitParameters &arborParameters);
-
-	/**
-	 *  @brief  Constructor
-	 */
-	CaloHit(const CaloHit *const pCaloHit, float weight = 1.f);
+	CaloHit(const PandoraContentApi::CaloHitFragmentation::Parameters &parameters);
 
 	/**
 	 *  @brief  Destructor
@@ -196,11 +162,6 @@ private:
 	~CaloHit();
 
 protected:
-
-	/**
-	 *  @brief  Caculate the cell length scale
-	 */
-	float CalculateCellLengthScale() const;
 
 	/**
 	 *
@@ -212,46 +173,11 @@ protected:
 	 */
 	Connector *Modifiable(const Connector *const pConnector) const;
 
-    const float                            m_cellSize0;
-    const float                            m_cellSize1;
-    const float                            m_cellLengthScale;
-    const SemiDigitalThreshold              m_semiDigitalThreshold;
-
     CaloHitMetaData                         m_caloHitMetaData;
     HitTagMap                               m_hitTagMap;
 
-    friend class PointingCaloHitFactory;
-    friend class RectangularCaloHitFactory;
+    friend class CaloHitFactory;
 };
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline float CaloHit::GetCellSize0() const
-{
-	return m_cellSize0;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline float CaloHit::GetCellSize1() const
-{
-	return m_cellSize1;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline float CaloHit::GetCellLengthScale() const
-{
-	return m_cellLengthScale;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline SemiDigitalThreshold CaloHit::GetSemiDigitalThreshold() const
-{
-	return m_semiDigitalThreshold;
-}
 
 } 
 
