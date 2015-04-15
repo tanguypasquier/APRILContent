@@ -54,7 +54,7 @@ private:
 	/**
 	 *  @brief  Get the calo hit of this connector meta data
 	 */
-	const arbor_content::CaloHit *const GetCaloHit() const;
+	const arbor_content::CaloHit *GetCaloHit() const;
 
 	/**
 	 *  @brief  Whether the calo hit is connected with this one
