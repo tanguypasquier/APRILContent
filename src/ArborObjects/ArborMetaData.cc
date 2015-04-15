@@ -49,7 +49,7 @@ CaloHitMetaData::~CaloHitMetaData()
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-const arbor_content::CaloHit *const CaloHitMetaData::GetCaloHit() const
+const arbor_content::CaloHit *CaloHitMetaData::GetCaloHit() const
 {
 	return m_pCaloHit;
 }
@@ -226,6 +226,11 @@ pandora::StatusCode CaloHitMetaData::AddConnector(const Connector *const pConnec
 		m_allConnectorList.erase(pConnector);
 		return pandora::STATUS_CODE_FAILURE;
 	}
+
+	if(BACKWARD_DIRECTION == direction)
+		m_isSeed = false;
+	else
+		m_isLeaf = false;
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
