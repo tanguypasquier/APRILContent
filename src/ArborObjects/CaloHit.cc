@@ -30,44 +30,27 @@
 namespace arbor_content
 {
 
-CaloHit::CaloHit(const PandoraApi::RectangularCaloHit::Parameters &parameters, const ArborApi::CaloHitParameters &arborParameters) :
+CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
 		pandora::CaloHit(parameters),
-		m_cellSize0(parameters.m_cellSizeU.Get()),
-		m_cellSize1(parameters.m_cellSizeV.Get()),
-		m_cellLengthScale(std::sqrt(m_cellSize0 * m_cellSize0)),
-		m_semiDigitalThreshold(arborParameters.m_semiDigitalThreshold.Get()),
 		m_caloHitMetaData(this)
 {
-	m_cellGeometry = pandora::RECTANGULAR;
 	ClearTagMap();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-CaloHit::CaloHit(const PandoraApi::PointingCaloHit::Parameters &parameters, const ArborApi::CaloHitParameters &arborParameters) :
+// TODO copy the connector list in the new calo hit
+CaloHit::CaloHit(const PandoraContentApi::CaloHitFragmentation::Parameters &parameters) :
 		pandora::CaloHit(parameters),
-		m_cellSize0(parameters.m_cellSizeEta.Get()),
-		m_cellSize1(parameters.m_cellSizePhi.Get()),
-		m_cellLengthScale(this->CalculateCellLengthScale()),
-		m_semiDigitalThreshold(arborParameters.m_semiDigitalThreshold.Get()),
 		m_caloHitMetaData(this)
-{
-	m_cellGeometry = pandora::POINTING;
-	ClearTagMap();
-}
 
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-CaloHit::CaloHit(const CaloHit *const pCaloHit, float weight) :
-		pandora::CaloHit(pCaloHit, weight),
-		m_cellSize0(pCaloHit->GetCellSize0()),
-		m_cellSize1(pCaloHit->GetCellSize1()),
-		m_cellLengthScale(pCaloHit->GetCellLengthScale()),
-		m_semiDigitalThreshold(pCaloHit->GetSemiDigitalThreshold()),
-		m_caloHitMetaData(this),
-		m_hitTagMap(pCaloHit->m_hitTagMap)
 {
-	m_cellGeometry = pCaloHit->GetCellGeometry();
+	const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit.Get());
+
+	if(NULL == pCaloHitCopy)
+		throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+
+	m_hitTagMap = pCaloHitCopy->m_hitTagMap;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -75,96 +58,6 @@ CaloHit::CaloHit(const CaloHit *const pCaloHit, float weight) :
 CaloHit::~CaloHit()
 {
 	PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveAllConnections());
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-void CaloHit::GetCellCorners(pandora::CartesianPointList &cartesianPointList) const
-{
-	if(m_cellGeometry == pandora::RECTANGULAR)
-	{
-	    const pandora::CartesianVector &position(this->GetPositionVector());
-
-	    pandora::CartesianVector normal(this->GetCellNormalVector());
-	    pandora::CartesianVector dirU((pandora::BARREL == this->GetHitRegion()) ?
-	    		pandora::CartesianVector(0.f, 0.f, 1.f) : pandora::CartesianVector(0.f, 1.f, 0.f) );
-	    pandora::CartesianVector dirV(normal.GetCrossProduct(dirU));
-
-	    dirU *= (this->GetCellSize0() / 2.);
-	    dirV *= (this->GetCellSize1() / 2.);
-	    normal *= (this->GetCellThickness() / 2.);
-
-	    cartesianPointList.push_back(pandora::CartesianVector(position - dirU - dirV - normal));
-	    cartesianPointList.push_back(pandora::CartesianVector(position + dirU - dirV - normal));
-	    cartesianPointList.push_back(pandora::CartesianVector(position + dirU + dirV - normal));
-	    cartesianPointList.push_back(pandora::CartesianVector(position - dirU + dirV - normal));
-
-	    cartesianPointList.push_back(pandora::CartesianVector(position - dirU - dirV + normal));
-	    cartesianPointList.push_back(pandora::CartesianVector(position + dirU - dirV + normal));
-	    cartesianPointList.push_back(pandora::CartesianVector(position + dirU + dirV + normal));
-	    cartesianPointList.push_back(pandora::CartesianVector(position - dirU + dirV + normal));
-	}
-	else
-	{
-	    float radius(0.f), phi(0.f), theta(0.f);
-	    this->GetPositionVector().GetSphericalCoordinates(radius, phi, theta);
-	    const float centralEta(-1. * std::log(std::tan(theta / 2.)));
-
-	    const float rMin(radius - this->GetCellThickness() / 2.), rMax(radius + this->GetCellThickness() / 2.);
-	    const float phiMin(phi - this->GetCellSize1() / 2.), phiMax(phi + this->GetCellSize1() / 2.);
-	    const float etaMin(centralEta - this->GetCellSize0() / 2.), etaMax(centralEta + this->GetCellSize0() / 2.);
-	    const float thetaMin(2. * std::atan(std::exp(-1. * etaMin))), thetaMax(2. * std::atan(std::exp(-1. * etaMax)));
-
-	    const float sinTheta(std::sin(theta)), cosTheta(std::cos(theta));
-	    const float sinThetaMin(std::sin(thetaMin)), cosThetaMin(std::cos(thetaMin)), sinPhiMin(std::sin(phiMin)), cosPhiMin(std::cos(phiMin));
-	    const float sinThetaMax(std::sin(thetaMax)), cosThetaMax(std::cos(thetaMax)), sinPhiMax(std::sin(phiMax)), cosPhiMax(std::cos(phiMax));
-
-	    float thetaMinRScale(1.f), thetaMaxRScale(1.f);
-
-	    if (pandora::BARREL == this->GetHitRegion())
-	    {
-	        if (std::fabs(sinThetaMin) > std::numeric_limits<float>::epsilon())
-	            thetaMinRScale = std::fabs(sinTheta / sinThetaMin);
-
-	        if (std::fabs(sinThetaMax) > std::numeric_limits<float>::epsilon())
-	            thetaMaxRScale = std::fabs(sinTheta / sinThetaMax);
-	    }
-	    else
-	    {
-	        if (std::fabs(cosThetaMin) > std::numeric_limits<float>::epsilon())
-	            thetaMinRScale = std::fabs(cosTheta / cosThetaMin);
-
-	        if (std::fabs(cosThetaMax) > std::numeric_limits<float>::epsilon())
-	            thetaMaxRScale = std::fabs(cosTheta / cosThetaMax);
-	    }
-
-	    const float rMinAtThetaMin(thetaMinRScale * rMin), rMinAtThetaMax(thetaMaxRScale * rMin);
-	    const float rMaxAtThetaMin(thetaMinRScale * rMax), rMaxAtThetaMax(thetaMaxRScale * rMax);
-
-	    cartesianPointList.push_back(pandora::CartesianVector(rMinAtThetaMin * sinThetaMin * cosPhiMin, rMinAtThetaMin * sinThetaMin * sinPhiMin, rMinAtThetaMin * cosThetaMin));
-	    cartesianPointList.push_back(pandora::CartesianVector(rMinAtThetaMax * sinThetaMax * cosPhiMin, rMinAtThetaMax * sinThetaMax * sinPhiMin, rMinAtThetaMax * cosThetaMax));
-	    cartesianPointList.push_back(pandora::CartesianVector(rMinAtThetaMax * sinThetaMax * cosPhiMax, rMinAtThetaMax * sinThetaMax * sinPhiMax, rMinAtThetaMax * cosThetaMax));
-	    cartesianPointList.push_back(pandora::CartesianVector(rMinAtThetaMin * sinThetaMin * cosPhiMax, rMinAtThetaMin * sinThetaMin * sinPhiMax, rMinAtThetaMin * cosThetaMin));
-
-	    cartesianPointList.push_back(pandora::CartesianVector(rMaxAtThetaMin * sinThetaMin * cosPhiMin, rMaxAtThetaMin * sinThetaMin * sinPhiMin, rMaxAtThetaMin * cosThetaMin));
-	    cartesianPointList.push_back(pandora::CartesianVector(rMaxAtThetaMax * sinThetaMax * cosPhiMin, rMaxAtThetaMax * sinThetaMax * sinPhiMin, rMaxAtThetaMax * cosThetaMax));
-	    cartesianPointList.push_back(pandora::CartesianVector(rMaxAtThetaMax * sinThetaMax * cosPhiMax, rMaxAtThetaMax * sinThetaMax * sinPhiMax, rMaxAtThetaMax * cosThetaMax));
-	    cartesianPointList.push_back(pandora::CartesianVector(rMaxAtThetaMin * sinThetaMin * cosPhiMax, rMaxAtThetaMin * sinThetaMin * sinPhiMax, rMaxAtThetaMin * cosThetaMin));
-	}
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-float CaloHit::CalculateCellLengthScale() const
-{
-    float radius(0.f), phi(0.f), theta(0.f);
-    this->GetPositionVector().GetSphericalCoordinates(radius, phi, theta);
-    const float centralEta(-1. * std::log(std::tan(theta / 2.)));
-
-    const float etaMin(centralEta - this->GetCellSize0() / 2.), etaMax(centralEta + this->GetCellSize0() / 2.);
-    const float thetaMin(2. * std::atan(std::exp(-1. * etaMin))), thetaMax(2. * std::atan(std::exp(-1. * etaMax)));
-
-    return std::sqrt(std::fabs(radius * this->GetCellSize1() * radius * (thetaMax - thetaMin)));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -265,7 +158,7 @@ pandora::StatusCode CaloHit::RemoveConnection(const CaloHit *const pCaloHit) con
 	const Connector *pConnector = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, m_caloHitMetaData.FindConnector(pCaloHit, pConnector));
 
-	if(!pConnector->IsFrom(pCaloHit) && pConnector->IsTo(pCaloHit))
+	if(!pConnector->IsFrom(pCaloHit) && !pConnector->IsTo(pCaloHit))
 		return pandora::STATUS_CODE_FAILURE;
 
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->Modifiable(this)->m_caloHitMetaData.RemoveConnector(pConnector));
