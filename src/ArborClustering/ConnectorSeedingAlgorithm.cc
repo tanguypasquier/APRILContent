@@ -75,7 +75,7 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Connect(const pandora::OrderedCal
 			if(NULL == pCaloHitI)
 				continue;
 
-			if(!PandoraContentApi::IsAvailable(*this, pCaloHitI))
+			if(!PandoraContentApi::IsAvailable(*this, *iterI))
 				continue;
 
 			const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
@@ -97,7 +97,7 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Connect(const pandora::OrderedCal
 					if(NULL == pCaloHitJ)
 						continue;
 
-					if(!PandoraContentApi::IsAvailable(*this, pCaloHitJ))
+					if(!PandoraContentApi::IsAvailable(*this, *iterJ))
 						continue;
 
 					const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
@@ -107,12 +107,20 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Connect(const pandora::OrderedCal
 					if(m_shouldConnectOnlySameHitType && hitTypeI != hitTypeJ)
 						continue;
 
-					const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
 					const float maxConnectionDistance = GetPandora().GetGeometry()->GetHitTypeGranularity(hitTypeJ) <= pandora::FINE ?
 							m_maxConnectionDistanceFine : m_maxConnectionDistanceCoarse;
+					const float maxConnectionAngle = GetPandora().GetGeometry()->GetHitTypeGranularity(hitTypeJ) <= pandora::FINE ?
+							m_maxConnectionAngleFine : m_maxConnectionAngleCoarse;
+
+					const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
+					const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
 
 					// check distance
 					if(difference > maxConnectionDistance)
+						continue;
+
+					// check angle
+					if(angle > maxConnectionAngle)
 						continue;
 
 					// check if already connected
@@ -209,8 +217,8 @@ pandora::StatusCode ConnectorSeedingAlgorithm::AlignConnectors(const pandora::Or
 									m_maxConnectionAngleFine : m_maxConnectionAngleCoarse;
 
 		const unsigned int startPseudoLayer = pConnector->GetFrom()->GetPseudoLayer()-1;
-		const unsigned int endPseudoLayer = pConnector->GetTo()->GetPseudoLayer() <= m_maxPseudoLayerConnection ?
-				0 : pConnector->GetTo()->GetPseudoLayer() - m_maxPseudoLayerConnection;
+		const unsigned int endPseudoLayer = pConnector->GetFrom()->GetPseudoLayer() <= m_maxPseudoLayerConnection ?
+				0 : pConnector->GetFrom()->GetPseudoLayer() - m_maxPseudoLayerConnection;
 
 		for(unsigned int pl = startPseudoLayer ; pl != endPseudoLayer ; --pl)
 		{
@@ -242,7 +250,7 @@ pandora::StatusCode ConnectorSeedingAlgorithm::AlignConnectors(const pandora::Or
 					continue;
 
 				// check if already connected
-				if(pConnector->GetFrom()->IsConnected(pCaloHit, FORWARD_DIRECTION))
+				if(pConnector->GetFrom()->IsConnected(pCaloHit, BACKWARD_DIRECTION))
 					continue;
 
 				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pConnector->GetFrom()->Connect(pCaloHit, BACKWARD_DIRECTION, maxConnectionDistance));
@@ -273,20 +281,17 @@ pandora::StatusCode ConnectorSeedingAlgorithm::ReadSettings(const pandora::TiXml
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxPseudoLayerConnection", m_maxPseudoLayerConnection));
 
-	m_shouldConnectOnlySameHitType = false;
+	m_shouldConnectOnlySameHitType = true;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"ShouldConnectOnlySameHitType", m_shouldConnectOnlySameHitType));
 
-	if(1 == m_seedingStrategy)
-	{
-		m_maxConnectionAngleFine = M_PI/4.f;
-		PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-				"MaxConnectionAngleFine", m_maxConnectionAngleFine));
+	m_maxConnectionAngleFine = M_PI/4.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxConnectionAngleFine", m_maxConnectionAngleFine));
 
-		m_maxConnectionAngleCoarse = M_PI/4.f;
-		PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-				"MaxConnectionAngleCoarse", m_maxConnectionAngleCoarse));
-	}
+	m_maxConnectionAngleCoarse = M_PI/4.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxConnectionAngleCoarse", m_maxConnectionAngleCoarse));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
