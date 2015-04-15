@@ -28,8 +28,6 @@
 
 #include "ArborPlugins/ArborBFieldPlugin.h"
 
-using namespace pandora;
-
 namespace arbor_content
 {
 
@@ -44,7 +42,7 @@ ArborBFieldPlugin::ArborBFieldPlugin(const float innerBField, const float muonBa
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-float ArborBFieldPlugin::GetBField(const CartesianVector &positionVector) const
+float ArborBFieldPlugin::GetBField(const pandora::CartesianVector &positionVector) const
 {
     if (std::fabs(positionVector.GetZ()) >= m_muonEndCapInnerZ)
         return m_muonEndCapBField;
@@ -57,28 +55,28 @@ float ArborBFieldPlugin::GetBField(const CartesianVector &positionVector) const
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode ArborBFieldPlugin::Initialize()
+pandora::StatusCode ArborBFieldPlugin::Initialize()
 {
     try
     {
-        m_muonEndCapInnerZ = this->GetPandora().GetGeometry()->GetSubDetector(MUON_ENDCAP).GetInnerZCoordinate();
-        m_coilMidPointR = (0.5f * (this->GetPandora().GetGeometry()->GetSubDetector(COIL).GetInnerRCoordinate() +
-            this->GetPandora().GetGeometry()->GetSubDetector(COIL).GetOuterRCoordinate()));
+        m_muonEndCapInnerZ = this->GetPandora().GetGeometry()->GetSubDetector(pandora::MUON_ENDCAP).GetInnerZCoordinate();
+        m_coilMidPointR = (0.5f * (this->GetPandora().GetGeometry()->GetSubDetector(pandora::COIL).GetInnerRCoordinate() +
+            this->GetPandora().GetGeometry()->GetSubDetector(pandora::COIL).GetOuterRCoordinate()));
     }
-    catch (StatusCodeException &statusCodeException)
+    catch (pandora::StatusCodeException &statusCodeException)
     {
         std::cout << "ArborBFieldPlugin: Unable to extract Muon EndCap and Coil geometry." << std::endl;
         return statusCodeException.GetStatusCode();
     }
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode ArborBFieldPlugin::ReadSettings(const TiXmlHandle /*xmlHandle*/)
+pandora::StatusCode ArborBFieldPlugin::ReadSettings(const pandora::TiXmlHandle /*xmlHandle*/)
 {
-    return STATUS_CODE_SUCCESS;
+	return pandora::STATUS_CODE_SUCCESS;
 }
 
-} // namespace lc_content
+}

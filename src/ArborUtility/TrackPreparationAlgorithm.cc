@@ -28,8 +28,6 @@
 
 #include "ArborUtility/TrackPreparationAlgorithm.h"
 
-using namespace pandora;
-
 namespace arbor_content
 {
 
@@ -41,19 +39,19 @@ TrackPreparationAlgorithm::TrackPreparationAlgorithm() :
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode TrackPreparationAlgorithm::Run()
+pandora::StatusCode TrackPreparationAlgorithm::Run()
 {
     // Create candidate track list, containing all tracks that could be associated to clusters and so used in final pfo creation
-    TrackList candidateTrackList;
+	pandora::TrackList candidateTrackList;
 
-    for (StringVector::const_iterator iter = m_candidateListNames.begin(), iterEnd = m_candidateListNames.end(); iter != iterEnd; ++iter)
+    for (pandora::StringVector::const_iterator iter = m_candidateListNames.begin(), iterEnd = m_candidateListNames.end(); iter != iterEnd; ++iter)
     {
-        const TrackList *pTrackList = NULL;
+        const pandora::TrackList *pTrackList = NULL;
 
-        if (STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, *iter, pTrackList))
+        if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList<pandora::TrackList>(*this, *iter, pTrackList))
             continue;
 
-        for (TrackList::const_iterator trackIter = pTrackList->begin(), trackIterEnd = pTrackList->end(); trackIter != trackIterEnd; ++trackIter)
+        for (pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackIterEnd = pTrackList->end(); trackIter != trackIterEnd; ++trackIter)
         {
             if ((*trackIter)->IsAvailable())
                 candidateTrackList.insert(*trackIter);
@@ -61,50 +59,50 @@ StatusCode TrackPreparationAlgorithm::Run()
     }
 
     // Set this list of candidate pfo tracks to be the current track list
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, candidateTrackList, m_mergedCandidateListName));
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<Track>(*this, m_mergedCandidateListName));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, candidateTrackList, m_mergedCandidateListName));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::Track>(*this, m_mergedCandidateListName));
 
     if (m_shouldMakeAssociations)
     {
         // Remove existing and calculate new track-cluster associations
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
 
-        for (StringVector::const_iterator iter = m_associationAlgorithms.begin(), iterEnd = m_associationAlgorithms.end();
+        for (pandora::StringVector::const_iterator iter = m_associationAlgorithms.begin(), iterEnd = m_associationAlgorithms.end();
             iter != iterEnd; ++iter)
         {
-            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, *iter));
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, *iter));
         }
     }
 
     if (m_shouldMakePfoTrackList)
     {
         // Filter the candidate track list to identify the parent tracks of charged pfos
-        TrackList pfoTrackList;
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, this->CreatePfoTrackList(candidateTrackList, pfoTrackList));
+    	pandora::TrackList pfoTrackList;
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreatePfoTrackList(candidateTrackList, pfoTrackList));
 
         // Save the filtered list and set it to be the current list for future algorithms
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, pfoTrackList, m_pfoTrackListName));
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<Track>(*this, m_pfoTrackListName));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, pfoTrackList, m_pfoTrackListName));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::Track>(*this, m_pfoTrackListName));
     }
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const TrackList &inputTrackList, TrackList &pfoTrackList) const
+pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora::TrackList &inputTrackList, pandora::TrackList &pfoTrackList) const
 {
-    TrackList siblingTracks;
+	pandora::TrackList siblingTracks;
 
-    for (TrackList::const_iterator iter = inputTrackList.begin(), iterEnd = inputTrackList.end(); iter != iterEnd; ++iter)
+    for (pandora::TrackList::const_iterator iter = inputTrackList.begin(), iterEnd = inputTrackList.end(); iter != iterEnd; ++iter)
     {
-        const Track *const pTrack = *iter;
+        const pandora::Track *const pTrack = *iter;
 
         if (!pTrack->GetParentTrackList().empty())
             continue;
 
         // Sibling tracks as first evidence of pfo target
-        const TrackList &siblingTrackList(pTrack->GetSiblingTrackList());
+        const pandora::TrackList &siblingTrackList(pTrack->GetSiblingTrackList());
 
         if (!siblingTrackList.empty())
         {
@@ -124,25 +122,25 @@ StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const TrackList &inputT
         }
     }
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-bool TrackPreparationAlgorithm::HasAssociatedClusters(const Track *const pTrack, const bool readSiblingInfo) const
+bool TrackPreparationAlgorithm::HasAssociatedClusters(const pandora::Track *const pTrack, const bool readSiblingInfo) const
 {
     if ((pTrack->CanFormPfo() && pTrack->HasAssociatedCluster()) || (pTrack->CanFormClusterlessPfo()))
         return true;
 
     if (!pTrack->IsAvailable())
-        throw StatusCodeException(STATUS_CODE_FAILURE);
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
     // Consider any sibling tracks
     if (readSiblingInfo)
     {
-        const TrackList &siblingTrackList(pTrack->GetSiblingTrackList());
+        const pandora::TrackList &siblingTrackList(pTrack->GetSiblingTrackList());
 
-        for (TrackList::const_iterator iter = siblingTrackList.begin(), iterEnd = siblingTrackList.end(); iter != iterEnd; ++iter)
+        for (pandora::TrackList::const_iterator iter = siblingTrackList.begin(), iterEnd = siblingTrackList.end(); iter != iterEnd; ++iter)
         {
             if (this->HasAssociatedClusters(*iter, false))
                 return true;
@@ -150,9 +148,9 @@ bool TrackPreparationAlgorithm::HasAssociatedClusters(const Track *const pTrack,
     }
 
     // Consider any daughter tracks
-    const TrackList &daughterTrackList(pTrack->GetDaughterTrackList());
+    const pandora::TrackList &daughterTrackList(pTrack->GetDaughterTrackList());
 
-    for (TrackList::const_iterator iter = daughterTrackList.begin(), iterEnd = daughterTrackList.end(); iter != iterEnd; ++iter)
+    for (pandora::TrackList::const_iterator iter = daughterTrackList.begin(), iterEnd = daughterTrackList.end(); iter != iterEnd; ++iter)
     {
         if (this->HasAssociatedClusters(*iter))
             return true;
@@ -163,36 +161,36 @@ bool TrackPreparationAlgorithm::HasAssociatedClusters(const Track *const pTrack,
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode TrackPreparationAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
+pandora::StatusCode TrackPreparationAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadVectorOfValues(xmlHandle,
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
         "CandidateListNames", m_candidateListNames));
 
     if (m_candidateListNames.empty())
-        return STATUS_CODE_INVALID_PARAMETER;
+        return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle,
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MergedCandidateListName", m_mergedCandidateListName));
 
-    PANDORA_RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, XmlHelper::ReadValue(xmlHandle,
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ShouldMakeAssociations", m_shouldMakeAssociations));
 
     if (m_shouldMakeAssociations)
     {
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ProcessAlgorithmList(*this, xmlHandle,
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithmList(*this, xmlHandle,
             "trackClusterAssociationAlgorithms", m_associationAlgorithms));
     }
 
-    PANDORA_RETURN_RESULT_IF_AND_IF(STATUS_CODE_SUCCESS, STATUS_CODE_NOT_FOUND, !=, XmlHelper::ReadValue(xmlHandle,
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ShouldMakePfoTrackList", m_shouldMakePfoTrackList));
 
     if (m_shouldMakePfoTrackList)
     {
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle,
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
             "PfoTrackListName", m_pfoTrackListName));
     }
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 } // namespace lc_content

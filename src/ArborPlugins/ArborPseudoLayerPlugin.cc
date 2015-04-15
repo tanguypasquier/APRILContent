@@ -28,8 +28,6 @@
 
 #include "ArborPlugins/ArborPseudoLayerPlugin.h"
 
-using namespace pandora;
-
 namespace arbor_content
 {
 
@@ -49,7 +47,7 @@ ArborPseudoLayerPlugin::ArborPseudoLayerPlugin() :
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode ArborPseudoLayerPlugin::Initialize()
+pandora::StatusCode ArborPseudoLayerPlugin::Initialize()
 {
     try
     {
@@ -58,47 +56,47 @@ StatusCode ArborPseudoLayerPlugin::Initialize()
         this->StorePolygonAngles();
         this->StoreOverlapCorrectionDetails();
     }
-    catch (StatusCodeException &statusCodeException)
+    catch (pandora::StatusCodeException &statusCodeException)
     {
         std::cout << "ArborPseudoLayerPlugin: Incomplete geometry - consider using a different PseudoLayerCalculator." << std::endl;
         return statusCodeException.GetStatusCode();
     }
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-unsigned int ArborPseudoLayerPlugin::GetPseudoLayer(const CartesianVector &positionVector) const
+unsigned int ArborPseudoLayerPlugin::GetPseudoLayer(const pandora::CartesianVector &positionVector) const
 {
     const float zCoordinate(std::fabs(positionVector.GetZ()));
 
     if (zCoordinate > m_endCapEdgeZ)
-        throw StatusCodeException(STATUS_CODE_NOT_FOUND);
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_NOT_FOUND);
 
     const float rCoordinate(this->GetMaximumRadius(m_eCalBarrelAngleVector, positionVector.GetX(), positionVector.GetY()));
     const float rCoordinateMuon(this->GetMaximumRadius(m_muonBarrelAngleVector, positionVector.GetX(), positionVector.GetY()));
 
     if ((rCoordinateMuon > m_barrelEdgeR) || (rCoordinate > m_barrelEdgeR))
-        throw StatusCodeException(STATUS_CODE_NOT_FOUND);
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_NOT_FOUND);
 
     unsigned int pseudoLayer;
 
     if ((zCoordinate < m_endCapInnerZMuon) && (rCoordinateMuon < m_barrelInnerRMuon))
     {
-        const StatusCode statusCode(this->GetPseudoLayer(rCoordinate, zCoordinate, m_rCorrection, m_zCorrection, m_barrelInnerR,
+        const pandora::StatusCode statusCode(this->GetPseudoLayer(rCoordinate, zCoordinate, m_rCorrection, m_zCorrection, m_barrelInnerR,
             m_endCapInnerZ, pseudoLayer));
 
-        if (STATUS_CODE_SUCCESS != statusCode)
-            throw StatusCodeException(statusCode);
+        if (pandora::STATUS_CODE_SUCCESS != statusCode)
+            throw pandora::StatusCodeException(statusCode);
     }
     else
     {
-        const StatusCode statusCode(this->GetPseudoLayer(rCoordinateMuon, zCoordinate, m_rCorrectionMuon, m_zCorrectionMuon,
+        const pandora::StatusCode statusCode(this->GetPseudoLayer(rCoordinateMuon, zCoordinate, m_rCorrectionMuon, m_zCorrectionMuon,
             m_barrelInnerRMuon, m_endCapInnerZMuon, pseudoLayer));
 
-        if (STATUS_CODE_SUCCESS != statusCode)
-            throw StatusCodeException(statusCode);
+        if (pandora::STATUS_CODE_SUCCESS != statusCode)
+            throw pandora::StatusCodeException(statusCode);
     }
 
     // Reserve a pseudo layer for track projections, etc.
@@ -107,7 +105,7 @@ unsigned int ArborPseudoLayerPlugin::GetPseudoLayer(const CartesianVector &posit
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode ArborPseudoLayerPlugin::GetPseudoLayer(const float rCoordinate, const float zCoordinate, const float rCorrection,
+pandora::StatusCode ArborPseudoLayerPlugin::GetPseudoLayer(const float rCoordinate, const float zCoordinate, const float rCorrection,
     const float zCorrection, const float barrelInnerR, const float endCapInnerZ, unsigned int &pseudoLayer) const
 {
     if (zCoordinate < endCapInnerZ)
@@ -121,35 +119,35 @@ StatusCode ArborPseudoLayerPlugin::GetPseudoLayer(const float rCoordinate, const
     else
     {
         unsigned int bestBarrelLayer(0);
-        const StatusCode barrelStatusCode(this->FindMatchingLayer(rCoordinate - rCorrection, m_barrelLayerPositions, bestBarrelLayer));
+        const pandora::StatusCode barrelStatusCode(this->FindMatchingLayer(rCoordinate - rCorrection, m_barrelLayerPositions, bestBarrelLayer));
 
         unsigned int bestEndCapLayer(0);
-        const StatusCode endCapStatusCode(this->FindMatchingLayer(zCoordinate - zCorrection, m_endCapLayerPositions, bestEndCapLayer));
+        const pandora::StatusCode endCapStatusCode(this->FindMatchingLayer(zCoordinate - zCorrection, m_endCapLayerPositions, bestEndCapLayer));
 
-        if ((STATUS_CODE_SUCCESS != barrelStatusCode) && (STATUS_CODE_SUCCESS != endCapStatusCode))
-            return STATUS_CODE_NOT_FOUND;
+        if ((pandora::STATUS_CODE_SUCCESS != barrelStatusCode) && (pandora::STATUS_CODE_SUCCESS != endCapStatusCode))
+            return pandora::STATUS_CODE_NOT_FOUND;
 
         pseudoLayer = std::max(bestBarrelLayer, bestEndCapLayer);
-        return STATUS_CODE_SUCCESS;
+        return pandora::STATUS_CODE_SUCCESS;
     }
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode ArborPseudoLayerPlugin::FindMatchingLayer(const float position, const LayerPositionList &layerPositionList,
+pandora::StatusCode ArborPseudoLayerPlugin::FindMatchingLayer(const float position, const LayerPositionList &layerPositionList,
     unsigned int &layer) const
 {
     LayerPositionList::const_iterator upperIter = std::upper_bound(layerPositionList.begin(), layerPositionList.end(), position);
 
     if (layerPositionList.end() == upperIter)
     {
-        return STATUS_CODE_NOT_FOUND;
+        return pandora::STATUS_CODE_NOT_FOUND;
     }
 
     if (layerPositionList.begin() == upperIter)
     {
         layer = 0;
-        return STATUS_CODE_SUCCESS;
+        return pandora::STATUS_CODE_SUCCESS;
     }
 
     LayerPositionList::const_iterator lowerIter = upperIter - 1;
@@ -163,25 +161,25 @@ StatusCode ArborPseudoLayerPlugin::FindMatchingLayer(const float position, const
         layer = std::distance(layerPositionList.begin(), upperIter);
     }
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 void ArborPseudoLayerPlugin::StoreLayerPositions()
 {
-    const GeometryManager *const pGeometryManager(this->GetPandora().GetGeometry());
-    this->StoreLayerPositions(pGeometryManager->GetSubDetector(ECAL_BARREL), m_barrelLayerPositions);
-    this->StoreLayerPositions(pGeometryManager->GetSubDetector(ECAL_ENDCAP), m_endCapLayerPositions);
-    this->StoreLayerPositions(pGeometryManager->GetSubDetector(HCAL_BARREL), m_barrelLayerPositions);
-    this->StoreLayerPositions(pGeometryManager->GetSubDetector(HCAL_ENDCAP), m_endCapLayerPositions);
-    this->StoreLayerPositions(pGeometryManager->GetSubDetector(MUON_BARREL), m_barrelLayerPositions);
-    this->StoreLayerPositions(pGeometryManager->GetSubDetector(MUON_ENDCAP), m_endCapLayerPositions);
+    const pandora::GeometryManager *const pGeometryManager(this->GetPandora().GetGeometry());
+    this->StoreLayerPositions(pGeometryManager->GetSubDetector(pandora::ECAL_BARREL), m_barrelLayerPositions);
+    this->StoreLayerPositions(pGeometryManager->GetSubDetector(pandora::ECAL_ENDCAP), m_endCapLayerPositions);
+    this->StoreLayerPositions(pGeometryManager->GetSubDetector(pandora::HCAL_BARREL), m_barrelLayerPositions);
+    this->StoreLayerPositions(pGeometryManager->GetSubDetector(pandora::HCAL_ENDCAP), m_endCapLayerPositions);
+    this->StoreLayerPositions(pGeometryManager->GetSubDetector(pandora::MUON_BARREL), m_barrelLayerPositions);
+    this->StoreLayerPositions(pGeometryManager->GetSubDetector(pandora::MUON_ENDCAP), m_endCapLayerPositions);
 
     if (m_barrelLayerPositions.empty() || m_endCapLayerPositions.empty())
     {
         std::cout << "ArborPseudoLayerPlugin: No layer positions specified." << std::endl;
-        throw StatusCodeException(STATUS_CODE_NOT_INITIALIZED);
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_NOT_INITIALIZED);
     }
 
     std::sort(m_barrelLayerPositions.begin(), m_barrelLayerPositions.end());
@@ -193,23 +191,23 @@ void ArborPseudoLayerPlugin::StoreLayerPositions()
     if ((m_barrelLayerPositions.end() != barrelIter) || (m_endCapLayerPositions.end() != endcapIter))
     {
         std::cout << "ArborPseudoLayerPlugin: Duplicate layer position detected." << std::endl;
-        throw StatusCodeException(STATUS_CODE_FAILURE);
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
     }
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void ArborPseudoLayerPlugin::StoreLayerPositions(const SubDetector &subDetector, LayerPositionList &layerPositionList)
+void ArborPseudoLayerPlugin::StoreLayerPositions(const pandora::SubDetector &subDetector, LayerPositionList &layerPositionList)
 {
     if (!subDetector.IsMirroredInZ())
     {
         std::cout << "ArborPseudoLayerPlugin: Error, detector must be symmetrical about z=0 plane." << std::endl;
-        throw StatusCodeException(STATUS_CODE_INVALID_PARAMETER);
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
     }
 
-    const SubDetector::SubDetectorLayerList &subDetectorLayerList(subDetector.GetSubDetectorLayerList());
+    const pandora::SubDetector::SubDetectorLayerList &subDetectorLayerList(subDetector.GetSubDetectorLayerList());
 
-    for (SubDetector::SubDetectorLayerList::const_iterator iter = subDetectorLayerList.begin(), iterEnd = subDetectorLayerList.end(); iter != iterEnd; ++iter)
+    for (pandora::SubDetector::SubDetectorLayerList::const_iterator iter = subDetectorLayerList.begin(), iterEnd = subDetectorLayerList.end(); iter != iterEnd; ++iter)
     {
         layerPositionList.push_back(iter->GetClosestDistanceToIp());
     }
@@ -219,21 +217,21 @@ void ArborPseudoLayerPlugin::StoreLayerPositions(const SubDetector &subDetector,
 
 void ArborPseudoLayerPlugin::StoreDetectorOuterEdge()
 {
-    const GeometryManager *const pGeometryManager(this->GetPandora().GetGeometry());
+    const pandora::GeometryManager *const pGeometryManager(this->GetPandora().GetGeometry());
 
-    m_barrelEdgeR = (std::max(pGeometryManager->GetSubDetector(ECAL_BARREL).GetOuterRCoordinate(), std::max(
-        pGeometryManager->GetSubDetector(HCAL_BARREL).GetOuterRCoordinate(),
-        pGeometryManager->GetSubDetector(MUON_BARREL).GetOuterRCoordinate()) ));
+    m_barrelEdgeR = (std::max(pGeometryManager->GetSubDetector(pandora::ECAL_BARREL).GetOuterRCoordinate(), std::max(
+        pGeometryManager->GetSubDetector(pandora::HCAL_BARREL).GetOuterRCoordinate(),
+        pGeometryManager->GetSubDetector(pandora::MUON_BARREL).GetOuterRCoordinate()) ));
 
-    m_endCapEdgeZ = (std::max(std::fabs(pGeometryManager->GetSubDetector(ECAL_ENDCAP).GetOuterZCoordinate()), std::max(
-        std::fabs(pGeometryManager->GetSubDetector(HCAL_ENDCAP).GetOuterZCoordinate()),
-        std::fabs(pGeometryManager->GetSubDetector(MUON_ENDCAP).GetOuterZCoordinate())) ));
+    m_endCapEdgeZ = (std::max(std::fabs(pGeometryManager->GetSubDetector(pandora::ECAL_ENDCAP).GetOuterZCoordinate()), std::max(
+        std::fabs(pGeometryManager->GetSubDetector(pandora::HCAL_ENDCAP).GetOuterZCoordinate()),
+        std::fabs(pGeometryManager->GetSubDetector(pandora::MUON_ENDCAP).GetOuterZCoordinate())) ));
 
     if ((m_barrelLayerPositions.end() != std::upper_bound(m_barrelLayerPositions.begin(), m_barrelLayerPositions.end(), m_barrelEdgeR)) ||
         (m_endCapLayerPositions.end() != std::upper_bound(m_endCapLayerPositions.begin(), m_endCapLayerPositions.end(), m_endCapEdgeZ)))
     {
         std::cout << "ArborPseudoLayerPlugin: Layers specified outside detector edge." << std::endl;
-        throw StatusCodeException(STATUS_CODE_FAILURE);
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
     }
 
     m_barrelLayerPositions.push_back(m_barrelEdgeR);
@@ -244,30 +242,30 @@ void ArborPseudoLayerPlugin::StoreDetectorOuterEdge()
 
 void ArborPseudoLayerPlugin::StorePolygonAngles()
 {
-    const GeometryManager *const pGeometryManager(this->GetPandora().GetGeometry());
+    const pandora::GeometryManager *const pGeometryManager(this->GetPandora().GetGeometry());
 
-    this->FillAngleVector(pGeometryManager->GetSubDetector(ECAL_BARREL).GetInnerSymmetryOrder(),
-        pGeometryManager->GetSubDetector(ECAL_BARREL).GetInnerPhiCoordinate(), m_eCalBarrelAngleVector);
+    this->FillAngleVector(pGeometryManager->GetSubDetector(pandora::ECAL_BARREL).GetInnerSymmetryOrder(),
+        pGeometryManager->GetSubDetector(pandora::ECAL_BARREL).GetInnerPhiCoordinate(), m_eCalBarrelAngleVector);
 
-    this->FillAngleVector(pGeometryManager->GetSubDetector(MUON_BARREL).GetInnerSymmetryOrder(),
-        pGeometryManager->GetSubDetector(MUON_BARREL).GetInnerPhiCoordinate(), m_muonBarrelAngleVector);
+    this->FillAngleVector(pGeometryManager->GetSubDetector(pandora::MUON_BARREL).GetInnerSymmetryOrder(),
+        pGeometryManager->GetSubDetector(pandora::MUON_BARREL).GetInnerPhiCoordinate(), m_muonBarrelAngleVector);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 void ArborPseudoLayerPlugin::StoreOverlapCorrectionDetails()
 {
-    const GeometryManager *const pGeometryManager(this->GetPandora().GetGeometry());
+    const pandora::GeometryManager *const pGeometryManager(this->GetPandora().GetGeometry());
 
-    m_barrelInnerR = pGeometryManager->GetSubDetector(ECAL_BARREL).GetInnerRCoordinate();
-    m_endCapInnerZ = std::fabs(pGeometryManager->GetSubDetector(ECAL_ENDCAP).GetInnerZCoordinate());
-    m_barrelInnerRMuon = pGeometryManager->GetSubDetector(MUON_BARREL).GetInnerRCoordinate();
-    m_endCapInnerZMuon = std::fabs(pGeometryManager->GetSubDetector(MUON_ENDCAP).GetInnerZCoordinate());
+    m_barrelInnerR = pGeometryManager->GetSubDetector(pandora::ECAL_BARREL).GetInnerRCoordinate();
+    m_endCapInnerZ = std::fabs(pGeometryManager->GetSubDetector(pandora::ECAL_ENDCAP).GetInnerZCoordinate());
+    m_barrelInnerRMuon = pGeometryManager->GetSubDetector(pandora::MUON_BARREL).GetInnerRCoordinate();
+    m_endCapInnerZMuon = std::fabs(pGeometryManager->GetSubDetector(pandora::MUON_ENDCAP).GetInnerZCoordinate());
 
-    const float barrelOuterZ = std::fabs(pGeometryManager->GetSubDetector(ECAL_BARREL).GetOuterZCoordinate());
-    const float endCapOuterR = pGeometryManager->GetSubDetector(ECAL_ENDCAP).GetOuterRCoordinate();
-    const float barrelOuterZMuon = std::fabs(pGeometryManager->GetSubDetector(MUON_BARREL).GetOuterZCoordinate());
-    const float endCapOuterRMuon = pGeometryManager->GetSubDetector(MUON_ENDCAP).GetOuterRCoordinate();
+    const float barrelOuterZ = std::fabs(pGeometryManager->GetSubDetector(pandora::ECAL_BARREL).GetOuterZCoordinate());
+    const float endCapOuterR = pGeometryManager->GetSubDetector(pandora::ECAL_ENDCAP).GetOuterRCoordinate();
+    const float barrelOuterZMuon = std::fabs(pGeometryManager->GetSubDetector(pandora::MUON_BARREL).GetOuterZCoordinate());
+    const float endCapOuterRMuon = pGeometryManager->GetSubDetector(pandora::MUON_ENDCAP).GetOuterRCoordinate();
 
     const bool IsEnclosingEndCap(endCapOuterR > m_barrelInnerR);
     m_rCorrection = ((!IsEnclosingEndCap) ? 0.f : m_barrelInnerR * ((m_endCapInnerZ / barrelOuterZ) - 1.f));
@@ -311,9 +309,9 @@ void ArborPseudoLayerPlugin::FillAngleVector(const unsigned int symmetryOrder, c
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode ArborPseudoLayerPlugin::ReadSettings(const TiXmlHandle /*xmlHandle*/)
+pandora::StatusCode ArborPseudoLayerPlugin::ReadSettings(const pandora::TiXmlHandle /*xmlHandle*/)
 {
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
-} // namespace lc_content
+}
