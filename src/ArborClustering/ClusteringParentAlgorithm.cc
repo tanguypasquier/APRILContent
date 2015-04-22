@@ -52,8 +52,11 @@ pandora::StatusCode ClusteringParentAlgorithm::Run()
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::CaloHit>(*this, m_inputCaloHitListName));
     }
 
-    // first the connector creation algorithm
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_connectorAlgorithmName));
+    // run first the connector creation algorithm is specified
+    if(!m_connectorAlgorithmName.empty())
+    {
+    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_connectorAlgorithmName));
+    }
 
     // Run the initial cluster formation algorithm
     const pandora::ClusterList *pClusterList = NULL;
@@ -88,7 +91,7 @@ pandora::StatusCode ClusteringParentAlgorithm::Run()
 pandora::StatusCode ClusteringParentAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
     // Daughter algorithm parameters
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
         "ConnectorCreation", m_connectorAlgorithmName));
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
