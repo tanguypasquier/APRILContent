@@ -66,18 +66,18 @@ pandora::StatusCode CaloHitHelper::RemoveConnections(const pandora::CaloHitList 
 //--------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode CaloHitHelper::ExtractCurrentSeedCaloHitList(const pandora::Algorithm &algorithm,
-		pandora::CaloHitList &seedCaloHitList)
+		pandora::CaloHitList &seedCaloHitList, bool discriminateLeafHits)
 {
 	const pandora::CaloHitList *pCaloHitList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pCaloHitList));
 
-	return CaloHitHelper::ExtractSeedCaloHitList(pCaloHitList, seedCaloHitList);
+	return CaloHitHelper::ExtractSeedCaloHitList(pCaloHitList, seedCaloHitList, discriminateLeafHits);
 }
 
 //--------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode CaloHitHelper::ExtractSeedCaloHitList(const pandora::CaloHitList *const pCaloHitList,
-		pandora::CaloHitList &seedCaloHitList)
+		pandora::CaloHitList &seedCaloHitList, bool discriminateLeafHits)
 {
 	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
 			endIter != iter ; ++iter)
@@ -87,7 +87,7 @@ pandora::StatusCode CaloHitHelper::ExtractSeedCaloHitList(const pandora::CaloHit
 		if(NULL == pCaloHit)
 			continue;
 
-		if(pCaloHit->IsSeed())
+		if(pCaloHit->IsSeed() && !(pCaloHit->IsLeaf() && discriminateLeafHits))
 			seedCaloHitList.insert(pCaloHit);
 	}
 

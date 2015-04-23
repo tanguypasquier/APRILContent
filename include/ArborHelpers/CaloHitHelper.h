@@ -59,12 +59,12 @@ public:
 	/**
 	 *
 	 */
-	static pandora::StatusCode ExtractCurrentSeedCaloHitList(const pandora::Algorithm &algorithm, pandora::CaloHitList &seedCaloHitList);
+	static pandora::StatusCode ExtractCurrentSeedCaloHitList(const pandora::Algorithm &algorithm, pandora::CaloHitList &seedCaloHitList, bool discriminateLeafHits = false);
 
 	/**
 	 *
 	 */
-	static pandora::StatusCode ExtractSeedCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &seedCaloHitList);
+	static pandora::StatusCode ExtractSeedCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &seedCaloHitList, bool discriminateLeafHits = false);
 
 	/**
 	 *
