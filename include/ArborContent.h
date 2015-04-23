@@ -48,6 +48,7 @@
 
 #include "ArborTopologicalAssociation/TopologicalAssociationParentAlgorithm.h"
 #include "ArborTopologicalAssociation/PointingClusterAssociationAlgorithm.h"
+#include "ArborTopologicalAssociation/ClosebySeedMergingAlgorithm.h"
 #include "ArborTrackClusterAssociation/EnergyDrivenTrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/TopologicalTrackClusterAssociationAlgorithm.h"
 
@@ -79,7 +80,8 @@ public:
 	d("GlobalConnectorCleaning",             arbor_content::GlobalConnectorCleaningAlgorithm::Factory) \
 	d("TreeClustering",                      arbor_content::TreeClusteringAlgorithm::Factory) \
 	d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
-	d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory)      \
+	d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory) \
+	d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \
 	d("TopologicalTrackClusterAssociation",  arbor_content::TopologicalTrackClusterAssociationAlgorithm::Factory)       \
 	d("EnergyDrivenTrackClusterAssociation", arbor_content::EnergyDrivenTrackClusterAssociationAlgorithm::Factory) \
 	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
