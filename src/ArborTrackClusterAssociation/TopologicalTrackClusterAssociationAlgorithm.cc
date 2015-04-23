@@ -91,7 +91,7 @@ pandora::StatusCode TopologicalTrackClusterAssociationAlgorithm::Run()
 
 			const float bestTrackClusterDistance = (closestHitPosition - pBestTrack->GetTrackStateAtCalorimeter().GetPosition()).GetMagnitude();
 
-			if(bestTrackClusterDistance < bestTrackClusterDistance)
+			if(bestTrackClusterDistance < trackClusterDistance)
 				continue;
 
 			pBestTrack = pTrack;
@@ -102,6 +102,8 @@ pandora::StatusCode TopologicalTrackClusterAssociationAlgorithm::Run()
 
 		trackClusterAssociationMap[pBestTrack].insert(pCluster);
 	}
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->PerformTrackClusterAssociations(trackClusterAssociationMap));
 
     return pandora::STATUS_CODE_SUCCESS;
 }
