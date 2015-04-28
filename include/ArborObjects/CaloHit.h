@@ -29,122 +29,27 @@
 #define CALOHIT_H
 
 #include "Objects/CaloHit.h"
-#include "Api/PandoraApi.h"
 
-#include "ArborApi/ArborApi.h"
+#include "Api/PandoraApi.h"
+#include "Api/PandoraContentApi.h"
+
+
+#include "ArborApi/ArborContentApi.h"
 #include "ArborApi/ArborInputTypes.h"
-#include "ArborObjects/Connector.h"
+
 #include "ArborObjects/ArborMetaData.h"
 
 namespace arbor_content
 {
 
 class Connector;
-class RectangularCaloHitFactory;
-class PointingCaloHitFactory;
-
-/**
- *  @brief  HitTag enumerator
- */
-enum HitTag
-{
-	CORE_HIT,
-	ISOLATED_HIT,
-	MIP_HIT,
-	NOISE_HIT
-};
-
-typedef std::map<HitTag, bool> HitTagMap;
+class CaloHitFactory;
 
 /** 
  *  @brief  CaloHit class
  */ 
 class CaloHit : public pandora::CaloHit
 {
-public:
-	/**
-	 *  @brief  Whether the calo hit is connected with this one
-	 */
-	bool IsConnected(const arbor_content::CaloHit *const pCaloHit) const;
-
-	/**
-	 *  @brief  Whether the calo hit (contained in meta data) is connected with this one in the connector direction
-	 */
-	bool IsConnected(const arbor_content::CaloHit *const pCaloHit, ConnectorDirection direction)  const;
-
-	/**
-	 *  @brief  Find a connector.
-	 */
-	pandora::StatusCode FindConnector(const arbor_content::CaloHit *const pCaloHit, const Connector *&pConnector) const;
-
-	/**
-	 *  @brief  Find a connector in a given direction
-	 */
-	pandora::StatusCode FindConnector(const arbor_content::CaloHit *const pCaloHit, ConnectorDirection direction,
-			const Connector *&pConnector) const;
-
-	/**
-	 *  @brief  Whether the pandora calo hit has at least one connection
-	 */
-	bool HasAnyConnection() const;
-
-	/**
-	 *  @brief  Get the global connector list (backward and forward)
-	 */
-	const ConnectorList &GetConnectorList() const;
-
-	/**
-	 *  @brief  Get the connector list for a given direction
-	 */
-	const ConnectorList &GetConnectorList(ConnectorDirection direction) const;
-
-	/**
-	 *  @brief  Whether the calo hit is a seed calo hit in the tree.
-	 */
-	bool IsSeed() const;
-
-	/**
-	 *  @brief  Whether the calo hit is a leaf calo hit in the tree
-	 */
-	bool IsLeaf() const;
-
-	/**
-	 *
-	 */
-	pandora::StatusCode Connect(const CaloHit *const pCaloHit, ConnectorDirection direction,
-			float referenceLength = 1.f) const;
-
-	/**
-	 *
-	 */
-	pandora::StatusCode Connect(const CaloHit *const pCaloHit, ConnectorDirection direction,
-				const Connector *&pConnector, float referenceLength = 1.f) const;
-
-	/**
-	 *
-	 */
-	pandora::StatusCode RemoveConnection(const CaloHit *const pCaloHit) const;
-
-	/**
-	 *
-	 */
-	pandora::StatusCode RemoveAllConnections() const;
-
-	/**
-	 *  @brief  Set the hit tag flag
-	 */
-	pandora::StatusCode SetTag(HitTag tag, bool value) const;
-
-	/**
-	 *  @brief  Get the hit tag flag
-	 */
-	bool GetTag(HitTag tag) const;
-
-	/**
-	 *
-	 */
-	void ClearTagMap() const;
-
 private:
 	/**
 	 *  @brief  Constructor with pandora calo hit parameters
@@ -154,29 +59,25 @@ private:
 	/**
 	 *  @brief  Constructor for calo hit fragmentation
 	 */
-	CaloHit(const PandoraContentApi::CaloHitFragmentation::Parameters &parameters);
+	CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameters);
 
 	/**
 	 *  @brief  Destructor
 	 */
 	~CaloHit();
 
+	/**
+	 *  @brief  Clear the tag map
+	 */
+	void ClearTagMap();
+
 protected:
-
-	/**
-	 *
-	 */
-	CaloHit *Modifiable(const CaloHit *const pCaloHit) const;
-
-	/**
-	 *
-	 */
-	Connector *Modifiable(const Connector *const pConnector) const;
 
     CaloHitMetaData                         m_caloHitMetaData;
     HitTagMap                               m_hitTagMap;
 
     friend class CaloHitFactory;
+    friend class ::ArborContentApi;
 };
 
 } 

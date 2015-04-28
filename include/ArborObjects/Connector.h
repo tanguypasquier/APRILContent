@@ -31,39 +31,30 @@
 #include "Pandora/StatusCodes.h"
 #include "Objects/CartesianVector.h"
 
+#include "ArborApi/ArborInputTypes.h"
+#include "ArborApi/ArborContentApi.h"
+
 namespace arbor_content
 {
 
-class Connector;
-class CaloHit;
-
-/**
- * @brief ConnectorDirection enumerator definition
- */
-enum ConnectorDirection
-{
-	BACKWARD_DIRECTION = -1,
-	FORWARD_DIRECTION = 1
-};
-
 /** 
- * @brief  Connector class
+ *  @brief  Connector class
  */ 
 class Connector
 {
 public:
 	/**
-	 *  @brief  Get the 'from' arbor calo hit
+	 *  @brief  Get the 'from' calo hit
 	 */
 	const arbor_content::CaloHit *GetFrom() const;
 
 	/**
-	 *  @brief  Get the 'to' arbor calo hit
+	 *  @brief  Get the 'to' calo hit
 	 */
 	const arbor_content::CaloHit *GetTo() const;
 
 	/**
-	 *  @brief  Get the 'to' or 'from' arbor calo hit (from (to) for BACKWARD_DIRECTION (FORWARD_DIRECTION))
+	 *  @brief  Get the 'to' or 'from' calo hit (from (to) for BACKWARD_DIRECTION (FORWARD_DIRECTION))
 	 */
 	const arbor_content::CaloHit *Get(ConnectorDirection direction) const;
 
@@ -83,9 +74,9 @@ public:
 	float GetNormalizedLength() const;
 
 	/**
-	 *
+	 *  @brief  Get the connector vector depending on the asked direction
 	 */
-	pandora::CartesianVector GetVector(ConnectorDirection direction) const;
+	pandora::CartesianVector GetVector(ConnectorDirection direction = FORWARD_DIRECTION) const;
 
 	/**
 	 *  @brief  Whether the calo hit is the 'from' calo hit of this connector
@@ -102,9 +93,14 @@ public:
 	 */
 	float GetOpeningAngle(const Connector *const pConnector) const;
 
+	/**
+	 *  @brief  Whether the connector is available to be added in connector lists
+	 */
+	bool IsAvailable() const;
+
 private:
 	/**
-	 *  @brief  Constructor with two connector meta data and reference length
+	 *  @brief  Constructor with two calo hits and a reference length
 	 */
 	Connector(const arbor_content::CaloHit *const pFromCaloHit, const arbor_content::CaloHit *const pToCaloHit,
 			float referenceLength = 1.f);
@@ -114,13 +110,19 @@ private:
 	 */
 	~Connector();
 
+	/**
+	 *  @brief  Set the connector availability
+	 */
+	void SetAvailability(bool availability);
+
 	const CaloHit                        *m_pFromCaloHit;
 	const CaloHit                        *m_pToCaloHit;
 	float                                 m_referenceLength;
+	bool                                  m_isAvailable;
 
 	// friendship
 	friend class ConnectorMetaData;
-	friend class CaloHit;
+	friend class ::ArborContentApi;
 };
 
 } 

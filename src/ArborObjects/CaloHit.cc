@@ -40,12 +40,12 @@ CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 // TODO copy the connector list in the new calo hit
-CaloHit::CaloHit(const PandoraContentApi::CaloHitFragmentation::Parameters &parameters) :
+CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameters) :
 		pandora::CaloHit(parameters),
 		m_caloHitMetaData(this)
 
 {
-	const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit.Get());
+	const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit);
 
 	if(NULL == pCaloHitCopy)
 		throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
@@ -57,195 +57,20 @@ CaloHit::CaloHit(const PandoraContentApi::CaloHitFragmentation::Parameters &para
 
 CaloHit::~CaloHit()
 {
-	PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveAllConnections());
+	PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveAndDeleteAllConnections(this));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-bool CaloHit::IsConnected(const arbor_content::CaloHit *const pCaloHit) const
+void CaloHit::ClearTagMap()
 {
-	return m_caloHitMetaData.IsConnected(pCaloHit);
+	m_hitTagMap[CORE_HIT] = false;
+	m_hitTagMap[ISOLATED_HIT] = false;
+	m_hitTagMap[MIP_HIT] = false;
+	m_hitTagMap[NOISE_HIT] = false;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
-
-bool CaloHit::IsConnected(const arbor_content::CaloHit *const pCaloHit, ConnectorDirection direction) const
-{
-	return m_caloHitMetaData.IsConnected(pCaloHit, direction);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode CaloHit::FindConnector(const arbor_content::CaloHit *const pCaloHit, const Connector *&pConnector) const
-{
-	return m_caloHitMetaData.FindConnector(pCaloHit, pConnector);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode CaloHit::FindConnector(const arbor_content::CaloHit *const pCaloHit, ConnectorDirection direction,
-		const Connector *&pConnector) const
-{
-	return m_caloHitMetaData.FindConnector(pCaloHit, direction, pConnector);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-bool CaloHit::HasAnyConnection() const
-{
-	return m_caloHitMetaData.HasAnyConnection();
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-const ConnectorList &CaloHit::GetConnectorList() const
-{
-	return m_caloHitMetaData.GetConnectorList();
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-const ConnectorList &CaloHit::GetConnectorList(ConnectorDirection direction) const
-{
-	return m_caloHitMetaData.GetConnectorList(direction);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-bool CaloHit::IsSeed() const
-{
-	return m_caloHitMetaData.IsSeed();
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-bool CaloHit::IsLeaf() const
-{
-	return m_caloHitMetaData.IsLeaf();
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode CaloHit::Connect(const CaloHit *const pCaloHit, ConnectorDirection direction,
-		float referenceLength) const
-{
-	const Connector *pConnector = NULL;
-	return this->Connect(pCaloHit, direction, pConnector, referenceLength);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode CaloHit::Connect(const CaloHit *const pCaloHit, ConnectorDirection direction,
-			const Connector *&pConnector, float referenceLength) const
-{
-	pConnector = NULL;
-
-	CaloHit *const pCaloHitFrom = direction == BACKWARD_DIRECTION ? this->Modifiable(pCaloHit) : this->Modifiable(this);
-	CaloHit *const pCaloHitTo = direction == BACKWARD_DIRECTION ? this->Modifiable(this) : this->Modifiable(pCaloHit);
-
-	pConnector = new Connector(pCaloHitFrom, pCaloHitTo, referenceLength);
-
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitFrom->m_caloHitMetaData.AddConnector(pConnector, FORWARD_DIRECTION));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitTo->m_caloHitMetaData.AddConnector(pConnector, BACKWARD_DIRECTION));
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode CaloHit::RemoveConnection(const CaloHit *const pCaloHit) const
-{
-	const Connector *pConnector = NULL;
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, m_caloHitMetaData.FindConnector(pCaloHit, pConnector));
-
-	if(!pConnector->IsFrom(pCaloHit) && !pConnector->IsTo(pCaloHit))
-		return pandora::STATUS_CODE_FAILURE;
-
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->Modifiable(this)->m_caloHitMetaData.RemoveConnector(pConnector));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->Modifiable(pCaloHit)->m_caloHitMetaData.RemoveConnector(pConnector));
-
-	delete pConnector;
-	pConnector = NULL;
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode CaloHit::RemoveAllConnections() const
-{
-	for(ConnectorList::const_iterator iter = m_caloHitMetaData.GetConnectorList(BACKWARD_DIRECTION).begin(),
-			endIter = m_caloHitMetaData.GetConnectorList(BACKWARD_DIRECTION).end() ;
-			endIter != iter ; ++iter)
-	{
-		const Connector *const pConnector = *iter;
-		const CaloHit *const pCaloHitFrom = pConnector->GetFrom();
-
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveConnection(pCaloHitFrom));
-	}
-
-	for(ConnectorList::const_iterator iter = m_caloHitMetaData.GetConnectorList(FORWARD_DIRECTION).begin(),
-			endIter = m_caloHitMetaData.GetConnectorList(FORWARD_DIRECTION).end() ;
-			endIter != iter ; ++iter)
-	{
-		const Connector *const pConnector = *iter;
-		const CaloHit *const pCaloHitTo = pConnector->GetTo();
-
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveConnection(pCaloHitTo));
-	}
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode CaloHit::SetTag(HitTag tag, bool value) const
-{
-	HitTagMap::const_iterator findIter = m_hitTagMap.find(tag);
-
-	if(findIter == m_hitTagMap.end())
-		return pandora::STATUS_CODE_NOT_FOUND;
-
-	this->Modifiable(this)->m_hitTagMap[tag] = value;
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-bool CaloHit::GetTag(HitTag tag) const
-{
-	HitTagMap::const_iterator findIter = m_hitTagMap.find(tag);
-
-	if(findIter == m_hitTagMap.end())
-		return false;
-
-	return findIter->second;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-void CaloHit::ClearTagMap() const
-{
-	this->Modifiable(this)->m_hitTagMap[CORE_HIT] = false;
-	this->Modifiable(this)->m_hitTagMap[ISOLATED_HIT] = false;
-	this->Modifiable(this)->m_hitTagMap[MIP_HIT] = false;
-	this->Modifiable(this)->m_hitTagMap[NOISE_HIT] = false;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-CaloHit *CaloHit::Modifiable(const CaloHit *const pCaloHit) const
-{
-	return const_cast<CaloHit*>(pCaloHit);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-Connector *CaloHit::Modifiable(const Connector *const pConnector) const
-{
-	return const_cast<Connector*>(pConnector);
-}
 
 } 
 
