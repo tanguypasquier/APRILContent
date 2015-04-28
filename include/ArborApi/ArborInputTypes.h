@@ -49,7 +49,7 @@ enum SemiDigitalThreshold
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 /**
- * @brief ConnectorDirection enumerator definition
+ * @brief ConnectorDirection enumerator
  */
 enum ConnectorDirection
 {
