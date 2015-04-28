@@ -124,11 +124,11 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Connect(const pandora::OrderedCal
 						continue;
 
 					// check if already connected
-					if(pCaloHitI->IsConnected(pCaloHitJ, FORWARD_DIRECTION))
+					if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION))
 						continue;
 
 					// connect !
-					PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitI->Connect(pCaloHitJ, FORWARD_DIRECTION, maxConnectionDistance));
+					PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION, maxConnectionDistance));
 				}
 			}
 		}
@@ -154,7 +154,7 @@ pandora::StatusCode ConnectorSeedingAlgorithm::AlignConnectors(const pandora::Or
 			if(NULL == pCaloHit)
 				return pandora::STATUS_CODE_FAILURE;
 
-			const ConnectorList &backwardConnectorList(pCaloHit->GetConnectorList(BACKWARD_DIRECTION));
+			const ConnectorList &backwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, BACKWARD_DIRECTION));
 
 			if(!backwardConnectorList.empty())
 			{
@@ -204,10 +204,10 @@ pandora::StatusCode ConnectorSeedingAlgorithm::AlignConnectors(const pandora::Or
 					continue;
 
 				// check if already connected
-				if(pConnector->GetTo()->IsConnected(pCaloHit, FORWARD_DIRECTION))
+				if(ArborContentApi::IsConnected(pConnector->GetTo(), pCaloHit, FORWARD_DIRECTION))
 					continue;
 
-				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pConnector->GetTo()->Connect(pCaloHit, FORWARD_DIRECTION, maxConnectionDistance));
+				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pConnector->GetTo(), pCaloHit, FORWARD_DIRECTION, maxConnectionDistance));
 			}
 		}
 
@@ -250,10 +250,10 @@ pandora::StatusCode ConnectorSeedingAlgorithm::AlignConnectors(const pandora::Or
 					continue;
 
 				// check if already connected
-				if(pConnector->GetFrom()->IsConnected(pCaloHit, BACKWARD_DIRECTION))
+				if(ArborContentApi::IsConnected(pConnector->GetFrom(), pCaloHit, BACKWARD_DIRECTION))
 					continue;
 
-				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pConnector->GetFrom()->Connect(pCaloHit, BACKWARD_DIRECTION, maxConnectionDistance));
+				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pConnector->GetFrom(), pCaloHit, BACKWARD_DIRECTION, maxConnectionDistance));
 			}
 		}
 	}

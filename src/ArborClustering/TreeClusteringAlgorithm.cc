@@ -66,13 +66,7 @@ pandora::StatusCode TreeClusteringAlgorithm::BuildClusters(const pandora::CaloHi
 		if(NULL == pCaloHit)
 			return pandora::STATUS_CODE_FAILURE;
 
-	if(pCaloHit->IsSeed() && pCaloHit->GetConnectorList(BACKWARD_DIRECTION).size() > 0)
-		std::cout << "Mis-identified seeds ! " << std::endl;
-
-	if(pCaloHit->IsLeaf() && pCaloHit->GetConnectorList(FORWARD_DIRECTION).size() > 0)
-		std::cout << "Mis-identified leafs ! " << std::endl;
-
-		if(!pCaloHit->IsSeed() || !PandoraContentApi::IsAvailable(*this, *iter))
+		if(ArborContentApi::IsSeed(pCaloHit) || !PandoraContentApi::IsAvailable(*this, *iter))
 			continue;
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->BuildCluster(pCaloHit));
@@ -88,7 +82,7 @@ pandora::StatusCode TreeClusteringAlgorithm::BuildCluster(const CaloHit *const p
 	if(NULL == pSeedCaloHit)
 		return pandora::STATUS_CODE_FAILURE;
 
-	if(!pSeedCaloHit->IsSeed())
+	if(!ArborContentApi::IsSeed(pSeedCaloHit))
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
 	pandora::CaloHitList clusterCaloHitList;

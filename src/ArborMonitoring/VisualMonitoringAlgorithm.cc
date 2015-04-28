@@ -494,7 +494,7 @@ void VisualMonitoringAlgorithm::VisualizeConnectors(const pandora::CaloHitList *
     		if(NULL == pCaloHit)
     			continue;
 
-    		const ConnectorList &connectorList(pCaloHit->GetConnectorList(FORWARD_DIRECTION));
+    		const ConnectorList &connectorList(ArborContentApi::GetConnectorList(pCaloHit, FORWARD_DIRECTION));
 
     		for(ConnectorList::const_iterator connectorIter = connectorList.begin(), connectorEndIter = connectorList.end() ;
     				connectorEndIter != connectorIter ; ++connectorIter)

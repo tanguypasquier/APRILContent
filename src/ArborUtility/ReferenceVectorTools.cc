@@ -64,7 +64,7 @@ pandora::StatusCode SimpleReferenceVectorTool::GetMeanDirection(const CaloHit *c
 	if(0 == depth)
 		return pandora::STATUS_CODE_SUCCESS;
 
-	const ConnectorList &connectorList(pCaloHit->GetConnectorList(connectorDirection));
+	const ConnectorList &connectorList(ArborContentApi::GetConnectorList(pCaloHit, connectorDirection));
 
 	if(connectorList.empty())
 		return pandora::STATUS_CODE_SUCCESS;

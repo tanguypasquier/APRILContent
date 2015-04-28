@@ -75,7 +75,7 @@ pandora::StatusCode GlobalConnectorCleaningAlgorithm::Clean(const pandora::CaloH
 		if(NULL == pCaloHit)
 			return pandora::STATUS_CODE_FAILURE;
 
-		const ConnectorList &backwardConnectorList(pCaloHit->GetConnectorList(BACKWARD_DIRECTION));
+		const ConnectorList &backwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, BACKWARD_DIRECTION));
 
 		if(backwardConnectorList.size() < 2)
 			continue;
@@ -129,7 +129,7 @@ pandora::StatusCode GlobalConnectorCleaningAlgorithm::Clean(const pandora::CaloH
 				hitEndIter != hitIter ; ++hitIter)
 		{
 			const CaloHit *const pCaloHit = dynamic_cast<const CaloHit *const>(*hitIter);
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, iter->m_pCaloHit->RemoveConnection(pCaloHit));
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveConnectionBetween(iter->m_pCaloHit, pCaloHit));
 		}
 	}
 

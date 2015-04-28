@@ -64,7 +64,7 @@ pandora::StatusCode SplitClusterTool::SplitCluster(const pandora::Algorithm &par
 	}
 
 	// remove the connection
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pFromCaloHit->RemoveConnection(pToCaloHit));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveConnectionBetween(pFromCaloHit, pToCaloHit));
 
 	// build the cluster fragment
 	pClusterFragment = NULL;
