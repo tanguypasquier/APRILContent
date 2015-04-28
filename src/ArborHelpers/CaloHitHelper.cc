@@ -30,6 +30,7 @@
 
 #include "Api/PandoraContentApi.h"
 
+#include "ArborApi/ArborContentApi.h"
 #include "ArborObjects/CaloHit.h"
 
 namespace arbor_content
@@ -57,7 +58,7 @@ pandora::StatusCode CaloHitHelper::RemoveConnections(const pandora::CaloHitList 
 		if(NULL == pCaloHit)
 			continue;
 
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHit->RemoveAllConnections());
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveAndDeleteAllConnections(pCaloHit));
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -87,7 +88,7 @@ pandora::StatusCode CaloHitHelper::ExtractSeedCaloHitList(const pandora::CaloHit
 		if(NULL == pCaloHit)
 			continue;
 
-		if(pCaloHit->IsSeed() && !(pCaloHit->IsLeaf() && discriminateLeafHits))
+		if(ArborContentApi::IsSeed(pCaloHit) && !(ArborContentApi::IsLeaf(pCaloHit) && discriminateLeafHits))
 			seedCaloHitList.insert(pCaloHit);
 	}
 
@@ -118,7 +119,7 @@ pandora::StatusCode CaloHitHelper::ExtractLeafCaloHitList(const pandora::CaloHit
 		if(NULL == pCaloHit)
 			continue;
 
-		if(pCaloHit->IsLeaf())
+		if(ArborContentApi::IsLeaf(pCaloHit))
 			leafCaloHitList.insert(pCaloHit);
 	}
 
@@ -130,7 +131,7 @@ pandora::StatusCode CaloHitHelper::ExtractLeafCaloHitList(const pandora::CaloHit
 pandora::StatusCode CaloHitHelper::BuildCaloHitList(const CaloHit *const pCaloHit, ConnectorDirection direction,
 		pandora::CaloHitList &calohitList)
 {
-	const ConnectorList &connectorList(pCaloHit->GetConnectorList(direction));
+	const ConnectorList &connectorList(ArborContentApi::GetConnectorList(pCaloHit, direction));
 
 	for(ConnectorList::const_iterator iter = connectorList.begin(), endIter = connectorList.end() ;
 			endIter != iter ; ++iter)
@@ -143,6 +144,37 @@ pandora::StatusCode CaloHitHelper::BuildCaloHitList(const CaloHit *const pCaloHi
 			return pandora::STATUS_CODE_FAILURE;
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pConnectedCaloHit, direction, calohitList));
+	}
+
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+
+pandora::StatusCode CaloHitHelper::BuildCaloHitList(const CaloHit *const pCaloHit, ConnectorDirection direction, pandora::CaloHitList &calohitList,
+		unsigned int connectionDepthLimit, unsigned int pseudoLayerLimit)
+{
+	const ConnectorList &connectorList(ArborContentApi::GetConnectorList(pCaloHit, direction));
+
+	if(0 == connectionDepthLimit)
+		return pandora::STATUS_CODE_SUCCESS;
+
+	for(ConnectorList::const_iterator iter = connectorList.begin(), endIter = connectorList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const Connector *const pConnector = *iter;
+		const CaloHit *const pConnectedCaloHit = pConnector->Get(direction);
+
+		const unsigned int pseudoLayerDifference =
+				std::max(pConnectedCaloHit->GetPseudoLayer(), pCaloHit->GetPseudoLayer()) - std::min(pConnectedCaloHit->GetPseudoLayer(), pCaloHit->GetPseudoLayer());
+
+		if(pseudoLayerDifference > pseudoLayerLimit)
+			continue;
+
+		if(!calohitList.insert(pConnectedCaloHit).second)
+			return pandora::STATUS_CODE_FAILURE;
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pConnectedCaloHit, direction, calohitList, connectionDepthLimit-1, pseudoLayerLimit-pseudoLayerDifference));
 	}
 
 
