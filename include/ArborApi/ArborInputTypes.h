@@ -34,6 +34,8 @@
 namespace arbor_content
 {
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 /**
  *  @brief  SemiDigitalThreshold enumerator
  */
@@ -46,12 +48,37 @@ enum SemiDigitalThreshold
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+/**
+ * @brief ConnectorDirection enumerator definition
+ */
+enum ConnectorDirection
+{
+	BACKWARD_DIRECTION = -1,
+	FORWARD_DIRECTION = 1
+};
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ *  @brief  HitTag enumerator
+ */
+enum HitTag
+{
+	CORE_HIT,
+	ISOLATED_HIT,
+	MIP_HIT,
+	NOISE_HIT
+};
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 class Connector;
 class CaloHit;
 
 typedef std::set<const CaloHit *> CaloHitList;
 typedef std::set<const Connector *> ConnectorList;
 typedef std::vector<SemiDigitalThreshold> SemiDigitalThresholdList;
+typedef std::map<HitTag, bool> HitTagMap;
 
 typedef pandora::PandoraInputType<SemiDigitalThreshold> InputSemiDigitalThreshold;
 typedef pandora::PandoraInputType<SemiDigitalThresholdList> InputSemiDigitalThresholdList;
