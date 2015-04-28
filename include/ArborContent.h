@@ -29,7 +29,8 @@
 #define ARBOR_CONTENT_H 1
 
 #include "Api/PandoraApi.h"
-#include "ArborApi/ArborApi.h"
+#include "ArborApi/ArborContentApi.h"
+#include "ArborApi/CaloHitFactory.h"
 
 #include "ArborClustering/ClusteringParentAlgorithm.h"
 #include "ArborClustering/ConnectorClusteringAlgorithm.h"
