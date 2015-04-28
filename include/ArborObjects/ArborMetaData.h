@@ -40,17 +40,7 @@ class Connector;
 
 class CaloHitMetaData
 {
-private:
-	/**
-	 *  @brief  Constructor with the associated calo hit
-	 */
-	CaloHitMetaData(const arbor_content::CaloHit *const pCaloHit);
-
-	/**
-	 * @brief  Destructor
-	 */
-	~CaloHitMetaData();
-
+public:
 	/**
 	 *  @brief  Get the calo hit of this connector meta data
 	 */
@@ -116,6 +106,17 @@ private:
 	 *  @brief  Remove all connections
 	 */
 	pandora::StatusCode RemoveAllConnections();
+
+private:
+	/**
+	 *  @brief  Constructor with the associated calo hit
+	 */
+	CaloHitMetaData(const arbor_content::CaloHit *const pCaloHit);
+
+	/**
+	 * @brief  Destructor
+	 */
+	~CaloHitMetaData();
 
 	const arbor_content::CaloHit *const     m_pCaloHit;
 
