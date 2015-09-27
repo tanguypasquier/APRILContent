@@ -29,8 +29,7 @@
 #define CONNECTORSEEDINGALGORITHM_H
 
 #include "Pandora/Algorithm.h"
-
-namespace pandora { class OrderedCaloHitList; }
+#include "Pandora/AlgorithmHeaders.h"
 
 namespace arbor_content
 {
@@ -67,13 +66,39 @@ private:
 	 */
 	pandora::StatusCode AlignConnectors(const pandora::OrderedCaloHitList &orderedCaloHitList) const;
 
+	/**
+	 *
+	 */
+	pandora::StatusCode ConnectFromTracks(const pandora::OrderedCaloHitList &orderedCaloHitList, const pandora::TrackList &trackList) const;
+
+	/**
+	 */
+	pandora::StatusCode FindSeedHits(const pandora::Track *const pTrack, const pandora::OrderedCaloHitList &orderedCaloHitList, pandora::CaloHitList &seedCaloHits) const;
+
+	/**
+	 *
+	 */
+	pandora::StatusCode ConnectRecursively(const pandora::CaloHit *const pCaloHit, const pandora::Helix *const pHelix, const pandora::OrderedCaloHitList &orderedCaloHitList,
+			const pandora::OrderedCaloHitList::const_iterator &currentIterator, pandora::CaloHitList &connectedCaloHitList) const;
+
 	float                       m_maxConnectionDistanceFine;
 	float                       m_maxConnectionDistanceCoarse;
 	float                       m_maxConnectionAngleFine;
 	float                       m_maxConnectionAngleCoarse;
+
 	unsigned int               m_maxPseudoLayerConnection;
 	unsigned int               m_seedingStrategy;
+
 	bool                        m_shouldConnectOnlySameHitType;
+
+	float                       m_maxNormaleAngleFine;
+	float                       m_maxNormaleAngleCoarse;
+	float                       m_maxTransverseAngleFine;
+	float                       m_maxTransverseAngleCoarse;
+	float                       m_maxNormaleDistanceFine;
+	float                       m_maxNormaleDistanceCoarse;
+	float                       m_maxTransverseDistanceFine;
+	float                       m_maxTransverseDistanceCoarse;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
