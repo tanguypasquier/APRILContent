@@ -16,6 +16,8 @@ SET( ${PROJECT_NAME}_VERSION_PATCH 00 )
 FIND_PACKAGE( ILCUTIL COMPONENTS ILCSOFT_CMAKE_MODULES REQUIRED )
 INCLUDE( ilcsoft_default_settings )
 
+OPTION( PANDORA_MONITORING "Whether to use PandoraMonitoring (requires ROOT)" OFF )
+
 ### SOURCE ##################################################################
 
 #include directories
@@ -70,7 +72,7 @@ FOREACH( pkg PandoraSDK )
   ENDIF()
 ENDFOREACH()
 
-IF( ARBOR_MONITORING )
+IF( PANDORA_MONITORING )
 
   FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Eve Geom RGL EG ) # minimum required ROOT version
   INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
