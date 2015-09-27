@@ -27,6 +27,7 @@
 
 #include "ArborClustering/ConnectorSeedingAlgorithm.h"
 #include "ArborObjects/CaloHit.h"
+#include "ArborHelpers/CaloHitHelper.h"
 
 #include "Pandora/AlgorithmHeaders.h"
 
@@ -44,13 +45,23 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Run()
 	pandora::OrderedCaloHitList orderedCaloHitList;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, orderedCaloHitList.Add(*pCaloHitList));
 
+	// seed with a global distance
 	if(0 == m_seedingStrategy)
 	{
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->Connect(orderedCaloHitList));
 	}
+	// seed from previous tree structure
 	else if(1 == m_seedingStrategy)
 	{
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->AlignConnectors(orderedCaloHitList));
+	}
+	// seed using track projections
+	else if(2 == m_seedingStrategy)
+	{
+		const pandora::TrackList *pTrackList = NULL;
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectFromTracks(orderedCaloHitList, *pTrackList));
 	}
 	else
 	{
@@ -261,6 +272,134 @@ pandora::StatusCode ConnectorSeedingAlgorithm::AlignConnectors(const pandora::Or
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
+//--------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ConnectorSeedingAlgorithm::ConnectFromTracks(const pandora::OrderedCaloHitList &orderedCaloHitList, const pandora::TrackList &trackList) const
+{
+	if(trackList.empty() || orderedCaloHitList.empty())
+		return pandora::STATUS_CODE_SUCCESS;
+
+	const float bField = this->GetPandora().GetPlugins()->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f));
+
+	for(pandora::TrackList::const_iterator trackIter = trackList.begin(), trackEndIter = trackList.end() ;
+			trackEndIter != trackIter ; ++trackIter)
+	{
+		const pandora::Track *const pTrack  = *trackIter;
+
+		if(!pTrack->IsAvailable())
+			continue;
+
+		pandora::CaloHitList seedCaloHitList;
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindSeedHits(pTrack, orderedCaloHitList, seedCaloHitList));
+
+		if(seedCaloHitList.empty())
+			continue;
+
+		pandora::Helix trackHelix (
+				pTrack->GetTrackStateAtCalorimeter().GetPosition(),
+				pTrack->GetTrackStateAtCalorimeter().GetMomentum(),
+				pTrack->GetCharge(),
+				bField
+				);
+
+		pandora::CaloHitList connectedCaloHitList;
+
+		for(pandora::CaloHitList::const_iterator iter = seedCaloHitList.begin(), endIter = seedCaloHitList.end() ;
+				endIter != iter ; ++iter)
+		{
+			unsigned int pseudoLayer = (*iter)->GetPseudoLayer();
+
+			pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pseudoLayer);
+
+			if(orderedCaloHitList.end() == findIter)
+				continue;
+
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectRecursively(*iter, &trackHelix, orderedCaloHitList, findIter, connectedCaloHitList));
+		}
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ConnectorSeedingAlgorithm::FindSeedHits(const pandora::Track *const pTrack, const pandora::OrderedCaloHitList &orderedCaloHitList, pandora::CaloHitList &seedCaloHits) const
+{
+	for(unsigned int pseudoLayer = 1 ; pseudoLayer<=m_maxPseudoLayerConnection ; pseudoLayer++)
+	{
+		pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pseudoLayer);
+
+		if(orderedCaloHitList.end() == findIter)
+			continue;
+
+		for(pandora::CaloHitList::const_iterator iter = findIter->second->begin(), endIter = findIter->second->end() ;
+				endIter != iter ; ++iter)
+		{
+			const CaloHit *pCaloHit = dynamic_cast<const arbor_content::CaloHit *>(*iter);
+
+			if(!CaloHitHelper::CanConnect(pTrack, pCaloHit, m_maxNormaleAngleFine, m_maxNormaleDistanceFine, m_maxTransverseAngleFine, m_maxTransverseDistanceFine))
+				continue;
+
+			seedCaloHits.insert(pCaloHit);
+		}
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ConnectorSeedingAlgorithm::ConnectRecursively(const pandora::CaloHit *const pCaloHit, const pandora::Helix *const pHelix, const pandora::OrderedCaloHitList &orderedCaloHitList,
+		const pandora::OrderedCaloHitList::const_iterator &currentLayerIterator, pandora::CaloHitList &connectedCaloHitList) const
+{
+	if(NULL == pCaloHit)
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	const CaloHit *pCurrentCaloHit = dynamic_cast<const CaloHit*>(pCaloHit);
+	const pandora::CartesianVector extrapolatedMomentum(pHelix->GetExtrapolatedMomentum(pCurrentCaloHit->GetPositionVector()));
+	const pandora::Granularity granularity = this->GetPandora().GetGeometry()->GetHitTypeGranularity(pCaloHit->GetHitType());
+
+	const float maxNormaleAngle = granularity >= pandora::COARSE ? m_maxNormaleAngleCoarse : m_maxNormaleAngleFine;
+	const float maxNormaleDistance = granularity >= pandora::COARSE ? m_maxNormaleDistanceCoarse : m_maxNormaleDistanceFine;
+	const float maxTransverseAngle = granularity >= pandora::COARSE ? m_maxTransverseAngleCoarse : m_maxTransverseAngleFine;
+	const float maxTransverseDistance = granularity >= pandora::COARSE ? m_maxTransverseDistanceCoarse : m_maxTransverseDistanceFine;
+
+	for(pandora::OrderedCaloHitList::const_iterator iter = currentLayerIterator, endIter = orderedCaloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		if(iter->first == pCaloHit->GetPseudoLayer())
+			continue;
+
+		if(iter->first - pCaloHit->GetPseudoLayer() > m_maxPseudoLayerConnection)
+			break;
+
+		for(pandora::CaloHitList::const_iterator hitIter = iter->second->begin(), hitEndIter = iter->second->end() ;
+				hitIter != hitEndIter ; ++hitIter)
+		{
+			const CaloHit *pForwardCaloHit = dynamic_cast<const CaloHit*>(*hitIter);
+
+			if(ArborContentApi::IsConnected(pCurrentCaloHit, pForwardCaloHit, FORWARD_DIRECTION))
+				continue;
+
+			if(!CaloHitHelper::CanConnect(pCurrentCaloHit, pForwardCaloHit, extrapolatedMomentum, maxNormaleAngle, maxNormaleDistance, maxTransverseAngle, maxTransverseDistance))
+				continue;
+
+			// connect hits
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCurrentCaloHit, pForwardCaloHit, FORWARD_DIRECTION));
+
+			if(std::find(connectedCaloHitList.begin(), connectedCaloHitList.end(), pForwardCaloHit) != connectedCaloHitList.end())
+				continue;
+
+			connectedCaloHitList.insert(pForwardCaloHit);
+
+			// continue connecting
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectRecursively(pForwardCaloHit, pHelix, orderedCaloHitList, iter, connectedCaloHitList));
+		}
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode ConnectorSeedingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
@@ -292,6 +431,40 @@ pandora::StatusCode ConnectorSeedingAlgorithm::ReadSettings(const pandora::TiXml
 	m_maxConnectionAngleCoarse = M_PI/4.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxConnectionAngleCoarse", m_maxConnectionAngleCoarse));
+
+	//---------------
+	m_maxNormaleAngleFine = m_maxConnectionAngleFine;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxNormaleAngleFine", m_maxNormaleAngleFine));
+
+	m_maxNormaleAngleCoarse = m_maxConnectionAngleCoarse;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxNormaleAngleCoarse", m_maxNormaleAngleCoarse));
+
+	m_maxTransverseAngleFine = .1f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxTransverseAngleFine", m_maxTransverseAngleFine));
+
+	m_maxTransverseAngleCoarse = .2f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxTransverseAngleCoarse", m_maxTransverseAngleCoarse));
+
+	//---------------
+	m_maxNormaleDistanceFine = m_maxConnectionDistanceFine;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxNormaleDistanceFine", m_maxNormaleDistanceFine));
+
+	m_maxNormaleDistanceCoarse = m_maxConnectionDistanceCoarse;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxNormaleDistanceCoarse", m_maxNormaleDistanceCoarse));
+
+	m_maxTransverseDistanceFine = m_maxNormaleDistanceFine*2.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxTransverseDistanceFine", m_maxTransverseDistanceFine));
+
+	m_maxTransverseDistanceCoarse = m_maxNormaleDistanceCoarse*2.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxTransverseDistanceCoarse", m_maxTransverseDistanceCoarse));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
