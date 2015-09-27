@@ -74,14 +74,19 @@ enum HitTag
 
 class Connector;
 class CaloHit;
+class Branch;
+class Track;
 
 typedef std::set<const CaloHit *> CaloHitList;
+typedef std::set<const Track *> TrackList;
 typedef std::set<const Connector *> ConnectorList;
 typedef std::vector<SemiDigitalThreshold> SemiDigitalThresholdList;
 typedef std::map<HitTag, bool> HitTagMap;
 
 typedef pandora::PandoraInputType<SemiDigitalThreshold> InputSemiDigitalThreshold;
 typedef pandora::PandoraInputType<SemiDigitalThresholdList> InputSemiDigitalThresholdList;
+
+typedef std::vector<const Branch *>  BranchList;
 
 }
 
