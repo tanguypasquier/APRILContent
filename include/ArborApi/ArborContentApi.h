@@ -215,7 +215,7 @@ public:
 	 *  @param  tag the reconstruction tag to apply
 	 *  @param  value the tag value to assign
 	 */
-	pandora::StatusCode Tag(const arbor_content::CaloHit *const pCaloHit, arbor_content::HitTag tag, bool value);
+	static pandora::StatusCode Tag(const arbor_content::CaloHit *const pCaloHit, arbor_content::HitTag tag, bool value);
 
 	/**
 	 *  @brief  Whether the calo hit has been tagged
@@ -225,7 +225,7 @@ public:
 	 *
 	 *  @return  boolean
 	 */
-	bool IsTagged(const arbor_content::CaloHit *const pCaloHit, arbor_content::HitTag tag);
+	static bool IsTagged(const arbor_content::CaloHit *const pCaloHit, arbor_content::HitTag tag);
 
 	/**
 	 *  @brief  Reset the calo hit tags
