@@ -75,8 +75,11 @@ private:
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
 
-	 unsigned int                         m_trackClusterNLayersCut;            ///< The track to cluster N layers difference cut
-	 float                                 m_trackClusterDistanceCut;          ///< The track to cluster innermost position difference cut
+	unsigned int                         m_trackClusterNLayersCut;            ///< The track to cluster N layers difference cut
+	float                                 m_maxNormaleAngle;
+	float                                 m_maxTransverseAngle;
+	float                                 m_maxNormaleDistance;
+	float                                 m_maxTransverseDistance;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

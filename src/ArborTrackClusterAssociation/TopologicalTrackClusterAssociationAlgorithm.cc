@@ -28,6 +28,7 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborTrackClusterAssociation/TopologicalTrackClusterAssociationAlgorithm.h"
+#include "ArborHelpers/CaloHitHelper.h"
 
 namespace arbor_content
 {
@@ -51,56 +52,62 @@ pandora::StatusCode TopologicalTrackClusterAssociationAlgorithm::Run()
 
 	TrackClusterAssociationMap trackClusterAssociationMap;
 
-	// find the best track to associate to each cluster
-	for(pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterEndIter = pClusterList->end() ;
-			clusterEndIter != clusterIter ; ++clusterIter)
+	for(pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackEndIter = pTrackList->end() ;
+			trackIter != trackEndIter ; ++trackIter)
 	{
-		const pandora::Cluster *const pCluster = *clusterIter;
+		const pandora::Track *pTrack = *trackIter;
 
-		if(!PandoraContentApi::IsAvailable(*this, pCluster))
+		if(!PandoraContentApi::IsAvailable(*this, pTrack))
 			continue;
 
-		const unsigned int innerPseudoLayer = pCluster->GetInnerPseudoLayer();
-
-		if(innerPseudoLayer > m_trackClusterNLayersCut)
-			continue;
-
-		pandora::CaloHitList *pFirstLayerCaloHitList = NULL;
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCluster->GetOrderedCaloHitList().GetCaloHitsInPseudoLayer(pCluster->GetInnerPseudoLayer(), pFirstLayerCaloHitList));
-		const pandora::Track *pBestTrack = NULL;
-
-		for(pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackEndIter = pTrackList->end() ;
-				trackEndIter != trackIter ; ++trackIter)
+		for(pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterEndIter = pClusterList->end() ;
+				clusterEndIter != clusterIter ; ++clusterIter)
 		{
-			const pandora::Track *const pTrack = *trackIter;
+			const pandora::Cluster *const pCluster = *clusterIter;
 
-			if(!PandoraContentApi::IsAvailable(*this, pTrack) || !pTrack->ReachesCalorimeter() || !pTrack->CanFormPfo())
+			const unsigned int innerPseudoLayer = pCluster->GetInnerPseudoLayer();
+
+			if(innerPseudoLayer > m_trackClusterNLayersCut)
 				continue;
 
-			const pandora::CartesianVector closestHitPosition(this->GetClosestHitPosition(pTrack, pFirstLayerCaloHitList));
-			const float trackClusterDistance = (closestHitPosition - pTrack->GetTrackStateAtCalorimeter().GetPosition()).GetMagnitude();
+			pandora::CaloHitList firstLayerCaloHitList;
 
-			if(trackClusterDistance > m_trackClusterDistanceCut)
-				continue;
-
-			if(pBestTrack == NULL)
+			// get all hits in first pseudo layers
+			for(unsigned int pseudoLayer = 1 ; pseudoLayer <= m_trackClusterNLayersCut ; pseudoLayer++)
 			{
-				pBestTrack = pTrack;
-				continue;
+				pandora::CaloHitList *pPseudoLayerCaloHitList = NULL;
+
+				PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=,
+						pCluster->GetOrderedCaloHitList().GetCaloHitsInPseudoLayer(pseudoLayer, pPseudoLayerCaloHitList));
+
+				if(NULL != pPseudoLayerCaloHitList)
+					firstLayerCaloHitList.insert(pPseudoLayerCaloHitList->begin(), pPseudoLayerCaloHitList->end());
 			}
 
-			const float bestTrackClusterDistance = (closestHitPosition - pBestTrack->GetTrackStateAtCalorimeter().GetPosition()).GetMagnitude();
+			bool shouldPerformAssociation = false;
 
-			if(bestTrackClusterDistance < trackClusterDistance)
+			// look for a seed close to track extrapolation
+			for(pandora::CaloHitList::iterator hitIter = firstLayerCaloHitList.begin(), hitEndIter = firstLayerCaloHitList.end() ;
+					hitEndIter != hitIter ; ++hitIter)
+			{
+				const CaloHit *const pCaloHit = dynamic_cast<const CaloHit *const>(*hitIter);
+
+				if(NULL == pCaloHit)
+					return pandora::STATUS_CODE_FAILURE;
+
+				if(CaloHitHelper::CanConnect(pTrack, pCaloHit, m_maxNormaleAngle,
+						m_maxNormaleDistance, m_maxTransverseAngle, m_maxTransverseDistance))
+				{
+					shouldPerformAssociation = true;
+					break;
+				}
+			}
+
+			if(!shouldPerformAssociation)
 				continue;
 
-			pBestTrack = pTrack;
+			trackClusterAssociationMap[pTrack].insert(pCluster);
 		}
-
-		if(NULL == pBestTrack)
-			continue;
-
-		trackClusterAssociationMap[pBestTrack].insert(pCluster);
 	}
 
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->PerformTrackClusterAssociations(trackClusterAssociationMap));
@@ -179,9 +186,25 @@ pandora::StatusCode TopologicalTrackClusterAssociationAlgorithm::ReadSettings(co
 	 PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "TrackClusterNLayersCut", m_trackClusterNLayersCut));
 
-	 m_trackClusterDistanceCut = 40.f;
-	 PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-	     "TrackClusterDistanceCut", m_trackClusterDistanceCut));
+//	 m_trackClusterDistanceCut = 40.f;
+//	 PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+//	     "TrackClusterDistanceCut", m_trackClusterDistanceCut));
+
+	m_maxNormaleAngle = 1.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxNormaleAngle", m_maxNormaleAngle));
+
+	m_maxTransverseAngle = 0.3f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxTransverseAngle", m_maxTransverseAngle));
+
+	m_maxNormaleDistance = 30.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxNormaleDistance", m_maxNormaleDistance));
+
+	m_maxTransverseDistance = m_maxNormaleDistance*2.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxTransverseDistance", m_maxTransverseDistance));
 
     return pandora::STATUS_CODE_SUCCESS;
 }
