@@ -30,6 +30,8 @@
 
 #include "Api/PandoraContentApi.h"
 
+#include "Objects/Track.h"
+
 #include "ArborApi/ArborContentApi.h"
 #include "ArborObjects/CaloHit.h"
 
@@ -150,6 +152,7 @@ pandora::StatusCode CaloHitHelper::BuildCaloHitList(const CaloHit *const pCaloHi
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
+//--------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode CaloHitHelper::BuildCaloHitList(const CaloHit *const pCaloHit, ConnectorDirection direction, pandora::CaloHitList &calohitList,
 		unsigned int connectionDepthLimit, unsigned int pseudoLayerLimit)
@@ -179,6 +182,69 @@ pandora::StatusCode CaloHitHelper::BuildCaloHitList(const CaloHit *const pCaloHi
 
 
 	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
+bool CaloHitHelper::CanConnect(const CaloHit *const pCaloHit1, const CaloHit *const pCaloHit2, const pandora::CartesianVector &expectedDirection,
+		const float normaleMaxAngle, const float normaleMaxDistance,
+		const float transverseMaxAngle, const float transverseMaxDistance)
+{
+	if(NULL == pCaloHit1 || NULL == pCaloHit2)
+		return false;
+
+	if(pCaloHit1 == pCaloHit2)
+		return false;
+
+	if(pCaloHit2->GetPseudoLayer() <= pCaloHit1->GetPseudoLayer())
+		return false;
+
+	const pandora::CartesianVector &cellNormaleVector(pCaloHit1->GetCellNormalVector());
+
+	return CaloHitHelper::IsInRegionOfInterest(pCaloHit1->GetPositionVector(), pCaloHit2->GetPositionVector(),
+			expectedDirection, cellNormaleVector, normaleMaxAngle, normaleMaxDistance, transverseMaxAngle, transverseMaxDistance);
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
+bool CaloHitHelper::CanConnect(const pandora::Track *const pTrack, const CaloHit *const pCaloHit,
+		const float normaleMaxAngle, const float normaleMaxDistance,
+		const float transverseMaxAngle, const float transverseMaxDistance)
+{
+	if(NULL == pTrack || NULL == pCaloHit)
+		return false;
+
+	const pandora::CartesianVector &cellNormaleVector(pCaloHit->GetCellNormalVector());
+
+	return CaloHitHelper::IsInRegionOfInterest(pTrack->GetTrackStateAtCalorimeter().GetPosition(), pCaloHit->GetPositionVector(),
+			pTrack->GetTrackStateAtCalorimeter().GetMomentum(), cellNormaleVector, normaleMaxAngle, normaleMaxDistance, transverseMaxAngle, transverseMaxDistance);
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
+bool CaloHitHelper::IsInRegionOfInterest(const pandora::CartesianVector &startRegionPosition, const pandora::CartesianVector &testPosition, const pandora::CartesianVector &expectedDirection,
+		const pandora::CartesianVector &normaleVector, const float normaleMaxAngle, const float normaleMaxDistance, const float transverseMaxAngle, const float transverseMaxDistance)
+{
+	const float expectedAngle = normaleVector.GetOpeningAngle(expectedDirection);
+
+	if(expectedAngle >= M_PI_2)
+		return false;
+
+	if(normaleMaxAngle <= transverseMaxAngle || normaleMaxDistance >= transverseMaxDistance)
+		return false;
+
+	const float maxDistance = (normaleMaxDistance - transverseMaxDistance)*std::cos(expectedAngle) + transverseMaxDistance;
+	const float maxAngle = (normaleMaxAngle - transverseMaxAngle)*std::cos(expectedAngle) + transverseMaxAngle;
+
+	const pandora::CartesianVector differenceVector = testPosition - startRegionPosition;
+
+	const float angle = differenceVector.GetOpeningAngle(expectedDirection);
+	const float distance = differenceVector.GetMagnitude();
+
+	if(angle > maxAngle || distance > maxDistance)
+		return false;
+
+	return true;
 }
 
 } 

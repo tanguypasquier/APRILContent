@@ -35,7 +35,7 @@
 #include "ArborObjects/CaloHit.h"
 #include "ArborObjects/Connector.h"
 
-namespace pandora { class Algorithm; class CaloHit; }
+namespace pandora { class Algorithm; class CaloHit; class Track; }
 
 namespace arbor_content
 {
@@ -115,6 +115,52 @@ public:
 	 */
 	static pandora::StatusCode BuildCaloHitList(const CaloHit *const pCaloHit, ConnectorDirection direction, pandora::CaloHitList &calohitList,
 			unsigned int connectionLimit, unsigned int pseudoLayerLimit);
+
+	/**
+	 * @brief  Whether the two calo hits can be connected.
+	 *         The valid region to connect two hits is contained within a cone
+	 *
+	 * @param  pCaloHit1 a backward calo hit to connect
+	 * @param  pCaloHit2 a forward calo hit to connect
+	 * @param  exceptedDirection the expected of the shower development from pCaloHit1
+	 * @param  normaleMaxAngle the maximum angle between the two hits when the expected direction is colinear to the cell direction of pCaloHit1
+	 * @param  normaleMaxDistance the maximum distance between the two hits when the expected direction is colinear to the cell direction of pCaloHit1
+	 * @param  transverseMaxAngle the maximum angle between the two hits when the expected direction is perpendicular to the cell direction of pCaloHit1
+	 * @param  transverseMaxDistance the maximum distance between the two hits when the expected direction is perpendicular to the cell direction of pCaloHit1
+	 */
+	static bool CanConnect(const CaloHit *const pCaloHit1, const CaloHit *const pCaloHit2, const pandora::CartesianVector &expectedDirection,
+			const float normaleMaxAngle, const float normaleMaxDistance,
+			const float transverseMaxAngle, const float transverseMaxDistance);
+
+	/**
+	 * @brief  Whether the track and the calo hit can be connected.
+	 *         The valid region is contained within a cone
+	 *
+	 * @param  pTrack a track with a valid calorimeter projection
+	 * @param  pCaloHit a forward calo hit to connect
+	 * @param  normaleMaxAngle the maximum angle between the two hits when the expected direction is colinear to the cell direction of pCaloHit1
+	 * @param  normaleMaxDistance the maximum distance between the two hits when the expected direction is colinear to the cell direction of pCaloHit1
+	 * @param  transverseMaxAngle the maximum angle between the two hits when the expected direction is perpendicular to the cell direction of pCaloHit1
+	 * @param  transverseMaxDistance the maximum distance between the two hits when the expected direction is perpendicular to the cell direction of pCaloHit1
+	 */
+	static bool CanConnect(const pandora::Track *const pTrack, const CaloHit *const pCaloHit,
+			const float normaleMaxAngle, const float normaleMaxDistance,
+			const float transverseMaxAngle, const float transverseMaxDistance);
+
+	/**
+	 * @brief  Whether the tested position is in the region of interest.
+	 *         The valid region is contained within a cone
+	 *
+	 * @param  startRegionPosition the position where the region of interest starts
+	 * @param  testPosition the position to test inside the region of interest
+	 * @param  exceptedDirection the expected of the shower development from startRegionPosition
+	 * @param  normaleMaxAngle the maximum angle between the two hits when the expected direction is colinear to the cell direction of startRegionPosition
+	 * @param  normaleMaxDistance the maximum distance between the two hits when the expected direction is colinear to the cell direction of startRegionPosition
+	 * @param  transverseMaxAngle the maximum angle between the two hits when the expected direction is perpendicular to the cell direction of startRegionPosition
+	 * @param  transverseMaxDistance the maximum distance between the two hits when the expected direction is perpendicular to the cell direction of startRegionPosition
+	 */
+	static bool IsInRegionOfInterest(const pandora::CartesianVector &startRegionPosition, const pandora::CartesianVector &testPosition, const pandora::CartesianVector &expectedDirection,
+			const pandora::CartesianVector &normaleVector, const float normaleMaxAngle, const float normaleMaxDistance, const float transverseMaxAngle, const float transverseMaxDistance);
 };
 
 } 
