@@ -66,7 +66,7 @@ pandora::StatusCode TreeClusteringAlgorithm::BuildClusters(const pandora::CaloHi
 		if(NULL == pCaloHit)
 			return pandora::STATUS_CODE_FAILURE;
 
-		if(ArborContentApi::IsSeed(pCaloHit) || !PandoraContentApi::IsAvailable(*this, *iter))
+		if(!ArborContentApi::IsSeed(pCaloHit) || !PandoraContentApi::IsAvailable(*this, *iter))
 			continue;
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->BuildCluster(pCaloHit));
@@ -87,6 +87,7 @@ pandora::StatusCode TreeClusteringAlgorithm::BuildCluster(const CaloHit *const p
 
 	pandora::CaloHitList clusterCaloHitList;
 	clusterCaloHitList.insert(pSeedCaloHit);
+
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pSeedCaloHit, FORWARD_DIRECTION, clusterCaloHitList));
 
 	for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
