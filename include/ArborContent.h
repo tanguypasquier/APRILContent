@@ -67,6 +67,7 @@
 #include "ArborUtility/TrackPreparationAlgorithm.h"
 #include "ArborUtility/ListChangingAlgorithm.h"
 #include "ArborUtility/ListMergingAlgorithm.h"
+#include "ArborUtility/CompositeAlgorithm.h"
 
 /** 
  * @brief  ArborContent class used to register arbor algorithms and plugins
@@ -99,7 +100,8 @@ public:
 	d("ClusterListMerging",                  arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Cluster>::Factory) \
 	d("PfoListMerging",                      arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Pfo>::Factory) \
 	d("VertexListMerging",                   arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Vertex>::Factory) \
-	d("ListChanging",                        arbor_content::ListChangingAlgorithm::Factory)
+	d("ListChanging",                        arbor_content::ListChangingAlgorithm::Factory) \
+	d("CompositeAlgorithm",                  arbor_content::CompositeAlgorithm::Factory)
 
 
 #define ARBOR_ALGORITHM_TOOL_LIST(d) \
