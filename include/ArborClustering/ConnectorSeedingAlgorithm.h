@@ -72,6 +72,7 @@ private:
 	pandora::StatusCode ConnectFromTracks(const pandora::OrderedCaloHitList &orderedCaloHitList, const pandora::TrackList &trackList) const;
 
 	/**
+	 *
 	 */
 	pandora::StatusCode FindSeedHits(const pandora::Track *const pTrack, const pandora::OrderedCaloHitList &orderedCaloHitList, pandora::CaloHitList &seedCaloHits) const;
 
@@ -90,6 +91,7 @@ private:
 	unsigned int               m_seedingStrategy;
 
 	bool                        m_shouldConnectOnlySameHitType;
+	bool                        m_connectOnlyAvailable;
 
 	float                       m_maxNormaleAngleFine;
 	float                       m_maxNormaleAngleCoarse;

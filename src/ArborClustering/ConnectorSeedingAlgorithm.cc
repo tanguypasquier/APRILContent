@@ -28,6 +28,7 @@
 #include "ArborClustering/ConnectorSeedingAlgorithm.h"
 #include "ArborObjects/CaloHit.h"
 #include "ArborHelpers/CaloHitHelper.h"
+#include "ArborHelpers/GeometryHelper.h"
 
 #include "Pandora/AlgorithmHeaders.h"
 
@@ -86,7 +87,8 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Connect(const pandora::OrderedCal
 			if(NULL == pCaloHitI)
 				continue;
 
-			if(!PandoraContentApi::IsAvailable(*this, *iterI))
+			// check for availability
+			if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pCaloHitI))
 				continue;
 
 			const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
@@ -108,7 +110,8 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Connect(const pandora::OrderedCal
 					if(NULL == pCaloHitJ)
 						continue;
 
-					if(!PandoraContentApi::IsAvailable(*this, *iterJ))
+					// check for availability
+					if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pCaloHitJ))
 						continue;
 
 					const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
@@ -178,6 +181,13 @@ pandora::StatusCode ConnectorSeedingAlgorithm::AlignConnectors(const pandora::Or
 			connectorEndIter != connectorIter ; ++connectorIter)
 	{
 		const Connector *const pConnector = *connectorIter;
+
+		// check for availability
+		if(m_connectOnlyAvailable &&
+				(!PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pConnector->GetTo())
+						|| !PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pConnector->GetFrom())))
+			continue;
+
 		const pandora::CartesianVector &connectorVector(pConnector->GetVector(FORWARD_DIRECTION));
 
 		float maxConnectionDistance = GetPandora().GetGeometry()->GetHitTypeGranularity(pConnector->GetTo()->GetHitType()) <= pandora::FINE ?
@@ -286,7 +296,7 @@ pandora::StatusCode ConnectorSeedingAlgorithm::ConnectFromTracks(const pandora::
 	{
 		const pandora::Track *const pTrack  = *trackIter;
 
-		if(!pTrack->IsAvailable())
+		if(!pTrack->IsAvailable() || !pTrack->CanFormPfo() || !pTrack->ReachesCalorimeter())
 			continue;
 
 		pandora::CaloHitList seedCaloHitList;
@@ -325,7 +335,48 @@ pandora::StatusCode ConnectorSeedingAlgorithm::ConnectFromTracks(const pandora::
 
 pandora::StatusCode ConnectorSeedingAlgorithm::FindSeedHits(const pandora::Track *const pTrack, const pandora::OrderedCaloHitList &orderedCaloHitList, pandora::CaloHitList &seedCaloHits) const
 {
-	for(unsigned int pseudoLayer = 1 ; pseudoLayer<=m_maxPseudoLayerConnection ; pseudoLayer++)
+	if(!pTrack->ReachesCalorimeter())
+		return pandora::STATUS_CODE_FAILURE;
+
+	// determine the gap size between the tracker and the ecal front face
+	float gapSize(0.f);
+	pandora::CartesianVector normaleVector(0.f, 0.f, 0.f);
+
+	// end cap case
+	if(pTrack->IsProjectedToEndCap())
+	{
+		normaleVector.SetValues(0.f, 0.f, pTrack->GetTrackStateAtCalorimeter().GetPosition().GetZ() > 0 ? 1.f : -1.f);
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetTrackerECalEndCapGapSize(this->GetPandora(), gapSize));
+	}
+	// barrel case
+	else
+	{
+		const unsigned int ecalBarrelInnerSymmetryOrder = this->GetPandora().GetGeometry()->GetSubDetector(pandora::ECAL_BARREL).GetInnerSymmetryOrder();
+
+		const pandora::CartesianVector trackPositionAtCalorimeter = pTrack->GetTrackStateAtCalorimeter().GetPosition();
+		const float rTrack = std::sqrt(trackPositionAtCalorimeter.GetX()*trackPositionAtCalorimeter.GetX() + trackPositionAtCalorimeter.GetY()*trackPositionAtCalorimeter.GetY());
+		const float phiTrack = trackPositionAtCalorimeter.GetY() > 0 ?
+				std::acos(trackPositionAtCalorimeter.GetX() / rTrack) : std::acos(-trackPositionAtCalorimeter.GetX() / rTrack) + M_PI;
+
+		const float phiShift = (2 * M_PI / static_cast<float>(ecalBarrelInnerSymmetryOrder)) / 2.f;
+
+		for(unsigned int i=0 ; i<ecalBarrelInnerSymmetryOrder ; i++)
+		{
+			const float phi = 2 * M_PI * (static_cast<float>(i) / static_cast<float>(ecalBarrelInnerSymmetryOrder));// + ecalBarrelInnerPhiCoordinate;
+			const float phiMin = phi - phiShift;
+			const float phiMax = phi + phiShift;
+
+			if(phiTrack > phiMin && phiTrack < phiMax)
+			{
+				normaleVector.SetValues(-std::sin(phi), std::cos(phi), 0.f);
+				break;
+			}
+		}
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetTrackerECalBarrelGapSize(this->GetPandora(), gapSize));
+	}
+
+	for(unsigned int pseudoLayer = 0 ; pseudoLayer<=m_maxPseudoLayerConnection ; pseudoLayer++)
 	{
 		pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pseudoLayer);
 
@@ -356,7 +407,19 @@ pandora::StatusCode ConnectorSeedingAlgorithm::ConnectRecursively(const pandora:
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
 	const CaloHit *pCurrentCaloHit = dynamic_cast<const CaloHit*>(pCaloHit);
-	const pandora::CartesianVector extrapolatedMomentum(pHelix->GetExtrapolatedMomentum(pCurrentCaloHit->GetPositionVector()));
+
+	pandora::CartesianVector referenceDirection(0.f, 0.f, 0.f);
+
+	if(ArborContentApi::IsSeed(pCurrentCaloHit))
+	{
+		referenceDirection = pHelix->GetExtrapolatedMomentum(pCurrentCaloHit->GetPositionVector());
+	}
+	else
+	{
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::GetMeanDirection(pCurrentCaloHit, BACKWARD_DIRECTION, referenceDirection, 4));
+		referenceDirection = referenceDirection*-1.f;
+	}
+
 	const pandora::Granularity granularity = this->GetPandora().GetGeometry()->GetHitTypeGranularity(pCaloHit->GetHitType());
 
 	const float maxNormaleAngle = granularity >= pandora::COARSE ? m_maxNormaleAngleCoarse : m_maxNormaleAngleFine;
@@ -381,16 +444,16 @@ pandora::StatusCode ConnectorSeedingAlgorithm::ConnectRecursively(const pandora:
 			if(ArborContentApi::IsConnected(pCurrentCaloHit, pForwardCaloHit, FORWARD_DIRECTION))
 				continue;
 
-			if(!CaloHitHelper::CanConnect(pCurrentCaloHit, pForwardCaloHit, extrapolatedMomentum, maxNormaleAngle, maxNormaleDistance, maxTransverseAngle, maxTransverseDistance))
+			if(!CaloHitHelper::CanConnect(pCurrentCaloHit, pForwardCaloHit, referenceDirection, maxNormaleAngle, maxNormaleDistance, maxTransverseAngle, maxTransverseDistance))
 				continue;
 
 			// connect hits
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCurrentCaloHit, pForwardCaloHit, FORWARD_DIRECTION));
 
-			if(std::find(connectedCaloHitList.begin(), connectedCaloHitList.end(), pForwardCaloHit) != connectedCaloHitList.end())
-				continue;
-
-			connectedCaloHitList.insert(pForwardCaloHit);
+//			if(std::find(connectedCaloHitList.begin(), connectedCaloHitList.end(), pForwardCaloHit) != connectedCaloHitList.end())
+//				continue;
+//
+//			connectedCaloHitList.insert(pForwardCaloHit);
 
 			// continue connecting
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectRecursively(pForwardCaloHit, pHelix, orderedCaloHitList, iter, connectedCaloHitList));
@@ -423,6 +486,10 @@ pandora::StatusCode ConnectorSeedingAlgorithm::ReadSettings(const pandora::TiXml
 	m_shouldConnectOnlySameHitType = true;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"ShouldConnectOnlySameHitType", m_shouldConnectOnlySameHitType));
+
+	m_connectOnlyAvailable = true;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"ConnectOnlyAvailable", m_connectOnlyAvailable));
 
 	m_maxConnectionAngleFine = M_PI/4.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
@@ -469,5 +536,5 @@ pandora::StatusCode ConnectorSeedingAlgorithm::ReadSettings(const pandora::TiXml
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
-} 
+}
 
