@@ -117,6 +117,12 @@ public:
 			unsigned int connectionLimit, unsigned int pseudoLayerLimit);
 
 	/**
+	 *
+	 */
+	static pandora::StatusCode GetMeanDirection(const CaloHit *const pCaloHit, ConnectorDirection connectorDirection,
+			 pandora::CartesianVector &direction, unsigned int depth);
+
+	/**
 	 * @brief  Whether the two calo hits can be connected.
 	 *         The valid region to connect two hits is contained within a cone
 	 *

@@ -186,6 +186,40 @@ pandora::StatusCode CaloHitHelper::BuildCaloHitList(const CaloHit *const pCaloHi
 
 //--------------------------------------------------------------------------------------------------------------------
 
+pandora::StatusCode CaloHitHelper::GetMeanDirection(const CaloHit *const pCaloHit, ConnectorDirection connectorDirection,
+		 pandora::CartesianVector &direction, unsigned int depth)
+{
+	if(NULL == pCaloHit)
+		return pandora::STATUS_CODE_FAILURE;
+
+	if(0 == depth)
+		return pandora::STATUS_CODE_SUCCESS;
+
+	const ConnectorList &connectorList(ArborContentApi::GetConnectorList(pCaloHit, connectorDirection));
+
+	if(connectorList.empty())
+		return pandora::STATUS_CODE_SUCCESS;
+
+	const pandora::CartesianVector &positionVector(pCaloHit->GetPositionVector());
+
+	for(ConnectorList::const_iterator iter = connectorList.begin() , endIter = connectorList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const Connector *const pConnector = *iter;
+		const CaloHit *const pConnectedCaloHit = pConnector->Get(connectorDirection);
+
+		pandora::CartesianVector differencePosition(pConnectedCaloHit->GetPositionVector() - positionVector);
+		direction += differencePosition;
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::GetMeanDirection(pConnectedCaloHit, connectorDirection,
+				direction, depth-1));
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
 bool CaloHitHelper::CanConnect(const CaloHit *const pCaloHit1, const CaloHit *const pCaloHit2, const pandora::CartesianVector &expectedDirection,
 		const float normaleMaxAngle, const float normaleMaxDistance,
 		const float transverseMaxAngle, const float transverseMaxDistance)
@@ -196,7 +230,7 @@ bool CaloHitHelper::CanConnect(const CaloHit *const pCaloHit1, const CaloHit *co
 	if(pCaloHit1 == pCaloHit2)
 		return false;
 
-	if(pCaloHit2->GetPseudoLayer() <= pCaloHit1->GetPseudoLayer())
+	if(pCaloHit2->GetPseudoLayer() < pCaloHit1->GetPseudoLayer())
 		return false;
 
 	const pandora::CartesianVector &cellNormaleVector(pCaloHit1->GetCellNormalVector());
@@ -226,9 +260,6 @@ bool CaloHitHelper::IsInRegionOfInterest(const pandora::CartesianVector &startRe
 		const pandora::CartesianVector &normaleVector, const float normaleMaxAngle, const float normaleMaxDistance, const float transverseMaxAngle, const float transverseMaxDistance)
 {
 	const float expectedAngle = normaleVector.GetOpeningAngle(expectedDirection);
-
-	if(expectedAngle >= M_PI_2)
-		return false;
 
 	if(normaleMaxAngle <= transverseMaxAngle || normaleMaxDistance >= transverseMaxDistance)
 		return false;
