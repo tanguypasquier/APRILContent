@@ -51,6 +51,7 @@ pandora::StatusCode TopologicalTrackClusterAssociationAlgorithm::Run()
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
 
 	TrackClusterAssociationMap trackClusterAssociationMap;
+	ClusterToTrackMap redondantTrackAssociation;
 
 	for(pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackEndIter = pTrackList->end() ;
 			trackIter != trackEndIter ; ++trackIter)
@@ -107,9 +108,11 @@ pandora::StatusCode TopologicalTrackClusterAssociationAlgorithm::Run()
 				continue;
 
 			trackClusterAssociationMap[pTrack].insert(pCluster);
+			redondantTrackAssociation[pCluster].insert(pTrack);
 		}
 	}
 
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveRedondantTrackAssociations(redondantTrackAssociation, trackClusterAssociationMap));
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->PerformTrackClusterAssociations(trackClusterAssociationMap));
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -139,6 +142,64 @@ pandora::CartesianVector TopologicalTrackClusterAssociationAlgorithm::GetClosest
 	}
 
 	return closestHitPosition;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode TopologicalTrackClusterAssociationAlgorithm::RemoveRedondantTrackAssociations(const ClusterToTrackMap &redondantTrackAssociation, TrackClusterAssociationMap &trackClusterAssociationMap)
+{
+	for(ClusterToTrackMap::const_iterator iter = redondantTrackAssociation.begin(), endIter = redondantTrackAssociation.end() ;
+			endIter != iter ; ++iter)
+	{
+		if(iter->second.size() <= 1)
+			continue;
+
+		const pandora::Cluster *pCluster = iter->first;
+
+		// get cluster hits
+		pandora::CaloHitList clusterHits;
+		pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterHits);
+
+		const pandora::Track *pBestTrack = NULL;
+		float bestTrackClusterDistance = std::numeric_limits<float>::max();
+
+		for(pandora::TrackList::const_iterator trackIter = iter->second.begin(), trackEndIter = iter->second.end() ;
+				trackEndIter != trackIter ; ++trackIter)
+		{
+			const pandora::Track *const pTrack = *trackIter;
+			const pandora::TrackState &trackStateAtCalorimeter(pTrack->GetTrackStateAtCalorimeter());
+
+			// find closest hit position to track
+			const pandora::CartesianVector closestPosition = this->GetClosestHitPosition(pTrack, &clusterHits);
+			const float distance = (trackStateAtCalorimeter.GetPosition() - closestPosition).GetMagnitude();
+
+			if(NULL == pBestTrack)
+			{
+				bestTrackClusterDistance = distance;
+				pBestTrack = pTrack;
+				continue;
+			}
+
+			// if better
+			if(distance < bestTrackClusterDistance)
+			{
+				trackClusterAssociationMap[pTrack].erase(pCluster);
+
+				bestTrackClusterDistance = distance;
+				pBestTrack = pTrack;
+			}
+			// if worst
+			else
+			{
+				trackClusterAssociationMap[pBestTrack].erase(pCluster);
+
+				bestTrackClusterDistance = distance;
+				pBestTrack = pTrack;
+			}
+		}
+	}
+
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------

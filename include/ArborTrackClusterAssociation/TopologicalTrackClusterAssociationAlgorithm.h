@@ -52,6 +52,7 @@ public:
 private:
 
 	typedef std::map<const pandora::Track *, pandora::ClusterList> TrackClusterAssociationMap;
+	typedef std::map<const pandora::Cluster *, pandora::TrackList> ClusterToTrackMap;
 
 	/**
 	 *  @brief  Get the closest hit position from the track extrapolation at calorimeter
@@ -69,6 +70,10 @@ private:
 	 *  @param  trackClusterAssociationMap map of track and cluster list to associate
 	 */
 	pandora::StatusCode PerformTrackClusterAssociations(const TrackClusterAssociationMap &trackClusterAssociationMap);
+
+	/**
+	 */
+	pandora::StatusCode RemoveRedondantTrackAssociations(const ClusterToTrackMap &redondantTrackAssociation, TrackClusterAssociationMap &trackClusterAssociationMap);
 
 
 	pandora::StatusCode Run();
