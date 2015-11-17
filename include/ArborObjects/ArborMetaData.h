@@ -107,25 +107,35 @@ public:
 	 */
 	pandora::StatusCode RemoveAllConnections();
 
+	/**
+	 *  @brief  Get a (non-deep) copy of this calo hit meta data
+	 */
+	CaloHitMetaData GetCopy() const;
+
+	/**
+	 *  @brief  Adopt the calo hit meta data by copying (non-deeply) it
+	 */
+	pandora::StatusCode Adopt(const CaloHitMetaData &metaData);
+
 private:
 	/**
 	 *  @brief  Constructor with the associated calo hit
 	 */
-	CaloHitMetaData(const arbor_content::CaloHit *const pCaloHit);
+	CaloHitMetaData(arbor_content::CaloHit *const pCaloHit);
 
 	/**
 	 * @brief  Destructor
 	 */
 	~CaloHitMetaData();
 
-	const arbor_content::CaloHit *const     m_pCaloHit;
+	arbor_content::CaloHit                   *m_pCaloHit;    ///< The handled arbor calo hit
 
-	ConnectorList                             m_allConnectorList;
-	ConnectorList                             m_forwardConnectorList;
-	ConnectorList                             m_backwardConnectorList;
+	ConnectorList                             m_allConnectorList;        ///< All connected calo hits
+	ConnectorList                             m_forwardConnectorList;   ///< Forward connected calo hits
+	ConnectorList                             m_backwardConnectorList;  ///< Backward connected calo hits
 
-	bool                                      m_isLeaf;
-	bool                                      m_isSeed;
+	bool                                      m_isLeaf;                   ///< Whether the calo hit is a leaf
+	bool                                      m_isSeed;                   ///< Whether the calo hit is a seed
 
 	friend class CaloHit;
 };
