@@ -29,8 +29,10 @@
 #define GEOMETRYHELPER_H
 
 #include "Pandora/PandoraInternal.h"
+#include "Pandora/Pandora.h"
 #include "Pandora/StatusCodes.h"
 #include "Objects/CartesianVector.h"
+#include "Pandora/PandoraEnumeratedTypes.h"
 
 namespace arbor_content
 {
@@ -89,6 +91,95 @@ public:
 	 		const pandora::CartesianVector &point2, const pandora::CartesianVector &direction2,
 	 		pandora::CartesianVector &crossingPoint1, pandora::CartesianVector &crossingPoint2);
 
+	 /**
+	  *  @brief  Get the crossing point between a line and a plane in space. The equation plane is defined as :
+	  *
+	  *    P : a*x + b*y + c*z + d = 0
+	  *
+	  *  @param  linePoint a point on the line
+	  *  @param  lineDirection the line direction vector
+	  *  @param  planeA the a component in the plane equation
+	  *  @param  planeB the b component in the plane equation
+	  *  @param  planeC the c component in the plane equation
+	  *  @param  planeD the d component in the plane equation
+	  *  @param  crossingPoint the crossing point vector position to receive
+	  */
+	 static pandora::StatusCode GetLinePlaneCrossingPoint(const pandora::CartesianVector &linePoint, const pandora::CartesianVector &lineDirection,
+			 float planeA, float planeB, float planeC, float planeD, pandora::CartesianVector &crossingPoint);
+
+	 /**
+	  *  @brief  Get the gap size between the ECal end cap and the HCal end cap
+	  *
+	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  gapSize the gap size to receive
+	  */
+	 static pandora::StatusCode GetECalHCalEndCapGapSize(const pandora::Pandora &pandora, float &gapSize);
+
+	 /**
+	  *  @brief  Get the gap size between the ECal barrel and the HCal barrel
+	  *
+	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  gapSize the gap size to receive
+	  */
+	 static pandora::StatusCode GetECalHCalBarrelGapSize(const pandora::Pandora &pandora, float &gapSize);
+
+	 /**
+	  *  @brief  Get the gap size between the tracker and ECal end cap
+	  *
+	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  gapSize the gap size to receive
+	  */
+	 static pandora::StatusCode GetTrackerECalEndCapGapSize(const pandora::Pandora &pandora, float &gapSize);
+
+	 /**
+	  *  @brief  Get the gap size between the tracker and ECal barrel
+	  *
+	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  gapSize the gap size to receive
+	  */
+	 static pandora::StatusCode GetTrackerECalBarrelGapSize(const pandora::Pandora &pandora, float &gapSize);
+
+	 /**
+	  *  @brief  Get the gap separation in the end cap region between two calo hits
+	  *
+	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  pEcalCaloHit the ecal calo hit address in the end cap region
+	  *  @param  pHcalCaloHit the hcal calo hit address in the end cap region
+	  *  @param  gapSeparation the gap separation distance to receive
+	  */
+	 static pandora::StatusCode GetEndcapGapSeparation(const pandora::Pandora &pandora, const pandora::CaloHit *const pEcalCaloHit,
+			 const pandora::CaloHit *const pHcalCaloHit, float &gapSeparation);
+
+	 /**
+	  *  @brief  Get the gap separation in the barrel region between two calo hits
+	  *
+	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  pEcalCaloHit the ecal calo hit address in the barrel region
+	  *  @param  pHcalCaloHit the hcal calo hit address in the barrel region
+	  *  @param  gapSeparation the gap separation distance to receive
+	  */
+	 static pandora::StatusCode GetBarrelGapSeparation(const pandora::Pandora &pandora, const pandora::CaloHit *const pEcalCaloHit,
+			 const pandora::CaloHit *const pHcalCaloHit, float &gapSeparation);
+
+	 /**
+	  *  @brief  Get the normale vector at outer detector face in the phi region where the point is contained
+	  *
+	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  point a point in space that fixes the phi region
+	  *  @param  normaleVector the normale vector at the outer detector face to receive
+	  */
+	 static pandora::StatusCode GetBarrelOuterNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
+			 pandora::CartesianVector &normaleVector);
+
+	 /**
+	  *  @brief  Get the normale vector at inner detector face in the phi region where the point is contained
+	  *
+	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  point a point in space that fixes the phi region
+	  *  @param  normaleVector the normale vector at the inner detector face to receive
+	  */
+	 static pandora::StatusCode GetBarrelInnerNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
+			 pandora::CartesianVector &normaleVector);
 }; 
 
 } 
