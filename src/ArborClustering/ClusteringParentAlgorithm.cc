@@ -76,6 +76,8 @@ pandora::StatusCode ClusteringParentAlgorithm::Run()
         if (m_replaceCurrentClusterList)
             PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::Cluster>(*this, m_clusterListName));
     }
+    else
+    	std::cout << "Empty cluster list '" << m_clusterListName << "' will not be saved" << std::endl;
 
     // Unless specified, return current calo hit list to that when algorithm started
     if (m_restoreOriginalCaloHitList && !m_inputCaloHitListName.empty())
