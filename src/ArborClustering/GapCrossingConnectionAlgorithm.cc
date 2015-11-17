@@ -225,31 +225,8 @@ pandora::StatusCode GapCrossingConnectionAlgorithm::FindHCalCrossGapConnectCaloH
 			else if(pandora::BARREL != pCaloHit->GetHitRegion() && pandora::ENDCAP != pCaloHit->GetHitRegion())
 				continue;
 
-			pandora::ClusterFitPointList clusterFitPointList;
-			pandora::CaloHitList fitCaloHits;
-
-			// get all hits in the tree getting recursively hits in the forward direction
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pCaloHit, FORWARD_DIRECTION, fitCaloHits, m_maxHCalClusterFitPseudoLayer, std::numeric_limits<unsigned int>::max()));
-
-			// build cluster fit points
-			for(pandora::CaloHitList::iterator fitHitIter = fitCaloHits.begin(), fitHitEndIter = fitCaloHits.end() ;
-					fitHitEndIter != fitHitIter ; ++fitHitIter)
-				clusterFitPointList.push_back(pandora::ClusterFitPoint(*fitHitIter));
-
-			if(clusterFitPointList.size() < 2)
-				continue;
-
-			// fit hcal interest part
-			pandora::ClusterFitResult fitResult;
-			pandora::StatusCode statusCode = pandora::ClusterFitHelper::FitPoints(clusterFitPointList, fitResult);
-
-			// requires successful fit !
-			if(statusCode != pandora::STATUS_CODE_SUCCESS || !fitResult.IsFitSuccessful())
-				continue;
-
 			gapCrossingInfoMap[pCaloHit].m_pCluster = pCluster;
 			gapCrossingInfoMap[pCaloHit].m_pCaloHit = pCaloHit;
-			gapCrossingInfoMap[pCaloHit].m_fitResult = fitResult;
 		}
 	}
 
@@ -263,12 +240,11 @@ pandora::StatusCode GapCrossingConnectionAlgorithm::ConnectGrossGapClusters(cons
 	for(GapCrossingInfoMap::const_iterator hcalIter = hcalGapCrossingInfoMap.begin(), hcalEndIter = hcalGapCrossingInfoMap.end() ;
 			hcalEndIter != hcalIter ; ++hcalIter)
 	{
-		float bestFitAngleDifference2(std::numeric_limits<float>::max());
+		float bestFitAngleDifference(std::numeric_limits<float>::max());
 		GapCrossingInfoMap::const_iterator bestCompatibleConnection = ecalGapCrossingInfoMap.end();
 
 		const pandora::Cluster *pHCalCluster = hcalIter->second.m_pCluster;
 		const arbor_content::CaloHit *pHCalSeedCaloHit = hcalIter->second.m_pCaloHit;
-		const pandora::CartesianVector hcalFitDirection(hcalIter->second.m_fitResult.GetDirection());
 
 		for(GapCrossingInfoMap::const_iterator ecalIter = ecalGapCrossingInfoMap.begin(), ecalEndIter = ecalGapCrossingInfoMap.end() ;
 				ecalEndIter != ecalIter ; ++ecalIter)
@@ -277,12 +253,12 @@ pandora::StatusCode GapCrossingConnectionAlgorithm::ConnectGrossGapClusters(cons
 				continue;
 
 			const pandora::CartesianVector ecalFitDirection(ecalIter->second.m_fitResult.GetDirection());
-			const float fitAngleDifference2 = ecalFitDirection.GetOpeningAngle(hcalIter->first->GetPositionVector() - ecalIter->first->GetPositionVector());
+			const float fitAngleDifference = ecalFitDirection.GetOpeningAngle(hcalIter->first->GetPositionVector() - ecalIter->first->GetPositionVector());
 
-			if(fitAngleDifference2 < bestFitAngleDifference2
-			&& fitAngleDifference2 < m_crossGapFitAngleDifferenceCut2)
+			if(fitAngleDifference < bestFitAngleDifference
+			&& fitAngleDifference < m_crossGapFitAngleDifferenceCut)
 			{
-				bestFitAngleDifference2 = fitAngleDifference2;
+				bestFitAngleDifference = fitAngleDifference;
 				bestCompatibleConnection = ecalIter;
 			}
 		}
@@ -318,8 +294,7 @@ pandora::StatusCode GapCrossingConnectionAlgorithm::ConnectGrossGapClusters(cons
 		if(NULL == pHCalMergeCluster)
 			continue;
 
-		const float differenceDistance = (pECalLeafCaloHit->GetPositionVector() - pHCalSeedCaloHit->GetPositionVector()).GetMagnitude();
-		const float connectorNormalization = differenceDistance;//(differenceDistance * m_maxEffectiveGapSeparation) / effectiveCaloHitsSeparation;
+		const float connectorNormalization = (pECalLeafCaloHit->GetPositionVector() - pHCalSeedCaloHit->GetPositionVector()).GetMagnitude();
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pECalLeafCaloHit, pHCalSeedCaloHit, FORWARD_DIRECTION, connectorNormalization));
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pECalCluster, pHCalMergeCluster, m_ecalClusterListName, m_hcalClusterListName));
@@ -370,21 +345,9 @@ pandora::StatusCode GapCrossingConnectionAlgorithm::ReadSettings(const pandora::
         		"MinECalBranchFitLength", m_minECalBranchFitLength));
     }
 
-    m_maxHCalClusterFitPseudoLayer = 6;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-    		"MaxHCalClusterFitPseudoLayer", m_maxHCalClusterFitPseudoLayer));
-
     m_crossGapFitAngleDifferenceCut = M_PI/6.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         	"CrossGapFitAngleDifferenceCut", m_crossGapFitAngleDifferenceCut));
-
-    m_crossGapFitAngleDifferenceCut2 = M_PI/6.f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        	"CrossGapFitAngleDifferenceCut2", m_crossGapFitAngleDifferenceCut2));
-
-    m_maxEffectiveGapSeparation = 70.f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        	"MaxEffectiveGapSeparation", m_maxEffectiveGapSeparation));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }

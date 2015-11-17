@@ -102,12 +102,8 @@ private:
     unsigned int                     m_minECalClusterSize;
     unsigned int                     m_minHCalClusterSize;
     bool                              m_shouldFitECalBranch;
-    bool                              m_shouldFitECalCluster;
     unsigned int                     m_minECalBranchFitLength;
-    unsigned int                     m_maxHCalClusterFitPseudoLayer;
     float                             m_crossGapFitAngleDifferenceCut;
-    float                             m_crossGapFitAngleDifferenceCut2;
-    float                             m_maxEffectiveGapSeparation;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
