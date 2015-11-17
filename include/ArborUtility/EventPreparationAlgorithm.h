@@ -54,10 +54,14 @@ private:
 
     std::string     m_outputTrackListName;          ///< The output track list name
     std::string     m_outputCaloHitListName;        ///< The output calo hit list name
+    std::string     m_outputECalCaloHitListName;    ///< The output ecal calo hit list name
+    std::string     m_outputHCalCaloHitListName;    ///< The output hcal calo hit list name
     std::string     m_outputMuonCaloHitListName;    ///< The output muon calo hit list name
 
     std::string     m_replacementTrackListName;     ///< The replacement track list name
     std::string     m_replacementCaloHitListName;   ///< The replacement calo hit list name
+
+    bool            m_mergeECalHCalCaloHitLists;    ///< Whether the ecal and hcal calo hit list have to merged
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

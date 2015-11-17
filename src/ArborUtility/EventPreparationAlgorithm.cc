@@ -55,7 +55,7 @@ pandora::StatusCode EventPreparationAlgorithm::Run()
     const pandora::CaloHitList *pCaloHitList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
 
-    pandora::CaloHitList caloHitList, muonCaloHitList;
+    pandora::CaloHitList ecalCaloHitList, hcalCaloHitList, muonCaloHitList;
 
     for (pandora::CaloHitList::const_iterator hitIter = pCaloHitList->begin(), hitIterEnd = pCaloHitList->end(); hitIter != hitIterEnd; ++hitIter)
     {
@@ -64,16 +64,35 @@ pandora::StatusCode EventPreparationAlgorithm::Run()
             if (!muonCaloHitList.insert(*hitIter).second)
                 return pandora::STATUS_CODE_ALREADY_PRESENT;
         }
-        else
+        else if(pandora::ECAL == (*hitIter)->GetHitType())
         {
-            if (!caloHitList.insert(*hitIter).second)
+            if (!ecalCaloHitList.insert(*hitIter).second)
+                return pandora::STATUS_CODE_ALREADY_PRESENT;
+        }
+        else if(pandora::HCAL == (*hitIter)->GetHitType())
+        {
+            if (!hcalCaloHitList.insert(*hitIter).second)
                 return pandora::STATUS_CODE_ALREADY_PRESENT;
         }
     }
 
-    // Save the lists, setting the ecal/hcal list to be the current list for subsequent algorithms
+    // Save the lists, setting one of the list to be the current list for subsequent algorithms
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, muonCaloHitList, m_outputMuonCaloHitListName));
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, caloHitList, m_outputCaloHitListName));
+
+    if(m_mergeECalHCalCaloHitLists)
+    {
+    	pandora::CaloHitList caloHitList;
+    	caloHitList.insert(ecalCaloHitList.begin(), ecalCaloHitList.end());
+    	caloHitList.insert(hcalCaloHitList.begin(), hcalCaloHitList.end());
+
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, ecalCaloHitList, m_outputCaloHitListName));
+    }
+    else
+    {
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, ecalCaloHitList, m_outputECalCaloHitListName));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, hcalCaloHitList, m_outputHCalCaloHitListName));
+    }
+
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::CaloHit>(*this, m_replacementCaloHitListName));
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -86,8 +105,23 @@ pandora::StatusCode EventPreparationAlgorithm::ReadSettings(const pandora::TiXml
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "OutputTrackListName", m_outputTrackListName));
 
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "OutputCaloHitListName", m_outputCaloHitListName));
+    m_mergeECalHCalCaloHitLists = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MergeECalHCalCaloHitLists", m_mergeECalHCalCaloHitLists));
+
+    if(m_mergeECalHCalCaloHitLists)
+    {
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+            "OutputCaloHitListName", m_outputCaloHitListName));
+    }
+    else
+    {
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+            "OutputECalCaloHitListName", m_outputECalCaloHitListName));
+
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+            "OutputHCalCaloHitListName", m_outputHCalCaloHitListName));
+    }
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "OutputMuonCaloHitListName", m_outputMuonCaloHitListName));
