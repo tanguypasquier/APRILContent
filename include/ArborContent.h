@@ -30,11 +30,12 @@
 
 #include "Api/PandoraApi.h"
 #include "ArborApi/ArborContentApi.h"
-#include "ArborApi/CaloHitFactory.h"
+#include "ArborApi/ObjectFactories.h"
 
 #include "ArborClustering/ClusteringParentAlgorithm.h"
 #include "ArborClustering/ConnectorClusteringAlgorithm.h"
 #include "ArborClustering/ConnectorSeedingAlgorithm.h"
+#include "ArborClustering/GapCrossingConnectionAlgorithm.h"
 #include "ArborClustering/GlobalConnectorCleaningAlgorithm.h"
 #include "ArborClustering/TreeClusteringAlgorithm.h"
 
@@ -65,6 +66,7 @@
 #include "ArborUtility/ClusterPreparationAlgorithm.h"
 #include "ArborUtility/TrackPreparationAlgorithm.h"
 #include "ArborUtility/ListChangingAlgorithm.h"
+#include "ArborUtility/ListMergingAlgorithm.h"
 
 /** 
  * @brief  ArborContent class used to register arbor algorithms and plugins
@@ -77,6 +79,7 @@ public:
 #define ARBOR_ALGORITHM_LIST(d) \
 	d("ConnectorSeeding",                    arbor_content::ConnectorSeedingAlgorithm::Factory)       \
 	d("ConnectorClustering",                 arbor_content::ConnectorClusteringAlgorithm::Factory)    \
+	d("GapCrossingConnection",               arbor_content::GapCrossingConnectionAlgorithm::Factory) \
 	d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory)       \
 	d("GlobalConnectorCleaning",             arbor_content::GlobalConnectorCleaningAlgorithm::Factory) \
 	d("TreeClustering",                      arbor_content::TreeClusteringAlgorithm::Factory) \
@@ -90,6 +93,12 @@ public:
 	d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
 	d("ClusterPreparation",                  arbor_content::ClusterPreparationAlgorithm::Factory) \
 	d("TrackPreparation",                    arbor_content::TrackPreparationAlgorithm::Factory) \
+	d("CaloHitListMerging",                  arbor_content::InputObjectListMergingAlgorithm<pandora::CaloHitList>::Factory) \
+	d("TrackListMerging",                    arbor_content::InputObjectListMergingAlgorithm<pandora::TrackList>::Factory) \
+	d("MCParticleListMerging",               arbor_content::InputObjectListMergingAlgorithm<pandora::MCParticleList>::Factory) \
+	d("ClusterListMerging",                  arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Cluster>::Factory) \
+	d("PfoListMerging",                      arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Pfo>::Factory) \
+	d("VertexListMerging",                   arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Vertex>::Factory) \
 	d("ListChanging",                        arbor_content::ListChangingAlgorithm::Factory)
 
 
