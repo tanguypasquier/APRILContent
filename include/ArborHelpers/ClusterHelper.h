@@ -51,6 +51,10 @@ public:
 	 */
 	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster, pandora::CartesianVector &point,
 			float &closestDistance);
+
+	/**
+	 */
+	static pandora::StatusCode GetNCaloHitSeeds(const pandora::Cluster *const pCluster, unsigned int &nSeeds);
 }; 
 
 } 

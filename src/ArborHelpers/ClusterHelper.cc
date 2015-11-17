@@ -28,6 +28,7 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborHelpers/ClusterHelper.h"
+#include "ArborHelpers/CaloHitHelper.h"
 
 namespace arbor_content
 {
@@ -70,6 +71,25 @@ pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Clu
 		if(closestDistance > distance)
 			closestDistance = distance;
 	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::GetNCaloHitSeeds(const pandora::Cluster *const pCluster, unsigned int &nSeeds)
+{
+	if(NULL == pCluster)
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	pandora::CaloHitList clusterCaloHitList;
+	pandora::CaloHitList seedsCaloHitList;
+
+	pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedsCaloHitList));
+
+	nSeeds = seedsCaloHitList.size();
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
