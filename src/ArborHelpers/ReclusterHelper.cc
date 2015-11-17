@@ -27,6 +27,7 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborHelpers/ReclusterHelper.h"
+#include "ArborHelpers/CaloHitHelper.h"
 
 namespace arbor_content
 {
@@ -64,6 +65,125 @@ float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pand
     const float chi((clusterEnergy - trackEnergy) / (energyResolutionFactor * sigmaE));
 
     return chi;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ReclusterHelper::SplitTreeFromCluster(const pandora::Algorithm &algorithm, const arbor_content::CaloHit *const pSeedCaloHit,
+		const pandora::Cluster *const pOriginalCluster, const pandora::Cluster *&pSeparatedTreeCluster, const std::string &originalClusterListName)
+{
+	if(NULL == pOriginalCluster || NULL == pSeedCaloHit)
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	if(!ArborContentApi::IsSeed(pSeedCaloHit))
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	pandora::CaloHitList clusterCaloHitList;
+	pandora::CaloHitList seedCaloHitList;
+	pOriginalCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, false));
+
+	// if only one seed in the original cluster, can't create a separate tree from this cluster
+	if(seedCaloHitList.size() <= 1)
+		return pandora::STATUS_CODE_NOT_ALLOWED;
+
+	// seed calo hit must be contained in the original cluster
+	if(seedCaloHitList.end() == seedCaloHitList.find(pSeedCaloHit))
+		return pandora::STATUS_CODE_FAILURE;
+
+	pandora::CaloHitList treeCaloHitList;
+	treeCaloHitList.insert(pSeedCaloHit);
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pSeedCaloHit, FORWARD_DIRECTION, treeCaloHitList));
+
+	// remove all the hits from the original cluster
+	for(pandora::CaloHitList::const_iterator iter = treeCaloHitList.begin(), endIter = treeCaloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveFromCluster(algorithm, pOriginalCluster, *iter));
+	}
+
+	// create the separated tree cluster
+	PandoraContentApi::ClusterParameters clusterParameters;
+	clusterParameters.m_caloHitList = treeCaloHitList;
+	pSeparatedTreeCluster = NULL;
+
+	std::string clusterListName;
+	std::string temporaryClusterListName;
+	const pandora::ClusterList *pTemporaryClusterList = NULL;
+
+	// in order to create a separate tree cluster, cluster creation must be enabled by pandora sdk first
+	if(originalClusterListName.empty())
+	{
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentListName<pandora::Cluster>(algorithm, clusterListName));
+	}
+	else
+	{
+		clusterListName = originalClusterListName;
+	}
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(algorithm, pTemporaryClusterList, temporaryClusterListName));
+
+	// create the tree cluster and save it
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pSeparatedTreeCluster));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<pandora::Cluster>(algorithm, temporaryClusterListName, clusterListName));
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ReclusterHelper::SplitClusterIntoTreeClusters(const pandora::Algorithm &algorithm, const pandora::Cluster *const pCluster,
+		pandora::ClusterVector &treeClusterVector)
+{
+	if(NULL == pCluster)
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	pandora::CaloHitList clusterCaloHitList;
+	pandora::CaloHitList seedCaloHitList;
+	pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, false));
+
+	// if only one seed in the original cluster, can't create a separate tree from this cluster
+	if(seedCaloHitList.size() <= 1)
+		return pandora::STATUS_CODE_NOT_ALLOWED;
+
+	pandora::ClusterList reclusterClusterList;
+	reclusterClusterList.insert(pCluster);
+
+	std::string originalClusterListName;
+	std::string fragmentsClustersListName;
+
+	// fragment the cluster
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::InitializeFragmentation(algorithm, reclusterClusterList, originalClusterListName, fragmentsClustersListName));
+
+	for(pandora::CaloHitList::const_iterator iter = seedCaloHitList.begin(), endIter = seedCaloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
+
+		if(NULL == pCaloHit)
+			return pandora::STATUS_CODE_FAILURE;
+
+		pandora::CaloHitList treeCaloHitList;
+		treeCaloHitList.insert(pCaloHit);
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pCaloHit, FORWARD_DIRECTION, treeCaloHitList));
+
+		// create a separated tree cluster
+		PandoraContentApi::ClusterParameters clusterParameters;
+		clusterParameters.m_caloHitList = treeCaloHitList;
+		const pandora::Cluster *pTreeCluster = NULL;
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pTreeCluster));
+
+		treeClusterVector.push_back(pTreeCluster);
+	}
+
+	// save fragmented clusters
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::EndFragmentation(algorithm, fragmentsClustersListName, originalClusterListName));
+
+	return pandora::STATUS_CODE_SUCCESS;
 }
 
 

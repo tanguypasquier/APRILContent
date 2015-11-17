@@ -34,6 +34,8 @@
 namespace arbor_content
 {
 
+class CaloHit;
+
 /** 
  * @brief ReclusterHelper class
  */ 
@@ -67,6 +69,30 @@ public:
      */
     static float GetTrackClusterCompatibility(const pandora::Pandora &pandora, const float clusterEnergy, const float trackEnergy,
     		float energyResolutionFactor = 1.f);
+
+    /**
+     *  @brief  Create a separated tree cluster from a seed calo hit contained in an original cluster.
+     *          Possible only if the original cluster contains more than tree (more than one seed calo hit).
+     *          Calo hits of the newly created tree cluster are removed from the original one
+     *
+     *  @param  algorithm the algorithm instance used to access pandora content
+     *  @param  pSeedCaloHit the seed calo hit pointer to build the separated tree from
+     *  @param  pOriginalCluster the original cluster pointer from which to separate the tree
+     */
+    static pandora::StatusCode SplitTreeFromCluster(const pandora::Algorithm &algorithm, const arbor_content::CaloHit *const pSeedCaloHit,
+    		const pandora::Cluster *const pOriginalCluster, const pandora::Cluster *&pSeparatedTreeCluster, const std::string &originalClusterListName = "");
+
+    /**
+     *  @brief  Create a cluster list for each tree contained in the cluster
+     *          Possible only if the cluster contains more than tree (more than one seed calo hit)
+     *
+     *  @param  algorithm the algorithm instance used to access pandora content
+     *  @param  pCluster the cluster to split
+     *  @param  treeClusterVector the split list of tree clusters
+     */
+    static pandora::StatusCode SplitClusterIntoTreeClusters(const pandora::Algorithm &algorithm, const pandora::Cluster *const pCluster,
+    		pandora::ClusterVector &treeClusterVector);
+
 }; 
 
 } 
