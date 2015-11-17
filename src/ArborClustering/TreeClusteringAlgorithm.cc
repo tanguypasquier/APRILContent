@@ -69,6 +69,9 @@ pandora::StatusCode TreeClusteringAlgorithm::BuildClusters(const pandora::CaloHi
 		if(!ArborContentApi::IsSeed(pCaloHit) || !PandoraContentApi::IsAvailable(*this, *iter))
 			continue;
 
+		if(!m_shouldBuildSingleHitTrees && ArborContentApi::IsLeaf(pCaloHit))
+			continue;
+
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->BuildCluster(pCaloHit));
 	}
 
@@ -90,14 +93,6 @@ pandora::StatusCode TreeClusteringAlgorithm::BuildCluster(const CaloHit *const p
 
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pSeedCaloHit, FORWARD_DIRECTION, clusterCaloHitList));
 
-	for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
-			endIter != iter ; ++iter)
-	{
-		if(!PandoraContentApi::IsAvailable(*this, *iter))
-			std::cout << "Warning adding non available hit to cluster !" << std::endl;
-	}
-
-
 	const pandora::Cluster *pCluster = NULL;
 	PandoraContentApi::ClusterParameters clusterParameters;
 	clusterParameters.m_caloHitList = clusterCaloHitList;
@@ -109,8 +104,12 @@ pandora::StatusCode TreeClusteringAlgorithm::BuildCluster(const CaloHit *const p
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode TreeClusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle /*xmlHandle*/)
+pandora::StatusCode TreeClusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
+	m_shouldBuildSingleHitTrees = false;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"ShouldBuildSingleHitTrees", m_shouldBuildSingleHitTrees));
+
 	return pandora::STATUS_CODE_SUCCESS;
 }
 

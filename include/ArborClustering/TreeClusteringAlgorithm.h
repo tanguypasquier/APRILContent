@@ -69,6 +69,10 @@ private:
      *  @param  pSeedCaloHit to build the cluster tree from
      */
     pandora::StatusCode BuildCluster(const CaloHit *const pSeedCaloHit) const;
+
+private:
+
+    bool                m_shouldBuildSingleHitTrees;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
