@@ -62,7 +62,7 @@ pandora::StatusCode InputObjectListMergingAlgorithm<T>::Run()
 		list.insert(pList->begin(), pList->end());
 	}
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, ListMergingAlgorithm<T>::m_outputListName, list));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, list, ListMergingAlgorithm<T>::m_outputListName));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
@@ -75,7 +75,6 @@ pandora::StatusCode AlgorithmObjectListMergingAlgorithm<T>::Run()
 	std::string temporaryListName;
 	const std::MANAGED_CONTAINER<const T *> *pList = NULL;
 
-	// create the new cluster list
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pList, temporaryListName));
 
 	for(pandora::StringVector::iterator iter = ListMergingAlgorithm<T>::m_inputListNames.begin(), endIter = ListMergingAlgorithm<T>::m_inputListNames.end() ;
