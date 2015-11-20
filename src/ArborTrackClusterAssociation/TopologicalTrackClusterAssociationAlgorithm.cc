@@ -61,6 +61,9 @@ pandora::StatusCode TopologicalTrackClusterAssociationAlgorithm::Run()
 		if(!PandoraContentApi::IsAvailable(*this, pTrack))
 			continue;
 
+		if(!pTrack->CanFormPfo())
+			continue;
+
 		for(pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterEndIter = pClusterList->end() ;
 				clusterEndIter != clusterIter ; ++clusterIter)
 		{
