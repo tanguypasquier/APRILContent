@@ -43,12 +43,14 @@ pandora::StatusCode ClusterHelper::GetCentroid(const pandora::Cluster *const pCl
 		centroid += pCluster->GetCentroid(iter->first);
 	}
 
+	centroid *= 1.f/(orderedCaloHitList.size());
+
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster, pandora::CartesianVector &point,
+pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
 		float &closestDistance)
 {
 	closestDistance = std::numeric_limits<float>::max();
