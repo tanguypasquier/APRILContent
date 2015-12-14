@@ -28,16 +28,20 @@
 #ifndef ARBOR_CONTENT_H
 #define ARBOR_CONTENT_H 1
 
+// multi-threading option
+#ifdef ARBOR_PARALLEL
+#include <omp.h>
+#endif
+
 #include "Api/PandoraApi.h"
+#include "Pandora/PandoraInternal.h"
 #include "ArborApi/ArborContentApi.h"
 #include "ArborApi/ObjectFactories.h"
 
+#include "ArborCheating/PerfectParticleFlowAlgorithm.h"
+
+#include "ArborClustering/ArborClusteringAlgorithm.h"
 #include "ArborClustering/ClusteringParentAlgorithm.h"
-#include "ArborClustering/ConnectorClusteringAlgorithm.h"
-#include "ArborClustering/ConnectorSeedingAlgorithm.h"
-#include "ArborClustering/GapCrossingConnectionAlgorithm.h"
-#include "ArborClustering/GlobalConnectorCleaningAlgorithm.h"
-#include "ArborClustering/TreeClusteringAlgorithm.h"
 
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
@@ -45,23 +49,34 @@
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/SortingHelper.h"
 
+#include "ArborMonitoring/VisualMonitoringAlgorithm.h"
+
+#include "ArborPfoConstruction/PfoCreationAlgorithm.h"
+
 #include "ArborPlugins/ArborBFieldPlugin.h"
 #include "ArborPlugins/ArborPseudoLayerPlugin.h"
+#include "ArborPlugins/SdhcalQuadraticEnergyFunction.h"
+
+#include "ArborReclustering/NeutralVicinityReclusteringAlgorithm.h"
+
+#include "ArborTools/ConnectorCleaningTool.h"
+#include "ArborTools/ConnectorSeedingTool.h"
+#include "ArborTools/GapCrossingConnectionTool.h"
+#include "ArborTools/EnergyEstimateTools.h"
 
 #include "ArborTopologicalAssociation/TopologicalAssociationParentAlgorithm.h"
 #include "ArborTopologicalAssociation/PointingClusterAssociationAlgorithm.h"
 #include "ArborTopologicalAssociation/ClosebySeedMergingAlgorithm.h"
+#include "ArborTopologicalAssociation/ClusterFragmentMergingAlgorithm.h"
+#include "ArborTopologicalAssociation/ContactClusterMergingAlgorithm.h"
+#include "ArborTopologicalAssociation/SurroundingHitsMergingAlgorithm.h"
+#include "ArborTopologicalAssociation/CloudClusterRemovalAlgorithm.h"
+
 #include "ArborTrackClusterAssociation/EnergyDrivenTrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/TopologicalTrackClusterAssociationAlgorithm.h"
 
-#include "ArborPfoConstruction/PfoCreationAlgorithm.h"
+#include "ArborUtility/AlgorithmConfiguration.h"
 
-#include "ArborMonitoring/VisualMonitoringAlgorithm.h"
-
-#include "ArborUtility/EnergyEstimateTools.h"
-#include "ArborUtility/OrderParameterTools.h"
-#include "ArborUtility/ReferenceVectorTools.h"
-#include "ArborUtility/SplitClusterTool.h"
 #include "ArborUtility/EventPreparationAlgorithm.h"
 #include "ArborUtility/ClusterPreparationAlgorithm.h"
 #include "ArborUtility/TrackPreparationAlgorithm.h"
@@ -78,39 +93,42 @@ class ArborContent
 public:
 
 #define ARBOR_ALGORITHM_LIST(d) \
-	d("ConnectorSeeding",                    arbor_content::ConnectorSeedingAlgorithm::Factory)       \
-	d("ConnectorClustering",                 arbor_content::ConnectorClusteringAlgorithm::Factory)    \
-	d("GapCrossingConnection",               arbor_content::GapCrossingConnectionAlgorithm::Factory) \
-	d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory)       \
-	d("GlobalConnectorCleaning",             arbor_content::GlobalConnectorCleaningAlgorithm::Factory) \
-	d("TreeClustering",                      arbor_content::TreeClusteringAlgorithm::Factory) \
+	d("PerfectParticleFlow",                 arbor_content::PerfectParticleFlowAlgorithm::Factory) \
+	d("ArborClustering",                     arbor_content::ArborClusteringAlgorithm::Factory) \
+	d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory) \
+	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
+	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
+	d("NeutralVicinityReclustering",         arbor_content::NeutralVicinityReclusteringAlgorithm::Factory) \
 	d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
 	d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory) \
 	d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \
-	d("TopologicalTrackClusterAssociation",  arbor_content::TopologicalTrackClusterAssociationAlgorithm::Factory)       \
+	d("ContactClusterMerging",               arbor_content::ContactClusterMergingAlgorithm::Factory) \
+	d("ClusterFragmentMerging",              arbor_content::ClusterFragmentMergingAlgorithm::Factory) \
+	d("SurroundingHitsMerging",              arbor_content::SurroundingHitsMergingAlgorithm::Factory) \
+	d("CloudClusterRemoval",                 arbor_content::CloudClusterRemovalAlgorithm::Factory) \
+	d("TopologicalTrackClusterAssociation",  arbor_content::TopologicalTrackClusterAssociationAlgorithm::Factory) \
 	d("EnergyDrivenTrackClusterAssociation", arbor_content::EnergyDrivenTrackClusterAssociationAlgorithm::Factory) \
-	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
-	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
 	d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
 	d("ClusterPreparation",                  arbor_content::ClusterPreparationAlgorithm::Factory) \
 	d("TrackPreparation",                    arbor_content::TrackPreparationAlgorithm::Factory) \
 	d("CaloHitListMerging",                  arbor_content::InputObjectListMergingAlgorithm<pandora::CaloHitList>::Factory) \
 	d("TrackListMerging",                    arbor_content::InputObjectListMergingAlgorithm<pandora::TrackList>::Factory) \
 	d("MCParticleListMerging",               arbor_content::InputObjectListMergingAlgorithm<pandora::MCParticleList>::Factory) \
+	d("PfoListMerging",                      arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::ParticleFlowObject>::Factory) \
 	d("ClusterListMerging",                  arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Cluster>::Factory) \
-	d("PfoListMerging",                      arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Pfo>::Factory) \
 	d("VertexListMerging",                   arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Vertex>::Factory) \
 	d("ListChanging",                        arbor_content::ListChangingAlgorithm::Factory) \
-	d("CompositeAlgorithm",                  arbor_content::CompositeAlgorithm::Factory)
+	d("CompositeAlgorithm",                  arbor_content::CompositeAlgorithm::Factory) \
+	d("AlgorithmConfiguration",              arbor_content::AlgorithmConfiguration::Factory)
 
 
 #define ARBOR_ALGORITHM_TOOL_LIST(d) \
-	d("KappaOrderParameter",                 arbor_content::KappaOrderParameterTool::Factory) \
-	d("SimpleReferenceVector",               arbor_content::SimpleReferenceVectorTool::Factory) \
-	d("SplitCluster",                        arbor_content::SplitClusterTool::Factory) \
 	d("LinearInputEnergyEstimate",           arbor_content::LinearInputEnergyEstimate::Factory) \
 	d("CombinedQuadraticEnergyEstimate",     arbor_content::CombinedQuadraticEnergyEstimate::Factory) \
-	d("LinearEnergyEstimate",                arbor_content::LinearEnergyEstimate::Factory)
+	d("LinearEnergyEstimate",                arbor_content::LinearEnergyEstimate::Factory) \
+	d("ConnectorCleaning",                   arbor_content::ConnectorCleaningTool::Factory) \
+	d("ConnectorSeeding",                    arbor_content::ConnectorSeedingTool::Factory) \
+	d("GapCrossingConnection",               arbor_content::GapCrossingConnectionTool::Factory)
 
 
  /**
@@ -137,6 +155,13 @@ public:
   */
  static pandora::StatusCode RegisterBFieldPlugin(const pandora::Pandora &pandora, const float innerBField, const float muonBarrelBField,
      const float muonEndCapBField);
+
+ /**
+  *  @brief  Register the energy corrections with pandora
+  *
+  *  @param  pandora the pandora instance with which to register content
+  */
+ static pandora::StatusCode RegisterEnergyCorrections(const pandora::Pandora &pandora);
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -163,6 +188,18 @@ inline pandora::StatusCode ArborContent::RegisterBFieldPlugin(const pandora::Pan
     const float muonBarrelBField, const float muonEndCapBField)
 {
     return PandoraApi::SetBFieldPlugin(pandora, new arbor_content::ArborBFieldPlugin(innerBField, muonBarrelBField, muonEndCapBField));
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline pandora::StatusCode ArborContent::RegisterEnergyCorrections(const pandora::Pandora &pandora)
+{
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
+			"SdhcalQuadraticEnergyFunction", pandora::HADRONIC, new arbor_content::SdhcalQuadraticEnergyFunction()));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
+			"SdhcalQuadraticEnergyFunction", pandora::ELECTROMAGNETIC, new arbor_content::SdhcalQuadraticEnergyFunction()));
+
+	return pandora::STATUS_CODE_SUCCESS;
 }
 
 
