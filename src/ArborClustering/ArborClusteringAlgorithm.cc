@@ -30,7 +30,6 @@
 
 #include "Pandora/AlgorithmHeaders.h"
 
-#include "ArborApi/ObjectFactories.h"
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborTools/ConnectorAlgorithmTool.h"
 
@@ -193,7 +192,7 @@ pandora::StatusCode ArborClusteringAlgorithm::CreateClusters() const
 		PandoraContentApi::ClusterParameters clusterParameters;
 		clusterParameters.m_caloHitList = clusterCaloHitList;
 
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, clusterParameters, pCluster, ClusterFactory()));
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, clusterParameters, pCluster));
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -274,11 +273,11 @@ pandora::StatusCode ArborClusteringAlgorithm::ReadSettings(const pandora::TiXmlH
 
 #ifdef ARBOR_PARALLEL
     m_useMultithread = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "UseMultithread", m_useMultithread));
 #else
     m_useMultithread = false;
 #endif
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "UseMultithread", m_useMultithread));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }

@@ -28,7 +28,6 @@
 
 #include "ArborObjects/ArborMetaData.h"
 #include "ArborObjects/CaloHit.h"
-#include "ArborObjects/Cluster.h"
 #include "ArborObjects/Connector.h"
 #include "ArborApi/ArborContentApi.h"
 
