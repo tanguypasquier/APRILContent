@@ -32,6 +32,8 @@
 
 #include "Pandora/AlgorithmHeaders.h"
 
+#include <sys/time.h>
+
 namespace arbor_content
 {
 
@@ -63,6 +65,10 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Run()
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectFromTracks(orderedCaloHitList, *pTrackList));
+	}
+	else if(3 == m_seedingStrategy)
+	{
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->Connect2(orderedCaloHitList));
 	}
 	else
 	{
@@ -143,6 +149,100 @@ pandora::StatusCode ConnectorSeedingAlgorithm::Connect(const pandora::OrderedCal
 
 					// connect !
 					PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION, maxConnectionDistance));
+				}
+			}
+		}
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ConnectorSeedingAlgorithm::Connect2(const pandora::OrderedCaloHitList &orderedCaloHitList) const
+{
+	for(pandora::OrderedCaloHitList::const_iterator layerIter = orderedCaloHitList.begin(), layerEndIter = orderedCaloHitList.end() ;
+			layerEndIter != layerIter ; ++layerIter)
+	{
+		for(pandora::CaloHitList::const_iterator iterI = layerIter->second->begin(), endIterI = layerIter->second->end() ;
+				endIterI != iterI ; ++iterI)
+		{
+			const arbor_content::CaloHit *const pCaloHitI = dynamic_cast<const arbor_content::CaloHit *const>(*iterI);
+
+			if(NULL == pCaloHitI)
+				continue;
+
+			// check for availability
+			if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pCaloHitI))
+				continue;
+
+			const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
+			const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
+			const pandora::HitType hitTypeI(pCaloHitI->GetHitType());
+			const pandora::CartesianVector &cellNormalVector(pCaloHitI->GetCellNormalVector());
+			const float normaleAngle = positionVectorI.GetOpeningAngle(cellNormalVector);
+
+			unsigned int start = pseudoLayerI+1;
+			unsigned int end = pseudoLayerI + m_maxPseudoLayerConnection;
+
+			for(unsigned int pl = start ; pl <= end ; pl += 1)
+			{
+				pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pl);
+
+				if(orderedCaloHitList.end() == findIter)
+					continue;
+
+				for(pandora::CaloHitList::const_iterator iterJ = findIter->second->begin(), endIterJ = findIter->second->end() ;
+						endIterJ != iterJ ; ++iterJ)
+				{
+					const arbor_content::CaloHit *const pCaloHitJ = dynamic_cast<const arbor_content::CaloHit *const>(*iterJ);
+
+					if(NULL == pCaloHitJ)
+						continue;
+
+					// check for availability
+					if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pCaloHitJ))
+						continue;
+
+					const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
+					const pandora::HitType hitTypeJ(pCaloHitJ->GetHitType());
+
+					// check types
+					if(m_shouldConnectOnlySameHitType && hitTypeI != hitTypeJ)
+						continue;
+
+					const pandora::Granularity &granularityJ(PandoraContentApi::GetGeometry(*this)->GetHitTypeGranularity(hitTypeJ));
+
+					// TODO include this formula here for the granularity cases !
+					// d_i = [ (d_//  - d_perp) / ( pi/2 )  ] * theta_i + d_perp
+					const float maxNormaleDistance = granularityJ <= pandora::FINE ?
+							m_maxNormaleDistanceFine : m_maxNormaleDistanceCoarse;
+
+					const float maxTransverseDistance = granularityJ <= pandora::FINE ?
+							m_maxTransverseDistanceFine : m_maxTransverseDistanceCoarse;
+
+					const float maxDistance = ((maxTransverseDistance - maxNormaleDistance) / M_PI_2 ) * normaleAngle + maxNormaleDistance;
+
+					const float maxConnectionAngle = granularityJ <= pandora::FINE ?
+							m_maxConnectionAngleFine : m_maxConnectionAngleCoarse;
+
+					const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
+					const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
+
+					// check distance
+					if(difference > maxDistance)
+						continue;
+
+					// check angle
+					if(angle > maxConnectionAngle)
+						continue;
+
+					// check if already connected
+					if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION))
+						continue;
+
+					// connect !
+					PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION, maxDistance));
 				}
 			}
 		}
