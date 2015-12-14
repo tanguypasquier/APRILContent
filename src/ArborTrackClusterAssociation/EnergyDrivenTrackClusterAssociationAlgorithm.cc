@@ -29,7 +29,7 @@
 
 #include "ArborTrackClusterAssociation/EnergyDrivenTrackClusterAssociationAlgorithm.h"
 
-#include "ArborUtility/EnergyEstimateTools.h"
+#include "ArborTools/EnergyEstimateTools.h"
 #include "ArborHelpers/SortingHelper.h"
 
 namespace arbor_content
