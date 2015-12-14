@@ -16,7 +16,8 @@ SET( ${PROJECT_NAME}_VERSION_PATCH 00 )
 FIND_PACKAGE( ILCUTIL COMPONENTS ILCSOFT_CMAKE_MODULES REQUIRED )
 INCLUDE( ilcsoft_default_settings )
 
-OPTION( PANDORA_MONITORING "Whether to use PandoraMonitoring (requires ROOT)" OFF )
+OPTION( PANDORA_MONITORING "Whether to use PandoraMonitoring (requires ROOT)" ON )
+OPTION( ARBOR_PARALLEL "Whether to use multithreading (requires OpenMP)" OFF )
 
 ### SOURCE ##################################################################
 
@@ -33,6 +34,8 @@ AUX_SOURCE_DIRECTORY( ./src/ArborHelpers ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborMonitoring ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborPfoConstruction ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborPlugins ArborContent_SRCS )
+AUX_SOURCE_DIRECTORY( ./src/ArborReclustering ArborContent_SRCS )
+AUX_SOURCE_DIRECTORY( ./src/ArborTools ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborTopologicalAssociation ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborTrackClusterAssociation ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborUtility ArborContent_SRCS )
@@ -90,6 +93,18 @@ IF( PANDORA_MONITORING )
 
 ENDIF()
 
+IF( ARBOR_PARALLEL )
+    FIND_PACKAGE( OpenMP )
+    
+    IF( NOT OPENMP_FOUND )
+        MESSAGE( FATAL "Couldn't find OpenMP ! Please set the ARBOR_PARALLEL option to OFF" )
+    ENDIF()
+    
+    ADD_DEFINITIONS( ${OpenMP_CXX_FLAGS} )
+    ADD_DEFINITIONS( "-DARBOR_PARALLEL" )
+ENDIF()
+
+
 OPTION( INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF )
 
 IF( INSTALL_DOC AND EXISTS "${PROJECT_SOURCE_DIR}/doc/CMakeLists.txt" )
@@ -103,6 +118,10 @@ ENDIF()
 
 # add library
 ADD_SHARED_LIBRARY( ${PROJECT_NAME} ${ArborContent_SRCS} )
+
+IF( ARBOR_PARALLEL )
+    TARGET_LINK_LIBRARIES( ${PROJECT_NAME} gomp )
+ENDIF()
 
 
 ### INSTALL #################################################################
