@@ -75,21 +75,21 @@ pandora::StatusCode ArborContentApi::DeleteConnector(const arbor_content::Connec
 
 bool ArborContentApi::IsConnected(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2)
 {
-	return pCaloHit1->m_caloHitMetaData.IsConnected(pCaloHit2);
+	return pCaloHit1->m_pCaloHitMetaData->IsConnected(pCaloHit2);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 bool ArborContentApi::IsConnected(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2, arbor_content::ConnectorDirection direction)
 {
-	return pCaloHit1->m_caloHitMetaData.IsConnected(pCaloHit2, direction);
+	return pCaloHit1->m_pCaloHitMetaData->IsConnected(pCaloHit2, direction);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode ArborContentApi::FindConnector(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2, const arbor_content::Connector *&pConnector)
 {
-	return pCaloHit1->m_caloHitMetaData.FindConnector(pCaloHit2, pConnector);
+	return pCaloHit1->m_pCaloHitMetaData->FindConnector(pCaloHit2, pConnector);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -97,42 +97,42 @@ pandora::StatusCode ArborContentApi::FindConnector(const arbor_content::CaloHit 
 pandora::StatusCode ArborContentApi::FindConnector(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2, arbor_content::ConnectorDirection direction,
 		const arbor_content::Connector *&pConnector)
 {
-	return pCaloHit1->m_caloHitMetaData.FindConnector(pCaloHit2, direction, pConnector);
+	return pCaloHit1->m_pCaloHitMetaData->FindConnector(pCaloHit2, direction, pConnector);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 bool ArborContentApi::HasAnyConnection(const arbor_content::CaloHit *const pCaloHit)
 {
-	return pCaloHit->m_caloHitMetaData.HasAnyConnection();
+	return pCaloHit->m_pCaloHitMetaData->HasAnyConnection();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 const arbor_content::ConnectorList &ArborContentApi::GetConnectorList(const arbor_content::CaloHit *const pCaloHit)
 {
-	return pCaloHit->m_caloHitMetaData.GetConnectorList();
+	return pCaloHit->m_pCaloHitMetaData->GetConnectorList();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 const arbor_content::ConnectorList &ArborContentApi::GetConnectorList(const arbor_content::CaloHit *const pCaloHit, arbor_content::ConnectorDirection direction)
 {
-	return pCaloHit->m_caloHitMetaData.GetConnectorList(direction);
+	return pCaloHit->m_pCaloHitMetaData->GetConnectorList(direction);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 bool ArborContentApi::IsSeed(const arbor_content::CaloHit *const pCaloHit)
 {
-	return pCaloHit->m_caloHitMetaData.IsSeed();
+	return pCaloHit->m_pCaloHitMetaData->IsSeed();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 bool ArborContentApi::IsLeaf(const arbor_content::CaloHit *const pCaloHit)
 {
-	return pCaloHit->m_caloHitMetaData.IsLeaf();
+	return pCaloHit->m_pCaloHitMetaData->IsLeaf();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -156,8 +156,8 @@ pandora::StatusCode ArborContentApi::Connect(const arbor_content::CaloHit *const
 
 	pConnector = new arbor_content::Connector(pCaloHitFrom, pCaloHitTo, referenceLength);
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitFrom->m_caloHitMetaData.AddConnector(pConnector, arbor_content::FORWARD_DIRECTION));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitTo->m_caloHitMetaData.AddConnector(pConnector, arbor_content::BACKWARD_DIRECTION));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitFrom->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::FORWARD_DIRECTION));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitTo->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::BACKWARD_DIRECTION));
 
 	ArborContentApi::Modifiable(pConnector)->SetAvailability(false);
 
@@ -174,8 +174,8 @@ pandora::StatusCode ArborContentApi::Connect(const arbor_content::Connector *con
 	if(!pConnector->IsAvailable())
 		return pandora::STATUS_CODE_NOT_ALLOWED;
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetFrom())->m_caloHitMetaData.AddConnector(pConnector, arbor_content::FORWARD_DIRECTION));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetTo())->m_caloHitMetaData.AddConnector(pConnector, arbor_content::BACKWARD_DIRECTION));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetFrom())->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::FORWARD_DIRECTION));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetTo())->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::BACKWARD_DIRECTION));
 
 	ArborContentApi::Modifiable(pConnector)->SetAvailability(false);
 
@@ -190,7 +190,7 @@ pandora::StatusCode ArborContentApi::RemoveConnectionBetween(const arbor_content
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
 	const arbor_content::Connector *pConnector = NULL;
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHit1->m_caloHitMetaData.FindConnector(pCaloHit2, pConnector));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHit1->m_pCaloHitMetaData->FindConnector(pCaloHit2, pConnector));
 
 	return ArborContentApi::RemoveAndDeleteConnector(pConnector);
 }
@@ -205,8 +205,8 @@ pandora::StatusCode ArborContentApi::RemoveConnector(const arbor_content::Connec
 	if(pConnector->IsAvailable())
 		return pandora::STATUS_CODE_FAILURE;
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetFrom())->m_caloHitMetaData.RemoveConnector(pConnector));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetTo())->m_caloHitMetaData.RemoveConnector(pConnector));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetFrom())->m_pCaloHitMetaData->RemoveConnector(pConnector));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetTo())->m_pCaloHitMetaData->RemoveConnector(pConnector));
 
 	ArborContentApi::Modifiable(pConnector)->SetAvailability(true);
 
@@ -227,16 +227,17 @@ pandora::StatusCode ArborContentApi::RemoveAndDeleteConnector(const arbor_conten
 
 pandora::StatusCode ArborContentApi::RemoveAndDeleteAllConnections(const arbor_content::CaloHit *const pCaloHit)
 {
-	for(arbor_content::ConnectorList::const_iterator iter = pCaloHit->m_caloHitMetaData.GetConnectorList(arbor_content::BACKWARD_DIRECTION).begin(),
-			endIter = pCaloHit->m_caloHitMetaData.GetConnectorList(arbor_content::BACKWARD_DIRECTION).end() ;
+	arbor_content::ConnectorList backwardConnectorList(pCaloHit->m_pCaloHitMetaData->GetConnectorList(arbor_content::BACKWARD_DIRECTION));
+	arbor_content::ConnectorList forwardConnectorList(pCaloHit->m_pCaloHitMetaData->GetConnectorList(arbor_content::FORWARD_DIRECTION));
+
+	for(arbor_content::ConnectorList::const_iterator iter = backwardConnectorList.begin(), endIter = backwardConnectorList.end() ;
 			endIter != iter ; ++iter)
 	{
 		const arbor_content::Connector *const pConnector = *iter;
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveAndDeleteConnector(pConnector));
 	}
 
-	for(arbor_content::ConnectorList::const_iterator iter = pCaloHit->m_caloHitMetaData.GetConnectorList(arbor_content::FORWARD_DIRECTION).begin(),
-			endIter = pCaloHit->m_caloHitMetaData.GetConnectorList(arbor_content::FORWARD_DIRECTION).end() ;
+	for(arbor_content::ConnectorList::const_iterator iter = forwardConnectorList.begin(), endIter = forwardConnectorList.end() ;
 			endIter != iter ; ++iter)
 	{
 		const arbor_content::Connector *const pConnector = *iter;
@@ -250,13 +251,7 @@ pandora::StatusCode ArborContentApi::RemoveAndDeleteAllConnections(const arbor_c
 
 pandora::StatusCode ArborContentApi::Tag(const arbor_content::CaloHit *const pCaloHit, arbor_content::HitTag tag, bool value)
 {
-	arbor_content::HitTagMap::const_iterator findIter = pCaloHit->m_hitTagMap.find(tag);
-
-	if(findIter == pCaloHit->m_hitTagMap.end())
-		return pandora::STATUS_CODE_NOT_FOUND;
-
-	ArborContentApi::Modifiable(pCaloHit)->m_hitTagMap[tag] = value;
-
+	ArborContentApi::Modifiable(pCaloHit)->m_hitTagMap.set(tag, value);
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
@@ -264,12 +259,7 @@ pandora::StatusCode ArborContentApi::Tag(const arbor_content::CaloHit *const pCa
 
 bool ArborContentApi::IsTagged(const arbor_content::CaloHit *const pCaloHit, arbor_content::HitTag tag)
 {
-	arbor_content::HitTagMap::const_iterator findIter = pCaloHit->m_hitTagMap.find(tag);
-
-	if(findIter == pCaloHit->m_hitTagMap.end())
-		return false;
-
-	return findIter->second;
+	return pCaloHit->m_hitTagMap.test(tag);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -279,7 +269,86 @@ pandora::StatusCode ArborContentApi::ResetTags(const arbor_content::CaloHit *con
 	if(NULL == pCaloHit)
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	ArborContentApi::Modifiable(pCaloHit)->ClearTagMap();
+	ArborContentApi::Modifiable(pCaloHit)->m_hitTagMap.reset();
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ArborContentApi::InitializeReclustering(const pandora::Algorithm &algorithm, const pandora::TrackList &inputTrackList,
+		const pandora::ClusterList &inputClusterList, std::string &originalClustersListName)
+{
+	// intialize reclustering within pandora
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::InitializeReclustering(algorithm, inputTrackList, inputClusterList, originalClustersListName));
+
+	const pandora::CaloHitList *pCaloHitList = NULL;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pCaloHitList));
+
+	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
+			endIter != iter ; ++iter)
+	{
+		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
+
+		if(NULL == pCaloHit)
+			return pandora::STATUS_CODE_FAILURE;
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pCaloHit)->SaveReclusterMetaData(originalClustersListName));
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ArborContentApi::RunReclusteringAlgorithm(const pandora::Algorithm &algorithm, const std::string &clusteringAlgorithmName,
+		const pandora::ClusterList *&pNewClusterList, std::string &newClusterListName)
+{
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunClusteringAlgorithm(algorithm, clusteringAlgorithmName, pNewClusterList, newClusterListName));
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ArborContentApi::PostRunReclusteringAlgorithm(const pandora::Algorithm &algorithm, const std::string &clusterListName)
+{
+	const pandora::CaloHitList *pCaloHitList = NULL;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pCaloHitList));
+
+	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
+			endIter != iter ; ++iter)
+	{
+		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
+
+		if(NULL == pCaloHit)
+			return pandora::STATUS_CODE_FAILURE;
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pCaloHit)->SaveReclusterMetaData(clusterListName));
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ArborContentApi::EndReclustering(const pandora::Algorithm &algorithm, const std::string &selectedClusterListName)
+{
+	const pandora::CaloHitList *pCaloHitList = NULL;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pCaloHitList));
+
+	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
+			endIter != iter ; ++iter)
+	{
+		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
+
+		if(NULL == pCaloHit)
+			return pandora::STATUS_CODE_FAILURE;
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pCaloHit)->EndReclustering(selectedClusterListName));
+	}
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::EndReclustering(algorithm, selectedClusterListName));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }

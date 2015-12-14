@@ -234,6 +234,28 @@ public:
 	 */
 	static pandora::StatusCode ResetTags(const arbor_content::CaloHit *const pCaloHit);
 
+	/**
+	 *
+	 */
+	static pandora::StatusCode InitializeReclustering(const pandora::Algorithm &algorithm, const pandora::TrackList &inputTrackList,
+			const pandora::ClusterList &inputClusterList, std::string &originalClustersListName);
+
+	/**
+	 *
+	 */
+	static pandora::StatusCode RunReclusteringAlgorithm(const pandora::Algorithm &algorithm, const std::string &clusteringAlgorithmName,
+			const pandora::ClusterList *&pNewClusterList, std::string &newClusterListName);
+
+	/**
+	 *
+	 */
+	static pandora::StatusCode PostRunReclusteringAlgorithm(const pandora::Algorithm &algorithm, const std::string &clusterListName);
+
+	/**
+	 *
+	 */
+	static pandora::StatusCode EndReclustering(const pandora::Algorithm &algorithm, const std::string &selectedClusterListName);
+
 private:
 	/**
 	 *  @brief  Alter the object (const_cast<T*>) for internal modification through the API

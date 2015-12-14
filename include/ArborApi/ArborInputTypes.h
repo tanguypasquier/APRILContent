@@ -31,6 +31,8 @@
 
 #include "Pandora/PandoraInputTypes.h"
 
+#include <bitset>
+
 namespace arbor_content
 {
 
@@ -49,7 +51,7 @@ enum SemiDigitalThreshold
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 /**
- * @brief ConnectorDirection enumerator
+ *  @brief  ConnectorDirection enumerator
  */
 enum ConnectorDirection
 {
@@ -67,7 +69,8 @@ enum HitTag
 	CORE_HIT,
 	ISOLATED_HIT,
 	MIP_HIT,
-	NOISE_HIT
+	NOISE_HIT,
+	NUMBER_OF_HIT_TAGS
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -76,17 +79,19 @@ class Connector;
 class CaloHit;
 class Branch;
 class Track;
+class ConnectorAlgorithmTool;
 
 typedef std::set<const CaloHit *> CaloHitList;
 typedef std::set<const Track *> TrackList;
 typedef std::set<const Connector *> ConnectorList;
+typedef std::vector<ConnectorAlgorithmTool *> ConnectorAlgorithmToolVector;
 typedef std::vector<SemiDigitalThreshold> SemiDigitalThresholdList;
-typedef std::map<HitTag, bool> HitTagMap;
+typedef std::bitset<NUMBER_OF_HIT_TAGS> HitTagMap;
 
 typedef pandora::PandoraInputType<SemiDigitalThreshold> InputSemiDigitalThreshold;
 typedef pandora::PandoraInputType<SemiDigitalThresholdList> InputSemiDigitalThresholdList;
 
-typedef std::vector<const Branch *>  BranchList;
+typedef std::vector<Branch>  BranchList;
 
 }
 
