@@ -29,26 +29,41 @@
 #ifndef SORTINGHELPER_H
 #define SORTINGHELPER_H
 
-#include "Pandora/PandoraInternal.h"
+#include "ArborApi/ArborInputTypes.h"
+
 #include "Pandora/StatusCodes.h"
+#include "Pandora/PandoraInternal.h"
 
 namespace pandora { class Cluster; }
 
 namespace arbor_content
 {
 
-/** 
- * @brief SortingHelper class
+/**
+ *  @brief  SortingHelper class
  */ 
 class SortingHelper 
 {
 public:
 	/**
 	 *  @brief  Sort clusters by inner layer, and hadronic energy for same layer
+	 *
+	 *  @param  pLhs the left handed cluster to compare
+	 *  @param  pRhs the right handed cluster to compare
 	 */
 	static bool SortClustersByInnerLayer(const pandora::Cluster *const pLhs, const pandora::Cluster *const pRhs);
-}; 
 
-} 
+	/**
+	 *  @brief  Sort branches by size
+	 *
+	 *  @param  lhs the left handed branch to compare
+	 *  @param  rhs the right handed branch to compare
+	 */
+	static bool SortBranchesBySize(const Branch &lhs, const Branch &rhs);
+};
+
+
+}
+
 
 #endif  //  SORTINGHELPER_H

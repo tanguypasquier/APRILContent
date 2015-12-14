@@ -29,6 +29,7 @@
 #include "ArborHelpers/SortingHelper.h"
 
 #include "Objects/Cluster.h"
+#include "ArborObjects/Branch.h"
 
 namespace arbor_content
 {
@@ -48,5 +49,12 @@ bool SortingHelper::SortClustersByInnerLayer(const pandora::Cluster *const pLhs,
 	return (pLhs->GetHadronicEnergy() > pRhs->GetHadronicEnergy());
 }
 
-} 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+bool SortingHelper::SortBranchesBySize(const Branch &lhs, const Branch &rhs)
+{
+	return lhs.size() < rhs.size();
+}
+
+}
 
