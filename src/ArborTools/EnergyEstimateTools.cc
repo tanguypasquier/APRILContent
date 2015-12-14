@@ -27,7 +27,7 @@
 
 #include "Pandora/AlgorithmHeaders.h"
 
-#include "ArborUtility/EnergyEstimateTools.h"
+#include "ArborTools/EnergyEstimateTools.h"
 
 namespace arbor_content
 {
