@@ -399,7 +399,7 @@ void VisualMonitoringAlgorithm::VisualizeParticleFlowList(const std::string &lis
 					pandora::CaloHitList clusterHits;
 					(*iter)->GetOrderedCaloHitList().GetCaloHitList(clusterHits);
 
-					this->VisualizeConnectors(&clusterHits, listName.empty() ? "CurrentClustersConnectors" : (listName+"Connectors").c_str(), pParentElement,
+					this->VisualizeConnectors(&clusterHits, listName.empty() ? "CurrentPfoConnectors" : (listName+"Connectors").c_str(), pParentElement,
 							(m_hitColors.find("particleid") != std::string::npos) ? ::AUTOID :
 							(m_hitColors.find("iterate") != std::string::npos) ? ::AUTOITER :
 							(m_hitColors.find("energy") != std::string::npos) ? ::AUTOENERGY : ::AUTO);
