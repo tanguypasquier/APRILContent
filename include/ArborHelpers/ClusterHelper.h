@@ -42,17 +42,28 @@ class ClusterHelper
 {
 public:
 	/**
+	 *  @brief  Get the cluster centroid
 	 *
+	 *  @param  pCluster the cluster to evaluate the centroid
+	 *  @param  centroid the centroid to receive
 	 */
 	static pandora::StatusCode GetCentroid(const pandora::Cluster *const pCluster, pandora::CartesianVector &centroid);
 
 	/**
+	 *  @brief  Get the closest distance approach between all the hits of the cluster and the given position vector
 	 *
+	 *  @param  pCluster the cluster to evaluate the closest distance approach
+	 *  @param  point the position vector
+	 *  @param  closestDistance the closest distance approach between the point and the cluster, unit mm
 	 */
-	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster, pandora::CartesianVector &point,
+	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
 			float &closestDistance);
 
 	/**
+	 *  @brief  Get the number of calo hit seeds in the cluster
+	 *
+	 *  @param  pCluster the cluster to get the number of calo hit seeds
+	 *  @param  nSeeds the number of seeds to receive
 	 */
 	static pandora::StatusCode GetNCaloHitSeeds(const pandora::Cluster *const pCluster, unsigned int &nSeeds);
 }; 
