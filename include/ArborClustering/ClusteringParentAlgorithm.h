@@ -21,17 +21,16 @@
  * You should have received a copy of the GNU General Public License
  * along with ArborContent.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * @author Remi Ete
- * @copyright CNRS , IPNL
+ *  @author J. Marshall
+ *  @comment Copied from LCContent at https://github.com/PandoraPFA/LCContent
  */
-
-
-#ifndef PARENTCLUSTERINGALGORITHM_H
-#define PARENTCLUSTERINGALGORITHM_H
+ 
+#ifndef CLUSTERINGPARENTALGORITHM_H
+#define CLUSTERINGPARENTALGORITHM_H 1
 
 #include "Pandora/Algorithm.h"
 
-namespace arbor_content
+namespace arbor_content // modified namespace
 {
 
 /**
@@ -58,7 +57,6 @@ private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
-    std::string     m_connectorAlgorithmName;       ///< The name of the connector creation algorithm to run
     std::string     m_clusteringAlgorithmName;      ///< The name of the clustering algorithm to run
     std::string     m_associationAlgorithmName;     ///< The name of the topological association algorithm to run
 
@@ -78,4 +76,4 @@ inline pandora::Algorithm *ClusteringParentAlgorithm::Factory::CreateAlgorithm()
 
 }
 
-#endif  //  PARENTCLUSTERINGALGORITHM_H
+#endif // #ifndef CLUSTERINGPARENTALGORITHM_H
