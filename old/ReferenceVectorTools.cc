@@ -25,8 +25,8 @@
  * @copyright CNRS , IPNL
  */
 
-
 #include "ArborUtility/ReferenceVectorTools.h"
+#include "ArborHelpers/CaloHitHelper.h"
 
 #include "Helpers/XmlHelper.h"
 
@@ -40,10 +40,14 @@ pandora::StatusCode SimpleReferenceVectorTool::ComputeReferenceVector(const Calo
 	pandora::CartesianVector meanForwardDirection(0, 0, 0);
 	pandora::CartesianVector meanBackwardDirection(0, 0, 0);
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetMeanDirection(pCaloHit, FORWARD_DIRECTION, meanForwardDirection,
-			m_forwardConnectorWeight, m_referenceDirectionDepth, pCaloHit->GetPseudoLayer()));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetMeanDirection(pCaloHit, BACKWARD_DIRECTION, meanBackwardDirection,
-			m_backwardConnectorWeight, m_referenceDirectionDepth, pCaloHit->GetPseudoLayer()));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::GetMeanDirection(pCaloHit, FORWARD_DIRECTION,
+			meanForwardDirection, m_forwardReferenceDirectionDepth));
+	meanForwardDirection *= m_forwardConnectorWeight;
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::GetMeanDirection(pCaloHit, BACKWARD_DIRECTION,
+			meanBackwardDirection, m_backwardReferenceDirectionDepth));
+
+	meanBackwardDirection *= m_backwardConnectorWeight;
 
 	if(meanForwardDirection == meanBackwardDirection)
 		return pandora::STATUS_CODE_FAILURE;
@@ -86,7 +90,8 @@ pandora::StatusCode SimpleReferenceVectorTool::GetMeanDirection(const CaloHit *c
 			continue;
 
 		pandora::CartesianVector differencePosition(pConnectedCaloHit->GetPositionVector() - positionVector);
-		direction += differencePosition * weight;
+		const float normalizationWeight = 1.f / (differencePosition.GetMagnitudeSquared());
+		direction += differencePosition * normalizationWeight * weight;
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetMeanDirection(pConnectedCaloHit, connectorDirection,
 				direction, weight, depth-1, initialPseudoLayer));
@@ -107,15 +112,15 @@ pandora::StatusCode SimpleReferenceVectorTool::ReadSettings(const pandora::TiXml
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"ForwardConnectorWeight", m_forwardConnectorWeight));
 
-	m_referenceDirectionDepth = 1;
+	m_backwardReferenceDirectionDepth = 1;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-			"ReferenceDirectionDepth", m_referenceDirectionDepth));
+			"BackwardReferenceDirectionDepth", m_backwardReferenceDirectionDepth));
 
-	m_referenceDirectionMaximumForwardLayer = std::numeric_limits<unsigned int>::max();
+	m_forwardReferenceDirectionDepth = 1;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-			"ReferenceDirectionMaximumForwardLayer", m_referenceDirectionMaximumForwardLayer));
+			"ForwardReferenceDirectionDepth", m_forwardReferenceDirectionDepth));
 
-	if(m_referenceDirectionDepth == 0 || m_referenceDirectionMaximumForwardLayer == 0)
+	if(m_backwardReferenceDirectionDepth == 0 || m_forwardReferenceDirectionDepth == 0)
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
 	return pandora::STATUS_CODE_SUCCESS;

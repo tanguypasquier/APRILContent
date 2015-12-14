@@ -89,8 +89,9 @@ private:
 
 	float                          m_backwardConnectorWeight;
 	float                          m_forwardConnectorWeight;
-	unsigned int                  m_referenceDirectionDepth;
-	unsigned int                  m_referenceDirectionMaximumForwardLayer;
+//	unsigned int                  m_referenceDirectionDepth;
+	unsigned int                  m_backwardReferenceDirectionDepth;
+	unsigned int                  m_forwardReferenceDirectionDepth;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
