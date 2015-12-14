@@ -40,6 +40,7 @@ namespace arbor_content
  */ 
 class CompositeAlgorithm : public pandora::Algorithm
 {
+public:
 	/**
 	 *  @brief  Factory class for instantiating algorithm
 	 */
