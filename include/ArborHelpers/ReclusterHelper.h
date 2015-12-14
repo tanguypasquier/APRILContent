@@ -72,7 +72,7 @@ public:
 
     /**
      *  @brief  Create a separated tree cluster from a seed calo hit contained in an original cluster.
-     *          Possible only if the original cluster contains more than tree (more than one seed calo hit).
+     *          Possible only if the original cluster contains more than one tree (more than one seed calo hit).
      *          Calo hits of the newly created tree cluster are removed from the original one
      *
      *  @param  algorithm the algorithm instance used to access pandora content
@@ -84,7 +84,7 @@ public:
 
     /**
      *  @brief  Create a cluster list for each tree contained in the cluster
-     *          Possible only if the cluster contains more than tree (more than one seed calo hit)
+     *          Possible only if the cluster contains more than one tree (more than one seed calo hit)
      *
      *  @param  algorithm the algorithm instance used to access pandora content
      *  @param  pCluster the cluster to split
