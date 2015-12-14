@@ -38,37 +38,65 @@ namespace arbor_content
 class CaloHit;
 class Connector;
 
+/**
+ *  @brief CaloHitMetaData class
+ */
 class CaloHitMetaData
 {
 public:
+	/**
+	 *  @brief  Constructor
+	 *
+	 *  @param  pCaloHit the calo hit for this meta data
+	 */
+	CaloHitMetaData(arbor_content::CaloHit *const pCaloHit);
+
+	/**
+	 * @brief  Destructor
+	 */
+	~CaloHitMetaData();
+
 	/**
 	 *  @brief  Get the calo hit of this connector meta data
 	 */
 	const arbor_content::CaloHit *GetCaloHit() const;
 
 	/**
-	 *  @brief  Whether the calo hit is connected with this one
+	 *  @brief  Whether the calo hit is connected with another one
+	 *
+	 *  @param  pCaloHit an other calo hit to check for connection
 	 */
 	bool IsConnected(const arbor_content::CaloHit *const pCaloHit) const;
 
 	/**
-	 *  @brief  Whether the calo hit (contained in meta data) is connected with this one in the connector direction
+	 *  @brief  Whether the calo hit is connected with another one in the given direction
+	 *
+	 *  @param  pCaloHit an other calo hit to check for connection
+	 *  @param  direction the connector direction
 	 */
 	bool IsConnected(const arbor_content::CaloHit *const pCaloHit, ConnectorDirection direction)  const;
 
 	/**
-	 *  @brief  Find a connector.
+	 *  @brief  Find a connector
+	 *
+	 *  @param  pCaloHit an other calo hit to check for connection
+	 *  @param  pConnector the connector address to receive
 	 */
 	pandora::StatusCode FindConnector(const arbor_content::CaloHit *const pCaloHit, const Connector *&pConnector) const;
 
 	/**
 	 *  @brief  Find a connector in a given direction
+	 *
+	 *  @param  pCaloHit an other calo hit to check for connection
+	 *  @param  direction the connector direction
+	 *  @param  pConnector the connector address to receive
+	 *
 	 */
 	pandora::StatusCode FindConnector(const arbor_content::CaloHit *const pCaloHit, ConnectorDirection direction,
 			const Connector *&pConnector) const;
 
 	/**
-	 *  @brief  Whether the pandora calo hit has at least one connection
+	 *  @brief  Whether the calo hit has at least one connection
 	 */
 	bool HasAnyConnection() const;
 
@@ -79,6 +107,8 @@ public:
 
 	/**
 	 *  @brief  Get the connector list for a given direction
+	 *
+	 *  @param  direction the connector direction
 	 */
 	const ConnectorList &GetConnectorList(ConnectorDirection direction) const;
 
@@ -93,12 +123,17 @@ public:
 	bool IsLeaf() const;
 
 	/**
+	 *  @brief  Add an available connector to meta data
 	 *
+	 *  @param  pConnector an unavailable connector to add
+	 *  @param  direction the connector direction
 	 */
 	pandora::StatusCode AddConnector(const Connector *const pConnector, ConnectorDirection direction);
 
 	/**
 	 *  @brief  Remove the connection with an other calo hit
+	 *
+	 *  @param  pConnector the connector to remove (not deleted)
 	 */
 	pandora::StatusCode RemoveConnector(const Connector *const pConnector);
 
@@ -107,33 +142,12 @@ public:
 	 */
 	pandora::StatusCode RemoveAllConnections();
 
-	/**
-	 *  @brief  Get a (non-deep) copy of this calo hit meta data
-	 */
-	CaloHitMetaData GetCopy() const;
-
-	/**
-	 *  @brief  Adopt the calo hit meta data by copying (non-deeply) it
-	 */
-	pandora::StatusCode Adopt(const CaloHitMetaData &metaData);
-
 private:
-	/**
-	 *  @brief  Constructor with the associated calo hit
-	 */
-	CaloHitMetaData(arbor_content::CaloHit *const pCaloHit);
 
-	/**
-	 * @brief  Destructor
-	 */
-	~CaloHitMetaData();
-
-	arbor_content::CaloHit                   *m_pCaloHit;    ///< The handled arbor calo hit
-
+	arbor_content::CaloHit                   *m_pCaloHit;                 ///< The handled arbor calo hit
 	ConnectorList                             m_allConnectorList;        ///< All connected calo hits
 	ConnectorList                             m_forwardConnectorList;   ///< Forward connected calo hits
 	ConnectorList                             m_backwardConnectorList;  ///< Backward connected calo hits
-
 	bool                                      m_isLeaf;                   ///< Whether the calo hit is a leaf
 	bool                                      m_isSeed;                   ///< Whether the calo hit is a seed
 

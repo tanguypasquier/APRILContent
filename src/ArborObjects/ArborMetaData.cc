@@ -28,7 +28,9 @@
 
 #include "ArborObjects/ArborMetaData.h"
 #include "ArborObjects/CaloHit.h"
+#include "ArborObjects/Cluster.h"
 #include "ArborObjects/Connector.h"
+#include "ArborApi/ArborContentApi.h"
 
 namespace arbor_content
 {
@@ -231,37 +233,6 @@ pandora::StatusCode CaloHitMetaData::AddConnector(const Connector *const pConnec
 		m_isSeed = false;
 	else
 		m_isLeaf = false;
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-CaloHitMetaData CaloHitMetaData::GetCopy() const
-{
-	CaloHitMetaData metaData(m_pCaloHit);
-
-	metaData.m_allConnectorList = this->m_allConnectorList;
-	metaData.m_forwardConnectorList = this->m_forwardConnectorList;
-	metaData.m_backwardConnectorList = this->m_backwardConnectorList;
-	metaData.m_isLeaf = this->m_isLeaf;
-	metaData.m_isSeed = this->m_isSeed;
-
-	return metaData;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode CaloHitMetaData::Adopt(const CaloHitMetaData &metaData)
-{
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveAllConnections());
-
-	this->m_pCaloHit = metaData.m_pCaloHit;
-	this->m_allConnectorList = metaData.m_allConnectorList;
-	this->m_forwardConnectorList = metaData.m_forwardConnectorList;
-	this->m_backwardConnectorList = metaData.m_backwardConnectorList;
-	this->m_isLeaf = metaData.m_isLeaf;
-	this->m_isSeed = metaData.m_isSeed;
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
