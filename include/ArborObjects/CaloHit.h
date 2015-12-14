@@ -71,10 +71,31 @@ private:
 	 */
 	void ClearTagMap();
 
+	/**
+	 *  @brief  Save the recluster meta data. Called during the reclustering process to
+	 *          back up the current calo hit meta data.
+	 *          Note that a new calo hit meta data is allocated
+	 *
+	 *  @param  clusterListName the cluster list name under which to save the current meta data
+	 */
+	pandora::StatusCode SaveReclusterMetaData(const std::string &clusterListName);
+
+	/**
+	 *  @brief  End the reclustering process for this calo hit. Reload the calo hit meta
+	 *          data corresponding to the selected cluster list and delete all the other
+	 *          meta data
+	 *
+	 *  @param  selectedClusterListName the selected cluster list name to reload meta data
+	 */
+	pandora::StatusCode EndReclustering(const std::string &selectedClusterListName);
+
 protected:
 
-    CaloHitMetaData                         m_caloHitMetaData;
+    typedef std::map<const std::string, CaloHitMetaData *> ReclusterMetaDataMap;
+
+    CaloHitMetaData                        *m_pCaloHitMetaData;
     HitTagMap                               m_hitTagMap;
+    ReclusterMetaDataMap                    m_reclusterMetaDataMap;
 
     friend class CaloHitFactory;
     friend class ::ArborContentApi;

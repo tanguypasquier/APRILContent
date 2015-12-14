@@ -31,18 +31,16 @@ namespace arbor_content
 {
 
 CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
-		pandora::CaloHit(parameters),
-		m_caloHitMetaData(this)
+		pandora::CaloHit(parameters)
 {
-	ClearTagMap();
+	m_pCaloHitMetaData = new CaloHitMetaData(this);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 // TODO copy the connector list in the new calo hit
 CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameters) :
-		pandora::CaloHit(parameters),
-		m_caloHitMetaData(this)
+		pandora::CaloHit(parameters)
 
 {
 	const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit);
@@ -50,6 +48,7 @@ CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameter
 	if(NULL == pCaloHitCopy)
 		throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
+	m_pCaloHitMetaData = new CaloHitMetaData(this);
 	m_hitTagMap = pCaloHitCopy->m_hitTagMap;
 }
 
@@ -58,19 +57,69 @@ CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameter
 CaloHit::~CaloHit()
 {
 	PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveAndDeleteAllConnections(this));
+	delete m_pCaloHitMetaData;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 void CaloHit::ClearTagMap()
 {
-	m_hitTagMap[CORE_HIT] = false;
-	m_hitTagMap[ISOLATED_HIT] = false;
-	m_hitTagMap[MIP_HIT] = false;
-	m_hitTagMap[NOISE_HIT] = false;
+	m_hitTagMap.reset();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode CaloHit::SaveReclusterMetaData(const std::string &clusterListName)
+{
+	ReclusterMetaDataMap::iterator findIter = m_reclusterMetaDataMap.find(clusterListName);
+
+	if(m_reclusterMetaDataMap.end() != findIter)
+		return pandora::STATUS_CODE_ALREADY_PRESENT;
+
+	// backup the meta data
+	m_reclusterMetaDataMap.insert(ReclusterMetaDataMap::value_type(clusterListName, m_pCaloHitMetaData));
+	m_pCaloHitMetaData = new CaloHitMetaData(this);
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode CaloHit::EndReclustering(const std::string &selectedClusterListName)
+{
+	ReclusterMetaDataMap::iterator findIter = m_reclusterMetaDataMap.find(selectedClusterListName);
+
+	if(m_reclusterMetaDataMap.end() == findIter)
+		return pandora::STATUS_CODE_NOT_FOUND;
+
+	for(ReclusterMetaDataMap::iterator iter = m_reclusterMetaDataMap.begin(), endIter = m_reclusterMetaDataMap.end() ;
+			endIter != iter ; ++iter)
+	{
+		// adopt the selected meta data
+		if(iter->first == selectedClusterListName)
+		{
+			delete m_pCaloHitMetaData;
+			m_pCaloHitMetaData = iter->second;
+
+			continue;
+		}
+
+		// get connector list copy
+		ConnectorList connectorList(iter->second->GetConnectorList(FORWARD_DIRECTION));
+
+		for(ConnectorList::iterator coIter = connectorList.begin(), coEndIter = connectorList.end() ;
+				coEndIter != coIter ; ++coIter)
+		{
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::DeleteConnector(*coIter));
+		}
+
+		delete iter->second;
+	}
+
+	m_reclusterMetaDataMap.clear();
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
 
 } 
 
