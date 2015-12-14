@@ -85,7 +85,7 @@ pandora::StatusCode EventPreparationAlgorithm::Run()
     	caloHitList.insert(ecalCaloHitList.begin(), ecalCaloHitList.end());
     	caloHitList.insert(hcalCaloHitList.begin(), hcalCaloHitList.end());
 
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, ecalCaloHitList, m_outputCaloHitListName));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, caloHitList, m_outputCaloHitListName));
     }
     else
     {
