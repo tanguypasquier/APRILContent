@@ -26,7 +26,7 @@
  */
 
 
-#include "ArborUtility/BranchingTools.h"
+#include "ArborTools/BranchingTools.h"
 #include "ArborObjects/Branch.h"
 #include "ArborApi/ArborContentApi.h"
 #include "ArborHelpers/CaloHitHelper.h"
