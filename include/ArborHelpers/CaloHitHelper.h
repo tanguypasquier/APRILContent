@@ -83,16 +83,18 @@ public:
 	 *
 	 *  @param  algorithm the algorithm to access the content
 	 *  @param  leafCaloHitList the calo hit leaf list to receive
+	 *  @param  discriminateLeafHits whether the leaf/seed hits have to be put in the extracted list
 	 */
-	static pandora::StatusCode ExtractCurrentLeafCaloHitList(const pandora::Algorithm &algorithm, pandora::CaloHitList &leafCaloHitList);
+	static pandora::StatusCode ExtractCurrentLeafCaloHitList(const pandora::Algorithm &algorithm, pandora::CaloHitList &leafCaloHitList, bool discriminateSeedHits = false);
 
 	/**
 	 *  @brief  Extract the calo hit leaf list from the calo hit list
 	 *
 	 *  @param  pCaloHitList the list to extract the sub calo hit leaf list
 	 *  @param  leafCaloHitList the calo hit leaf list to receive
+	 *  @param  discriminateLeafHits whether the leaf/seed hits have to be put in the extracted list
 	 */
-	static pandora::StatusCode ExtractLeafCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &leafCaloHitList);
+	static pandora::StatusCode ExtractLeafCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &leafCaloHitList, bool discriminateSeedHits = false);
 
 	/**
 	 *  @brief  Build the calo hit list starting from a calo hit by looking recursively in the connector list (forward or backward)
@@ -117,7 +119,12 @@ public:
 			unsigned int connectionLimit, unsigned int pseudoLayerLimit);
 
 	/**
+	 *  @brief  Get the mean direction of the calo hit in a given direction
 	 *
+	 *  @param  pCaloHit the calo hit to evaluate the mean direction
+	 *  @param  connectorDirection the connector direction to evaluate the mean direction
+	 *  @param  direction the mean direction to receive
+	 *  @param  depth the maximum connector depth to reach for the direction evaluation
 	 */
 	static pandora::StatusCode GetMeanDirection(const CaloHit *const pCaloHit, ConnectorDirection connectorDirection,
 			 pandora::CartesianVector &direction, unsigned int depth);

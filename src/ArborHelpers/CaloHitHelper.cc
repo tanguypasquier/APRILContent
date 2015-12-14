@@ -100,18 +100,18 @@ pandora::StatusCode CaloHitHelper::ExtractSeedCaloHitList(const pandora::CaloHit
 //--------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode CaloHitHelper::ExtractCurrentLeafCaloHitList(const pandora::Algorithm &algorithm,
-		pandora::CaloHitList &leafCaloHitList)
+		pandora::CaloHitList &leafCaloHitList, bool discriminateSeedHits)
 {
 	const pandora::CaloHitList *pCaloHitList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pCaloHitList));
 
-	return CaloHitHelper::ExtractLeafCaloHitList(pCaloHitList, leafCaloHitList);
+	return CaloHitHelper::ExtractLeafCaloHitList(pCaloHitList, leafCaloHitList, discriminateSeedHits);
 }
 
 //--------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode CaloHitHelper::ExtractLeafCaloHitList(const pandora::CaloHitList *const pCaloHitList,
-		pandora::CaloHitList &leafCaloHitList)
+		pandora::CaloHitList &leafCaloHitList, bool discriminateSeedHits)
 {
 	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
 			endIter != iter ; ++iter)
@@ -121,7 +121,7 @@ pandora::StatusCode CaloHitHelper::ExtractLeafCaloHitList(const pandora::CaloHit
 		if(NULL == pCaloHit)
 			continue;
 
-		if(ArborContentApi::IsLeaf(pCaloHit))
+		if(ArborContentApi::IsLeaf(pCaloHit) && !(discriminateSeedHits && !ArborContentApi::IsSeed(pCaloHit)))
 			leafCaloHitList.insert(pCaloHit);
 	}
 
@@ -209,7 +209,8 @@ pandora::StatusCode CaloHitHelper::GetMeanDirection(const CaloHit *const pCaloHi
 		const CaloHit *const pConnectedCaloHit = pConnector->Get(connectorDirection);
 
 		pandora::CartesianVector differencePosition(pConnectedCaloHit->GetPositionVector() - positionVector);
-		direction += differencePosition;
+		const float normalizationWeight = 1.f / (differencePosition.GetMagnitudeSquared());
+		direction += (differencePosition * normalizationWeight);
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::GetMeanDirection(pConnectedCaloHit, connectorDirection,
 				direction, depth-1));
