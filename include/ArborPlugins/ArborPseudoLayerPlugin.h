@@ -48,9 +48,10 @@ public:
 
 private:
     pandora::StatusCode Initialize();
+public:
     unsigned int GetPseudoLayer(const pandora::CartesianVector &positionVector) const;
     unsigned int GetPseudoLayerAtIp() const;
-
+private:
     /**
      *  @brief  Get the appropriate pseudolayer for a specified parameters
      * 
@@ -128,6 +129,7 @@ private:
 
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
+private:
     LayerPositionList   m_barrelLayerPositions;     ///< List of barrel layer positions
     LayerPositionList   m_endCapLayerPositions;     ///< List of endcap layer positions
     AngleVector         m_eCalBarrelAngleVector;    ///< The ecal barrel angle vector
@@ -145,6 +147,8 @@ private:
 
     float               m_barrelEdgeR;              ///< Extremal barrel r coordinate
     float               m_endCapEdgeZ;              ///< Extremal endcap z coordinate
+
+    bool                m_useCoordinateCorrections; ///< Whether to use coordinate correction in intermediate regions
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

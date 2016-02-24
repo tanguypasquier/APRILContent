@@ -41,7 +41,8 @@ ArborPseudoLayerPlugin::ArborPseudoLayerPlugin() :
     m_rCorrectionMuon(0.f),
     m_zCorrectionMuon(0.f),
     m_barrelEdgeR(0.f),
-    m_endCapEdgeZ(0.f)
+    m_endCapEdgeZ(0.f),
+	m_useCoordinateCorrections(false)
 {
 }
 
@@ -118,11 +119,14 @@ pandora::StatusCode ArborPseudoLayerPlugin::GetPseudoLayer(const float rCoordina
     }
     else
     {
+        const float correctedRCoordinate = m_useCoordinateCorrections ? rCoordinate - rCorrection : rCoordinate;
+        const float correctedZCoordinate = m_useCoordinateCorrections ? zCoordinate - zCorrection : zCoordinate;
+
         unsigned int bestBarrelLayer(0);
-        const pandora::StatusCode barrelStatusCode(this->FindMatchingLayer(rCoordinate - rCorrection, m_barrelLayerPositions, bestBarrelLayer));
+        const pandora::StatusCode barrelStatusCode(this->FindMatchingLayer(correctedRCoordinate, m_barrelLayerPositions, bestBarrelLayer));
 
         unsigned int bestEndCapLayer(0);
-        const pandora::StatusCode endCapStatusCode(this->FindMatchingLayer(zCoordinate - zCorrection, m_endCapLayerPositions, bestEndCapLayer));
+        const pandora::StatusCode endCapStatusCode(this->FindMatchingLayer(correctedZCoordinate, m_endCapLayerPositions, bestEndCapLayer));
 
         if ((pandora::STATUS_CODE_SUCCESS != barrelStatusCode) && (pandora::STATUS_CODE_SUCCESS != endCapStatusCode))
             return pandora::STATUS_CODE_NOT_FOUND;
@@ -267,7 +271,7 @@ void ArborPseudoLayerPlugin::StoreOverlapCorrectionDetails()
     const float barrelOuterZMuon = std::fabs(pGeometryManager->GetSubDetector(pandora::MUON_BARREL).GetOuterZCoordinate());
     const float endCapOuterRMuon = pGeometryManager->GetSubDetector(pandora::MUON_ENDCAP).GetOuterRCoordinate();
 
-    const bool IsEnclosingEndCap(endCapOuterR > m_barrelInnerR);
+    const bool IsEnclosingEndCap(endCapOuterR > m_barrelInnerR); // true for ILD !
     m_rCorrection = ((!IsEnclosingEndCap) ? 0.f : m_barrelInnerR * ((m_endCapInnerZ / barrelOuterZ) - 1.f));
     m_zCorrection = ((IsEnclosingEndCap) ? 0.f : m_endCapInnerZ * ((m_barrelInnerR / endCapOuterR) - 1.f));
     m_rCorrectionMuon = ((!IsEnclosingEndCap) ? 0.f : m_barrelInnerRMuon * ((m_endCapInnerZMuon / barrelOuterZMuon) - 1.f));
@@ -309,8 +313,12 @@ void ArborPseudoLayerPlugin::FillAngleVector(const unsigned int symmetryOrder, c
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode ArborPseudoLayerPlugin::ReadSettings(const pandora::TiXmlHandle /*xmlHandle*/)
+pandora::StatusCode ArborPseudoLayerPlugin::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
+	m_useCoordinateCorrections = false;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"UseCoordinateCorrections", m_useCoordinateCorrections));
+
     return pandora::STATUS_CODE_SUCCESS;
 }
 
