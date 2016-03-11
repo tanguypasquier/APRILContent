@@ -79,6 +79,38 @@ pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Clu
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
+		float &closestDistance)
+{
+	closestDistance = std::numeric_limits<float>::max();
+
+	if(NULL == pCluster1 || NULL == pCluster2)
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	if(0 == pCluster1->GetNCaloHits() || 0 == pCluster2->GetNCaloHits())
+		return pandora::STATUS_CODE_FAILURE;
+
+	pandora::CaloHitList clusterCaloHitList1;
+	pCluster1->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList1);
+
+	for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList1.begin() , endIter = clusterCaloHitList1.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit = *iter;
+		float closestHitDistanceApproach(std::numeric_limits<float>::max());
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster2,
+				pCaloHit->GetPositionVector(), closestHitDistanceApproach));
+
+		if(closestHitDistanceApproach < closestDistance)
+			closestDistance = closestHitDistanceApproach;
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 pandora::StatusCode ClusterHelper::GetNCaloHitSeeds(const pandora::Cluster *const pCluster, unsigned int &nSeeds)
 {
 	if(NULL == pCluster)

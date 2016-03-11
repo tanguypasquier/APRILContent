@@ -60,6 +60,16 @@ public:
 			float &closestDistance);
 
 	/**
+	 *  @brief  Get the closest distance approach between all the hits of the clusters
+	 *
+	 *  @param  pCluster the first cluster
+	 *  @param  pCluster the second cluster
+	 *  @param  closestDistance the closest distance approach between the two clusters, unit mm
+	 */
+	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
+			float &closestDistance);
+
+	/**
 	 *  @brief  Get the number of calo hit seeds in the cluster
 	 *
 	 *  @param  pCluster the cluster to get the number of calo hit seeds
