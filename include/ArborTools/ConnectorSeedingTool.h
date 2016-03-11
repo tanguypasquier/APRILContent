@@ -53,11 +53,6 @@ public:
     };
 
 	/**
-	 *  @brief  Destructor
-	 */
-	~ConnectorSeedingTool();
-
-	/**
 	 *  @brief  Seed connectors from the calo hit list
 	 *
 	 *  @param  algorithm the parent algorithm to access pandora content
@@ -75,11 +70,9 @@ public:
 private:
 	float                       m_maxConnectionAngleFine;
 	float                       m_maxConnectionAngleCoarse;
-	float                       m_maxNormaleDistanceFine;
-	float                       m_maxNormaleDistanceCoarse;
 	float                       m_maxTransverseDistanceFine;
 	float                       m_maxTransverseDistanceCoarse;
-	unsigned int               m_maxPseudoLayerConnection;
+	unsigned int                m_maxPseudoLayerConnection;
 	bool                        m_connectOnlyAvailable;
 };
 
@@ -88,14 +81,6 @@ private:
 inline pandora::AlgorithmTool *ConnectorSeedingTool::Factory::CreateAlgorithmTool() const
 {
 	return new ConnectorSeedingTool();
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline ConnectorSeedingTool::~ConnectorSeedingTool()
-{
-
 }
 
 } 

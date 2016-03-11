@@ -62,20 +62,6 @@ pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algo
 
 			const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
 			const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
-			const pandora::HitType hitTypeI(pCaloHitI->GetHitType());
-			const pandora::CartesianVector &cellNormalVector(pCaloHitI->GetCellNormalVector());
-			const float normaleAngle = positionVectorI.GetOpeningAngle(cellNormalVector);
-
-			const pandora::Granularity &granularity(PandoraContentApi::GetGeometry(algorithm)->GetHitTypeGranularity(hitTypeI));
-
-			const float maxNormaleDistance = granularity <= pandora::FINE ?
-					m_maxNormaleDistanceFine : m_maxNormaleDistanceCoarse;
-
-			const float maxTransverseDistance = granularity <= pandora::FINE ?
-					m_maxTransverseDistanceFine : m_maxTransverseDistanceCoarse;
-
-			const float maxConnectionAngle = granularity <= pandora::FINE ?
-					m_maxConnectionAngleFine : m_maxConnectionAngleCoarse;
 
 			for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
 			{
@@ -97,12 +83,20 @@ pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algo
 						continue;
 
 					const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
-					const float maxDistance = ((maxTransverseDistance - maxNormaleDistance) / M_PI_2 ) * normaleAngle + maxNormaleDistance;
+					const pandora::HitType hitTypeJ(pCaloHitJ->GetHitType());
 					const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
 					const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
+					const float transverseDistance = std::sin( angle ) * difference;
+					const pandora::Granularity &granularity(PandoraContentApi::GetGeometry(algorithm)->GetHitTypeGranularity(hitTypeJ));
 
-					// check distance
-					if(difference > maxDistance)
+					const float maxTransverseDistance = granularity <= pandora::FINE ?
+							m_maxTransverseDistanceFine : m_maxTransverseDistanceCoarse;
+
+					const float maxConnectionAngle = granularity <= pandora::FINE ?
+							m_maxConnectionAngleFine : m_maxConnectionAngleCoarse;
+
+					// check transverse distance
+					if(transverseDistance > maxTransverseDistance)
 						continue;
 
 					// check angle
@@ -114,7 +108,7 @@ pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algo
 						continue;
 
 					// connect !
-					PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION, maxDistance));
+					PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION));
 				}
 			}
 		}
@@ -142,14 +136,6 @@ pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandl
 	m_maxConnectionAngleCoarse = 0.9;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxConnectionAngleCoarse", m_maxConnectionAngleCoarse));
-
-	m_maxNormaleDistanceFine = 20.f;
-	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-			"MaxNormaleDistanceFine", m_maxNormaleDistanceFine));
-
-	m_maxNormaleDistanceCoarse = 65.f;
-	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-			"MaxNormaleDistanceCoarse", m_maxNormaleDistanceCoarse));
 
 	m_maxTransverseDistanceFine = 35.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
