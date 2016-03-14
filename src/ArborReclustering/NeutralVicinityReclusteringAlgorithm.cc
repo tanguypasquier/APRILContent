@@ -121,7 +121,7 @@ pandora::StatusCode NeutralVicinityReclusteringAlgorithm::Run()
 		    	std::cout << "newChi : " << newChi << std::endl;
 
 		    	// if we see an improvement on separation update the best list
-		    	if(newChi > bestChi || newChi*newChi < bestChi*bestChi)
+		    	if(newChi < bestChi && newChi*newChi < bestChi*bestChi)
 		    	{
 		    		bestChi = newChi;
 		    		bestReclusterClusterListName = reclusterClusterListName;
@@ -136,6 +136,10 @@ pandora::StatusCode NeutralVicinityReclusteringAlgorithm::Run()
 	    	if(shouldStopReclustering)
 	    		break;
 	    }
+
+        // Recreate track-cluster associations for chosen recluster candidates
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
 
 	    std::cout << "bestReclusterClusterListName : " << bestReclusterClusterListName << std::endl;
 	    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
@@ -163,6 +167,9 @@ pandora::StatusCode NeutralVicinityReclusteringAlgorithm::ReadSettings(const pan
 
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
 		 "ClusterAssociation", m_associationAlgorithmName));
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
+		 "TrackClusterAssociation", m_trackClusterAssociationAlgName));
 
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
 		 "Monitoring", m_monitoringAlgorithmName));

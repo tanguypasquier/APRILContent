@@ -59,6 +59,7 @@ private:
 	float                  m_maxChi2ToStopReclustering;
 	pandora::StringVector  m_clusteringAlgorithmList;
 	std::string            m_associationAlgorithmName;
+	std::string            m_trackClusterAssociationAlgName;
 	std::string            m_monitoringAlgorithmName;
 };
 
