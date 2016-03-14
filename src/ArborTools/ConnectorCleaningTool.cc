@@ -218,22 +218,22 @@ pandora::StatusCode ConnectorCleaningTool::ReadSettings(const pandora::TiXmlHand
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"BackwardReferenceDirectionDepth", m_backwardReferenceDirectionDepth));
 
-	m_forwardReferenceDirectionDepth = 1;
+	m_forwardReferenceDirectionDepth = 2;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"ForwardReferenceDirectionDepth", m_forwardReferenceDirectionDepth));
 
 	if(m_backwardReferenceDirectionDepth == 0 || m_forwardReferenceDirectionDepth == 0)
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	m_orderParameterAnglePower = 1.f;
+	m_orderParameterAnglePower = 3.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"OrderParameterAnglePower", m_orderParameterAnglePower));
 
-	m_orderParameterDistancePower = 5.f;
+	m_orderParameterDistancePower = 2.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"OrderParameterDistancePower", m_orderParameterDistancePower));
 
-	m_strategy = 0;
+	m_strategy = 2;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"Strategy", m_strategy));
 
