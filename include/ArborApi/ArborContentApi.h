@@ -43,24 +43,6 @@ public:
 	// Connector related Api
 
 	/**
-	 *  @brief  Create a connector
-	 *
-	 *  @param  pConnector the connector address to receive
-	 *  @param  pCaloHitFrom the "from" calo hit
-	 *  @param  pCaloHitTo the "to" calo hit
-	 *  @param  referenceLength the reference length of the connector
-	 */
-	static pandora::StatusCode Create(const arbor_content::Connector *&pConnector, const arbor_content::CaloHit *const pCaloHitFrom, const arbor_content::CaloHit *const pCaloHitTo,
-			float referenceLength = 1.f);
-
-	/**
-	 *  @brief  Delete the connector. Possible only if the connector is available
-	 *
-	 *  @param  pConnector the connector to delete
-	 */
-	static pandora::StatusCode DeleteConnector(const arbor_content::Connector *const pConnector);
-
-	/**
 	 *  @brief  Whether the two calo hits are connected (backward or forward directions)
 	 *
 	 *  @param  pCaloHit1 the first calo hit
@@ -171,26 +153,12 @@ public:
 			arbor_content::ConnectorDirection direction, const arbor_content::Connector *&pConnector, float referenceLength = 1.f);
 
 	/**
-	 *  @brief  Connect the two calo hits (from and to of the connector) from a user created connector
-	 *
-	 *  @param  pConnector the connector to add to the two calo hits "from" and "to"
-	 */
-	static pandora::StatusCode Connect(const arbor_content::Connector *const pConnector);
-
-	/**
 	 *  @brief  Remove and delete the connection between the two calo hits.
 	 *
 	 *  @param  pCaloHit1 the first calo hit to disconnect
 	 *  @param  pCaloHit2 the second calo hit to disconnect
 	 */
 	static pandora::StatusCode RemoveConnectionBetween(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2);
-
-	/**
-	 *  @brief  Remove the connection. Destructor not called, the connector responsibility is forwarded to the caller
-	 *
-	 *  @param  pConnector the connector to remove
-	 */
-	static pandora::StatusCode RemoveConnector(const arbor_content::Connector *const pConnector);
 
 	/**
 	 *  @brief  Remove the connection between the two calo hits and delete the connector
@@ -235,28 +203,51 @@ public:
 	static pandora::StatusCode ResetTags(const arbor_content::CaloHit *const pCaloHit);
 
 	/**
+	 *  @brief  Initialize Arbor re-clustering. Save calo hit meta data and create a new one for each calo hit
 	 *
+	 *  @param  algorithm the parent algorithm that initializes the re-clustering
+	 *  @param  inputTrackList the list of tracks used for re-clustering
+	 *  @param  inputClusterList the list of cluster used for re-clustering
+	 *  @param  originalClustersListName the list of the original cluster to receive
 	 */
 	static pandora::StatusCode InitializeReclustering(const pandora::Algorithm &algorithm, const pandora::TrackList &inputTrackList,
 			const pandora::ClusterList &inputClusterList, std::string &originalClustersListName);
 
 	/**
+	 *  @brief  Run a re-clustering algorithm. Must be called only to run a clustering algorithm in a re-clustering process
 	 *
+	 *  @param  algorithm the parent algorithm running the (re)clustering algorithm
+	 *  @param  clusteringAlgorithmName the name of the clustering algorithm
+	 *  @param  pNewClusterList the list of created clusters to receive
+	 *  @param  newClusterListName the cluster list name to receive
 	 */
 	static pandora::StatusCode RunReclusteringAlgorithm(const pandora::Algorithm &algorithm, const std::string &clusteringAlgorithmName,
 			const pandora::ClusterList *&pNewClusterList, std::string &newClusterListName);
 
 	/**
+	 *  @brief  Function to call just after a re-clustering algorithm and potential association algorithms
 	 *
+	 *  @param  algorithm the parent algorithm that run the re-clustering algorithm
+	 *  @param  clusterListName the name of the cluster list
 	 */
 	static pandora::StatusCode PostRunReclusteringAlgorithm(const pandora::Algorithm &algorithm, const std::string &clusterListName);
 
 	/**
+	 *  @brief  End the re-clustering procedure.
 	 *
+	 *  @param  algorithm the parent algorithm that run the re-clustering
+	 *  @param  selectedClusterListName the name of the selected cluster list
 	 */
 	static pandora::StatusCode EndReclustering(const pandora::Algorithm &algorithm, const std::string &selectedClusterListName);
 
 private:
+	/**
+	 *  @brief  Remove the connection. Destructor not called, the connector responsibility is forwarded to the caller
+	 *
+	 *  @param  pConnector the connector to remove
+	 */
+	static pandora::StatusCode RemoveConnector(const arbor_content::Connector *const pConnector);
+
 	/**
 	 *  @brief  Alter the object (const_cast<T*>) for internal modification through the API
 	 *

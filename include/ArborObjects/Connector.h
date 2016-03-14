@@ -39,7 +39,7 @@ namespace arbor_content
 
 /** 
  *  @brief  Connector class
- */ 
+ */
 class Connector
 {
 public:
@@ -93,11 +93,6 @@ public:
 	 */
 	float GetOpeningAngle(const Connector *const pConnector) const;
 
-	/**
-	 *  @brief  Whether the connector is available to be added in connector lists
-	 */
-	bool IsAvailable() const;
-
 private:
 	/**
 	 *  @brief  Constructor with two calo hits and a reference length
@@ -110,18 +105,13 @@ private:
 	 */
 	~Connector();
 
-	/**
-	 *  @brief  Set the connector availability
-	 */
-	void SetAvailability(bool availability);
-
-	const CaloHit                        *m_pFromCaloHit;
-	const CaloHit                        *m_pToCaloHit;
-	float                                 m_referenceLength;
-	bool                                  m_isAvailable;
+private:
+	const CaloHit                        *m_pFromCaloHit;     ///< The 'from' calo hit of this connector
+	const CaloHit                        *m_pToCaloHit;       ///< The 'to' calo hit of this connector
+	float                                 m_referenceLength;  ///< The reference length on connector creation
 
 	// friendship
-	friend class ConnectorMetaData;
+	friend class CaloHit;
 	friend class ::ArborContentApi;
 };
 

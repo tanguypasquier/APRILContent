@@ -35,9 +35,9 @@ Connector::Connector(const arbor_content::CaloHit *const pFromCaloHit, const arb
 		float referenceLength) :
 		m_pFromCaloHit(pFromCaloHit),
 		m_pToCaloHit(pToCaloHit),
-		m_referenceLength(referenceLength),
-		m_isAvailable(true)
+		m_referenceLength(referenceLength)
 {
+	/* nop */
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -120,20 +120,6 @@ float Connector::GetOpeningAngle(const Connector *const pConnector) const
 	const pandora::CartesianVector otherDirection(pConnector->GetTo()->GetPositionVector() - pConnector->GetTo()->GetPositionVector());
 
 	return direction.GetOpeningAngle(otherDirection);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-bool Connector::IsAvailable() const
-{
-	return m_isAvailable;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-void Connector::SetAvailability(bool availability)
-{
-	m_isAvailable = availability;
 }
 
 } 

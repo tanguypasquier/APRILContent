@@ -33,44 +33,6 @@
 #include "ArborObjects/ArborMetaData.h"
 
 
-pandora::StatusCode ArborContentApi::Create(const arbor_content::Connector *&pConnector, const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2,
-float referenceLength)
-{
-	pConnector = NULL;
-
-	try
-	{
-		pConnector = new arbor_content::Connector(pCaloHit1, pCaloHit2, referenceLength);
-		ArborContentApi::Modifiable(pConnector)->SetAvailability(true);
-	}
-	catch(pandora::StatusCodeException &statusCodeException)
-	{
-		if(NULL != pConnector)
-			delete pConnector;
-
-		pConnector = NULL;
-
-		return statusCodeException.GetStatusCode();
-	}
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode ArborContentApi::DeleteConnector(const arbor_content::Connector *const pConnector)
-{
-	if(NULL == pConnector)
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
-
-	if(!pConnector->IsAvailable())
-		return pandora::STATUS_CODE_NOT_ALLOWED;
-
-	delete ArborContentApi::Modifiable(pConnector);
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 bool ArborContentApi::IsConnected(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2)
@@ -159,26 +121,6 @@ pandora::StatusCode ArborContentApi::Connect(const arbor_content::CaloHit *const
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitFrom->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::FORWARD_DIRECTION));
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitTo->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::BACKWARD_DIRECTION));
 
-	ArborContentApi::Modifiable(pConnector)->SetAvailability(false);
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode ArborContentApi::Connect(const arbor_content::Connector *const pConnector)
-{
-	if(NULL == pConnector)
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
-
-	if(!pConnector->IsAvailable())
-		return pandora::STATUS_CODE_NOT_ALLOWED;
-
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetFrom())->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::FORWARD_DIRECTION));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetTo())->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::BACKWARD_DIRECTION));
-
-	ArborContentApi::Modifiable(pConnector)->SetAvailability(false);
-
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
@@ -202,13 +144,8 @@ pandora::StatusCode ArborContentApi::RemoveConnector(const arbor_content::Connec
 	if(NULL == pConnector)
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	if(pConnector->IsAvailable())
-		return pandora::STATUS_CODE_FAILURE;
-
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetFrom())->m_pCaloHitMetaData->RemoveConnector(pConnector));
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Modifiable(pConnector->GetTo())->m_pCaloHitMetaData->RemoveConnector(pConnector));
-
-	ArborContentApi::Modifiable(pConnector)->SetAvailability(true);
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
@@ -279,9 +216,11 @@ pandora::StatusCode ArborContentApi::ResetTags(const arbor_content::CaloHit *con
 pandora::StatusCode ArborContentApi::InitializeReclustering(const pandora::Algorithm &algorithm, const pandora::TrackList &inputTrackList,
 		const pandora::ClusterList &inputClusterList, std::string &originalClustersListName)
 {
-	// intialize reclustering within pandora
+	// Initialize re-clustering within pandora
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::InitializeReclustering(algorithm, inputTrackList, inputClusterList, originalClustersListName));
 
+	// Current calo hit list here is the one for re-clustering
+	// Get it, save and create new meta data for each
 	const pandora::CaloHitList *pCaloHitList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pCaloHitList));
 
@@ -313,6 +252,8 @@ pandora::StatusCode ArborContentApi::RunReclusteringAlgorithm(const pandora::Alg
 
 pandora::StatusCode ArborContentApi::PostRunReclusteringAlgorithm(const pandora::Algorithm &algorithm, const std::string &clusterListName)
 {
+	// Get the current re-clustering calo hit list
+	// Save meta data for each calo hit
 	const pandora::CaloHitList *pCaloHitList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pCaloHitList));
 
