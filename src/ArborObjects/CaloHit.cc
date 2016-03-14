@@ -109,9 +109,7 @@ pandora::StatusCode CaloHit::EndReclustering(const std::string &selectedClusterL
 
 		for(ConnectorList::iterator coIter = connectorList.begin(), coEndIter = connectorList.end() ;
 				coEndIter != coIter ; ++coIter)
-		{
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::DeleteConnector(*coIter));
-		}
+			delete *coIter;
 
 		delete iter->second;
 	}
