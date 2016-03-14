@@ -38,6 +38,7 @@ namespace arbor_content
 
 pandora::StatusCode ContactClusterMergingAlgorithm::Run()
 {
+	// get current cluster list
 	const pandora::ClusterList *pClusterList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
