@@ -36,8 +36,6 @@
 namespace arbor_content
 {
 
-// TODO run a connection muon tool
-
 pandora::StatusCode ArborClusteringAlgorithm::Run()
 {
 	const pandora::CaloHitList *pCaloHitList = NULL;
@@ -48,7 +46,7 @@ pandora::StatusCode ArborClusteringAlgorithm::Run()
 
 	pandora::CaloHitList ecalCaloHitList, hcalCaloHitList, muonCaloHitList;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SplitCaloHitList(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreateClusters());
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -59,6 +57,9 @@ pandora::StatusCode ArborClusteringAlgorithm::Run()
 pandora::StatusCode ArborClusteringAlgorithm::SplitCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &ecalCaloHitList,
 		pandora::CaloHitList &hcalCaloHitList, pandora::CaloHitList &muonCaloHitList) const
 {
+	if( m_ecalToolList.empty() && m_hcalToolList.empty() && m_muonToolList.empty() )
+		return pandora::STATUS_CODE_SUCCESS;
+
 	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
 			endIter !=iter ; ++iter)
 	{
@@ -80,8 +81,8 @@ pandora::StatusCode ArborClusteringAlgorithm::SplitCaloHitList(const pandora::Ca
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::CaloHitList &ecalCaloHitList, const pandora::CaloHitList &hcalCaloHitList,
-		const pandora::CaloHitList &muonCaloHitList) const
+pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::CaloHitList *const pCaloHitList, const pandora::CaloHitList &ecalCaloHitList,
+		const pandora::CaloHitList &hcalCaloHitList, const pandora::CaloHitList &muonCaloHitList) const
 {
 	if(m_useMultithread)
 	{
@@ -126,9 +127,6 @@ pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::Cal
 
 		if(globalStatusCode != pandora::STATUS_CODE_SUCCESS)
 			return globalStatusCode;
-#else
-		std::cout << "Multithreading is not available. Please recompile ArborContent with OpenMP !" <<std::endl;
-		return pandora::STATUS_CODE_FAILURE;
 #endif
 	}
 	else
@@ -136,16 +134,10 @@ pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::Cal
 		// single core algorithm
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(ecalCaloHitList, m_ecalToolList));
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList));
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_muonToolList));
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(muonCaloHitList, m_muonToolList));
 	}
 
-	pandora::CaloHitList allCaloHitList;
-	allCaloHitList.insert(ecalCaloHitList.begin(), ecalCaloHitList.end());
-	allCaloHitList.insert(hcalCaloHitList.begin(), hcalCaloHitList.end());
-	allCaloHitList.insert(muonCaloHitList.begin(), muonCaloHitList.end());
-
-	// replace the old cross gap alg
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(allCaloHitList, m_additionalToolList));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_additionalToolList));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
@@ -158,7 +150,7 @@ pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::Cal
 			endIter != iter ; ++iter)
 	{
 		ConnectorAlgorithmTool *pTool = *iter;
-		pTool->Process(*this, &caloHitList);
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pTool->Process(*this, &caloHitList));
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -168,6 +160,9 @@ pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::Cal
 
 pandora::StatusCode ArborClusteringAlgorithm::CreateClusters() const
 {
+	if( m_ecalToolList.empty() && m_hcalToolList.empty() && m_muonToolList.empty() && m_additionalToolList.empty() )
+		return pandora::STATUS_CODE_SUCCESS;
+
 	// Find seeds and build clusters from them looking for forward connected hits in the tree structure
 	pandora::CaloHitList seedCaloHitList;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractCurrentSeedCaloHitList(*this, seedCaloHitList, !m_allowSingleHitClusters));
@@ -203,7 +198,7 @@ pandora::StatusCode ArborClusteringAlgorithm::CreateClusters() const
 pandora::StatusCode ArborClusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
 	pandora::AlgorithmToolList algorithmToolList;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
         "ECalConnectionTools", algorithmToolList));
 
     for(pandora::AlgorithmToolList::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
@@ -219,7 +214,7 @@ pandora::StatusCode ArborClusteringAlgorithm::ReadSettings(const pandora::TiXmlH
 
     algorithmToolList.clear();
 
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
         "HCalConnectionTools", algorithmToolList));
 
     for(pandora::AlgorithmToolList::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
@@ -235,7 +230,7 @@ pandora::StatusCode ArborClusteringAlgorithm::ReadSettings(const pandora::TiXmlH
 
     algorithmToolList.clear();
 
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
         "MuonConnectionTools", algorithmToolList));
 
     for(pandora::AlgorithmToolList::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
@@ -278,6 +273,18 @@ pandora::StatusCode ArborClusteringAlgorithm::ReadSettings(const pandora::TiXmlH
 #else
     m_useMultithread = false;
 #endif
+
+    unsigned int nNonEmptyToolList = 0;
+
+    nNonEmptyToolList += m_ecalToolList.empty() ? 0 : 1;
+    nNonEmptyToolList += m_hcalToolList.empty() ? 0 : 1;
+    nNonEmptyToolList += m_muonToolList.empty() ? 0 : 1;
+
+    if(nNonEmptyToolList <= 1 && m_useMultithread)
+    {
+    	std::cout << "Multi-threading disabled" << std::endl;
+    	m_useMultithread = false;
+    }
 
 	return pandora::STATUS_CODE_SUCCESS;
 }

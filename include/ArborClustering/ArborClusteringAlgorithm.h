@@ -57,34 +57,47 @@ private:
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
 	/**
+	 *  @brief  Split the input calo hit list into three lists for ecal, hcal and muon.
 	 *
+	 *  @param  pCaloHitList the input calo hit list to split
+	 *  @param  ecalCaloHitList the ecal calo hit list to receive
+	 *  @param  hcalCaloHitList the hcal calo hit list to receive
+	 *  @param  muonCaloHitList the muon calo hit list to receive
 	 */
 	pandora::StatusCode SplitCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &ecalCaloHitList,
 			pandora::CaloHitList &hcalCaloHitList, pandora::CaloHitList &muonCaloHitList) const;
 
 	/**
+	 *  @brief  Connect calo hits using targeted connection algorithm tools for global, ecal, hcal and muon calo hit list
 	 *
+	 *  @param  pCaloHitList the global calo hit list to process
+	 *  @param  ecalCaloHitList the ecal calo hit list to process
+	 *  @param  hcalCaloHitList the hcal calo hit list to process
+	 *  @param  muonCaloHitList the muon calo hit list to process
 	 */
-	pandora::StatusCode ConnectCaloHits(const pandora::CaloHitList &ecalCaloHitList, const pandora::CaloHitList &hcalCaloHitList,
-			const pandora::CaloHitList &muonCaloHitList) const;
+	pandora::StatusCode ConnectCaloHits(const pandora::CaloHitList *const pCaloHitList, const pandora::CaloHitList &ecalCaloHitList,
+			const pandora::CaloHitList &hcalCaloHitList, const pandora::CaloHitList &muonCaloHitList) const;
 
 	/**
+	 *  @brief  Process calo hit list connection using the algorithm tool list
 	 *
+	 *  @param  caloHitList the input calo hit list to connect
+	 *  @param  toolVector the list of algorithm tool used for connecting calo hits
 	 */
 	pandora::StatusCode ConnectCaloHits(const pandora::CaloHitList &caloHitList, const ConnectorAlgorithmToolVector &toolVector) const;
 
 	/**
-	 *
+	 *  @brief  Create clusters from the previously connected calo hits
 	 */
 	pandora::StatusCode CreateClusters() const;
 
 private:
-	ConnectorAlgorithmToolVector      m_ecalToolList;
-	ConnectorAlgorithmToolVector      m_hcalToolList;
-	ConnectorAlgorithmToolVector      m_muonToolList;
-	ConnectorAlgorithmToolVector      m_additionalToolList;
-	bool                              m_allowSingleHitClusters;
-	bool                              m_useMultithread;
+	ConnectorAlgorithmToolVector      m_ecalToolList;              ///< The ecal algorithm tool list
+	ConnectorAlgorithmToolVector      m_hcalToolList;              ///< The hcal algorithm tool list
+	ConnectorAlgorithmToolVector      m_muonToolList;              ///< The muon algorithm tool list
+	ConnectorAlgorithmToolVector      m_additionalToolList;        ///< The addtional algorithm tool list
+	bool                              m_allowSingleHitClusters;    ///< Whether to allow single calo hit clusters
+	bool                              m_useMultithread;            ///< Whether to use multithreading with ecal-hcal-muon tools
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
