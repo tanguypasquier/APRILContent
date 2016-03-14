@@ -58,11 +58,13 @@
 #include "ArborPlugins/SdhcalQuadraticEnergyFunction.h"
 
 #include "ArborReclustering/NeutralVicinityReclusteringAlgorithm.h"
+#include "ArborReclustering/MissingEnergyReclusteringAlgorithm.h"
 
 #include "ArborTools/ConnectorCleaningTool.h"
 #include "ArborTools/ConnectorSeedingTool.h"
 #include "ArborTools/GapCrossingConnectionTool.h"
 #include "ArborTools/EnergyEstimateTools.h"
+#include "ArborTools/TrackDrivenSeedingTool.h"
 
 #include "ArborTopologicalAssociation/TopologicalAssociationParentAlgorithm.h"
 #include "ArborTopologicalAssociation/PointingClusterAssociationAlgorithm.h"
@@ -99,6 +101,7 @@ public:
 	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
 	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
 	d("NeutralVicinityReclustering",         arbor_content::NeutralVicinityReclusteringAlgorithm::Factory) \
+	d("MissingEnergyReclustering",           arbor_content::MissingEnergyReclusteringAlgorithm::Factory) \
 	d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
 	d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory) \
 	d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \
@@ -128,7 +131,8 @@ public:
 	d("LinearEnergyEstimate",                arbor_content::LinearEnergyEstimate::Factory) \
 	d("ConnectorCleaning",                   arbor_content::ConnectorCleaningTool::Factory) \
 	d("ConnectorSeeding",                    arbor_content::ConnectorSeedingTool::Factory) \
-	d("GapCrossingConnection",               arbor_content::GapCrossingConnectionTool::Factory)
+	d("GapCrossingConnection",               arbor_content::GapCrossingConnectionTool::Factory) \
+	d("TrackDrivenSeeding",                  arbor_content::TrackDrivenSeedingTool::Factory)
 
 
  /**
