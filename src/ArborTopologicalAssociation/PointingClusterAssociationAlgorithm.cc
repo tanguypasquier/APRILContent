@@ -47,6 +47,7 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::Run()
 	if(pClusterList->empty())
 		return pandora::STATUS_CODE_SUCCESS;
 
+	// get candidate clusters for association
 	pandora::ClusterVector clusterVector;
 
 	for(pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterEndIter = pClusterList->end() ;
@@ -60,6 +61,7 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::Run()
 		clusterVector.push_back(pCluster);
 	}
 
+	// sort them by inner layer
 	std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortClustersByInnerLayer);
 
 	for(pandora::ClusterVector::reverse_iterator iter = clusterVector.rbegin(), endIter = clusterVector.rend() ;
@@ -76,11 +78,13 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::Run()
 		if(NULL == pBestParentCluster)
 			continue;
 
+		// if neutral cluster
 		if(pBestParentCluster->GetAssociatedTrackList().empty())
 		{
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pBestParentCluster, pDaughterCluster));
 			(*iter) = NULL;
 		}
+		// charged cluster case
 		else
 		{
 			const pandora::TrackList &trackList(pBestParentCluster->GetAssociatedTrackList());
@@ -143,8 +147,11 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::FindBestParentCluster(c
 
 	const pandora::ClusterFitResult &daughterClusterFitResult(pDaughterCluster->GetFitToAllHitsResult());
 
-	if(!daughterClusterFitResult.IsFitSuccessful())
+	if( ! daughterClusterFitResult.IsFitSuccessful() )
+	{
+		std::cout << "Daughter cluster fit failed !" << std::endl;
 		return pandora::STATUS_CODE_SUCCESS;
+	}
 
 	pandora::CartesianVector daughterClusterCentroid(0.f, 0.f, 0.f);
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pDaughterCluster, daughterClusterCentroid));
@@ -171,8 +178,11 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::FindBestParentCluster(c
 
 		const pandora::ClusterFitResult &parentClusterFitResult(pParentCluster->GetFitToAllHitsResult());
 
-		if(!parentClusterFitResult.IsFitSuccessful())
+		if( ! parentClusterFitResult.IsFitSuccessful() )
+		{
+			std::cout << "Parent cluster fit failed !" << std::endl;
 			continue;
+		}
 
 		pandora::CartesianVector parentClusterCentroid(0.f, 0.f, 0.f);
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pParentCluster, parentClusterCentroid));
@@ -254,6 +264,7 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::PerformInterceptCluster
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode PointingClusterAssociationAlgorithm::ChooseBestParentCluster(const pandora::Cluster *const pBarycentreParentCluster, const pandora::Cluster *const pInterceptParentCluster,
 		const pandora::Cluster *const pDaughterCluster, const pandora::Cluster *&pBestParentCluster) const
