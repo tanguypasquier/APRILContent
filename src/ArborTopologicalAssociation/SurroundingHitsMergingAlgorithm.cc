@@ -153,19 +153,7 @@ pandora::StatusCode SurroundingHitsMergingAlgorithm::GetAvailableCaloHitList(con
 		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
 
 		if(PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pCaloHit))
-		{
-//			if(!ArborContentApi::IsSeed(pCaloHit))
-//			{
-//				std::cout << "NON SEED !" << std::endl;
-//			}
-//
-//			if(!ArborContentApi::IsLeaf(pCaloHit))
-//			{
-//				std::cout << "NON LEAF !" << std::endl;
-//			}
-
 			availableCaloHitList.insert(pCaloHit);
-		}
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
