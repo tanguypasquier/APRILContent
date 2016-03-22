@@ -74,13 +74,23 @@ public:
 
 private:
 	/**
+	 *  @brief  Find the initial calo hits close to track extrapolation
 	 *
+	 *  @param  algorithm the algorithm to access pandora content
+	 *  @param  pTrack the track used for extrapolation
+	 *  @param  pInputCaloHitList the input calo hit list to go all over
+	 *  @param  caloHitVector the calo hits close to track extrapolation to receive
 	 */
-	pandora::StatusCode FindInitialCaloHits(const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
+	pandora::StatusCode FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
 			pandora::CaloHitVector &caloHitVector);
 
 	/**
+	 *  @brief  Find and connect calo hits from the ones found close to the track extrapolation
 	 *
+	 *  @param  algorithm the algorithm to access pandora content
+	 *  @param  pTrack the track used for extrapolation
+	 *  @param  pInputCaloHitList the input calo hit list to go all over
+	 *  @param  caloHitVector the calo hits close to track extrapolation / all connected calo hits to receive
 	 */
 	pandora::StatusCode ConnectCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
 			pandora::CaloHitVector &caloHitVector);
@@ -93,6 +103,8 @@ private:
 	float                           m_maxConnectionPseudoLayer;
 	float                           m_maxTransverseDistanceFine;
 	float                           m_maxTransverseDistanceCoarse;
+	float                           m_maxDistanceToTrackFine;
+	float                           m_maxDistanceToTrackCoarse;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

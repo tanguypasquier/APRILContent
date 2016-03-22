@@ -59,7 +59,7 @@ pandora::StatusCode TrackDrivenSeedingTool::Process(const pandora::Algorithm &al
 			continue;
 
 		pandora::CaloHitVector caloHitVector;
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(pTrack, pCaloHitList, caloHitVector));
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, pCaloHitList, caloHitVector));
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(algorithm, pTrack, pCaloHitList, caloHitVector));
 	}
 
@@ -68,13 +68,16 @@ pandora::StatusCode TrackDrivenSeedingTool::Process(const pandora::Algorithm &al
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
+pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
 		pandora::CaloHitVector &caloHitVector)
 {
 	for(pandora::CaloHitList::const_iterator iter = pInputCaloHitList->begin(), endIter = pInputCaloHitList->end() ;
 			endIter != iter ; ++iter)
 	{
 		const pandora::CaloHit *const pCaloHit = *iter;
+
+		if( ! PandoraContentApi::IsAvailable<pandora::CaloHit>( algorithm, pCaloHit ) )
+			continue;
 
 		if(pCaloHit->GetPseudoLayer() > m_maxInitialPseudoLayer)
 			continue;
@@ -114,14 +117,12 @@ pandora::StatusCode TrackDrivenSeedingTool::ConnectCaloHits(const pandora::Algor
 	const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
 			pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
 
-	const float trackMomentum = pTrack->GetTrackStateAtStart().GetMomentum().GetMagnitude();;
-	bool doPrint = trackMomentum > 4.6 && trackMomentum < 4.8;
-
 	for(size_t i=0 ; i<caloHitVector.size() ; i++)
 	{
 		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHitVector.at(i));
 
 		const unsigned int pseudoLayer = pCaloHit->GetPseudoLayer();
+
 		const pandora::CartesianVector extrapolatedMomentum(helix.GetExtrapolatedMomentum(pCaloHit->GetPositionVector()));
 		pandora::OrderedCaloHitList::const_iterator plIter = orderedCaloHitList.find(pseudoLayer);
 
@@ -150,13 +151,20 @@ pandora::StatusCode TrackDrivenSeedingTool::ConnectCaloHits(const pandora::Algor
 				{
 					const arbor_content::CaloHit *const pTestCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
 
+					if( ! PandoraContentApi::IsAvailable<pandora::CaloHit>( algorithm, pTestCaloHit ) )
+						continue;
+
 					const pandora::Granularity &granularity(algorithm.GetPandora().GetGeometry()->GetHitTypeGranularity(pTestCaloHit->GetHitType()));
 					const float maxTransverseDistance = (granularity >= pandora::COARSE) ? m_maxTransverseDistanceCoarse : m_maxTransverseDistanceFine;
+					const float maxDistanceToTrack = (granularity >= pandora::COARSE) ? m_maxDistanceToTrackCoarse : m_maxDistanceToTrackFine;
 
 					const pandora::CartesianVector caloHitsVector(pTestCaloHit->GetPositionVector() - pCaloHit->GetPositionVector());
 					const float caloHitsAngle = caloHitsVector.GetOpeningAngle(extrapolatedMomentum);
 					const float longitudinalDistance = caloHitsVector.GetMagnitude()*cos(caloHitsAngle);
 					const float transverseDistance = caloHitsVector.GetMagnitude()*sin(caloHitsAngle);
+
+					pandora::CartesianVector distanceToHelix(0.f, 0.f, 0.f);
+					helix.GetDistanceToPoint(pTestCaloHit->GetPositionVector(), distanceToHelix);
 
 					if(longitudinalDistance < 0.f)
 						continue;
@@ -164,14 +172,12 @@ pandora::StatusCode TrackDrivenSeedingTool::ConnectCaloHits(const pandora::Algor
 					if(transverseDistance > maxTransverseDistance)
 						continue;
 
+					if(distanceToHelix.GetZ() > maxDistanceToTrack)
+						continue;
+
 					// check for existing connection
 					if(ArborContentApi::IsConnected(pCaloHit, pTestCaloHit, arbor_content::FORWARD_DIRECTION))
 						continue;
-
-					if(doPrint && pseudoLayer == 30)
-					{
-						std::cout << "Found a hit : " << pTestCaloHit->GetPseudoLayer() << " , distance from hit : " << caloHitsVector.GetMagnitude() << std::endl;
-					}
 
 					PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHit, pTestCaloHit, arbor_content::FORWARD_DIRECTION));
 
@@ -215,6 +221,14 @@ pandora::StatusCode TrackDrivenSeedingTool::ReadSettings(const pandora::TiXmlHan
 	m_maxTransverseDistanceCoarse = 30.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxTransverseDistanceCoarse", m_maxTransverseDistanceCoarse));
+
+	m_maxDistanceToTrackFine = std::numeric_limits<float>::max();
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxDistanceToTrackFine", m_maxDistanceToTrackFine));
+
+	m_maxDistanceToTrackCoarse = std::numeric_limits<float>::max();
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MaxDistanceToTrackCoarse", m_maxDistanceToTrackCoarse));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }

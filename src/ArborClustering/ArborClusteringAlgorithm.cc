@@ -176,6 +176,9 @@ pandora::StatusCode ArborClusteringAlgorithm::CreateClusters() const
 		if(NULL == pCaloHit)
 			continue;
 
+		if( ! PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pCaloHit) )
+			continue;
+
 		pandora::CaloHitList clusterCaloHitList;
 		clusterCaloHitList.insert(pCaloHit);
 
