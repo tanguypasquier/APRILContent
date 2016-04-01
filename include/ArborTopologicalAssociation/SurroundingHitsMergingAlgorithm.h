@@ -40,38 +40,6 @@ namespace arbor_content
  */ 
 class SurroundingHitsMergingAlgorithm : public pandora::Algorithm
 {
-	struct ClusterInfo
-	{
-		ClusterInfo() :
-			m_pCluster(NULL),
-			m_clusterEnergy(0.f),
-			m_distanceToHit(0.f)
-		{
-			/* nop */
-		}
-
-		const pandora::Cluster     *m_pCluster;
-		float                       m_clusterEnergy;
-		float                       m_distanceToHit;
-	};
-
-	typedef std::vector<ClusterInfo> ClusterInfoVector;
-
-	struct MultiClusterInfo
-	{
-		MultiClusterInfo() :
-			m_totalClusterEnergy(0.f)
-		{
-			/* nop */
-		}
-
-		ClusterInfoVector      m_clusterInfoVector;
-		float                 m_totalClusterEnergy;
-	};
-
-
-	typedef std::map<const pandora::CaloHit *, MultiClusterInfo> MultiClusterInfoMap;
-
 public:
 	/**
 	 *  @brief  Factory class for instantiating algorithm
@@ -95,16 +63,67 @@ private:
 	pandora::StatusCode GetAvailableCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &availableCaloHitList) const;
 
 private:
-	float                                    m_maxAssociationDistance;
+	struct ClusterInfo
+	{
+		/**
+		 *  @brief  Constructor
+		 */
+		ClusterInfo();
+
+		const pandora::Cluster     *m_pCluster;
+		float                       m_clusterEnergy;
+		float                       m_distanceToHit;
+	};
+
+	typedef std::vector<ClusterInfo> ClusterInfoVector;
+
+	struct MultiClusterInfo
+	{
+		/**
+		 *  @brief  Constructor
+		 */
+		MultiClusterInfo();
+
+		ClusterInfoVector      m_clusterInfoVector;
+		float                 m_totalClusterEnergy;
+	};
+
+	typedef std::map<const pandora::CaloHit *, MultiClusterInfo> MultiClusterInfoMap;
+
+private:
+	float                                    m_maxCaloHitDistanceFine;
+	float                                    m_maxCaloHitDistanceCoarse;
+	float                                    m_maxCentroidDistanceFine;
+	float                                    m_maxCentroidDistanceCoarse;
 	float                                    m_distanceWeight;
 	float                                    m_energyWeight;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 inline pandora::Algorithm *SurroundingHitsMergingAlgorithm::Factory::CreateAlgorithm() const
 {
     return new SurroundingHitsMergingAlgorithm();
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline SurroundingHitsMergingAlgorithm::ClusterInfo::ClusterInfo() :
+		m_pCluster(NULL),
+		m_clusterEnergy(0.f),
+		m_distanceToHit(0.f)
+{
+	/* nop */
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline SurroundingHitsMergingAlgorithm::MultiClusterInfo::MultiClusterInfo() :
+		m_totalClusterEnergy(0.f)
+{
+	/* nop */
 }
 
 } 
