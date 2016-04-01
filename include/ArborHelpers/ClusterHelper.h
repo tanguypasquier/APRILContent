@@ -60,6 +60,16 @@ public:
 			float &closestDistance);
 
 	/**
+	 *  @brief  Get the distance between the cluster centroid and the given position vector
+	 *
+	 *  @param  pCluster the cluster to evaluate the closest distance approach
+	 *  @param  point the position vector
+	 *  @param  centroidDistance the distance between the point and the cluster centroid, unit mm
+	 */
+	static pandora::StatusCode GetCentroidDistance(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
+			float &centroidDistance);
+
+	/**
 	 *  @brief  Get the closest distance approach between all the hits of the clusters
 	 *
 	 *  @param  pCluster the first cluster
@@ -76,7 +86,9 @@ public:
 	 *  @param  nSeeds the number of seeds to receive
 	 */
 	static pandora::StatusCode GetNCaloHitSeeds(const pandora::Cluster *const pCluster, unsigned int &nSeeds);
-}; 
+};
+
+
 
 } 
 

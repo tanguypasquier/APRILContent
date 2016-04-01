@@ -79,6 +79,27 @@ pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Clu
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+pandora::StatusCode ClusterHelper::GetCentroidDistance(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
+		float &centroidDistance)
+{
+	centroidDistance = std::numeric_limits<float>::max();
+
+	if(NULL == pCluster)
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	if(0 == pCluster->GetNCaloHits())
+		return pandora::STATUS_CODE_FAILURE;
+
+	pandora::CartesianVector clusterCentroid(0.f, 0.f, 0.f);
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, clusterCentroid));
+
+	centroidDistance = (clusterCentroid - point).GetMagnitude();
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
 		float &closestDistance)
 {
