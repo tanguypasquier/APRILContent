@@ -62,7 +62,6 @@
 
 #include "ArborTools/ConnectorCleaningTool.h"
 #include "ArborTools/ConnectorSeedingTool.h"
-#include "ArborTools/GapCrossingConnectionTool.h"
 #include "ArborTools/EnergyEstimateTools.h"
 #include "ArborTools/TrackDrivenSeedingTool.h"
 
@@ -78,7 +77,6 @@
 #include "ArborTrackClusterAssociation/TopologicalTrackClusterAssociationAlgorithm.h"
 
 #include "ArborUtility/AlgorithmConfiguration.h"
-
 #include "ArborUtility/EventPreparationAlgorithm.h"
 #include "ArborUtility/ClusterPreparationAlgorithm.h"
 #include "ArborUtility/TrackPreparationAlgorithm.h"
@@ -91,7 +89,6 @@
  */ 
 class ArborContent 
 {
-
 public:
 
 #define ARBOR_ALGORITHM_LIST(d) \
@@ -131,7 +128,6 @@ public:
 	d("LinearEnergyEstimate",                arbor_content::LinearEnergyEstimate::Factory) \
 	d("ConnectorCleaning",                   arbor_content::ConnectorCleaningTool::Factory) \
 	d("ConnectorSeeding",                    arbor_content::ConnectorSeedingTool::Factory) \
-	d("GapCrossingConnection",               arbor_content::GapCrossingConnectionTool::Factory) \
 	d("TrackDrivenSeeding",                  arbor_content::TrackDrivenSeedingTool::Factory)
 
 
