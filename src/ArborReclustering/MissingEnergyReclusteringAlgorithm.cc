@@ -63,9 +63,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		// negative chi means missing energy in the cluster
 		const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList);
 
-		std::cout << "Original chi = " << chi << std::endl;
-		std::cout << "Track p = " << pTrack->GetTrackStateAtStart().GetMomentum().GetMagnitude() << " GeV" << std::endl;
-
 		// check for chi2 and missing energy in charged cluster
 		if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
 			continue;
@@ -77,9 +74,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
 	    // find nearby clusters to potentially merge-in
 	    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindNearbyClusters(pCluster, pClusterList, reclusterClusterList, reclusterTrackList));
-
-	    std::cout << "N clusters (reclustering) : " << reclusterClusterList.size() << std::endl;
-	    std::cout << "N tracks (reclustering) : " << reclusterTrackList.size() << std::endl;
 
 	    // initialize reclustering
 	    std::string originalClusterListName;
@@ -97,21 +91,16 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RunReclusteringAlgorithm(*this,
 	    			*clusteringAlgIter, pReclusterClusterList, reclusterClusterListName));
 
-	    	std::cout << "reclusterClusterListName : " << reclusterClusterListName << std::endl;
-
 	    	if(pReclusterClusterList->empty())
 	    		continue;
 
-	    	std::cout << "Running association algorithms" << std::endl;
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this,
 	    			m_associationAlgorithmName));
 
-	    	std::cout << "Post reclustering alg" << std::endl;
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::PostRunReclusteringAlgorithm(*this, reclusterClusterListName));
 
 	    	bool shouldStopReclustering = false;
 
-	    	std::cout << "Analyzing recluster list" << std::endl;
 	    	// find the cluster associated with original track and look at the compatibility
 	    	for(pandora::ClusterList::const_iterator reclusterIter = pReclusterClusterList->begin(), reclusterEndIter = pReclusterClusterList->end() ;
 	    			reclusterEndIter != reclusterIter ; ++reclusterIter)
@@ -119,17 +108,13 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 	    		// no cluster associated to the original track
 	    		// -> continue looping over algorithms
 	    		if(!pTrack->HasAssociatedCluster())
-	    		{
-	    			std::cout << "No associated cluster ... Continue" << std::endl;
 	    			break;
-	    		}
 
 	    		const pandora::Cluster *pReclusterCluster = pTrack->GetAssociatedCluster();
 	    		pandora::TrackList dummyTrackList;
 	    		dummyTrackList.insert(pTrack);
 
 		    	const float newChi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pReclusterCluster, dummyTrackList);
-		    	std::cout << "newChi : " << newChi << std::endl;
 
 		    	// if we see an improvement on separation, update the best list
 		    	if(/*newChi > bestChi && */newChi*newChi < bestChi*bestChi)
@@ -152,8 +137,7 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
 
-	    std::cout << "bestReclusterClusterListName : " << bestReclusterClusterListName << std::endl;
-	    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
 
     	// run monitoring algorithm if provided
     	if(!m_monitoringAlgorithmName.empty())

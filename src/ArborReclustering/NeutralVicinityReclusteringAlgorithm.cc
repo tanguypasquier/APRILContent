@@ -60,8 +60,6 @@ pandora::StatusCode NeutralVicinityReclusteringAlgorithm::Run()
 		// negative chi means missing energy in the cluster
 		const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList);
 
-		std::cout << "chi2 : " << chi*chi << std::endl;
-
 		// check for chi2 and
 		if(chi*chi < m_minChi2ToRunReclustering || chi < 0.f)
 			continue;
@@ -86,8 +84,6 @@ pandora::StatusCode NeutralVicinityReclusteringAlgorithm::Run()
 	    	std::string reclusterClusterListName;
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RunReclusteringAlgorithm(*this,
 	    			*clusteringAlgIter, pReclusterClusterList, reclusterClusterListName));
-
-	    	std::cout << "reclusterClusterListName : " << reclusterClusterListName << std::endl;
 
 	    	if(pReclusterClusterList->empty())
 	    		continue;
@@ -118,8 +114,6 @@ pandora::StatusCode NeutralVicinityReclusteringAlgorithm::Run()
 
 		    	const float newChi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pReclusterCluster, newTrackList);
 
-		    	std::cout << "newChi : " << newChi << std::endl;
-
 		    	// if we see an improvement on separation update the best list
 		    	if(newChi < bestChi && newChi*newChi < bestChi*bestChi)
 		    	{
@@ -141,7 +135,6 @@ pandora::StatusCode NeutralVicinityReclusteringAlgorithm::Run()
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
 
-	    std::cout << "bestReclusterClusterListName : " << bestReclusterClusterListName << std::endl;
 	    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
 
 	    (*iter) = NULL;
