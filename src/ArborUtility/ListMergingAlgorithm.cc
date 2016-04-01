@@ -58,7 +58,15 @@ pandora::StatusCode InputObjectListMergingAlgorithm<T>::Run()
 			endIter != iter ; ++iter)
 	{
 		const T *pList = NULL;
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, *iter, pList));
+
+		const pandora::StatusCode statusCode(PandoraContentApi::GetList(*this, *iter, pList));
+
+		if(statusCode == pandora::STATUS_CODE_NOT_FOUND)
+			continue;
+
+		if(statusCode != pandora::STATUS_CODE_SUCCESS)
+			return statusCode;
+
 		list.insert(pList->begin(), pList->end());
 	}
 
@@ -80,7 +88,13 @@ pandora::StatusCode AlgorithmObjectListMergingAlgorithm<T>::Run()
 	for(pandora::StringVector::iterator iter = ListMergingAlgorithm<T>::m_inputListNames.begin(), endIter = ListMergingAlgorithm<T>::m_inputListNames.end() ;
 			endIter != iter ; ++iter)
 	{
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<T>(*this, *iter, temporaryListName));
+		const pandora::StatusCode statusCode(PandoraContentApi::SaveList<T>(*this, *iter, temporaryListName));
+
+		if(statusCode == pandora::STATUS_CODE_NOT_FOUND)
+			continue;
+
+		if(statusCode != pandora::STATUS_CODE_SUCCESS)
+			return statusCode;
 	}
 
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<T>(*this, ListMergingAlgorithm<T>::m_outputListName));
