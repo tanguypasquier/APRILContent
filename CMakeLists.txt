@@ -66,7 +66,7 @@ ENDIF()
 SET( CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -ansi -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
 
 # -------------- packages -------------
-FIND_PACKAGE( PandoraSDK 01.00.00 REQUIRED )
+FIND_PACKAGE( PandoraSDK 02.00.00 REQUIRED )
 
 FOREACH( pkg PandoraSDK )
   IF( ${pkg}_FOUND )
