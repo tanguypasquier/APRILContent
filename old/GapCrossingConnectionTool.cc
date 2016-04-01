@@ -197,7 +197,10 @@ pandora::StatusCode GapCrossingConnectionTool::FindBackwardConnectableHits(const
 		pandora::ClusterFitPointList fitPointList;
 		pandora::ClusterFitResult fitResult;
 
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pCaloHit, FORWARD_DIRECTION, treeFitCaloHitList, m_maxHCalClusterFitLayers, std::numeric_limits<float>::max()));
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=,
+				CaloHitHelper::BuildCaloHitList(pCaloHit, FORWARD_DIRECTION, treeFitCaloHitList,
+						m_maxHCalClusterFitLayers, std::numeric_limits<unsigned int>::max())
+		);
 
 		if(treeFitCaloHitList.size() < m_minHCalClusterSize)
 			continue;
@@ -206,9 +209,9 @@ pandora::StatusCode GapCrossingConnectionTool::FindBackwardConnectableHits(const
 				fitHitEndIter != fitHitIter ; ++fitHitIter)
 			fitPointList.push_back(pandora::ClusterFitPoint(*fitHitIter));
 
-		const pandora::StatusCode statusCode = pandora::ClusterFitHelper::FitPoints(fitPointList, fitResult);
+		const pandora::StatusCode statusCode2 = pandora::ClusterFitHelper::FitPoints(fitPointList, fitResult);
 
-		if(statusCode != pandora::STATUS_CODE_SUCCESS || !fitResult.IsFitSuccessful())
+		if(statusCode2 != pandora::STATUS_CODE_SUCCESS || !fitResult.IsFitSuccessful())
 			continue;
 
 		backwardGapCrossingInfoMap[pCaloHit].m_pCaloHit = pCaloHit;
