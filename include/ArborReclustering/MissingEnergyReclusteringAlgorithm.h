@@ -50,22 +50,23 @@ public:
 		pandora::Algorithm *CreateAlgorithm() const;
 	};
 
+	typedef std::vector<unsigned int> UIntVector;
+
 private:
 	pandora::StatusCode Run();
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
-	/**
-	 *
-	 */
-	pandora::StatusCode FindNearbyClusters(const pandora::Cluster *const pCluster, const pandora::ClusterList *const pInputClusterList,
-			pandora::ClusterList &reclusterClusterList, pandora::TrackList &reclusterTrackList);
-
 private:
+	unsigned int                        m_minTrackAssociations;
+	unsigned int                        m_maxTrackAssociations;
+
 	float                               m_minChi2ToRunReclustering;
 	float                               m_maxChi2ToStopReclustering;
 	float                               m_maxClusterCentroidDistance;
 	float                               m_maxClusterHitsDistance;
+
 	pandora::StringVector	            m_clusteringAlgorithmList;
+
 	std::string                         m_associationAlgorithmName;
 	std::string                         m_trackClusterAssociationAlgName;
 	std::string                         m_monitoringAlgorithmName;

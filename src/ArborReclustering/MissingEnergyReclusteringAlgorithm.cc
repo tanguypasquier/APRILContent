@@ -47,33 +47,66 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		return pandora::STATUS_CODE_SUCCESS;
 
 	pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
+	const unsigned int nClusters(clusterVector.size());
 
-	for(pandora::ClusterVector::iterator iter = clusterVector.begin(), endIter = clusterVector.end() ;
-			endIter != iter ; ++iter)
+	for(unsigned int i=0 ; i<nClusters ; ++i)
 	{
-		const pandora::Cluster *const pCluster = *iter;
-		const pandora::TrackList &trackList(pCluster->GetAssociatedTrackList());
+		const pandora::Cluster *const pCluster = clusterVector[i];
 
-		// need exactly one track
-		if(trackList.size() != 1)
+		if( NULL == pCluster )
 			continue;
 
-		const pandora::Track *pTrack = *trackList.begin();
+		const pandora::TrackList trackList(pCluster->GetAssociatedTrackList());
+		unsigned int nTrackAssociations(trackList.size());
 
-		// negative chi means missing energy in the cluster
+		if((nTrackAssociations < m_minTrackAssociations) || (nTrackAssociations > m_maxTrackAssociations))
+			continue;
+
 		const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList);
 
 		// check for chi2 and missing energy in charged cluster
 		if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
 			continue;
 
+		ARBOR_LOG( "* Bad chi2 and negative chi : = " << chi << std::endl );
+
 		// prepare clusters and tracks for reclustering
 	    pandora::ClusterList reclusterClusterList;
 	    reclusterClusterList.insert(pCluster);
 	    pandora::TrackList reclusterTrackList(trackList);
 
+	    UIntVector originalClusterIndices(1, i);
+
 	    // find nearby clusters to potentially merge-in
-	    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindNearbyClusters(pCluster, pClusterList, reclusterClusterList, reclusterTrackList));
+		pandora::CartesianVector clusterCentroid(0.f, 0.f, 0.f);
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, clusterCentroid));
+
+		for(unsigned int j=0 ; j<nClusters ; ++j)
+		{
+			const pandora::Cluster *const pOtherCluster = clusterVector[j];
+
+			if((NULL == pOtherCluster) || (pCluster == pOtherCluster))
+				continue;
+
+			pandora::CartesianVector otherClusterCentroid(0.f, 0.f, 0.f);
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pOtherCluster, otherClusterCentroid));
+
+			const float centroidDifference = (clusterCentroid - otherClusterCentroid).GetMagnitude();
+
+			float clusterHitsDistance = std::numeric_limits<float>::max();
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster, pOtherCluster, clusterHitsDistance));
+
+			if(clusterHitsDistance < m_maxClusterHitsDistance || centroidDifference < m_maxClusterCentroidDistance)
+			{
+				reclusterClusterList.insert(pOtherCluster);
+				originalClusterIndices.push_back(j);
+
+				const pandora::TrackList associatedTrackList(pOtherCluster->GetAssociatedTrackList());
+
+				if(!associatedTrackList.empty())
+					reclusterTrackList.insert(associatedTrackList.begin(), associatedTrackList.end());
+			}
+		}
 
 	    // initialize reclustering
 	    std::string originalClusterListName;
@@ -99,43 +132,35 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::PostRunReclusteringAlgorithm(*this, reclusterClusterListName));
 
-	    	bool shouldStopReclustering = false;
+	    	ReclusterResult reclusterResult;
+	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ReclusterHelper::ExtractReclusterResults(this->GetPandora(), *pReclusterClusterList, reclusterResult));
 
-	    	// find the cluster associated with original track and look at the compatibility
-	    	for(pandora::ClusterList::const_iterator reclusterIter = pReclusterClusterList->begin(), reclusterEndIter = pReclusterClusterList->end() ;
-	    			reclusterEndIter != reclusterIter ; ++reclusterIter)
+	    	const float newChi(reclusterResult.GetChi());
+	    	const float newChi2(reclusterResult.GetChi2());
+
+	    	if(newChi2 < bestChi*bestChi)
 	    	{
-	    		// no cluster associated to the original track
-	    		// -> continue looping over algorithms
-	    		if(!pTrack->HasAssociatedCluster())
+	    		bestChi = newChi;
+	    		bestReclusterClusterListName = reclusterClusterListName;
+
+	    		if(newChi2 < m_maxChi2ToStopReclustering)
 	    			break;
-
-	    		const pandora::Cluster *pReclusterCluster = pTrack->GetAssociatedCluster();
-	    		pandora::TrackList dummyTrackList;
-	    		dummyTrackList.insert(pTrack);
-
-		    	const float newChi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pReclusterCluster, dummyTrackList);
-
-		    	// if we see an improvement on separation, update the best list
-		    	if(/*newChi > bestChi && */newChi*newChi < bestChi*bestChi)
-		    	{
-		    		bestChi = newChi;
-		    		bestReclusterClusterListName = reclusterClusterListName;
-
-		    		if(newChi*newChi < m_maxChi2ToStopReclustering)
-		    			shouldStopReclustering = true;
-		    	}
-
-		    	break;
 	    	}
-
-	    	if(shouldStopReclustering)
-	    		break;
 	    }
+
+	    ARBOR_LOG( "  final chi after reclustering = " << bestChi << std::endl );
 
         // Recreate track-cluster associations for chosen recluster candidates
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
+
+        // tidy the cluster vector used for reclustering
+        if( originalClusterListName != bestReclusterClusterListName )
+        {
+        	for(UIntVector::const_iterator iter = originalClusterIndices.begin(), endIter = originalClusterIndices.end() ;
+        			endIter != iter ; ++iter)
+        		clusterVector[*iter] = NULL;
+        }
 
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
 
@@ -145,46 +170,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this,
 	    			m_monitoringAlgorithmName));
     	}
-
-	    (*iter) = NULL;
-	}
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------
-
-pandora::StatusCode MissingEnergyReclusteringAlgorithm::FindNearbyClusters(const pandora::Cluster *const pCluster, const pandora::ClusterList *const pInputClusterList,
-		pandora::ClusterList &reclusterClusterList, pandora::TrackList &reclusterTrackList)
-{
-	pandora::CartesianVector clusterCentroid(0.f, 0.f, 0.f);
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, clusterCentroid));
-
-	for(pandora::ClusterList::const_iterator iter = pInputClusterList->begin(), endIter = pInputClusterList->end() ;
-			endIter != iter ; ++iter)
-	{
-		const pandora::Cluster *const pOtherCluster = *iter;
-
-		if(pCluster == pOtherCluster)
-			continue;
-
-		pandora::CartesianVector otherClusterCentroid(0.f, 0.f, 0.f);
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pOtherCluster, otherClusterCentroid));
-
-		const float centroidDifference = (clusterCentroid - otherClusterCentroid).GetMagnitude();
-
-		float clusterHitsDistance = std::numeric_limits<float>::max();
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster, pOtherCluster, clusterHitsDistance));
-
-		if(clusterHitsDistance < m_maxClusterHitsDistance || centroidDifference < m_maxClusterCentroidDistance)
-		{
-			reclusterClusterList.insert(pOtherCluster);
-
-			const pandora::TrackList &associatedTrackList(pOtherCluster->GetAssociatedTrackList());
-
-			if(!associatedTrackList.empty())
-				reclusterTrackList.insert(associatedTrackList.begin(), associatedTrackList.end());
-		}
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -194,6 +179,14 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::FindNearbyClusters(const
 
 pandora::StatusCode MissingEnergyReclusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
+	m_minTrackAssociations = 1;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+		"MinTrackAssociations", m_minTrackAssociations));
+
+	m_maxTrackAssociations = 1;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+		"MaxTrackAssociations", m_maxTrackAssociations));
+
 	m_minChi2ToRunReclustering = 2.5f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MinChi2ToRunReclustering", m_minChi2ToRunReclustering));
