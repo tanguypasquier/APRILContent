@@ -36,6 +36,92 @@ namespace arbor_content
 
 class CaloHit;
 
+/**
+ *  @brief  ReclusterResult class
+ */
+class ReclusterResult
+{
+public:
+	/**
+	 *
+	 */
+	float GetChi() const;
+
+	/**
+	 *
+	 */
+	float GetChi2() const;
+
+	/**
+	 *
+	 */
+	float GetChiPerDof() const;
+
+	/**
+	 *
+	 */
+	float GetChi2PerDof() const;
+
+	/**
+	 *
+	 */
+	float GetNeutralEnergy() const;
+
+	/**
+	 *
+	 */
+	float GetChargedEnergy() const;
+
+	/**
+	 *
+	 */
+	float GetChiWorstAssociation() const;
+
+	/**
+	 *
+	 */
+	void SetChi(float chi);
+
+	/**
+	 *
+	 */
+	void SetChi2(float chi2);
+
+	/**
+	 *
+	 */
+	void SetChiPerDof(float chiPerDof);
+
+	/**
+	 *
+	 */
+	void SetChi2PerDof(float chi2PerDof);
+
+	/**
+	 *
+	 */
+	void SetNeutralEnergy(float neutralEnergy);
+
+	/**
+	 *
+	 */
+	void SetChargedEnergy(float chargedEnergy);
+
+	/**
+	 *
+	 */
+	void SetChiWorstAssociation(float chiWorstAssociation);
+
+private:
+	float                  m_chi;
+	float                  m_chi2;
+	float                  m_chiPerDof;
+	float                  m_chi2PerDof;
+	float                  m_neutralEnergy;
+	float                  m_chargedEnergy;
+	float                  m_chiWorstAssociation;
+};
+
 /** 
  * @brief ReclusterHelper class
  */ 
@@ -71,6 +157,15 @@ public:
     		float energyResolutionFactor = 1.f);
 
     /**
+     *  @brief  Extract the recluster result
+     *
+     *  @param  pandora the pandora instance to access content
+     *  @param  clusterList the newly created clusters after a reclustering step
+     *  @param  reclusterResult the recluster results
+     */
+    static pandora::StatusCode ExtractReclusterResults(const pandora::Pandora &pandora, const pandora::ClusterList &clusterList, ReclusterResult &reclusterResult);
+
+    /**
      *  @brief  Create a separated tree cluster from a seed calo hit contained in an original cluster.
      *          Possible only if the original cluster contains more than one tree (more than one seed calo hit).
      *          Calo hits of the newly created tree cluster are removed from the original one
@@ -92,8 +187,106 @@ public:
      */
     static pandora::StatusCode SplitClusterIntoTreeClusters(const pandora::Algorithm &algorithm, const pandora::Cluster *const pCluster,
     		pandora::ClusterVector &treeClusterVector);
+};
 
-}; 
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline float ReclusterResult::GetChi() const
+{
+	return m_chi;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline float ReclusterResult::GetChi2() const
+{
+	return m_chi2;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline float ReclusterResult::GetChiPerDof() const
+{
+	return m_chiPerDof;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline float ReclusterResult::GetChi2PerDof() const
+{
+	return m_chi2PerDof;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline float ReclusterResult::GetNeutralEnergy() const
+{
+	return m_neutralEnergy;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline float ReclusterResult::GetChargedEnergy() const
+{
+	return m_chargedEnergy;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline float ReclusterResult::GetChiWorstAssociation() const
+{
+	return m_chiWorstAssociation;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline void ReclusterResult::SetChi(float chi)
+{
+	m_chi = chi;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline void ReclusterResult::SetChi2(float chi2)
+{
+	m_chi2 = chi2;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline void ReclusterResult::SetChiPerDof(float chiPerDof)
+{
+	m_chiPerDof = chiPerDof;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline void ReclusterResult::SetChi2PerDof(float chi2PerDof)
+{
+	m_chi2PerDof = chi2PerDof;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline void ReclusterResult::SetNeutralEnergy(float neutralEnergy)
+{
+	m_neutralEnergy = neutralEnergy;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline void ReclusterResult::SetChargedEnergy(float chargedEnergy)
+{
+	m_chargedEnergy = chargedEnergy;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline void ReclusterResult::SetChiWorstAssociation(float chiWorstAssociation)
+{
+	m_chiWorstAssociation = chiWorstAssociation;
+}
 
 } 
 

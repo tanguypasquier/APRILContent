@@ -69,6 +69,57 @@ float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pand
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+pandora::StatusCode ReclusterHelper::ExtractReclusterResults(const pandora::Pandora &pandora, const pandora::ClusterList &clusterList, ReclusterResult &reclusterResult)
+{
+	if(clusterList.empty())
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	unsigned int nDof(0);
+	float chi(0.f), chi2(0.f), neutralEnergy(0.f), chargedEnergy(0.f), chiWorstAssociation(0.f);
+
+	for(pandora::ClusterList::const_iterator iter = clusterList.begin(), endIter = clusterList.end() ; endIter != iter ; ++iter)
+	{
+		const pandora::Cluster *const pCluster = *iter;
+
+		const float clusterEnergy(pCluster->GetCorrectedHadronicEnergy(pandora));
+		const pandora::TrackList &trackList(pCluster->GetAssociatedTrackList());
+		const unsigned int nTracks(trackList.size());
+
+		if(nTracks == 0)
+		{
+			neutralEnergy += clusterEnergy;
+			continue;
+		}
+
+		chargedEnergy += clusterEnergy;
+
+		const float newChi(ReclusterHelper::GetTrackClusterCompatibility(pandora, pCluster, trackList));
+
+		chi += newChi;
+		chi2 += newChi * newChi;
+
+		++nDof;
+
+		if( (newChi * newChi) > chiWorstAssociation*chiWorstAssociation )
+			chiWorstAssociation = newChi;
+	}
+
+	if(0 == nDof)
+		return pandora::STATUS_CODE_FAILURE;
+
+	reclusterResult.SetChi(chi);
+	reclusterResult.SetChi2(chi2);
+	reclusterResult.SetChiPerDof(chi / nDof);
+	reclusterResult.SetChi2PerDof(chi2 / nDof);
+	reclusterResult.SetNeutralEnergy(neutralEnergy);
+	reclusterResult.SetChargedEnergy(chargedEnergy);
+	reclusterResult.SetChiWorstAssociation(chiWorstAssociation);
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 pandora::StatusCode ReclusterHelper::SplitTreeFromCluster(const pandora::Algorithm &algorithm, const arbor_content::CaloHit *const pSeedCaloHit,
 		const pandora::Cluster *const pOriginalCluster, const pandora::Cluster *&pSeparatedTreeCluster, const std::string &originalClusterListName)
 {
