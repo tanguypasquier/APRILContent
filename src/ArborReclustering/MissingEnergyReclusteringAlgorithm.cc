@@ -68,7 +68,7 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
 			continue;
 
-		ARBOR_LOG( "* Bad chi2 and negative chi : = " << chi << std::endl );
+		ARBOR_LOG( "* Cluster address : " << pCluster << " bad chi2 and negative chi : = " << chi << std::endl );
 
 		// prepare clusters and tracks for reclustering
 	    pandora::ClusterList reclusterClusterList;
@@ -107,6 +107,9 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 					reclusterTrackList.insert(associatedTrackList.begin(), associatedTrackList.end());
 			}
 		}
+
+		if(1 == reclusterClusterList.size())
+			continue;
 
 	    // initialize reclustering
 	    std::string originalClusterListName;
