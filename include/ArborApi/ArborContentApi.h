@@ -34,6 +34,10 @@
 
 namespace arbor_content { class CaloHit; class Connector; }
 
+// logging macro
+#define ARBOR_LOG( message ) if( PandoraContentApi::GetSettings(*this)->ShouldDisplayAlgorithmInfo() ) std::cout << message
+
+
 /** 
  *  @brief  ArborContentApi class
  */ 
