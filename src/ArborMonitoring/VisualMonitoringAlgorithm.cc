@@ -326,13 +326,17 @@ void VisualMonitoringAlgorithm::VisualizeClusterList(const std::string &listName
 		            (m_hitColors.find("energy") != std::string::npos) ? ::AUTOENERGY : ::AUTO,
 		            m_showAssociatedTracks);
 
+	    	TEveElement *pConnectorDirectory = new TEveElementList();
+	    	pConnectorDirectory->SetElementNameTitle("ClusterConnectors", "ClusterConnectors");
+	    	pParentElement->AddElement(pConnectorDirectory);
+
 	    	for(pandora::ClusterList::const_iterator iter = clusterList.begin(), endIter = clusterList.end() ;
 	    			endIter != iter ; ++iter)
 	    	{
 	    		pandora::CaloHitList clusterHits;
 	    		(*iter)->GetOrderedCaloHitList().GetCaloHitList(clusterHits);
 
-		    	this->VisualizeConnectors(&clusterHits, listName.empty() ? "CurrentClustersConnectors" : (listName+"Connectors").c_str(), pParentElement,
+		    	this->VisualizeConnectors(&clusterHits, listName.empty() ? "CurrentClustersConnectors" : (listName+"Connectors").c_str(), pConnectorDirectory,
 		    			(m_hitColors.find("particleid") != std::string::npos) ? ::AUTOID :
 						(m_hitColors.find("iterate") != std::string::npos) ? ::AUTOITER :
 						(m_hitColors.find("energy") != std::string::npos) ? ::AUTOENERGY : ::AUTO);
@@ -386,6 +390,10 @@ void VisualMonitoringAlgorithm::VisualizeParticleFlowList(const std::string &lis
 	            (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY :
 	            AUTO)), m_showPfoVertices, m_showPfoHierarchy);
 
+	    	TEveElement *pConnectorDirectory = new TEveElementList();
+	    	pConnectorDirectory->SetElementNameTitle("PfoConnectors", "PfoConnectors");
+	    	pParentElement->AddElement(pConnectorDirectory);
+
 	    	for(pandora::PfoList::const_iterator pfoIter = pPfoList->begin(), pfoEndIter = pPfoList->end() ;
 	    			pfoEndIter != pfoIter ; ++pfoIter)
 	    	{
@@ -399,7 +407,7 @@ void VisualMonitoringAlgorithm::VisualizeParticleFlowList(const std::string &lis
 					pandora::CaloHitList clusterHits;
 					(*iter)->GetOrderedCaloHitList().GetCaloHitList(clusterHits);
 
-					this->VisualizeConnectors(&clusterHits, listName.empty() ? "CurrentPfoConnectors" : (listName+"Connectors").c_str(), pParentElement,
+					this->VisualizeConnectors(&clusterHits, listName.empty() ? "CurrentPfoConnectors" : (listName+"Connectors").c_str(), pConnectorDirectory,
 							(m_hitColors.find("particleid") != std::string::npos) ? ::AUTOID :
 							(m_hitColors.find("iterate") != std::string::npos) ? ::AUTOITER :
 							(m_hitColors.find("energy") != std::string::npos) ? ::AUTOENERGY : ::AUTO);
