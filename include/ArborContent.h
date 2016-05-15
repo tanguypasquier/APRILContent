@@ -73,7 +73,7 @@
 #include "ArborTopologicalAssociation/SurroundingHitsMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/CloudClusterRemovalAlgorithm.h"
 
-#include "ArborTrackClusterAssociation/EnergyDrivenTrackClusterAssociationAlgorithm.h"
+#include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/TopologicalTrackClusterAssociationAlgorithm.h"
 
 #include "ArborUtility/AlgorithmConfiguration.h"
@@ -107,7 +107,7 @@ public:
 	d("SurroundingHitsMerging",              arbor_content::SurroundingHitsMergingAlgorithm::Factory) \
 	d("CloudClusterRemoval",                 arbor_content::CloudClusterRemovalAlgorithm::Factory) \
 	d("TopologicalTrackClusterAssociation",  arbor_content::TopologicalTrackClusterAssociationAlgorithm::Factory) \
-	d("EnergyDrivenTrackClusterAssociation", arbor_content::EnergyDrivenTrackClusterAssociationAlgorithm::Factory) \
+	d("TrackClusterAssociation",             arbor_content::TrackClusterAssociationAlgorithm::Factory) \
 	d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
 	d("ClusterPreparation",                  arbor_content::ClusterPreparationAlgorithm::Factory) \
 	d("TrackPreparation",                    arbor_content::TrackPreparationAlgorithm::Factory) \
