@@ -280,7 +280,6 @@ pandora::StatusCode TrackClusterAssociationAlgorithm::CalculateAssociationConstr
 
 	const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
 	const pandora::CartesianVector trackProjection(pTrack->GetTrackStateAtCalorimeter().GetPosition());
-	const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
 
 	pandora::CartesianVector innerCentroid(0.f, 0.f, 0.f);
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid));
