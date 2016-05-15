@@ -68,8 +68,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
 			continue;
 
-		ARBOR_LOG( "* Cluster address : " << pCluster << " bad chi2 and negative chi : = " << chi << std::endl );
-
 		// prepare clusters and tracks for reclustering
 	    pandora::ClusterList reclusterClusterList;
 	    reclusterClusterList.insert(pCluster);
@@ -88,15 +86,10 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 			if((NULL == pOtherCluster) || (pCluster == pOtherCluster))
 				continue;
 
-			pandora::CartesianVector otherClusterCentroid(0.f, 0.f, 0.f);
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pOtherCluster, otherClusterCentroid));
-
-			const float centroidDifference = (clusterCentroid - otherClusterCentroid).GetMagnitude();
-
 			float clusterHitsDistance = std::numeric_limits<float>::max();
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster, pOtherCluster, clusterHitsDistance));
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pOtherCluster, pCluster, clusterHitsDistance));
 
-			if(clusterHitsDistance < m_maxClusterHitsDistance || centroidDifference < m_maxClusterCentroidDistance)
+			if(clusterHitsDistance < m_maxClusterHitsDistance)
 			{
 				reclusterClusterList.insert(pOtherCluster);
 				originalClusterIndices.push_back(j);
@@ -130,9 +123,7 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 	    	if(pReclusterClusterList->empty())
 	    		continue;
 
-	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this,
-	    			m_associationAlgorithmName));
-
+	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_associationAlgorithmName));
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::PostRunReclusteringAlgorithm(*this, reclusterClusterListName));
 
 	    	ReclusterResult reclusterResult;
@@ -151,12 +142,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 	    	}
 	    }
 
-	    ARBOR_LOG( "  final chi after reclustering = " << bestChi << std::endl );
-
-        // Recreate track-cluster associations for chosen recluster candidates
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
-
         // tidy the cluster vector used for reclustering
         if( originalClusterListName != bestReclusterClusterListName )
         {
@@ -165,6 +150,9 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
         		clusterVector[*iter] = NULL;
         }
 
+        // Recreate track-cluster associations for chosen recluster candidates
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
 
     	// run monitoring algorithm if provided
