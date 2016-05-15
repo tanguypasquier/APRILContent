@@ -206,7 +206,7 @@ pandora::StatusCode ConnectorCleaningTool::CleanCaloHits(const pandora::OrderedC
 
 pandora::StatusCode ConnectorCleaningTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-	m_backwardConnectorWeight = 2.f;
+	m_backwardConnectorWeight = 1.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"BackwardConnectorWeight", m_backwardConnectorWeight));
 
@@ -225,11 +225,11 @@ pandora::StatusCode ConnectorCleaningTool::ReadSettings(const pandora::TiXmlHand
 	if(m_backwardReferenceDirectionDepth == 0 || m_forwardReferenceDirectionDepth == 0)
 		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	m_orderParameterAnglePower = 3.f;
+	m_orderParameterAnglePower = 1.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"OrderParameterAnglePower", m_orderParameterAnglePower));
 
-	m_orderParameterDistancePower = 2.f;
+	m_orderParameterDistancePower = 3.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"OrderParameterDistancePower", m_orderParameterDistancePower));
 

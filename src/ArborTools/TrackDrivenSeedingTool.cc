@@ -206,11 +206,11 @@ pandora::StatusCode TrackDrivenSeedingTool::ReadSettings(const pandora::TiXmlHan
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxInitialTrackDistance", m_maxInitialTrackDistance));
 
-	m_maxInitialTrackAngle = .9f;
+	m_maxInitialTrackAngle = 0.9f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxInitialTrackAngle", m_maxInitialTrackAngle));
 
-	m_maxConnectionPseudoLayer = 4;
+	m_maxConnectionPseudoLayer = 3;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxConnectionPseudoLayer", m_maxConnectionPseudoLayer));
 
