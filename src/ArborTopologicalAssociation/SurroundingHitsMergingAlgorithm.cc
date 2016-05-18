@@ -178,19 +178,19 @@ pandora::StatusCode SurroundingHitsMergingAlgorithm::GetAvailableCaloHitList(con
 
 pandora::StatusCode SurroundingHitsMergingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-	m_maxCaloHitDistanceFine = 10.f;
+	m_maxCaloHitDistanceFine = 100.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxCaloHitDistanceFine", m_maxCaloHitDistanceFine));
 
-	m_maxCaloHitDistanceCoarse = 20.f;
+	m_maxCaloHitDistanceCoarse = 200.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxCaloHitDistanceCoarse", m_maxCaloHitDistanceCoarse));
 
-	m_maxCentroidDistanceFine = 50.f;
+	m_maxCentroidDistanceFine = 150.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxCentroidDistanceFine", m_maxCentroidDistanceFine));
 
-	m_maxCentroidDistanceCoarse = 100.f;
+	m_maxCentroidDistanceCoarse = 300.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxCentroidDistanceCoarse", m_maxCentroidDistanceCoarse));
 

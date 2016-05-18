@@ -34,8 +34,8 @@ namespace arbor_content
 PfoCreationAlgorithm::PfoCreationAlgorithm() :
     m_shouldCreateTrackBasedPfos(true),
     m_shouldCreateNeutralPfos(true),
-    m_minClusterHadronicEnergy(0.25f),
-    m_minClusterElectromagneticEnergy(0.f),
+    m_minClusterHadronicEnergy(0.1f),
+    m_minClusterElectromagneticEnergy(0.1f),
     m_minHitsInCluster(5),
     m_allowSingleLayerClusters(false),
     m_photonPositionAlgorithm(2)

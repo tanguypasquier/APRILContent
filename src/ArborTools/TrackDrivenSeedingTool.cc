@@ -85,11 +85,11 @@ pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::A
 		const pandora::CartesianVector &trackPositionAtCalorimeter(pTrack->GetTrackStateAtCalorimeter().GetPosition());
 		const pandora::CartesianVector &trackMomentumAtCalorimeter(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
 		const pandora::CartesianVector &trackToCaloHitVector(pCaloHit->GetPositionVector() - trackPositionAtCalorimeter);
-		const float separationDistance = trackToCaloHitVector.GetMagnitude();
+//		const float separationDistance = trackToCaloHitVector.GetMagnitude();
 		const float openingAngle = trackMomentumAtCalorimeter.GetOpeningAngle(trackToCaloHitVector);
 
-		if(separationDistance > m_maxInitialTrackDistance)
-			continue;
+//		if(separationDistance > m_maxInitialTrackDistance)
+//			continue;
 
 		if(openingAngle > m_maxInitialTrackAngle)
 			continue;

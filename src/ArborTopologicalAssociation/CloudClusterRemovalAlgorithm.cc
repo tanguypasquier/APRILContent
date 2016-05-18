@@ -172,7 +172,7 @@ pandora::StatusCode CloudClusterRemovalAlgorithm::ReadSettings(const pandora::Ti
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxClusterNHit", m_maxClusterNHit));
 
-	m_minClusterExtension = 10.f;
+	m_minClusterExtension = 0.5f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MinClusterExtension", m_minClusterExtension));
 

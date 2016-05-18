@@ -151,7 +151,7 @@ pandora::StatusCode NeutralVicinityReclusteringAlgorithm::ReadSettings(const pan
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MinChi2ToRunReclustering", m_minChi2ToRunReclustering));
 
-	m_maxChi2ToStopReclustering = 0.8f;
+	m_maxChi2ToStopReclustering = 0.5f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxChi2ToStopReclustering", m_maxChi2ToStopReclustering));
 

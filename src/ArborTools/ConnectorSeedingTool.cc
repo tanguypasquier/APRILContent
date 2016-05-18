@@ -129,7 +129,7 @@ pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandl
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"ConnectOnlyAvailable", m_connectOnlyAvailable));
 
-	m_maxConnectionAngleFine = 0.9;
+	m_maxConnectionAngleFine = 0.6;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxConnectionAngleFine", m_maxConnectionAngleFine));
 
@@ -137,11 +137,11 @@ pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandl
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxConnectionAngleCoarse", m_maxConnectionAngleCoarse));
 
-	m_maxTransverseDistanceFine = 35.f;
+	m_maxTransverseDistanceFine = 20.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxTransverseDistanceFine", m_maxTransverseDistanceFine));
 
-	m_maxTransverseDistanceCoarse = 100.f;
+	m_maxTransverseDistanceCoarse = 65.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxTransverseDistanceCoarse", m_maxTransverseDistanceCoarse));
 

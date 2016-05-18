@@ -229,7 +229,7 @@ bool ClusterFragmentMergingAlgorithm::CanMergeCluster(const pandora::Cluster *co
 
 pandora::StatusCode ClusterFragmentMergingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-	m_minNCaloHits = 10;
+	m_minNCaloHits = 5;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinNCaloHits", m_minNCaloHits));
 
@@ -245,7 +245,7 @@ pandora::StatusCode ClusterFragmentMergingAlgorithm::ReadSettings(const pandora:
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxNPseudoLayers", m_maxNPseudoLayers));
 
-	m_minNHitPerLayer = 1.8f;
+	m_minNHitPerLayer = 0.8f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinNHitPerLayer", m_minNHitPerLayer));
 
@@ -253,7 +253,7 @@ pandora::StatusCode ClusterFragmentMergingAlgorithm::ReadSettings(const pandora:
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxFirstPseudoLayerFit", m_maxFirstPseudoLayerFit));
 
-	m_maxClusterDistance = 65.f;
+	m_maxClusterDistance = 150.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxClusterDistance", m_maxClusterDistance));
 
