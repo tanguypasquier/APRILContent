@@ -68,6 +68,10 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
 			continue;
 
+		const float clusterEnergyI(pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+		ARBOR_LOG( "Cluster energy = " << clusterEnergyI << " GeV" << std::endl );
+	    ARBOR_LOG( "Track p = " << (*trackList.begin())->GetEnergyAtDca() << " GeV , chi = " << chi << std::endl );
+
 		// prepare clusters and tracks for reclustering
 	    pandora::ClusterList reclusterClusterList;
 	    reclusterClusterList.insert(pCluster);
@@ -94,10 +98,16 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 				reclusterClusterList.insert(pOtherCluster);
 				originalClusterIndices.push_back(j);
 
+				const float clusterEnergyJ(pOtherCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+				ARBOR_LOG( "  Other cluster energy = " << clusterEnergyJ << " GeV added for reclustering" << std::endl );
+
 				const pandora::TrackList associatedTrackList(pOtherCluster->GetAssociatedTrackList());
 
 				if(!associatedTrackList.empty())
+				{
+					ARBOR_LOG( "  Added with track p = " << (*associatedTrackList.begin())->GetEnergyAtDca() << " GeV" << std::endl );
 					reclusterTrackList.insert(associatedTrackList.begin(), associatedTrackList.end());
+				}
 			}
 		}
 
@@ -111,6 +121,8 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
 	    float bestChi(chi);
 	    std::string bestReclusterClusterListName(originalClusterListName);
+
+	    ARBOR_LOG( "Original list : " << originalClusterListName << std::endl );
 
 	    for(pandora::StringVector::const_iterator clusteringAlgIter = m_clusteringAlgorithmList.begin(), endClusteringAlgIter = m_clusteringAlgorithmList.end() ;
 	    		endClusteringAlgIter != clusteringAlgIter ; ++clusteringAlgIter)
@@ -150,10 +162,12 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
         		clusterVector[*iter] = NULL;
         }
 
+	    ARBOR_LOG( "Track p = " << (*trackList.begin())->GetEnergyAtDca() << " GeV , best chi = " << bestChi << std::endl );
+	    ARBOR_LOG( "Best list : " << bestReclusterClusterListName << std::endl );
+
         // Recreate track-cluster associations for chosen recluster candidates
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
 
     	// run monitoring algorithm if provided
     	if(!m_monitoringAlgorithmName.empty())
@@ -161,6 +175,8 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this,
 	    			m_monitoringAlgorithmName));
     	}
+
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -182,15 +198,11 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::ReadSettings(const pando
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MinChi2ToRunReclustering", m_minChi2ToRunReclustering));
 
-	m_maxChi2ToStopReclustering = 0.8f;
+	m_maxChi2ToStopReclustering = 0.5f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxChi2ToStopReclustering", m_maxChi2ToStopReclustering));
 
-	m_maxClusterCentroidDistance = 300.f;
-	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "MaxClusterCentroidDistance", m_maxClusterCentroidDistance));
-
-	m_maxClusterHitsDistance = 30.f;
+	m_maxClusterHitsDistance = 20.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxClusterHitsDistance", m_maxClusterHitsDistance));
 
