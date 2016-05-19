@@ -90,6 +90,9 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 			if((NULL == pOtherCluster) || (pCluster == pOtherCluster))
 				continue;
 
+			if( ! pOtherCluster->GetAssociatedTrackList().empty() )
+				continue;
+
 			float clusterHitsDistance = std::numeric_limits<float>::max();
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pOtherCluster, pCluster, clusterHitsDistance));
 
@@ -139,7 +142,8 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::PostRunReclusteringAlgorithm(*this, reclusterClusterListName));
 
 	    	ReclusterResult reclusterResult;
-	    	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ReclusterHelper::ExtractReclusterResults(this->GetPandora(), *pReclusterClusterList, reclusterResult));
+	    	if(pandora::STATUS_CODE_SUCCESS != ReclusterHelper::ExtractReclusterResults(this->GetPandora(), *pReclusterClusterList, reclusterResult))
+	    		continue;
 
 	    	const float newChi(reclusterResult.GetChi());
 	    	const float newChi2(reclusterResult.GetChi2());
