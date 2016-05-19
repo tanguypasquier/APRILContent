@@ -50,6 +50,7 @@
 #include "ArborHelpers/SortingHelper.h"
 
 #include "ArborMonitoring/VisualMonitoringAlgorithm.h"
+#include "ArborMonitoring/PerformanceMonitoringAlgorithm.h"
 
 #include "ArborPfoConstruction/PfoCreationAlgorithm.h"
 
