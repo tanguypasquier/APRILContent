@@ -107,6 +107,9 @@ pandora::StatusCode ClusterFragmentMergingAlgorithm::Run()
 			{
 				const arbor_content::CaloHit *pLeafCaloHit = dynamic_cast<const arbor_content::CaloHit *>(*leafIter);
 
+				if(pLeafCaloHit->GetPseudoLayer() > innerDaughterPseudoLayer)
+					continue;
+
 				const float distanceToDaughterCluster = (pLeafCaloHit->GetPositionVector() - innerDaughterCentroid).GetMagnitude();
 
 				if(distanceToDaughterCluster > m_maxClusterDistance)
