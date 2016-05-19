@@ -72,6 +72,7 @@
 #include "ArborTopologicalAssociation/ContactClusterMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/SurroundingHitsMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/CloudClusterRemovalAlgorithm.h"
+#include "ArborTopologicalAssociation/ChargedClusterMergingAlgorithm.h"
 
 #include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/TopologicalTrackClusterAssociationAlgorithm.h"
@@ -96,6 +97,7 @@ public:
 	d("ArborClustering",                     arbor_content::ArborClusteringAlgorithm::Factory) \
 	d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory) \
 	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
+	d("PerformanceMonitoring",               arbor_content::PerformanceMonitoringAlgorithm::Factory) \
 	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
 	d("NeutralVicinityReclustering",         arbor_content::NeutralVicinityReclusteringAlgorithm::Factory) \
 	d("MissingEnergyReclustering",           arbor_content::MissingEnergyReclusteringAlgorithm::Factory) \
@@ -106,6 +108,7 @@ public:
 	d("ClusterFragmentMerging",              arbor_content::ClusterFragmentMergingAlgorithm::Factory) \
 	d("SurroundingHitsMerging",              arbor_content::SurroundingHitsMergingAlgorithm::Factory) \
 	d("CloudClusterRemoval",                 arbor_content::CloudClusterRemovalAlgorithm::Factory) \
+	d("ChargedClusterMerging",               arbor_content::ChargedClusterMergingAlgorithm::Factory) \
 	d("TopologicalTrackClusterAssociation",  arbor_content::TopologicalTrackClusterAssociationAlgorithm::Factory) \
 	d("TrackClusterAssociation",             arbor_content::TrackClusterAssociationAlgorithm::Factory) \
 	d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
