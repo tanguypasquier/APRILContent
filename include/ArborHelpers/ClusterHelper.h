@@ -86,6 +86,27 @@ public:
 	 *  @param  nSeeds the number of seeds to receive
 	 */
 	static pandora::StatusCode GetNCaloHitSeeds(const pandora::Cluster *const pCluster, unsigned int &nSeeds);
+
+	/**
+	 *  @brief  Whether the cluster is leaving the detector
+	 *
+	 *  @param  pandora the pandora instance to access internal content
+	 *  @param  pCluster the cluster address
+	 *  @param  nOuterLayersToExamine the number of outer layers of the cluster to examine
+	 *  @param  maxDistanceToDetectorEdge the distance to the detector edge for a target calo hit
+	 *  @param  minNHitsNearEdges the minimum number of calo hit near the detector edge to consider the cluster as leaving the detector
+	 */
+	static bool IsClusterLeavingDetector(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, unsigned int nOuterLayersToExamine = 3,
+			float maxDistanceToDetectorEdge = 50.f, unsigned int minNHitsNearEdges = 3);
+
+
+	/**
+	 *  @brief  Whether the cluster contains at least one hit of target type
+	 *
+	 *  @param  pCluster to check
+	 *  @param  hitType the hit type to look for
+	 */
+	static bool ContainsHitType(const pandora::Cluster *const pCluster, const pandora::HitType hitType);
 };
 
 

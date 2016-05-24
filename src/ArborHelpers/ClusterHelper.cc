@@ -29,6 +29,7 @@
 
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/CaloHitHelper.h"
+#include "ArborHelpers/GeometryHelper.h"
 
 namespace arbor_content
 {
@@ -147,6 +148,113 @@ pandora::StatusCode ClusterHelper::GetNCaloHitSeeds(const pandora::Cluster *cons
 	nSeeds = seedsCaloHitList.size();
 
 	return pandora::STATUS_CODE_SUCCESS;
+}
+
+
+bool ClusterHelper::IsClusterLeavingDetector(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, unsigned int nOuterLayersToExamine,
+		float maxDistanceToDetectorEdge, unsigned int minNHitsNearEdges)
+{
+	if(NULL == pCluster)
+		throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+
+	// muons escape detector
+	if( abs(pCluster->GetParticleIdFlag()) == 13 || ClusterHelper::ContainsHitType(pCluster, pandora::MUON))
+		return true;
+
+	if(pandora::HCAL != pCluster->GetOuterLayerHitType())
+		return false;
+
+	const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+	const unsigned int outerPseudoLayer(pCluster->GetOuterPseudoLayer());
+	const unsigned int innerPseudoLayer(pCluster->GetInnerPseudoLayer());
+	const unsigned int nPseudoLayers(outerPseudoLayer-innerPseudoLayer+1);
+	const unsigned int pseudoLayerStart(nPseudoLayers < nOuterLayersToExamine ? innerPseudoLayer : outerPseudoLayer-nOuterLayersToExamine);
+
+	const pandora::GeometryManager *const pGeometry = pandora.GetGeometry();
+
+	const pandora::SubDetector &hcalEndcap(pGeometry->GetSubDetector(pandora::HCAL_ENDCAP));
+	const pandora::SubDetector &hcalBarrel(pGeometry->GetSubDetector(pandora::HCAL_BARREL));
+
+	const float hcalEndcapOuterZCoordinate(hcalEndcap.GetOuterZCoordinate());
+	const float hcalEndcapOuterRCoordinate(hcalEndcap.GetOuterRCoordinate());
+	const float hcalBarrelOuterRCoordinate(hcalBarrel.GetOuterRCoordinate());
+
+	unsigned int nHitsNearbyEdge(0);
+
+	for(unsigned int pl=pseudoLayerStart ; pl<outerPseudoLayer ; ++pl)
+	{
+		pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.find(pl);
+
+		if(orderedCaloHitList.end() == iter)
+			continue;
+
+		for (pandora::CaloHitList::const_iterator hitIter = iter->second->begin(), hitIterEnd = iter->second->end() ;
+				hitIter != hitIterEnd; ++hitIter)
+		{
+			const pandora::CaloHit *const pCaloHit(*hitIter);
+
+			if(pandora::HCAL != pCaloHit->GetHitType())
+				continue;
+
+			if(pandora::ENDCAP == pCaloHit->GetHitRegion())
+			{
+				pandora::CartesianVector outerNormaleVector(0.f, 0.f, 0.f);
+
+				if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetOuterNormaleVector(pandora, pandora::HCAL_ENDCAP, (*hitIter)->GetPositionVector(), outerNormaleVector))
+					continue;
+
+				const float hitCosAngleNormale(outerNormaleVector.GetCosOpeningAngle(pCaloHit->GetPositionVector()));
+				const float hitDistanceToOrigin(pCaloHit->GetPositionVector().GetMagnitude());
+				const float hitDistanceToREdge(hcalEndcapOuterRCoordinate - hitDistanceToOrigin*hitCosAngleNormale);
+				const float hitDistanceToZEdge(hcalEndcapOuterZCoordinate-fabs(pCaloHit->GetPositionVector().GetZ()));
+
+				if(hitDistanceToREdge < maxDistanceToDetectorEdge)
+					++nHitsNearbyEdge;
+				else if(hitDistanceToZEdge < maxDistanceToDetectorEdge)
+					++nHitsNearbyEdge;
+			}
+			else if(pandora::BARREL == pCaloHit->GetHitRegion())
+			{
+				pandora::CartesianVector outerNormaleVector(0.f, 0.f, 0.f);
+
+				if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetOuterNormaleVector(pandora, pandora::HCAL_BARREL, (*hitIter)->GetPositionVector(), outerNormaleVector))
+					continue;
+
+				const float hitCosAngleNormale(outerNormaleVector.GetCosOpeningAngle(pCaloHit->GetPositionVector()));
+				const float hitDistanceToOrigin(pCaloHit->GetPositionVector().GetMagnitude());
+				const float hitDistanceToEdge(hcalBarrelOuterRCoordinate - hitDistanceToOrigin*hitCosAngleNormale);
+
+				if(hitDistanceToEdge < maxDistanceToDetectorEdge)
+					++nHitsNearbyEdge;
+			}
+		}
+	}
+
+	std::cout << "nHitsNearbyEdge = " << nHitsNearbyEdge << std::endl;
+	if(nHitsNearbyEdge >= minNHitsNearEdges)
+		return true;
+
+	return false;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+bool ClusterHelper::ContainsHitType(const pandora::Cluster *const pCluster, const pandora::HitType hitType)
+{
+    const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+
+    for (pandora::OrderedCaloHitList::const_reverse_iterator iter = orderedCaloHitList.rbegin(), iterEnd = orderedCaloHitList.rend(); iter != iterEnd; ++iter)
+    {
+        for (pandora::CaloHitList::const_iterator hIter = iter->second->begin(), hIterEnd = iter->second->end(); hIter != hIterEnd; ++hIter)
+        {
+            const pandora::CaloHit *const pCaloHit(*hIter);
+
+            if (hitType == pCaloHit->GetHitType())
+                return true;
+        }
+    }
+
+    return false;
 }
 
 } 
