@@ -210,15 +210,15 @@ pandora::StatusCode TrackDrivenSeedingTool::ReadSettings(const pandora::TiXmlHan
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxInitialTrackAngle", m_maxInitialTrackAngle));
 
-	m_maxConnectionPseudoLayer = 3;
+	m_maxConnectionPseudoLayer = 4;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxConnectionPseudoLayer", m_maxConnectionPseudoLayer));
 
-	m_maxTransverseDistanceFine = 15.f;
+	m_maxTransverseDistanceFine = 20.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxTransverseDistanceFine", m_maxTransverseDistanceFine));
 
-	m_maxTransverseDistanceCoarse = 30.f;
+	m_maxTransverseDistanceCoarse = 40.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxTransverseDistanceCoarse", m_maxTransverseDistanceCoarse));
 
