@@ -39,6 +39,7 @@
 #include "ArborApi/ObjectFactories.h"
 
 #include "ArborCheating/PerfectParticleFlowAlgorithm.h"
+#include "ArborCheating/PerfectClusteringAlgorithm.h"
 
 #include "ArborClustering/ArborClusteringAlgorithm.h"
 #include "ArborClustering/ClusteringParentAlgorithm.h"
@@ -59,6 +60,7 @@
 #include "ArborPlugins/SdhcalQuadraticEnergyFunction.h"
 
 #include "ArborReclustering/NeutralVicinityReclusteringAlgorithm.h"
+#include "ArborReclustering/ChargedVicinityReclusteringAlgorithm.h"
 #include "ArborReclustering/MissingEnergyReclusteringAlgorithm.h"
 
 #include "ArborTools/ConnectorCleaningTool.h"
@@ -95,12 +97,14 @@ public:
 
 #define ARBOR_ALGORITHM_LIST(d) \
 	d("PerfectParticleFlow",                 arbor_content::PerfectParticleFlowAlgorithm::Factory) \
+	d("PerfectClustering",                   arbor_content::PerfectClusteringAlgorithm::Factory) \
 	d("ArborClustering",                     arbor_content::ArborClusteringAlgorithm::Factory) \
 	d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory) \
 	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
 	d("PerformanceMonitoring",               arbor_content::PerformanceMonitoringAlgorithm::Factory) \
 	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
 	d("NeutralVicinityReclustering",         arbor_content::NeutralVicinityReclusteringAlgorithm::Factory) \
+	d("ChargedVicinityReclustering",         arbor_content::ChargedVicinityReclusteringAlgorithm::Factory) \
 	d("MissingEnergyReclustering",           arbor_content::MissingEnergyReclusteringAlgorithm::Factory) \
 	d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
 	d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory) \
