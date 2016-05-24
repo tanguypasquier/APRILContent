@@ -129,7 +129,7 @@ pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandl
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"ConnectOnlyAvailable", m_connectOnlyAvailable));
 
-	m_maxConnectionAngleFine = 0.6;
+	m_maxConnectionAngleFine = 0.9;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxConnectionAngleFine", m_maxConnectionAngleFine));
 
