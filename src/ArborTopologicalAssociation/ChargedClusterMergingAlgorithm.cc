@@ -71,30 +71,27 @@ pandora::StatusCode ChargedClusterMergingAlgorithm::Run()
 		if((chi*chi < m_minChi2ToRunReclustering) && (chi < 0.f))
 			continue;
 
-		const float clusterEnergyI(pParentCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
 	    float trackEnergySum(0.);
 
 	    for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
 	        trackEnergySum += (*trackIter)->GetEnergyAtDca();
 
 		pandora::ClusterFitResult parentFitResult;
-
-		if(pandora::STATUS_CODE_SUCCESS != pandora::ClusterFitHelper::FitFullCluster(pParentCluster, parentFitResult))
-			continue;
-
-		if(!parentFitResult.IsFitSuccessful())
-			continue;
-
 		pandora::CartesianVector parentCentroid(0.f, 0.f, 0.f);
 
 		if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetCentroid(pParentCluster, parentCentroid))
 			continue;
 
 		const unsigned int parentCentroidPseudoLayer(PandoraContentApi::GetPlugins(*this)->GetPseudoLayerPlugin()->GetPseudoLayer(parentCentroid));
+		const unsigned int maxOccupiedLayers(parentCentroidPseudoLayer-pParentCluster->GetInnerPseudoLayer());
+
+		if(pandora::STATUS_CODE_SUCCESS != pandora::ClusterFitHelper::FitStart(pParentCluster, maxOccupiedLayers, parentFitResult))
+			continue;
+
+		if(!parentFitResult.IsFitSuccessful())
+			continue;
 
 		pandora::ClusterVector daughterClusterVector;
-
-		ARBOR_LOG( "* Charged cluster energy = " << clusterEnergyI << " GeV , p = " << trackEnergySum << " , chi = " << chi << std::endl );
 
 		for(unsigned int j=0 ; j<nClusters ; ++j)
 		{
@@ -115,40 +112,16 @@ pandora::StatusCode ChargedClusterMergingAlgorithm::Run()
 			if( pDaughterCluster->GetInnerPseudoLayer() - parentCentroidPseudoLayer > m_maxPseudoLayerAssociation )
 				continue;
 
-			const pandora::CartesianVector daughterInnerCentroid(pDaughterCluster->GetCentroid(pDaughterCluster->GetInnerPseudoLayer()));
-			const float angle( parentFitResult.GetDirection().GetOpeningAngle( daughterInnerCentroid - parentCentroid ) );
-
-			if( angle > m_maxAngleAssociation )
-				continue;
-
-			pandora::ClusterFitResult daughterFitResult;
-
-			if(pandora::STATUS_CODE_SUCCESS != pandora::ClusterFitHelper::FitFullCluster(pDaughterCluster, daughterFitResult))
-				continue;
-
-			if(!daughterFitResult.IsFitSuccessful())
-				continue;
-
 			pandora::CartesianVector daughterCentroid(0.f, 0.f, 0.f);
 
 			if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetCentroid(pDaughterCluster, daughterCentroid))
 				continue;
 
-			const unsigned int plDifference(pDaughterCluster->GetInnerPseudoLayer() - parentCentroidPseudoLayer);
-			const float clusterEnergyJ(pDaughterCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
-			const float neutralAngle( daughterFitResult.GetDirection().GetOpeningAngle(daughterCentroid) );
+			const float angle( parentFitResult.GetDirection().GetOpeningAngle( daughterCentroid - parentCentroid ) );
 
-			float distance(0.f);
-
-			if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetClosestDistanceToLine(daughterCentroid, daughterFitResult.GetDirection(), parentCentroid, distance))
+			if( angle > m_maxAngleAssociation )
 				continue;
-
-			if(distance > m_maxClusterDca)
-				continue;
-
-			ARBOR_LOG( " ==> Neutral cluster energy = " << clusterEnergyJ << " GeV , PL = " << pDaughterCluster->GetInnerPseudoLayer() << " , PL dif = " << plDifference << std::endl );
-			ARBOR_LOG( " ====> Neutral angle = " << neutralAngle << " , distance to dca = " << distance << std::endl );
-
+				
 			daughterClusterVector.push_back(pDaughterCluster);
 		}
 
@@ -174,8 +147,6 @@ pandora::StatusCode ChargedClusterMergingAlgorithm::Run()
 
 			if(oldChi*oldChi < newChi*newChi )
 				break;
-
-			ARBOR_LOG( "Merging cluster no " << j << " !" << std::endl );
 
 			pandora::ClusterVector::iterator iter = std::find(clusterVector.begin(), clusterVector.end(), pDaughterCluster);
 
