@@ -165,20 +165,22 @@ public:
 	  *  @brief  Get the normale vector at outer detector face in the phi region where the point is contained
 	  *
 	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  type the sub detector type (requires access to outer symetry order)
 	  *  @param  point a point in space that fixes the phi region
 	  *  @param  normaleVector the normale vector at the outer detector face to receive
 	  */
-	 static pandora::StatusCode GetBarrelOuterNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
+	 static pandora::StatusCode GetOuterNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
 			 pandora::CartesianVector &normaleVector);
 
 	 /**
 	  *  @brief  Get the normale vector at inner detector face in the phi region where the point is contained
 	  *
 	  *  @param  pandora the pandora instance to access geometry parameters
+	  *  @param  type the sub detector type (requires access to inner symetry order)
 	  *  @param  point a point in space that fixes the phi region
 	  *  @param  normaleVector the normale vector at the inner detector face to receive
 	  */
-	 static pandora::StatusCode GetBarrelInnerNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
+	 static pandora::StatusCode GetInnerNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
 			 pandora::CartesianVector &normaleVector);
 }; 
 

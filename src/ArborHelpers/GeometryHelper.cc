@@ -281,10 +281,10 @@ pandora::StatusCode GeometryHelper::GetBarrelGapSeparation(const pandora::Pandor
 	pandora::CartesianVector ecalBarrelOuterNormaleVector(0.f, 0.f, 0.f);
 	pandora::CartesianVector hcalBarrelInnerNormaleVector(0.f, 0.f, 0.f);
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetBarrelOuterNormaleVector(
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetOuterNormaleVector(
 			pandora, pandora::ECAL_BARREL, pEcalCaloHit->GetPositionVector(), ecalBarrelOuterNormaleVector));
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetBarrelInnerNormaleVector(
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetInnerNormaleVector(
 			pandora, pandora::HCAL_BARREL, pHcalCaloHit->GetPositionVector(), hcalBarrelInnerNormaleVector));
 
 	// Get the crossing point with ecal and hcal in the gap region
@@ -308,23 +308,26 @@ pandora::StatusCode GeometryHelper::GetBarrelGapSeparation(const pandora::Pandor
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode GeometryHelper::GetBarrelOuterNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
+pandora::StatusCode GeometryHelper::GetOuterNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
 		 pandora::CartesianVector &normaleVector)
 {
-	if(pandora::HCAL_BARREL != type && pandora::ECAL_BARREL != type && pandora::MUON_BARREL != type)
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
+	const unsigned int outerSymmetryOrder = pandora.GetGeometry()->GetSubDetector(type).GetOuterSymmetryOrder();
 
-	const unsigned int barrelOuterSymmetryOrder = pandora.GetGeometry()->GetSubDetector(type).GetOuterSymmetryOrder();
+	if(0 == outerSymmetryOrder)
+	{
+		normaleVector.SetValues(point.GetX(), point.GetY(), 0.f);
+		return pandora::STATUS_CODE_SUCCESS;
+	}
 
 	const float rPoint = std::sqrt(point.GetX()*point.GetX() + point.GetY()*point.GetY());
 	const float phiPoint = point.GetY() > 0 ?
 			std::acos(point.GetX() / rPoint) : std::acos(-point.GetX() / rPoint) + M_PI;
 
-	const float phiShift = (2 * M_PI / static_cast<float>(barrelOuterSymmetryOrder)) / 2.f;
+	const float phiShift = (2 * M_PI / static_cast<float>(outerSymmetryOrder)) / 2.f;
 
-	for(unsigned int i=0 ; i<barrelOuterSymmetryOrder ; i++)
+	for(unsigned int i=0 ; i<outerSymmetryOrder ; i++)
 	{
-		const float phi = 2 * M_PI * (static_cast<float>(i) / static_cast<float>(barrelOuterSymmetryOrder));
+		const float phi = 2 * M_PI * (static_cast<float>(i) / static_cast<float>(outerSymmetryOrder));
 		const float phiMin = phi - phiShift;// + barrelOuterPhiCoordinate;
 		const float phiMax = phi + phiShift;// + barrelOuterPhiCoordinate;
 
@@ -340,23 +343,26 @@ pandora::StatusCode GeometryHelper::GetBarrelOuterNormaleVector(const pandora::P
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode GeometryHelper::GetBarrelInnerNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
+pandora::StatusCode GeometryHelper::GetInnerNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
 		 pandora::CartesianVector &normaleVector)
 {
-	if(pandora::HCAL_BARREL != type && pandora::ECAL_BARREL != type && pandora::MUON_BARREL != type)
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
+	const unsigned int innerSymmetryOrder = pandora.GetGeometry()->GetSubDetector(type).GetInnerSymmetryOrder();
 
-	const unsigned int barrelInnerSymmetryOrder = pandora.GetGeometry()->GetSubDetector(type).GetInnerSymmetryOrder();
+	if(0 == innerSymmetryOrder)
+	{
+		normaleVector.SetValues(point.GetX(), point.GetY(), 0.f);
+		return pandora::STATUS_CODE_SUCCESS;
+	}
 
 	const float rPoint = std::sqrt(point.GetX()*point.GetX() + point.GetY()*point.GetY());
 	const float phiPoint = point.GetY() > 0 ?
 			std::acos(point.GetX() / rPoint) : std::acos(-point.GetX() / rPoint) + M_PI;
 
-	const float phiShift = (2 * M_PI / static_cast<float>(barrelInnerSymmetryOrder)) / 2.f;
+	const float phiShift = (2 * M_PI / static_cast<float>(innerSymmetryOrder)) / 2.f;
 
-	for(unsigned int i=0 ; i<barrelInnerSymmetryOrder ; i++)
+	for(unsigned int i=0 ; i<innerSymmetryOrder ; i++)
 	{
-		const float phi = 2 * M_PI * (static_cast<float>(i) / static_cast<float>(barrelInnerSymmetryOrder));
+		const float phi = 2 * M_PI * (static_cast<float>(i) / static_cast<float>(innerSymmetryOrder));
 		const float phiMin = phi - phiShift;
 		const float phiMax = phi + phiShift;
 
