@@ -68,8 +68,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
 			continue;
 
-		const float clusterEnergyI(pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
-
 		// check for clusters that leave the detector
 		if(ClusterHelper::IsClusterLeavingDetector(this->GetPandora(), pCluster, 3, 50.f, 3))
 			continue;
@@ -97,8 +95,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
 			if( ! pOtherCluster->GetAssociatedTrackList().empty() )
 				continue;
-
-			const float clusterEnergyJ(pOtherCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
 
 			float clusterHitsDistance = std::numeric_limits<float>::max();
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pOtherCluster, pCluster, clusterHitsDistance));
