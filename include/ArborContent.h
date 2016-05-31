@@ -57,7 +57,7 @@
 
 #include "ArborPlugins/ArborBFieldPlugin.h"
 #include "ArborPlugins/ArborPseudoLayerPlugin.h"
-#include "ArborPlugins/SdhcalQuadraticEnergyFunction.h"
+#include "ArborPlugins/EnergyCorrectionPlugins.h"
 
 #include "ArborReclustering/NeutralVicinityReclusteringAlgorithm.h"
 #include "ArborReclustering/ChargedVicinityReclusteringAlgorithm.h"
@@ -204,8 +204,15 @@ inline pandora::StatusCode ArborContent::RegisterEnergyCorrections(const pandora
 {
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
 			"SdhcalQuadraticEnergyFunction", pandora::HADRONIC, new arbor_content::SdhcalQuadraticEnergyFunction()));
+
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
 			"SdhcalQuadraticEnergyFunction", pandora::ELECTROMAGNETIC, new arbor_content::SdhcalQuadraticEnergyFunction()));
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
+			"AnalogicEnergyFunction", pandora::HADRONIC, new arbor_content::AnalogicEnergyFunction()));
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
+			"AnalogicEnergyFunction", pandora::ELECTROMAGNETIC, new arbor_content::AnalogicEnergyFunction()));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
