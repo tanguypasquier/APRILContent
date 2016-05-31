@@ -325,7 +325,7 @@ pandora::StatusCode GeometryHelper::GetOuterNormaleVector(const pandora::Pandora
 
 	const float phiShift = (2 * M_PI / static_cast<float>(outerSymmetryOrder)) / 2.f;
 
-	for(unsigned int i=0 ; i<outerSymmetryOrder ; i++)
+	for(unsigned int i=0 ; i<outerSymmetryOrder+1 ; i++)
 	{
 		const float phi = 2 * M_PI * (static_cast<float>(i) / static_cast<float>(outerSymmetryOrder));
 		const float phiMin = phi - phiShift;// + barrelOuterPhiCoordinate;
