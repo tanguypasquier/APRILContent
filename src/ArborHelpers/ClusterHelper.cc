@@ -230,7 +230,6 @@ bool ClusterHelper::IsClusterLeavingDetector(const pandora::Pandora &pandora, co
 		}
 	}
 
-	std::cout << "nHitsNearbyEdge = " << nHitsNearbyEdge << std::endl;
 	if(nHitsNearbyEdge >= minNHitsNearEdges)
 		return true;
 
