@@ -152,7 +152,7 @@ pandora::StatusCode SurroundingHitsMergingAlgorithm::Run()
 			}
 		}
 
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddIsolatedToCluster(*this, pBestCluster, pCaloHit));
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pBestCluster, pCaloHit));
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
