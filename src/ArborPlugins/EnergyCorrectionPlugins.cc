@@ -110,35 +110,50 @@ pandora::StatusCode SdhcalQuadraticEnergyFunction::MakeEnergyCorrections(const p
 	pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
 
 	float emEnergy = 0.f;
+	float otherEnergy = 0.f;
 
 	for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
 			endIter != iter ; ++iter)
 	{
 		const pandora::CaloHit *const pCaloHit = *iter;
 
-		if(pandora::ECAL != pCaloHit->GetHitType())
+		// Ecal case. Get the calibrated hit energy
+		if(pandora::ECAL == pCaloHit->GetHitType())
 		{
 			emEnergy += pCaloHit->GetElectromagneticEnergy();
 			continue;
 		}
+		// SDHCAL case. Do thresholds counting
+		else if(pandora::HCAL == pCaloHit->GetHitType())
+		{
+			if(m_sdhcalThresholds.at(0) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
+				NHadronicHit1++;
+			else if(m_sdhcalThresholds.at(1) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
+				NHadronicHit2++;
+			else if(m_sdhcalThresholds.at(2) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
+				NHadronicHit3++;
+			else
+			{
+				otherEnergy += pCaloHit->GetInputEnergy();
+				continue;
+			}
 
-		if(m_sdhcalThresholds.at(0) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
-			NHadronicHit1++;
-		else if(m_sdhcalThresholds.at(1) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
-			NHadronicHit2++;
-		else if(m_sdhcalThresholds.at(2) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
-			NHadronicHit3++;
+			NHadronicHit++;
+		}
+		// Other hit types ... should never happen
 		else
-			return pandora::STATUS_CODE_SUCCESS;
-
-		NHadronicHit++;
+		{
+			otherEnergy += pCaloHit->GetInputEnergy();
+		}
 	}
 
-	const float alpha = m_energyConstantParameters.at(0) + m_energyConstantParameters.at(1)*NHadronicHit + m_energyConstantParameters.at(2)*NHadronicHit*NHadronicHit;
-	const float beta  = m_energyConstantParameters.at(3) + m_energyConstantParameters.at(4)*NHadronicHit + m_energyConstantParameters.at(5)*NHadronicHit*NHadronicHit;
-	const float gamma = m_energyConstantParameters.at(6) + m_energyConstantParameters.at(7)*NHadronicHit + m_energyConstantParameters.at(8)*NHadronicHit*NHadronicHit;
+	// estimate of sdhcal energy
+	const float alpha(m_energyConstantParameters.at(0) + m_energyConstantParameters.at(1)*NHadronicHit + m_energyConstantParameters.at(2)*NHadronicHit*NHadronicHit);
+	const float beta(m_energyConstantParameters.at(3) + m_energyConstantParameters.at(4)*NHadronicHit + m_energyConstantParameters.at(5)*NHadronicHit*NHadronicHit);
+	const float gamma(m_energyConstantParameters.at(6) + m_energyConstantParameters.at(7)*NHadronicHit + m_energyConstantParameters.at(8)*NHadronicHit*NHadronicHit);
+	const float hadEnergy(NHadronicHit1*alpha + NHadronicHit2*beta + NHadronicHit3*gamma);
 
-	correctedEnergy = emEnergy + NHadronicHit1*alpha + NHadronicHit2*beta + NHadronicHit3*gamma;
+	correctedEnergy = emEnergy + hadEnergy + otherEnergy;
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
