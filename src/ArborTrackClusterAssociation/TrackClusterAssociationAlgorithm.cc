@@ -352,7 +352,7 @@ pandora::StatusCode TrackClusterAssociationAlgorithm::ReadSettings(const pandora
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxTrackClusterAngle", m_maxTrackClusterAngle));
 
-	m_allowMultiAssociations = false;
+	m_allowMultiAssociations = true;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"AllowMultiAssociations", m_allowMultiAssociations));
 
