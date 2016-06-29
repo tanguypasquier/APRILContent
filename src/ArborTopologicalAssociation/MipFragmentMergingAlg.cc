@@ -100,6 +100,9 @@ pandora::StatusCode MipFragmentMergingAlg::FindMipParentCluster(const pandora::C
 	{
 		const pandora::Cluster *const pCluster(*jIter);
 
+		if(pCluster == pMipCluster)
+			continue;
+
 		if(!this->IsPossibleParent(pCluster))
 			continue;
 
