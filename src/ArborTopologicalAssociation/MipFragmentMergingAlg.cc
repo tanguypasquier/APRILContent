@@ -265,19 +265,19 @@ pandora::StatusCode MipFragmentMergingAlg::ReadSettings(const pandora::TiXmlHand
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "DiscriminatePhotonPid", m_discriminatePhotonPid));
 
-	m_maxMipTransverseRatio = 0.01f;
+	m_maxMipTransverseRatio = 0.05f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxMipTransverseRatio", m_maxMipTransverseRatio));
 
-	m_minDaughterClusterNHits = 5;
+	m_minDaughterClusterNHits = 7;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinDaughterClusterNHits", m_minDaughterClusterNHits));
 
-	m_maxNHitsPerLayer = 1.5f;
+	m_maxNHitsPerLayer = 2.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxNHitsPerLayer", m_maxNHitsPerLayer));
 
-	m_minNHitsPerLayer = 0.8;
+	m_minNHitsPerLayer = 0.7;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinNHitsPerLayer", m_minNHitsPerLayer));
 
@@ -297,7 +297,7 @@ pandora::StatusCode MipFragmentMergingAlg::ReadSettings(const pandora::TiXmlHand
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinInnerPseudoLayer", m_minInnerPseudoLayer));
 
-	m_maxMipBackwardAngle = M_PI/6.f;
+	m_maxMipBackwardAngle = 0.4;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxMipBackwardAngle", m_maxMipBackwardAngle));
 
