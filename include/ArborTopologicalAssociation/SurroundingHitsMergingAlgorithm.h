@@ -54,6 +54,17 @@ private:
 	pandora::StatusCode Run();
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
+private:
+	typedef std::map<const pandora::CaloHit *, const pandora::Cluster *> CaloHitToClusterMap;
+
+	/**
+	 *  @brief  Get the pandora content to perform the algorithm
+	 *
+	 *  @param  caloHitList the calo hit list to receive
+	 *  @param  clusterVector the cluster list to receive
+	 */
+	pandora::StatusCode GetContents(pandora::CaloHitList &caloHitList, pandora::ClusterVector &clusterVector) const;
+
 	/**
 	 *  @brief  Get the list of available calo hits
 	 *
@@ -62,41 +73,26 @@ private:
 	 */
 	pandora::StatusCode GetAvailableCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &availableCaloHitList) const;
 
-private:
-	struct ClusterInfo
-	{
-		/**
-		 *  @brief  Constructor
-		 */
-		ClusterInfo();
+	/**
+	 *  @brief  Find a possible parent cluster for each hit
+	 *
+	 *  @param  caloHitList the input calo hit list
+	 *  @param  clusterVector the input cluster list
+	 *  @param  caloHitToClusterMap the map of calo hit to cluster to merge
+	 */
+	pandora::StatusCode FindCaloHitClusterMerging(const pandora::CaloHitList &caloHitList, const pandora::ClusterVector &clusterVector, CaloHitToClusterMap &caloHitToClusterMap) const;
 
-		const pandora::Cluster     *m_pCluster;
-		float                       m_clusterEnergy;
-		float                       m_distanceToHit;
-	};
-
-	typedef std::vector<ClusterInfo> ClusterInfoVector;
-
-	struct MultiClusterInfo
-	{
-		/**
-		 *  @brief  Constructor
-		 */
-		MultiClusterInfo();
-
-		ClusterInfoVector      m_clusterInfoVector;
-		float                 m_totalClusterEnergy;
-	};
-
-	typedef std::map<const pandora::CaloHit *, MultiClusterInfo> MultiClusterInfoMap;
+	/**
+	 *  @brief  Merge the calo hits in their target cluster
+	 *
+	 *  @param  caloHitToClusterMap the calo hit to cluster map to perform the merging
+	 */
+	pandora::StatusCode MergeCaloHits(const CaloHitToClusterMap &caloHitToClusterMap) const;
 
 private:
-	float                                    m_maxCaloHitDistanceFine;
-	float                                    m_maxCaloHitDistanceCoarse;
-	float                                    m_maxCentroidDistanceFine;
-	float                                    m_maxCentroidDistanceCoarse;
-	float                                    m_distanceWeight;
-	float                                    m_energyWeight;
+	float                                    m_maxCaloHitDistanceFine;       ///< The max distance to merge a hit in a cluster (fine granularity)
+ 	float                                    m_maxCaloHitDistanceCoarse;     ///< The max distance to merge a hit in a cluster (coarse granularity)
+	pandora::StringVector                    m_additionalClusterListNames;   ///< Additional cluster list names to perform the merging
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -105,25 +101,6 @@ private:
 inline pandora::Algorithm *SurroundingHitsMergingAlgorithm::Factory::CreateAlgorithm() const
 {
     return new SurroundingHitsMergingAlgorithm();
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline SurroundingHitsMergingAlgorithm::ClusterInfo::ClusterInfo() :
-		m_pCluster(NULL),
-		m_clusterEnergy(0.f),
-		m_distanceToHit(0.f)
-{
-	/* nop */
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline SurroundingHitsMergingAlgorithm::MultiClusterInfo::MultiClusterInfo() :
-		m_totalClusterEnergy(0.f)
-{
-	/* nop */
 }
 
 } 

@@ -27,133 +27,26 @@
 
 
 #include "ArborTopologicalAssociation/SurroundingHitsMergingAlgorithm.h"
-#include "ArborHelpers/ClusterHelper.h"
 
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborApi/ArborContentApi.h"
-#include "ArborObjects/CaloHit.h"
+#include "ArborHelpers/ClusterHelper.h"
 
 namespace arbor_content
 {
 
+// TODO use open mp
+// => parallel on cluster loop in FindCaloHitClusterMerging()
+
 pandora::StatusCode SurroundingHitsMergingAlgorithm::Run()
 {
-	const pandora::CaloHitList *pCaloHitList = NULL;
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+	pandora::CaloHitList caloHitList; pandora::ClusterVector clusterVector;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetContents(caloHitList, clusterVector));
 
-	std::string currentListName;
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentListName<pandora::CaloHit>(*this, currentListName));
-
-	pandora::CaloHitList availableCaloHitList;
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetAvailableCaloHitList(pCaloHitList, availableCaloHitList));
-
-	const pandora::ClusterList *pClusterList = NULL;
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
-
-	// find cluster candidates for hits merging according to distance first
-	MultiClusterInfoMap multiClusterInfoMap;
-
-	for(pandora::CaloHitList::const_iterator hitIter = availableCaloHitList.begin(), hitEndIter = availableCaloHitList.end() ;
-			hitEndIter != hitIter ; ++hitIter)
-	{
-		const pandora::CaloHit *const pCaloHit = *hitIter;
-		const pandora::Granularity &granularity( PandoraContentApi::GetGeometry(*this)->GetHitTypeGranularity(pCaloHit->GetHitType()) );
-
-		const float maxCaloHitDistance = granularity <= pandora::FINE ? m_maxCaloHitDistanceFine : m_maxCaloHitDistanceCoarse;
-		const float maxCentroidDistance = granularity <= pandora::FINE ? m_maxCentroidDistanceFine : m_maxCentroidDistanceCoarse;
-
-		for(pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterEndIter = pClusterList->end() ;
-				clusterEndIter != clusterIter ; ++clusterIter)
-		{
-			const pandora::Cluster *const pCluster = *clusterIter;
-
-			// Get calo hit closest distance approach
-			float caloHitDistance(std::numeric_limits<float>::max());
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster, pCaloHit->GetPositionVector(), caloHitDistance));
-
-			// get centroid distance
-			float centroidDistance(std::numeric_limits<float>::max());
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroidDistance(pCluster, pCaloHit->GetPositionVector(), centroidDistance));
-
-			if(centroidDistance > maxCentroidDistance && caloHitDistance > maxCaloHitDistance)
-				continue;
-
-			// calculate normalized generic distance
-			float distanceToHit(std::numeric_limits<float>::max());
-
-			if( centroidDistance < maxCentroidDistance )
-				distanceToHit = centroidDistance / maxCentroidDistance;
-
-			if( caloHitDistance < maxCaloHitDistance )
-				distanceToHit = caloHitDistance / maxCaloHitDistance;
-
-			// compute cluster energy
-			float clusterEnergy = 0.f;
-
-			if(PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsEmShower(pCluster))
-			{
-				clusterEnergy = pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora());
-			}
-			else
-			{
-				clusterEnergy = pCluster->GetCorrectedHadronicEnergy(this->GetPandora());
-			}
-
-			MultiClusterInfoMap::iterator mapIter = multiClusterInfoMap.find(pCaloHit);
-
-			if(multiClusterInfoMap.end() == mapIter)
-				mapIter = multiClusterInfoMap.insert(MultiClusterInfoMap::value_type(pCaloHit, MultiClusterInfo())).first;
-
-			ClusterInfo clusterInfo;
-			clusterInfo.m_pCluster = pCluster;
-			clusterInfo.m_clusterEnergy = clusterEnergy;
-			clusterInfo.m_distanceToHit = distanceToHit;
-
-			mapIter->second.m_clusterInfoVector.push_back(clusterInfo);
-			// update total cluster energy
-			mapIter->second.m_totalClusterEnergy += clusterEnergy;
-		}
-	}
-
-	for(MultiClusterInfoMap::const_iterator iter = multiClusterInfoMap.begin(), endIter = multiClusterInfoMap.end() ;
-			endIter != iter ; ++iter)
-	{
-		const pandora::CaloHit *const pCaloHit = iter->first;
-		const pandora::Cluster *pBestCluster = NULL;
-
-		const float totalClusterEnergySquared = iter->second.m_totalClusterEnergy*iter->second.m_totalClusterEnergy;
-		float bestChi2(std::numeric_limits<float>::max());
-
-		if(iter->second.m_clusterInfoVector.empty())
-		{
-			continue;
-		}
-		else if(iter->second.m_clusterInfoVector.size() == 1)
-		{
-			pBestCluster = iter->second.m_clusterInfoVector.begin()->m_pCluster;
-		}
-		else
-		{
-			for(ClusterInfoVector::const_iterator clusterIter = iter->second.m_clusterInfoVector.begin(), clusterEndIter = iter->second.m_clusterInfoVector.end() ;
-					clusterEndIter != clusterIter ; ++clusterIter)
-			{
-				const float clusterEnergySquared = clusterIter->m_clusterEnergy*clusterIter->m_clusterEnergy;
-				const float distanceToHitSquared = clusterIter->m_distanceToHit*clusterIter->m_distanceToHit;
-
-				const float chi2 = m_energyWeight*(totalClusterEnergySquared / clusterEnergySquared)+
-						m_distanceWeight*(distanceToHitSquared);
-
-				if(chi2 < bestChi2)
-				{
-					pBestCluster = clusterIter->m_pCluster;
-					bestChi2 = chi2;
-				}
-			}
-		}
-
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pBestCluster, pCaloHit));
-	}
+	CaloHitToClusterMap caloHitToClusterMap;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindCaloHitClusterMerging(caloHitList, clusterVector, caloHitToClusterMap));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->MergeCaloHits(caloHitToClusterMap));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
@@ -165,10 +58,100 @@ pandora::StatusCode SurroundingHitsMergingAlgorithm::GetAvailableCaloHitList(con
 	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
 			endIter != iter ; ++iter)
 	{
-		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
+		const pandora::CaloHit *const pCaloHit(*iter);
 
-		if(PandoraContentApi::IsAvailable<pandora::CaloHit>(*this, pCaloHit))
+		if(PandoraContentApi::IsAvailable(*this, pCaloHit))
 			availableCaloHitList.insert(pCaloHit);
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode SurroundingHitsMergingAlgorithm::GetContents(pandora::CaloHitList &caloHitList, pandora::ClusterVector &clusterVector) const
+{
+	// get available calo hit list
+	const pandora::CaloHitList *pCaloHitList = NULL;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetAvailableCaloHitList(pCaloHitList, caloHitList));
+
+	// get cluster list
+	const pandora::ClusterList *pClusterList = NULL;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+
+	pandora::ClusterList clusterList(pClusterList->begin(), pClusterList->end());
+
+	for(pandora::StringVector::const_iterator iter = m_additionalClusterListNames.begin(), endIter = m_additionalClusterListNames.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::ClusterList *pAdditionalClusterList = NULL;
+
+		if(pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, *iter, pAdditionalClusterList))
+		{
+			std::cout << "SurroundingHitsMergingAlgorithm: additional cluster list '" << *iter << "' is not available" << std::endl;
+			continue;
+		}
+
+		clusterList.insert(pAdditionalClusterList->begin(), pAdditionalClusterList->end());
+	}
+
+	clusterVector.insert(clusterVector.end(), clusterList.begin(), clusterList.end());
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode SurroundingHitsMergingAlgorithm::FindCaloHitClusterMerging(const pandora::CaloHitList &caloHitList, const pandora::ClusterVector &clusterVector, CaloHitToClusterMap &caloHitToClusterMap) const
+{
+	for(pandora::CaloHitList::const_iterator hitIter = caloHitList.begin(), hitEndIter = caloHitList.end() ;
+			hitEndIter != hitIter ; ++hitIter)
+	{
+		const pandora::CaloHit *const pCaloHit(*hitIter);
+
+		const pandora::Granularity &granularity(PandoraContentApi::GetGeometry(*this)->GetHitTypeGranularity(pCaloHit->GetHitType()));
+		const float maxCaloHitDistance = (granularity <= pandora::FINE) ? m_maxCaloHitDistanceFine : m_maxCaloHitDistanceCoarse;
+
+		float bestDistanceToHit(std::numeric_limits<float>::max());
+		const pandora::Cluster *pBestCluster = NULL;
+
+		for(pandora::ClusterVector::const_iterator clusterIter = clusterVector.begin(), clusterEndIter = clusterVector.end() ;
+				clusterEndIter != clusterIter ; ++clusterIter)
+		{
+			const pandora::Cluster *const pCluster(*clusterIter);
+
+			// Get calo hit closest distance approach
+			float caloHitDistance(std::numeric_limits<float>::max());
+
+			if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetClosestDistanceApproach(pCluster, pCaloHit->GetPositionVector(), caloHitDistance))
+				continue;
+
+			if(caloHitDistance < maxCaloHitDistance && caloHitDistance < bestDistanceToHit)
+			{
+				bestDistanceToHit = caloHitDistance;
+				pBestCluster = pCluster;
+			}
+		}
+
+		if(NULL != pBestCluster)
+			caloHitToClusterMap[pCaloHit] = pBestCluster;
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode SurroundingHitsMergingAlgorithm::MergeCaloHits(const CaloHitToClusterMap &caloHitToClusterMap) const
+{
+	for(CaloHitToClusterMap::const_iterator iter = caloHitToClusterMap.begin(), endIter = caloHitToClusterMap.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit(iter->first);
+		const pandora::Cluster *const pCluster(iter->second);
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pCluster, pCaloHit));
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -186,21 +169,8 @@ pandora::StatusCode SurroundingHitsMergingAlgorithm::ReadSettings(const pandora:
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxCaloHitDistanceCoarse", m_maxCaloHitDistanceCoarse));
 
-	m_maxCentroidDistanceFine = 150.f;
-	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "MaxCentroidDistanceFine", m_maxCentroidDistanceFine));
-
-	m_maxCentroidDistanceCoarse = 300.f;
-	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "MaxCentroidDistanceCoarse", m_maxCentroidDistanceCoarse));
-
-	m_distanceWeight = 1.f;
-	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "DistanceWeight", m_distanceWeight));
-
-	m_energyWeight = 0.f;
-	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "EnergyWeight", m_energyWeight));
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
+			"AdditionalClusterListNames", m_additionalClusterListNames));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
