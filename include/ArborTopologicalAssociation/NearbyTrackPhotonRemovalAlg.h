@@ -63,13 +63,19 @@ private:
 	pandora::StatusCode GetContents(pandora::ClusterVector &clusterVector, pandora::TrackVector &trackVector) const;
 
 	/**
+	 *  @brief  Remove photon hits nearby tracks and get all photon fragments with too less hits
 	 *
+	 *  @param  clusterVector the input photon cluster vector
+	 *  @param  trackVector the input track vector
+	 *  @param  photonFragmentVector the list of photon fragments to receive
 	 */
 	pandora::StatusCode RemoveNearbyPhotonHits(const pandora::ClusterVector &clusterVector, const pandora::TrackVector &trackVector,
 			pandora::ClusterVector &photonFragmentVector) const;
 
 	/**
+	 *  @brief  Delete the provided list of photon fragments
 	 *
+	 *  @param  photonFragmentVector the list of photon fragments to remove
 	 */
 	pandora::StatusCode RemovePhotonFragments(const pandora::ClusterVector &photonFragmentVector) const;
 
