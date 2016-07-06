@@ -54,6 +54,25 @@ private:
 	pandora::StatusCode Run();
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
+	/**
+	 *  @brief  Get the contents for the algorithm
+	 *
+	 *  @param  clusterVector the cluster vector to receive
+	 *  @param  trackVector the track vector to receive
+	 */
+	pandora::StatusCode GetContents(pandora::ClusterVector &clusterVector, pandora::TrackVector &trackVector) const;
+
+	/**
+	 *
+	 */
+	pandora::StatusCode RemoveNearbyPhotonHits(const pandora::ClusterVector &clusterVector, const pandora::TrackVector &trackVector,
+			pandora::ClusterVector &photonFragmentVector) const;
+
+	/**
+	 *
+	 */
+	pandora::StatusCode RemovePhotonFragments(const pandora::ClusterVector &photonFragmentVector) const;
+
 private:
 	std::string                 m_photonClusterListName;
 	float                       m_maxTrackHitDistance;

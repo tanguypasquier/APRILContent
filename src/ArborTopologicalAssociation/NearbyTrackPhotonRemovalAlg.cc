@@ -40,25 +40,69 @@ namespace arbor_content
 
 pandora::StatusCode NearbyTrackPhotonRemovalAlg::Run()
 {
-	// get photon cluster list
+	// get algorithm contents
+	pandora::ClusterVector clusterVector; pandora::TrackVector trackVector;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetContents(clusterVector, trackVector));
+
+	if(clusterVector.empty() || trackVector.empty())
+		return pandora::STATUS_CODE_SUCCESS;
+
+	pandora::ClusterVector photonFragmentVector;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveNearbyPhotonHits(clusterVector, trackVector, photonFragmentVector));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemovePhotonFragments(photonFragmentVector));
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode NearbyTrackPhotonRemovalAlg::GetContents(pandora::ClusterVector &clusterVector, pandora::TrackVector &trackVector) const
+{
+	// Get photon cluster list
 	const pandora::ClusterList *pClusterList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, m_photonClusterListName, pClusterList));
 
-	pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
+	clusterVector.insert(clusterVector.end(), pClusterList->begin(), pClusterList->end());
 
-	// Get the current track list to be used as veto
+	// Get the track list to be used as veto
 	const pandora::TrackList *pTrackList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
 
-	pandora::TrackVector trackVector(pTrackList->begin(), pTrackList->end());
-
-	if(pClusterList->empty() || pTrackList->empty())
-		return pandora::STATUS_CODE_SUCCESS;
-
 	const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
 
-	pandora::ClusterVector clusterRemovalList;
-	unsigned int totalRemovedNHits(0);
+	for(pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackEndIter = pTrackList->end() ;
+			trackEndIter != trackIter ; ++trackIter)
+	{
+		const pandora::Track *const pTrack(*trackIter);
+
+		if(!pTrack->CanFormPfo())
+			continue;
+
+		if(!pTrack->ReachesCalorimeter())
+			continue;
+
+		if(!pTrack->GetDaughterTrackList().empty())
+			continue;
+
+		const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
+								pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
+
+		if(fabs(helix.GetOmega()) > m_maxOmegaTrack)
+			continue;
+
+		trackVector.push_back(pTrack);
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode NearbyTrackPhotonRemovalAlg::RemoveNearbyPhotonHits(const pandora::ClusterVector &clusterVector, const pandora::TrackVector &trackVector,
+		pandora::ClusterVector &photonFragmentVector) const
+{
+	const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
+	unsigned int totalRemovedNHits(0); // just for logging
 
 	for(pandora::ClusterVector::const_iterator clusterIter = clusterVector.begin(), clusterEndIter = clusterVector.end() ; clusterEndIter != clusterIter ; ++clusterIter)
 	{
@@ -73,25 +117,26 @@ pandora::StatusCode NearbyTrackPhotonRemovalAlg::Run()
 				trackEndIter != trackIter ; ++trackIter)
 		{
 			const pandora::Track *const pTrack(*trackIter);
-
-			if(!pTrack->CanFormPfo() || !pTrack->ReachesCalorimeter() || !pTrack->GetDaughterTrackList().empty())
-				continue;
+			const pandora::CartesianVector &trackProjection(pTrack->GetTrackStateAtCalorimeter().GetPosition());
 
 			const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
 									pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
-
-			if(helix.GetOmega() > m_maxOmegaTrack)
-				continue;
 
 			for(pandora::CaloHitList::const_iterator iter = clusterCaloHits.begin(), endIter = clusterCaloHits.end() ;
 					endIter != iter ; ++iter)
 			{
 				const pandora::CaloHit *const pCaloHit(*iter);
 
+				const float trackHitAngle(pCaloHit->GetPositionVector().GetOpeningAngle(trackProjection));
+
+				// cut needed for discriminate track opposite direction
+				if(trackHitAngle > M_PI/2.f)
+					continue;
+
 				pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
 
 				if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, pCaloHit->GetPositionVector(), projectionOnHelix))
-						continue;
+					continue;
 
 				const float distanceToHelix((projectionOnHelix-pCaloHit->GetPositionVector()).GetMagnitude());
 
@@ -114,26 +159,23 @@ pandora::StatusCode NearbyTrackPhotonRemovalAlg::Run()
 
 		if(nRemainingCaloHits < m_minRemainingPhotonNHits || remainingEnergy < m_minRemainingPhotonEnergy)
 		{
-			clusterRemovalList.push_back(pCluster);
+			photonFragmentVector.push_back(pCluster);
 		}
 	}
 
-	ARBOR_LOG( "NearbyTrackPhotonRemovalAlg: Will remove " << clusterRemovalList.size() << " photons" << std::endl);
+	ARBOR_LOG( "NearbyTrackPhotonRemovalAlg: Will remove " << photonFragmentVector.size() << " photons" << std::endl);
 	ARBOR_LOG( "NearbyTrackPhotonRemovalAlg: Removed " << totalRemovedNHits << " hits from photon clusters" << std::endl);
 
-	for(pandora::ClusterVector::const_iterator iter = clusterRemovalList.begin(), endIter = clusterRemovalList.end() ; endIter != iter ; ++iter)
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode NearbyTrackPhotonRemovalAlg::RemovePhotonFragments(const pandora::ClusterVector &photonFragmentVector) const
+{
+	for(pandora::ClusterVector::const_iterator iter = photonFragmentVector.begin(), endIter = photonFragmentVector.end() ; endIter != iter ; ++iter)
 	{
 		const pandora::Cluster *const pCluster(*iter);
-
-		for(pandora::ClusterVector::iterator jter = clusterVector.begin(), endJter = clusterVector.end() ; endJter != jter ; ++jter)
-		{
-			if(*jter == pCluster)
-			{
-				clusterVector.erase(jter);
-				break;
-			}
-		}
-
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(*this, pCluster));
 	}
 
@@ -151,7 +193,7 @@ pandora::StatusCode NearbyTrackPhotonRemovalAlg::ReadSettings(const pandora::TiX
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxTrackHitDistance", m_maxTrackHitDistance));
 
-	m_maxOmegaTrack = 0.f;
+	m_maxOmegaTrack = 0.002;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxOmegaTrack", m_maxOmegaTrack));
 
