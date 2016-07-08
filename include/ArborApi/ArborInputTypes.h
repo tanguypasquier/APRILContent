@@ -84,6 +84,10 @@ class ConnectorAlgorithmTool;
 typedef std::set<const CaloHit *> CaloHitList;
 typedef std::set<const Track *> TrackList;
 typedef std::set<const Connector *> ConnectorList;
+
+typedef std::map<const pandora::Cluster *, const pandora::Cluster *> ClusterToClusterMap;
+typedef std::map<const pandora::CaloHit *, const pandora::Cluster *> CaloHitToClusterMap;
+
 typedef std::vector<ConnectorAlgorithmTool *> ConnectorAlgorithmToolVector;
 typedef std::vector<SemiDigitalThreshold> SemiDigitalThresholdList;
 typedef std::bitset<NUMBER_OF_HIT_TAGS> HitTagMap;
