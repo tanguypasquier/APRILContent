@@ -88,10 +88,13 @@ pandora::StatusCode TrackClusterAssociationAlgorithm::ExtractAssociationLists(pa
 	{
 		const pandora::Track *const pTrack = *trackIter;
 
-		if( ! PandoraContentApi::IsAvailable(*this, pTrack) )
+		if(!PandoraContentApi::IsAvailable(*this, pTrack))
 			continue;
 
-		if( ! pTrack->ReachesCalorimeter() || ! pTrack->CanFormPfo())
+		if(!pTrack->ReachesCalorimeter())
+			continue;
+
+		if(!pTrack->CanFormPfo())
 			continue;
 
 		trackList.insert(pTrack);
@@ -215,6 +218,9 @@ pandora::StatusCode TrackClusterAssociationAlgorithm::ComputeInnerCentroid(const
 
 	unsigned int nDof(0);
 
+//	std::cout << "Track p = " << pTrack->GetEnergyAtDca() << " GeV" <<  std::endl;
+//	std::cout << " ==> Cluster E = " << pCluster->GetHadronicEnergy() << " GeV" <<  std::endl;
+
 	for(pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.begin(), endIter = orderedCaloHitList.end() ; endIter != iter ; ++iter)
 	{
 		if( ( iter->first - innerPseudoLayer ) > m_nFirstClusterPseudoLayer )
@@ -234,6 +240,7 @@ pandora::StatusCode TrackClusterAssociationAlgorithm::ComputeInnerCentroid(const
 		}
 	}
 
+//	std::cout << " ==> nDof = " << nDof <<  std::endl;
 
 	if(0 == nDof)
 		return pandora::STATUS_CODE_FAILURE;
@@ -261,6 +268,11 @@ bool TrackClusterAssociationAlgorithm::PassesInitialCuts(const pandora::Cluster 
 	// get b field and track helix
 	const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
 	const pandora::Helix helix(trackProjection, trackMomentum, pTrack->GetCharge(), bField);
+
+//	pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
+//
+//	if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, innerCentroid, projectionOnHelix))
+//		return false;
 
 	pandora::CartesianVector distanceToHelix(0.f, 0.f, 0.f);
 	helix.GetDistanceToPoint(innerCentroid, distanceToHelix);
