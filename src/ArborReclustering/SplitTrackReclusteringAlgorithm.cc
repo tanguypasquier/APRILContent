@@ -31,6 +31,7 @@
 #include "Pandora/AlgorithmHeaders.h"
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/CaloHitHelper.h"
+#include "ArborHelpers/GeometryHelper.h"
 #include "ArborApi/ArborContentApi.h"
 
 namespace arbor_content
@@ -130,10 +131,8 @@ pandora::StatusCode SplitTrackReclusteringAlgorithm::Run()
 
                     const pandora::Helix &helix(helixIter->second);
 
-                    pandora::CartesianVector helixSeparation(0.f, 0.f, 0.f);
-                    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, helix.GetDistanceToPoint(hitPosition, helixSeparation));
-
-                    const float distanceToTrack(helixSeparation.GetMagnitude());
+                    float distanceToTrack(std::numeric_limits<float>::max());
+                    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetDistanceToHelix(helix, hitPosition, distanceToTrack));
 
                     if (distanceToTrack < minDistanceToTrack)
                     {
@@ -142,6 +141,7 @@ pandora::StatusCode SplitTrackReclusteringAlgorithm::Run()
                     }
                 }
 
+                // should never happen
                 if (NULL == pBestCluster)
                     return pandora::STATUS_CODE_FAILURE;
 
