@@ -176,12 +176,30 @@ public:
 	  *  @brief  Get the normale vector at inner detector face in the phi region where the point is contained
 	  *
 	  *  @param  pandora the pandora instance to access geometry parameters
-	  *  @param  type the sub detector type (requires access to inner symetry order)
+	  *  @param  type the sub detector type (requires access to inner symmetry order)
 	  *  @param  point a point in space that fixes the phi region
-	  *  @param  normaleVector the normale vector at the inner detector face to receive
+	  *  @param  normaleVector the normal vector at the inner detector face to receive
 	  */
 	 static pandora::StatusCode GetInnerNormaleVector(const pandora::Pandora &pandora, pandora::SubDetectorType type, const pandora::CartesianVector &point,
 			 pandora::CartesianVector &normaleVector);
+
+	 /**
+	  *  @brief  Get the projection of a point on the helix
+	  *
+	  *  @param  helix the helix to consider
+	  *  @param  point the point in space to project on the helix
+	  *  @param  projection the projection point to receive
+	  */
+	 static pandora::StatusCode GetProjectionOnHelix(const pandora::Helix &helix, const pandora::CartesianVector &point, pandora::CartesianVector &projection);
+
+	 /**
+	  *  @brief  Get the distance between a point and the helix
+	  *
+	  *  @param  helix the helix to consider
+	  *  @param  point a point in space
+	  *  @param  distanceToHelix the distance to the helix to receive
+	  */
+	 static pandora::StatusCode GetDistanceToHelix(const pandora::Helix &helix, const pandora::CartesianVector &point, float &distanceToHelix);
 }; 
 
 } 

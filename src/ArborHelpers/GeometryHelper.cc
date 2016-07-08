@@ -29,6 +29,7 @@
 
 #include "Managers/GeometryManager.h"
 #include "Objects/SubDetector.h"
+#include "Objects/Helix.h"
 #include "Objects/CaloHit.h"
 
 namespace arbor_content
@@ -372,6 +373,50 @@ pandora::StatusCode GeometryHelper::GetInnerNormaleVector(const pandora::Pandora
 			break;
 		}
 	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode GeometryHelper::GetProjectionOnHelix(const pandora::Helix &helix, const pandora::CartesianVector &point, pandora::CartesianVector &projection)
+{
+	pandora::CartesianVector pointInXY(0.f, 0.f, 0.f), pointInZ(0.f, 0.f, 0.f);
+
+    const pandora::StatusCode statusCode1(helix.GetPointInXY(point.GetX(), point.GetY(), point.GetX(), point.GetY(), helix.GetReferencePoint(), pointInXY));
+    const pandora::StatusCode statusCode2(helix.GetPointInZ(point.GetZ(), helix.GetReferencePoint(), pointInZ));
+
+    if(pandora::STATUS_CODE_SUCCESS != statusCode1 && pandora::STATUS_CODE_SUCCESS != statusCode2)
+    	return pandora::STATUS_CODE_NOT_FOUND;
+
+    if(statusCode2 != pandora::STATUS_CODE_SUCCESS)
+    {
+    	projection = pointInXY;
+    	return pandora::STATUS_CODE_SUCCESS;
+    }
+
+    if(statusCode1 != pandora::STATUS_CODE_SUCCESS)
+    {
+    	projection = pointInZ;
+    	return pandora::STATUS_CODE_SUCCESS;
+    }
+
+	const float distanceInXY((pointInXY-point).GetMagnitude()), distanceInZ((pointInZ-point).GetMagnitude());
+	projection = distanceInXY < distanceInZ ? pointInXY : pointInZ;
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode GeometryHelper::GetDistanceToHelix(const pandora::Helix &helix, const pandora::CartesianVector &point, float &distanceToHelix)
+{
+	distanceToHelix = std::numeric_limits<float>::max();
+
+	pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnHelix(helix, point, projectionOnHelix));
+
+	distanceToHelix = (point-projectionOnHelix).GetMagnitude();
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
