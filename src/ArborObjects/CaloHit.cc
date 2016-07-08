@@ -31,7 +31,9 @@ namespace arbor_content
 {
 
 CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
-		pandora::CaloHit(parameters)
+		pandora::CaloHit(parameters),
+		m_surroundingEnergy(0.f),
+		m_density(0.f)
 {
 	m_pCaloHitMetaData = new CaloHitMetaData(this);
 }
@@ -40,7 +42,9 @@ CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
 
 // TODO copy the connector list in the new calo hit
 CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameters) :
-		pandora::CaloHit(parameters)
+		pandora::CaloHit(parameters),
+		m_surroundingEnergy(0.f),
+		m_density(0.f)
 
 {
 	const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit);
@@ -50,6 +54,8 @@ CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameter
 
 	m_pCaloHitMetaData = new CaloHitMetaData(this);
 	m_hitTagMap = pCaloHitCopy->m_hitTagMap;
+	m_surroundingEnergy = pCaloHitCopy->m_surroundingEnergy;
+	m_density = pCaloHitCopy->m_density;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -58,6 +64,20 @@ CaloHit::~CaloHit()
 {
 	PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveAndDeleteAllConnections(this));
 	delete m_pCaloHitMetaData;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+float CaloHit::GetSurroundingEnergy() const
+{
+	return m_surroundingEnergy;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+float CaloHit::GetDensity() const
+{
+	return m_density;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------

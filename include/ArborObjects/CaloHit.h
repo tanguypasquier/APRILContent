@@ -50,6 +50,17 @@ class CaloHitFactory;
  */ 
 class CaloHit : public pandora::CaloHit
 {
+public:
+	/**
+	 *  @brief  Get the surrounding hit energy
+	 */
+	float GetSurroundingEnergy() const;
+
+	/**
+	 *  @brief  Get the hit density
+	 */
+	float GetDensity() const;
+
 private:
 	/**
 	 *  @brief  Constructor with pandora calo hit parameters
@@ -93,9 +104,15 @@ protected:
 
     typedef std::map<const std::string, CaloHitMetaData *> ReclusterMetaDataMap;
 
+    // arbor related meta data
     CaloHitMetaData                        *m_pCaloHitMetaData;
-    HitTagMap                               m_hitTagMap;
+
+    // re-clustering meta data
     ReclusterMetaDataMap                    m_reclusterMetaDataMap;
+
+    float                                   m_surroundingEnergy;
+    float                                   m_density;
+    HitTagMap                               m_hitTagMap;
 
     friend class CaloHitFactory;
     friend class ::ArborContentApi;
