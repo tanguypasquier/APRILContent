@@ -32,6 +32,24 @@
 #include "ArborObjects/Connector.h"
 #include "ArborObjects/ArborMetaData.h"
 
+#include "Api/PandoraContentApi.h"
+
+pandora::StatusCode ArborContentApi::AlterMetadata(const pandora::Algorithm &algorithm, const arbor_content::CaloHit *const pCaloHit, const ArborContentApi::CaloHitMetadata &caloHitMetadata)
+{
+	// alter pandora calo hit meta data
+	const pandora::CaloHit *const pPandoraCaloHit(pCaloHit);
+	const PandoraContentApi::CaloHit::Metadata pandoraCaloHitMetadata(caloHitMetadata);
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AlterMetadata(algorithm, pPandoraCaloHit, pandoraCaloHitMetadata));
+
+	if(caloHitMetadata.m_surroundingEnergy.IsInitialized())
+		ArborContentApi::Modifiable(pCaloHit)->m_surroundingEnergy = caloHitMetadata.m_surroundingEnergy.Get();
+
+	if(caloHitMetadata.m_density.IsInitialized())
+		ArborContentApi::Modifiable(pCaloHit)->m_density = caloHitMetadata.m_density.Get();
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 

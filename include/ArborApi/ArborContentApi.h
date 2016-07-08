@@ -44,6 +44,26 @@ namespace arbor_content { class CaloHit; class Connector; }
 class ArborContentApi 
 {
 public:
+	/**
+	 *  @brief  CaloHitMetadata class
+	 */
+	class CaloHitMetadata : public PandoraContentApi::CaloHit::Metadata
+	{
+	public:
+		pandora::InputFloat             m_surroundingEnergy;
+		pandora::InputFloat             m_density;
+	};
+
+	/**
+	 *  @brief  Alter calo hit meta data
+	 *
+	 *  @param  algorithm to access internal content
+	 *  @param  pCaloHit to modify
+	 *  @param  caloHitMetadata the input meta data
+	 */
+	static pandora::StatusCode AlterMetadata(const pandora::Algorithm &algorithm, const arbor_content::CaloHit *const pCaloHit, const CaloHitMetadata &caloHitMetadata);
+
+public:
 	// Connector related Api
 
 	/**
