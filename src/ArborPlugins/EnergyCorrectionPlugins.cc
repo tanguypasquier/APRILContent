@@ -126,11 +126,11 @@ pandora::StatusCode SdhcalQuadraticEnergyFunction::MakeEnergyCorrections(const p
 		// SDHCAL case. Do thresholds counting
 		else if(pandora::HCAL == pCaloHit->GetHitType())
 		{
-			if(m_sdhcalThresholds.at(0) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
+			if(fabs(m_sdhcalThresholds.at(0) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
 				NHadronicHit1++;
-			else if(m_sdhcalThresholds.at(1) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
+			else if(fabs(m_sdhcalThresholds.at(1) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
 				NHadronicHit2++;
-			else if(m_sdhcalThresholds.at(2) - pCaloHit->GetInputEnergy() < std::numeric_limits<float>::epsilon())
+			else if(fabs(m_sdhcalThresholds.at(2) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
 				NHadronicHit3++;
 			else
 			{
