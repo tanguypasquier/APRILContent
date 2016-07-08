@@ -34,7 +34,7 @@
 #include "Pandora/StatusCodes.h"
 #include "Pandora/PandoraInternal.h"
 
-namespace pandora { class Cluster; }
+namespace pandora { class Cluster; class Track; class Pandora; }
 
 namespace arbor_content
 {
@@ -60,8 +60,38 @@ public:
 	 *  @param  rhs the right handed branch to compare
 	 */
 	static bool SortBranchesBySize(const Branch &lhs, const Branch &rhs);
-};
 
+	/**
+	 *  @brief  Sort tracks by energy at dca
+	 *
+	 *  @param  pLhs the left handed track to compare
+	 *  @param  pRhs the right handed track to compare
+	 */
+	static bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs);
+
+	/**
+	 *  @brief  SortByTrackClusterCompatibility class
+	 */
+	class SortByTrackClusterCompatibility
+	{
+	public:
+		/**
+		 *  @brief  Constructor
+		 */
+		SortByTrackClusterCompatibility(const pandora::Pandora *const pPandora);
+
+		/**
+		 *  @brief  Functor to sort clusters by track-cluster compatibility
+		 *
+		 *  @param  pLhs the left handed cluster to compare
+		 *  @param  pRhs the right handed cluster to compare
+		 */
+		bool operator() (const pandora::Cluster *const pLhs, const pandora::Cluster *const pRhs) const;
+
+	private:
+		const pandora::Pandora *const m_pPandora;
+	};
+};
 
 }
 

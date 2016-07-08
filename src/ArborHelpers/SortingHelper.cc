@@ -27,8 +27,10 @@
 
 
 #include "ArborHelpers/SortingHelper.h"
+#include "ArborHelpers/ReclusterHelper.h"
 
 #include "Objects/Cluster.h"
+#include "Objects/Track.h"
 #include "ArborObjects/Branch.h"
 
 namespace arbor_content
@@ -54,6 +56,39 @@ bool SortingHelper::SortClustersByInnerLayer(const pandora::Cluster *const pLhs,
 bool SortingHelper::SortBranchesBySize(const Branch &lhs, const Branch &rhs)
 {
 	return lhs.size() < rhs.size();
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+bool SortingHelper::SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs)
+{
+	return pLhs->GetEnergyAtDca() < pRhs->GetEnergyAtDca();
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+SortingHelper::SortByTrackClusterCompatibility::SortByTrackClusterCompatibility(const pandora::Pandora *const pPandora) :
+		m_pPandora(pPandora)
+{
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+
+bool SortingHelper::SortByTrackClusterCompatibility::operator()(const pandora::Cluster *const pLhs, const pandora::Cluster *const pRhs) const
+{
+	if(pLhs->GetAssociatedTrackList().empty())
+		return false;
+
+	if(pRhs->GetAssociatedTrackList().empty())
+		return true;
+
+	const pandora::TrackList lhsTrackList(pLhs->GetAssociatedTrackList()), rhsTrackList(pRhs->GetAssociatedTrackList());
+	const float lhsChi(ReclusterHelper::GetTrackClusterCompatibility(*m_pPandora, pLhs, lhsTrackList));
+	const float rhsChi(ReclusterHelper::GetTrackClusterCompatibility(*m_pPandora, pRhs, rhsTrackList));
+
+	return (lhsChi*lhsChi < rhsChi*rhsChi);
 }
 
 }
