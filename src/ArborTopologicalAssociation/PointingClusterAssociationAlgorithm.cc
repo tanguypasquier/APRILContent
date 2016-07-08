@@ -33,6 +33,7 @@
 #include "ArborHelpers/GeometryHelper.h"
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
+#include "ArborApi/ArborContentApi.h"
 
 #include <algorithm>
 
@@ -41,14 +42,29 @@ namespace arbor_content
 
 pandora::StatusCode PointingClusterAssociationAlgorithm::Run()
 {
+	// get candidate clusters for association
+	pandora::ClusterVector clusterVector;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetEligibleClusters(clusterVector));
+
+	// sort them by inner layer
+	std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortClustersByInnerLayer);
+
+	ClusterToClusterMap clusterToClusterMap;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindClustersToMerge(clusterVector, clusterToClusterMap));
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::MergeClusters(*this, clusterToClusterMap));
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode PointingClusterAssociationAlgorithm::GetEligibleClusters(pandora::ClusterVector &clusterVector) const
+{
 	const pandora::ClusterList *pClusterList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
 	if(pClusterList->empty())
 		return pandora::STATUS_CODE_SUCCESS;
-
-	// get candidate clusters for association
-	pandora::ClusterVector clusterVector;
 
 	for(pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterEndIter = pClusterList->end() ;
 			clusterEndIter != clusterIter ; ++clusterIter)
@@ -58,54 +74,10 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::Run()
 		if(!this->CanMergeCluster(pCluster))
 			continue;
 
+		if(m_discriminatePhotonPid && pCluster->GetParticleIdFlag() == pandora::PHOTON)
+			continue;
+
 		clusterVector.push_back(pCluster);
-	}
-
-	// sort them by inner layer
-	std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortClustersByInnerLayer);
-
-	for(pandora::ClusterVector::reverse_iterator iter = clusterVector.rbegin(), endIter = clusterVector.rend() ;
-			endIter != iter ; ++iter)
-	{
-		const pandora::Cluster *const pDaughterCluster = *iter;
-
-		if(NULL == pDaughterCluster)
-			continue;
-
-		const pandora::Cluster *pBestParentCluster = NULL;
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindBestParentCluster(pDaughterCluster, clusterVector, pBestParentCluster));
-
-		if(NULL == pBestParentCluster)
-			continue;
-
-		// if neutral cluster
-		if(pBestParentCluster->GetAssociatedTrackList().empty())
-		{
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pBestParentCluster, pDaughterCluster));
-			(*iter) = NULL;
-		}
-		// charged cluster case
-		else
-		{
-			const pandora::TrackList &trackList(pBestParentCluster->GetAssociatedTrackList());
-			float trackEnergySum(0.f);
-
-		    for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
-		        trackEnergySum += (*trackIter)->GetEnergyAtDca();
-
-		    const float bestParentClusterEnergy = pBestParentCluster->GetTrackComparisonEnergy(this->GetPandora());
-		    const float clusterEnergySum = bestParentClusterEnergy + pDaughterCluster->GetTrackComparisonEnergy(this->GetPandora());
-
-		    const float oldChi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), bestParentClusterEnergy, trackEnergySum);
-		    const float newChi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), clusterEnergySum, trackEnergySum);
-
-		    // if we improve on chi2 or if chi2 still valid, associate
-		    if(newChi*newChi < oldChi*oldChi || newChi*newChi < m_chi2AssociationCut)
-		    {
-				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pBestParentCluster, pDaughterCluster));
-				(*iter) = NULL;
-		    }
-		}
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -124,15 +96,53 @@ bool PointingClusterAssociationAlgorithm::CanMergeCluster(const pandora::Cluster
 	if(pCluster->GetNCaloHits() < m_minNCaloHits || pCluster->GetNCaloHits() > m_maxNCaloHits)
 		return false;
 
-	const unsigned int firstPseudoLayer = pCluster->GetInnerPseudoLayer();
-	const unsigned int lastPseudoLayer = pCluster->GetOuterPseudoLayer();
-
-	unsigned int nPseudoLayers = lastPseudoLayer - firstPseudoLayer + 1;
+	const unsigned int nPseudoLayers(pCluster->GetOrderedCaloHitList().size());
 
 	if(nPseudoLayers < m_minNPseudoLayers || nPseudoLayers >= m_maxNPseudoLayers)
 		return false;
 
 	return true;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode PointingClusterAssociationAlgorithm::FindClustersToMerge(const pandora::ClusterVector &clusterVector, ClusterToClusterMap &clusterToClusterMap) const
+{
+	for(pandora::ClusterVector::const_iterator iter = clusterVector.begin(), endIter = clusterVector.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::Cluster *const pDaughterCluster = *iter;
+
+		if(NULL == pDaughterCluster)
+			continue;
+
+		if( ! pDaughterCluster->GetAssociatedTrackList().empty() )
+			continue;
+
+		const pandora::Cluster *pBestParentCluster = NULL;
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindBestParentCluster(pDaughterCluster, clusterVector, pBestParentCluster));
+
+		if(NULL == pBestParentCluster)
+			continue;
+
+		// if neutral cluster
+		if(pBestParentCluster->GetAssociatedTrackList().empty())
+		{
+			clusterToClusterMap[pDaughterCluster] = pBestParentCluster;
+		}
+		// charged cluster case
+		else
+		{
+			float oldChi(0.f), newChi(0.f);
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetChiClusterMerging(this->GetPandora(), pBestParentCluster, pDaughterCluster, oldChi, newChi));
+
+		    // if we improve on chi2 or if chi2 still valid, associate
+		    if(newChi*newChi < oldChi*oldChi || newChi*newChi < m_chi2AssociationCut)
+		    	clusterToClusterMap[pDaughterCluster] = pBestParentCluster;
+		}
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -143,170 +153,92 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::FindBestParentCluster(c
 	pBestParentCluster = NULL;
 
 	if(NULL == pDaughterCluster)
-		return pandora::STATUS_CODE_SUCCESS;
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	const pandora::ClusterFitResult &daughterClusterFitResult(pDaughterCluster->GetFitToAllHitsResult());
+	pandora::CartesianVector innerPosition(0.f, 0.f, 0.f), backwardDirection(0.f, 0.f, 0.f);
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetClusterBackwardDirection(pDaughterCluster, backwardDirection, innerPosition));
 
-	if( ! daughterClusterFitResult.IsFitSuccessful() )
+	const unsigned int maxBackwardPseudoLayer(pDaughterCluster->GetInnerPseudoLayer() >= m_maxBackwardPseudoLayer ? 0 : pDaughterCluster->GetInnerPseudoLayer()-m_maxBackwardPseudoLayer);
+	float bestDistanceToCluster(std::numeric_limits<float>::max());
+
+	for(pandora::ClusterVector::const_reverse_iterator jIter = clusterVector.rbegin(), jEndIter = clusterVector.rend() ;
+			jEndIter != jIter ; ++jIter)
 	{
-		std::cout << "Daughter cluster fit failed !" << std::endl;
-		return pandora::STATUS_CODE_SUCCESS;
-	}
+		const pandora::Cluster *const pCluster(*jIter);
 
-	pandora::CartesianVector daughterClusterCentroid(0.f, 0.f, 0.f);
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pDaughterCluster, daughterClusterCentroid));
-
-	const pandora::Cluster *pBestBarycentreCluster = NULL;
-	const pandora::Cluster *pBestInterceptCluster = NULL;
-	float bestBarycentreImpactParameter(std::numeric_limits<float>::max());
-	float bestInterceptImpactParameter(std::numeric_limits<float>::max());
-
-	// loop over clusters and look for two parent clusters with two different computations
-	for(pandora::ClusterVector::const_reverse_iterator iter = clusterVector.rbegin(), endIter = clusterVector.rend() ;
-			endIter != iter ; ++iter)
-	{
-		const pandora::Cluster *const pParentCluster = *iter;
-
-		if(NULL == pParentCluster)
+		if(NULL == pCluster)
 			continue;
 
-		if(pParentCluster == pDaughterCluster)
+		if(pCluster == pDaughterCluster)
 			continue;
 
-		if(pParentCluster->GetInnerPseudoLayer() >= pDaughterCluster->GetInnerPseudoLayer())
+		if(!m_allowNeutralParentMerging && pCluster->GetAssociatedTrackList().empty())
 			continue;
 
-		const pandora::ClusterFitResult &parentClusterFitResult(pParentCluster->GetFitToAllHitsResult());
+		const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+		unsigned int nHitsInRoi(0);
+		unsigned int bestNHitsInRoi(std::numeric_limits<unsigned int>::min());
+		pandora::CartesianVector centroidInRoi(0.f, 0.f, 0.f);
 
-		if( ! parentClusterFitResult.IsFitSuccessful() )
+		for(pandora::OrderedCaloHitList::const_reverse_iterator layerIter = orderedCaloHitList.rbegin(), layerEndIter = orderedCaloHitList.rend() ;
+				layerEndIter != layerIter ; ++layerIter)
 		{
-			std::cout << "Parent cluster fit failed !" << std::endl;
-			continue;
+			if(layerIter->first <= maxBackwardPseudoLayer)
+				break;
+
+			for(pandora::CaloHitList::const_iterator iterI = layerIter->second->begin(), endIterI = layerIter->second->end() ;
+					endIterI != iterI ; ++iterI)
+			{
+				const pandora::CaloHit *const pCaloHit(*iterI);
+
+				const pandora::CartesianVector differenceVector(pCaloHit->GetPositionVector()-innerPosition);
+				const float distanceToHit(differenceVector.GetMagnitude());
+				const float angleWithCluster(differenceVector.GetOpeningAngle(backwardDirection));
+				const pandora::Granularity granularity(this->GetPandora().GetGeometry()->GetHitTypeGranularity(pCaloHit->GetHitType()));
+
+				const float maxBackwardDistance(granularity <= pandora::FINE ? m_maxBackwardDistanceFine : m_maxBackwardDistanceCoarse);
+
+				if(layerIter->first > maxBackwardPseudoLayer && distanceToHit < maxBackwardDistance && angleWithCluster < m_maxBackwardAngle)
+				{
+					++nHitsInRoi;
+					centroidInRoi += pCaloHit->GetPositionVector();
+				}
+			}
 		}
 
-		pandora::CartesianVector parentClusterCentroid(0.f, 0.f, 0.f);
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pParentCluster, parentClusterCentroid));
+		if(nHitsInRoi > m_minParentClusterBackwardNHits && nHitsInRoi > bestNHitsInRoi)
+		{
+			centroidInRoi = centroidInRoi * (1.f/nHitsInRoi);
+			bestNHitsInRoi = nHitsInRoi;
 
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->PerformBarycentreClusterComputation(daughterClusterFitResult, daughterClusterCentroid,
-				parentClusterFitResult, parentClusterCentroid, pParentCluster, pBestBarycentreCluster, bestBarycentreImpactParameter));
+			const float distanceToCluster((innerPosition - centroidInRoi).GetMagnitude());
 
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->PerformInterceptClusterComputation(daughterClusterFitResult, daughterClusterCentroid,
-				parentClusterFitResult, parentClusterCentroid, pParentCluster, pBestInterceptCluster, bestInterceptImpactParameter));
+			if(distanceToCluster < bestDistanceToCluster)
+			{
+				bestDistanceToCluster = distanceToCluster;
+				pBestParentCluster = pCluster;
+			}
+		}
 	}
-
-	// choose the best parent cluster to merge-in
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ChooseBestParentCluster(pBestBarycentreCluster, pBestInterceptCluster, pDaughterCluster,
-			pBestParentCluster));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode PointingClusterAssociationAlgorithm::PerformBarycentreClusterComputation(const pandora::ClusterFitResult &daughterClusterFitResult, const pandora::CartesianVector &daughterClusterCentroid,
-		const pandora::ClusterFitResult &parentClusterFitResult, const pandora::CartesianVector &parentClusterCentroid,
-		const pandora::Cluster *const pParentCluster, const pandora::Cluster *&pBestBarycentreCluster, float &bestImpactParameter) const
+pandora::StatusCode PointingClusterAssociationAlgorithm::GetClusterBackwardDirection(const pandora::Cluster *const pCluster, pandora::CartesianVector &backwardDirection, pandora::CartesianVector &innerPosition) const
 {
-	const pandora::CartesianVector centroidDifference(daughterClusterCentroid - parentClusterCentroid);
-	const float clustersAngle = parentClusterFitResult.GetDirection().GetOpeningAngle(centroidDifference);
+	pandora::CartesianVector centroid(0.f, 0.f, 0.f);
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, centroid));
 
-	float impactParameter = 0.f;
+	const pandora::CartesianVector innerCentroid(pCluster->GetCentroid(pCluster->GetInnerPseudoLayer()));
 
-	if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetClosestDistanceToLine(daughterClusterCentroid, daughterClusterFitResult.GetDirection(),
-			parentClusterCentroid, impactParameter))
-		return pandora::STATUS_CODE_SUCCESS;
+	pandora::ClusterFitResult clusterFitResult;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitStart(pCluster, m_nBackwardLayersFit, clusterFitResult));
+	const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
 
-	if(clustersAngle > m_clustersAngleCut
-	|| impactParameter > m_barycentreImpactParameterCut
-	|| impactParameter > bestImpactParameter)
-		return pandora::STATUS_CODE_SUCCESS;
-
-	bestImpactParameter = impactParameter;
-	pBestBarycentreCluster = pParentCluster;
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode PointingClusterAssociationAlgorithm::PerformInterceptClusterComputation(const pandora::ClusterFitResult &daughterClusterFitResult, const pandora::CartesianVector &daughterClusterCentroid,
-		const pandora::ClusterFitResult &parentClusterFitResult, const pandora::CartesianVector &parentClusterCentroid,
-		const pandora::Cluster *const pParentCluster, const pandora::Cluster *&pBestInterceptCluster, float &bestImpactParameter) const
-{
-	float impactParameter = 0.f;
-
-	if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetClosestDistanceBetweenLines(daughterClusterCentroid, daughterClusterFitResult.GetDirection(),
-			parentClusterCentroid, parentClusterFitResult.GetDirection(), impactParameter))
-		return pandora::STATUS_CODE_SUCCESS;
-
-	if(impactParameter > m_interceptImpactParameterCut || impactParameter > bestImpactParameter)
-		return pandora::STATUS_CODE_SUCCESS;
-
-	pandora::CartesianVector projectionOnParentClusterAxis(0.f, 0.f, 0.f);
-	pandora::CartesianVector projectionOnDaughterClusterAxis(0.f, 0.f, 0.f);
-
-	if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetCrossingPointsBetweenLines(daughterClusterCentroid, daughterClusterFitResult.GetDirection(),
-			parentClusterCentroid, parentClusterFitResult.GetDirection(), projectionOnDaughterClusterAxis, projectionOnParentClusterAxis))
-		return pandora::STATUS_CODE_SUCCESS;
-
-	float closestDistanceApproach = 0.f;
-
-	if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetClosestDistanceApproach(pParentCluster, projectionOnDaughterClusterAxis,
-			closestDistanceApproach))
-		return pandora::STATUS_CODE_SUCCESS;
-
-	if(m_interceptClosestDistanceApproachCut < closestDistanceApproach)
-		return pandora::STATUS_CODE_SUCCESS;
-
-	pBestInterceptCluster = pParentCluster;
-	bestImpactParameter = impactParameter;
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode PointingClusterAssociationAlgorithm::ChooseBestParentCluster(const pandora::Cluster *const pBarycentreParentCluster, const pandora::Cluster *const pInterceptParentCluster,
-		const pandora::Cluster *const pDaughterCluster, const pandora::Cluster *&pBestParentCluster) const
-{
-	if(NULL == pBarycentreParentCluster && NULL == pInterceptParentCluster)
-	{
-		pBestParentCluster = NULL;
-		return pandora::STATUS_CODE_SUCCESS;
-	}
-
-	if(pBarycentreParentCluster == pInterceptParentCluster)
-	{
-		pBestParentCluster = pBarycentreParentCluster;
-		return pandora::STATUS_CODE_SUCCESS;
-	}
-
-	if(NULL != pBarycentreParentCluster && NULL == pInterceptParentCluster)
-	{
-		pBestParentCluster = pBarycentreParentCluster;
-		return pandora::STATUS_CODE_SUCCESS;
-	}
-
-	if(NULL == pBarycentreParentCluster && NULL != pInterceptParentCluster)
-	{
-		pBestParentCluster = pInterceptParentCluster;
-		return pandora::STATUS_CODE_SUCCESS;
-	}
-
-	// here, two different parent clusters have been found.
-	// we need to decide which one is the best parent
-	pandora::CartesianVector barycentreClusterCentroid(0.f, 0.f, 0.f);
-	pandora::CartesianVector interceptClusterCentroid(0.f, 0.f, 0.f);
-	pandora::CartesianVector daughterClusterCentroid(0.f, 0.f, 0.f);
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pBarycentreParentCluster, barycentreClusterCentroid));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pInterceptParentCluster, interceptClusterCentroid));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pDaughterCluster, daughterClusterCentroid));
-
-	const float barycentreCentroidDifference = (barycentreClusterCentroid - daughterClusterCentroid).GetMagnitude();
-	const float interceptCentroidDifference = (interceptClusterCentroid - daughterClusterCentroid).GetMagnitude();
-
-	pBestParentCluster = barycentreCentroidDifference < interceptCentroidDifference ?
-			pBarycentreParentCluster : pInterceptParentCluster;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnLine(centroid, clusterDirection, innerCentroid, innerPosition));
+	backwardDirection = clusterDirection * -1.f;
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
@@ -315,6 +247,14 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::ChooseBestParentCluster
 
 pandora::StatusCode PointingClusterAssociationAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
+	m_discriminatePhotonPid = true;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+	     "DiscriminatePhotonPid", m_discriminatePhotonPid));
+
+	m_allowNeutralParentMerging = false;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+	     "AllowNeutralParentMerging", m_allowNeutralParentMerging));
+
 	m_minNCaloHits = 10;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinNCaloHits", m_minNCaloHits));
@@ -335,21 +275,30 @@ pandora::StatusCode PointingClusterAssociationAlgorithm::ReadSettings(const pand
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "Chi2AssociationCut", m_chi2AssociationCut));
 
-	m_clustersAngleCut = M_PI/6.f;
+	m_nBackwardLayersFit = 6;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "ClustersAngleCut", m_clustersAngleCut));
+		 "NBackwardLayersFit", m_nBackwardLayersFit));
 
-	m_barycentreImpactParameterCut = 20.f;
+	m_maxBackwardAngle = 0.4;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "BarycentreImpactParameterCut", m_barycentreImpactParameterCut));
+	     "MaxBackwardAngle", m_maxBackwardAngle));
 
-	m_interceptImpactParameterCut = 20.f;
+	m_maxBackwardDistanceFine = 150.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "InterceptImpactParameterCut", m_interceptImpactParameterCut));
+	     "MaxBackwardDistanceFine", m_maxBackwardDistanceFine));
 
-	m_interceptClosestDistanceApproachCut = 20.f;
+	m_maxBackwardDistanceCoarse = 500.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "InterceptClosestDistanceApproachCut", m_interceptClosestDistanceApproachCut));
+	     "MaxBackwardDistanceCoarse", m_maxBackwardDistanceCoarse));
+
+	m_maxBackwardPseudoLayer = 8;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+	     "MaxBackwardPseudoLayer", m_maxBackwardPseudoLayer));
+
+	m_minParentClusterBackwardNHits = 5;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+	     "MinParentClusterBackwardNHits", m_minParentClusterBackwardNHits));
+
 
 	return pandora::STATUS_CODE_SUCCESS;
 }

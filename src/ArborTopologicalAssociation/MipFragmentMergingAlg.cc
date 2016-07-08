@@ -94,6 +94,7 @@ pandora::StatusCode MipFragmentMergingAlg::FindMipParentCluster(const pandora::C
 	const unsigned int maxBackwardPseudoLayer(pMipCluster->GetInnerPseudoLayer() >= m_maxMipBackwardPseudoLayer ? 0 : pMipCluster->GetInnerPseudoLayer()-m_maxMipBackwardPseudoLayer);
 
 	float bestDistanceToCluster(std::numeric_limits<float>::max());
+	float bestAngleWithMip(std::numeric_limits<float>::max());
 
 	for(pandora::ClusterVector::const_reverse_iterator jIter = clusterVector.rbegin(), jEndIter = clusterVector.rend() ;
 			jEndIter != jIter ; ++jIter)
@@ -137,12 +138,13 @@ pandora::StatusCode MipFragmentMergingAlg::FindMipParentCluster(const pandora::C
 			continue;
 
 		centroidInRoi = centroidInRoi * (1.f/nHitsInRoi);
-
+		const float angleWithMip((centroidInRoi - mipInnerCentroid).GetOpeningAngle(mipBackwardDirection));
 		const float distanceToCluster((mipInnerCentroid - centroidInRoi).GetMagnitude());
 
-		if(distanceToCluster < bestDistanceToCluster)
+		if(distanceToCluster < bestDistanceToCluster && angleWithMip < bestAngleWithMip)
 		{
 			bestDistanceToCluster = distanceToCluster;
+			bestAngleWithMip = angleWithMip;
 			pParentCluster = pCluster;
 		}
 	}
@@ -269,7 +271,7 @@ pandora::StatusCode MipFragmentMergingAlg::ReadSettings(const pandora::TiXmlHand
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxMipTransverseRatio", m_maxMipTransverseRatio));
 
-	m_minDaughterClusterNHits = 7;
+	m_minDaughterClusterNHits = 5;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinDaughterClusterNHits", m_minDaughterClusterNHits));
 
@@ -281,11 +283,11 @@ pandora::StatusCode MipFragmentMergingAlg::ReadSettings(const pandora::TiXmlHand
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinNHitsPerLayer", m_minNHitsPerLayer));
 
-	m_minParentClusterEnergy = 0.5f;
+	m_minParentClusterEnergy = 0.3f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinParentClusterEnergy", m_minParentClusterEnergy));
 
-	m_minParentClusterNHits = 10;
+	m_minParentClusterNHits = 5;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinParentClusterNHits", m_minParentClusterNHits));
 
@@ -297,7 +299,7 @@ pandora::StatusCode MipFragmentMergingAlg::ReadSettings(const pandora::TiXmlHand
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MinInnerPseudoLayer", m_minInnerPseudoLayer));
 
-	m_maxMipBackwardAngle = 0.4;
+	m_maxMipBackwardAngle = 0.35;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxMipBackwardAngle", m_maxMipBackwardAngle));
 

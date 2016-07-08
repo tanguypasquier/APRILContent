@@ -115,11 +115,8 @@ pandora::StatusCode FragmentRemovalAlgorithm::FindClusterFragments(pandora::Clus
 		float meanDensity(0.f);
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetMeanDensity(pCluster, meanDensity));
 
-		std::cout << "Cluster E = " << pCluster->GetHadronicEnergy() << " GeV , mean density = " << meanDensity << std::endl;
-
 		if(meanDensity < m_maxFragmentDensity)
 		{
-			std::cout << " ==> Deleted !!" << std::endl;
 			potentialFragmentsClusterVector.push_back(pCluster);
 			continue;
 		}
@@ -262,11 +259,11 @@ pandora::StatusCode FragmentRemovalAlgorithm::ReadSettings(const pandora::TiXmlH
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxFragmentDensity", m_maxFragmentDensity));
 
-	m_maxProximityDistanceFine = 10.f;
+	m_maxProximityDistanceFine = 20.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxProximityDistanceFine", m_maxProximityDistanceFine));
 
-	m_maxProximityDistanceCoarse = 20.f;
+	m_maxProximityDistanceCoarse = 40.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxProximityDistanceCoarse", m_maxProximityDistanceCoarse));
 
