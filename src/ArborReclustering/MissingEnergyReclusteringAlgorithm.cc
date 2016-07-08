@@ -33,12 +33,16 @@
 #include "ArborApi/ArborContentApi.h"
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
+#include "ArborHelpers/SortingHelper.h"
 
 namespace arbor_content
 {
 
 pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 {
+	// start by recalculating track-cluster association
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
+
 	// get current cluster list
 	const pandora::ClusterList *pClusterList = NULL;
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
@@ -47,6 +51,8 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		return pandora::STATUS_CODE_SUCCESS;
 
 	pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
+	std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortByTrackClusterCompatibility(&this->GetPandora()));
+
 	const unsigned int nClusters(clusterVector.size());
 
 	for(unsigned int i=0 ; i<nClusters ; ++i)
@@ -62,14 +68,26 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		if((nTrackAssociations < m_minTrackAssociations) || (nTrackAssociations > m_maxTrackAssociations))
 			continue;
 
+	    float trackEnergySum(0.);
+
+	    for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
+	        trackEnergySum += (*trackIter)->GetEnergyAtDca();
+
+		if(trackEnergySum < m_minTrackMomentum)
+			continue;
+
 		const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList);
+		const float clusterEnergyI(pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+
+		ARBOR_LOG( "Cluster energy = " << clusterEnergyI << " GeV" << std::endl );
+	    ARBOR_LOG( "Track p = " << (*trackList.begin())->GetEnergyAtDca() << " GeV , chi = " << chi << std::endl );
 
 		// check for chi2 and missing energy in charged cluster
 		if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
 			continue;
 
 		// check for clusters that leave the detector
-		if(ClusterHelper::IsClusterLeavingDetector(this->GetPandora(), pCluster, 3, 50.f, 3))
+		if(ClusterHelper::IsClusterLeavingDetector(this->GetPandora(), pCluster))
 			continue;
 
 		// prepare clusters and tracks for reclustering
@@ -101,16 +119,17 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
 			if(clusterHitsDistance < m_maxClusterHitsDistance)
 			{
+				const float clusterEnergyJ(pOtherCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+
+				ARBOR_LOG( " ==> Other cluster energy = " << clusterEnergyJ << " GeV" << std::endl );
+
 				reclusterClusterList.insert(pOtherCluster);
 				originalClusterIndices.push_back(j);
 			}
 			else
 			{
 				if(pandora::STATUS_CODE_SUCCESS != centroidStatusCode || !parentFitResult.IsFitSuccessful())
-				{
-					std::cout << "Problem !" << std::endl;
 					continue;
-				}
 
 				pandora::CartesianVector daughterCentroid(0.f, 0.f, 0.f);
 
@@ -121,6 +140,10 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
 				if( angle > m_maxNeighborClusterAngle )
 					continue;
+
+				const float clusterEnergyJ(pOtherCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+
+				ARBOR_LOG( " ==> Other cluster energy = " << clusterEnergyJ << " GeV" << std::endl );
 
 				reclusterClusterList.insert(pOtherCluster);
 				originalClusterIndices.push_back(j);
@@ -239,6 +262,10 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::ReadSettings(const pando
 	m_maxNeighborClusterAngle = 0.5f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxNeighborClusterAngle", m_maxNeighborClusterAngle));
+
+	m_minTrackMomentum = 0.8f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"MinTrackMomentum", m_minTrackMomentum));
 
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithmList(*this, xmlHandle,
 			"clusteringAlgorithms", m_clusteringAlgorithmList));

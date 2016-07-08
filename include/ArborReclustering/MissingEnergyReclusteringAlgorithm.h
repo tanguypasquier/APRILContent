@@ -64,6 +64,7 @@ private:
 	float                               m_maxChi2ToStopReclustering;
 	float                               m_maxClusterHitsDistance;
 	float                               m_maxNeighborClusterAngle;
+	float                               m_minTrackMomentum;
 
 	pandora::StringVector	            m_clusteringAlgorithmList;
 
