@@ -158,7 +158,7 @@ pandora::StatusCode UnassociatedTrackRecoveryAlg::PerformPossibleTrackClusterAss
 		    const float clusterEnergy(pCluster->GetTrackComparisonEnergy(this->GetPandora()));
 		    const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), clusterEnergy, energyAtDca));
 
-			if(trackClusterDistance < bestTrackClusterDistance && chi*chi < bestChi*bestChi)
+		    if((chi*chi < bestChi*bestChi) && (trackClusterDistance < bestTrackClusterDistance || trackClusterDistance < m_trackClusterDistanceCut2))
 			{
 				bestTrackClusterDistance = trackClusterDistance;
 				bestChi = chi;
@@ -166,7 +166,7 @@ pandora::StatusCode UnassociatedTrackRecoveryAlg::PerformPossibleTrackClusterAss
 			}
 		}
 
-		if((NULL == pBestCluster) || (fabs(bestChi) > m_maxAssociationChi))
+		if((NULL == pBestCluster) || (fabs(bestChi) > m_maxAssociationChi) || (bestTrackClusterDistance > m_trackClusterDistanceCut))
 			continue;
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, pTrack, pBestCluster));
@@ -198,6 +198,14 @@ pandora::StatusCode UnassociatedTrackRecoveryAlg::ReadSettings(const pandora::Ti
 	m_maxTrackClusterDistance = 200.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxTrackClusterDistance", m_maxTrackClusterDistance));
+
+	m_trackClusterDistanceCut = 100.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+		 "TrackClusterDistanceCut", m_trackClusterDistanceCut));
+
+	m_trackClusterDistanceCut2 = 70.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+		 "TrackClusterDistanceCut2", m_trackClusterDistanceCut2));
 
 	m_maxAssociationChi = 1.8f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

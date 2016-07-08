@@ -83,6 +83,8 @@ private:
 	float                              m_maxEndCapProjectionAngle;     ///< The max angle between the track and the endcap (if projected to endcap)
 	unsigned int                       m_maxClusterInnerPseudoLayer;   ///< The max inner pseudo layer for an eligible cluster
 	float                              m_maxTrackClusterDistance;      ///< The max track-cluster distance for distance evaluation
+	float                              m_trackClusterDistanceCut;      ///< The track-cluster distance cut
+	float                              m_trackClusterDistanceCut2;     ///< The track-cluster distance cut if energy improved
 	float                              m_maxAssociationChi;            ///< The max (absolute) chi for a possible track-cluster association
 };
 
