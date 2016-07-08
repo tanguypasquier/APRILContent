@@ -31,9 +31,74 @@
 
 #include "Pandora/PandoraInternal.h"
 #include "Pandora/PandoraInputTypes.h"
+#include "ArborApi/ArborInputTypes.h"
 
 namespace arbor_content
 {
+
+/**
+ *  @brief  ClusterPca class
+ */
+class ClusterPca
+{
+public:
+	/**
+	 *  @brief  Constructor
+	 *
+	 *  @param  pCluster the input cluster address to perform pca on
+	 */
+	ClusterPca(const pandora::Cluster *const pCluster);
+
+	/**
+	 *  @brief  Get the eigen value for a given component. Components are sorted by descending order
+	 *
+	 *  @param  component the pca component
+	 *
+	 *  @return the eigen value for the given component
+	 */
+	float GetEigenValue(int component) const;
+
+	/**
+	 *  @brief  Get the eigen vector for a given component. Components are sorted by descending order
+	 *
+	 *  @param  component the pca component
+	 *
+	 *  @return the eigen vector for the given component
+	 */
+	const pandora::CartesianVector &GetEigenVector(int component) const;
+
+	/**
+	 *  @brief  Get the transverse ratio of the cluster
+	 */
+	float GetTransverseRatio() const;
+
+	/**
+	 *  @brief  Get the input cluster
+	 */
+	const pandora::Cluster *GetCluster() const;
+
+private:
+	/**
+	 *  @brief  Component struct
+	 */
+	struct Component
+	{
+		/**
+		 *  @brief  Contructor
+		 */
+		Component();
+
+		float                         m_eigenValue;    ///< The eigen value
+		pandora::CartesianVector      m_eigenVector;   ///< The eigen vector
+	};
+
+	Component                   m_components[3];      ///< The eigen values and vectors for each component
+	float                       m_transverseRatio;    ///< The cluster transverse ratio
+	const pandora::Cluster     *m_pCluster;           ///< The inout cluster
+};
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 /** 
  *  @brief  ClusterHelper class
@@ -99,7 +164,6 @@ public:
 	static bool IsClusterLeavingDetector(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, unsigned int nOuterLayersToExamine = 3,
 			float maxDistanceToDetectorEdge = 50.f, unsigned int minNHitsNearEdges = 3);
 
-
 	/**
 	 *  @brief  Whether the cluster contains at least one hit of target type
 	 *
@@ -107,9 +171,88 @@ public:
 	 *  @param  hitType the hit type to look for
 	 */
 	static bool ContainsHitType(const pandora::Cluster *const pCluster, const pandora::HitType hitType);
+
+	/**
+	 *  @brief  Get the mean surrounding energy of the cluster
+	 *
+	 *  @param  pCluster the input cluster
+	 *  @param  meanSurroundingEnergy the mean surrounding energy to receive
+	 */
+	static pandora::StatusCode GetMeanSurroundingEnergy(const pandora::Cluster *const pCluster, float &meanSurroundingEnergy);
+
+	/**
+	 *  @brief  Get the mean density of the cluster
+	 *
+	 *  @param  pCluster the input cluster
+	 *  @param  meanDensity the mean density to receive
+	 */
+	static pandora::StatusCode GetMeanDensity(const pandora::Cluster *const pCluster, float &meanDensity);
+
+	/**
+	 *  @brief  Evaluate the chi before and after to merge the two clusters
+	 *
+	 *  @param  pandora the pandora instance to access internal content
+	 *  @param  pClusterToEnlarge the cluster to enlarge
+	 *  @param  pClusterToMerge the cluster to merge
+	 *  @param  oldChi the chi of the cluster to enlarge
+	 *  @param  newChi the chi of the clusters after a potential merging
+	 */
+	static pandora::StatusCode GetChiClusterMerging(const pandora::Pandora &pandora, const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *const pClusterToMerge, float &oldChi, float &newChi);
+
+	/**
+	 *  @brief  Perform intelligent merging of clusters (daughter <-> parent relationship management)
+	 *
+	 *  @param  algorithm the algorithm that requests the merging
+	 *  @param  clusterToClusterMap the mapping of clusters to merge (daughter -> parent)
+	 */
+	static pandora::StatusCode MergeClusters(const pandora::Algorithm &algorithm, ClusterToClusterMap &clusterToClusterMap);
+
+	/**
+	 *  @brief  Get the track cluster distance
+	 *
+	 *  @param  pandora the pandora instance to access internal content
+	 *  @param  pCluster the input cluster
+	 *  @param  pTrack the input track
+	 *  @param  maxTransverseDistance the maximum distance between cluster hits and the track helix
+	 *  @param  trackClusterDistance the track cluster distance to receive
+	 */
+	static pandora::StatusCode GetTrackClusterDistance(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::Track *const pTrack, const float maxTransverseDistance, float &trackClusterDistance);
 };
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
+inline float ClusterPca::GetEigenValue(int component) const
+{
+	if(component < 0 || component > 2)
+		throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+
+	return m_components[component].m_eigenValue;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline const pandora::CartesianVector &ClusterPca::GetEigenVector(int component) const
+{
+	if(component < 0 || component > 2)
+		throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+
+	return m_components[component].m_eigenVector;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline float ClusterPca::GetTransverseRatio() const
+{
+	return m_transverseRatio;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+inline const pandora::Cluster *ClusterPca::GetCluster() const
+{
+	return m_pCluster;
+}
 
 } 
 

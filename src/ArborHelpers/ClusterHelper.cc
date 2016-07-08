@@ -30,9 +30,96 @@
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/GeometryHelper.h"
+#include "ArborHelpers/ReclusterHelper.h"
+
+#include "TMatrixT.h"
+#include "TMatrixDEigen.h"
+#include "TVectorD.h"
 
 namespace arbor_content
 {
+
+ClusterPca::Component::Component() :
+		m_eigenValue(0.f),
+		m_eigenVector(0.f, 0.f, 0.f)
+{
+	/* nop */
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+ClusterPca::ClusterPca(const pandora::Cluster *const pCluster) :
+		m_pCluster(pCluster)
+{
+	if(NULL == pCluster || 2 > pCluster->GetNCaloHits())
+		throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+
+	float mean[3] = {0.f};
+
+	pandora::CaloHitList clusterCaloHitList;
+	pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+
+	const unsigned nDofs(clusterCaloHitList.size());
+
+	for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit(*iter);
+
+		mean[0] += pCaloHit->GetPositionVector().GetX();
+		mean[1] += pCaloHit->GetPositionVector().GetY();
+		mean[2] += pCaloHit->GetPositionVector().GetZ();
+	}
+
+	mean[0] /= nDofs;
+	mean[1] /= nDofs;
+	mean[2] /= nDofs;
+
+	TMatrixD covarianceMatrix(3, 3);
+
+	for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit(*iter);
+
+		float x(pCaloHit->GetPositionVector().GetX() - mean[0]);
+		float y(pCaloHit->GetPositionVector().GetY() - mean[1]);
+		float z(pCaloHit->GetPositionVector().GetZ() - mean[2]);
+
+		covarianceMatrix(0, 0) += ((x*x) / nDofs);
+		covarianceMatrix(1, 1) += ((y*y) / nDofs);
+		covarianceMatrix(2, 2) += ((z*z) / nDofs);
+
+		covarianceMatrix(0, 1) += ((x*y) / nDofs);
+		covarianceMatrix(0, 2) += ((x*z) / nDofs);
+		covarianceMatrix(1, 2) += ((y*z) / nDofs);
+	}
+
+	covarianceMatrix(1, 0) = covarianceMatrix(0, 1);
+	covarianceMatrix(2, 0) = covarianceMatrix(0, 2);
+	covarianceMatrix(2, 1) = covarianceMatrix(1, 2);
+
+	TMatrixDEigen eigenMatrix(covarianceMatrix);
+
+	for(unsigned int i=0 ; i<3 ; i++)
+	{
+		m_components[i].m_eigenValue = eigenMatrix.GetEigenValuesRe()[i];
+
+		const float x(eigenMatrix.GetEigenVectors()[i][0]);
+		const float y(eigenMatrix.GetEigenVectors()[i][1]);
+		const float z(eigenMatrix.GetEigenVectors()[i][2]);
+
+		m_components[i].m_eigenVector.SetValues(x, y, z);
+
+//		std::cout << "Eigen val [" << i << "] : val = " << m_components[i].m_eigenValue << " , vec = " << m_components[i].m_eigenVector << std::endl;
+	}
+
+	m_transverseRatio = std::sqrt(m_components[2].m_eigenValue*m_components[2].m_eigenValue + m_components[1].m_eigenValue*m_components[1].m_eigenValue) / m_components[0].m_eigenValue;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode ClusterHelper::GetCentroid(const pandora::Cluster *const pCluster, pandora::CartesianVector &centroid)
 {
@@ -150,6 +237,7 @@ pandora::StatusCode ClusterHelper::GetNCaloHitSeeds(const pandora::Cluster *cons
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 bool ClusterHelper::IsClusterLeavingDetector(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, unsigned int nOuterLayersToExamine,
 		float maxDistanceToDetectorEdge, unsigned int minNHitsNearEdges)
@@ -254,6 +342,171 @@ bool ClusterHelper::ContainsHitType(const pandora::Cluster *const pCluster, cons
     }
 
     return false;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::GetMeanSurroundingEnergy(const pandora::Cluster *const pCluster, float &meanSurroundingEnergy)
+{
+	if(NULL == pCluster || 0 == pCluster->GetNCaloHits())
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	meanSurroundingEnergy = 0.f;
+
+    const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+
+    for (pandora::OrderedCaloHitList::const_reverse_iterator iter = orderedCaloHitList.rbegin(), iterEnd = orderedCaloHitList.rend(); iter != iterEnd; ++iter)
+    {
+        for (pandora::CaloHitList::const_iterator hIter = iter->second->begin(), hIterEnd = iter->second->end(); hIter != hIterEnd; ++hIter)
+        {
+			const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*hIter));
+
+			if(NULL == pCaloHit)
+				return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+			meanSurroundingEnergy += pCaloHit->GetSurroundingEnergy();
+        }
+    }
+
+	meanSurroundingEnergy /= pCluster->GetNCaloHits();
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::GetMeanDensity(const pandora::Cluster *const pCluster, float &meanDensity)
+{
+	if(NULL == pCluster || 0 == pCluster->GetNCaloHits())
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	meanDensity = 0.f;
+
+    const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+
+    for (pandora::OrderedCaloHitList::const_reverse_iterator iter = orderedCaloHitList.rbegin(), iterEnd = orderedCaloHitList.rend(); iter != iterEnd; ++iter)
+    {
+        for (pandora::CaloHitList::const_iterator hIter = iter->second->begin(), hIterEnd = iter->second->end(); hIter != hIterEnd; ++hIter)
+        {
+			const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*hIter));
+
+			if(NULL == pCaloHit)
+				return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+			meanDensity += pCaloHit->GetDensity();
+        }
+    }
+
+    meanDensity /= pCluster->GetNCaloHits();
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::GetChiClusterMerging(const pandora::Pandora &pandora, const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *const pClusterToMerge, float &oldChi, float &newChi)
+{
+	const pandora::TrackList trackList(pClusterToEnlarge->GetAssociatedTrackList());
+
+	pandora::TrackList trackListCombined(pClusterToMerge->GetAssociatedTrackList());
+	trackListCombined.insert(trackList.begin(), trackList.end());
+
+	if(trackList.empty())
+		return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	float trackEnergySum(0.f);
+	float trackEnergySumCombined(0.f);
+
+    for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
+        trackEnergySum += (*trackIter)->GetEnergyAtDca();
+
+    for (pandora::TrackList::const_iterator trackIter = trackListCombined.begin(), trackIterEnd = trackListCombined.end(); trackIter != trackIterEnd; ++trackIter)
+    	trackEnergySumCombined += (*trackIter)->GetEnergyAtDca();
+
+    const float clusterEnergy(pClusterToEnlarge->GetTrackComparisonEnergy(pandora));
+    const float clusterEnergyCombined(clusterEnergy + pClusterToMerge->GetTrackComparisonEnergy(pandora));
+
+    oldChi = ReclusterHelper::GetTrackClusterCompatibility(pandora, clusterEnergy, trackEnergySum);
+    newChi = ReclusterHelper::GetTrackClusterCompatibility(pandora, clusterEnergyCombined, trackEnergySumCombined);
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::MergeClusters(const pandora::Algorithm &algorithm, ClusterToClusterMap &clusterToClusterMap)
+{
+	for(ClusterToClusterMap::iterator iter = clusterToClusterMap.begin(), endIter = clusterToClusterMap.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::Cluster *const pDaughterCluster(iter->first);
+		const pandora::Cluster *const pParentCluster(iter->second);
+
+		if((NULL == pDaughterCluster) || (NULL == pParentCluster))
+			continue;
+
+		for(ClusterToClusterMap::iterator jter = clusterToClusterMap.begin(), endJter = clusterToClusterMap.end() ;
+				endJter != jter ; ++jter)
+		{
+			if(jter->first == pDaughterCluster)
+				continue;
+
+			if(jter->second == pDaughterCluster)
+				jter->second = pParentCluster;
+		}
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(algorithm, pParentCluster, pDaughterCluster));
+
+		(iter->second) = NULL;
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::GetTrackClusterDistance(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::Track *const pTrack, const float maxTransverseDistance, float &trackClusterDistance)
+{
+	pandora::CaloHitList clusterCaloHitList;
+	pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+
+	const float bField(pandora.GetPlugins()->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
+	const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
+							pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
+
+	const pandora::CartesianVector trackProjection(pTrack->GetTrackStateAtCalorimeter().GetPosition());
+
+	unsigned int nNearbyCaloHits(0);
+	float distanceToHelix(0.f);
+
+	for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit(*iter);
+
+		const float trackHitAngle(pCaloHit->GetPositionVector().GetOpeningAngle(trackProjection));
+
+		// cut needed for discriminate track opposite direction
+		if(trackHitAngle > (2*M_PI)/3.f)
+			continue;
+
+		pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnHelix(helix, pCaloHit->GetPositionVector(), projectionOnHelix));
+		const float hitDistanceToHelix((pCaloHit->GetPositionVector()-projectionOnHelix).GetMagnitude());
+
+		if(hitDistanceToHelix < maxTransverseDistance)
+		{
+			++nNearbyCaloHits;
+			distanceToHelix += hitDistanceToHelix;
+		}
+	}
+
+	if(0 == nNearbyCaloHits)
+		return pandora::STATUS_CODE_NOT_FOUND;
+
+	trackClusterDistance = distanceToHelix / nNearbyCaloHits;
+
+	return pandora::STATUS_CODE_SUCCESS;
 }
 
 } 
