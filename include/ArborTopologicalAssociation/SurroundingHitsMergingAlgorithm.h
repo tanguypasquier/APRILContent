@@ -31,9 +31,12 @@
 
 #include "Pandora/Algorithm.h"
 #include "Pandora/PandoraInternal.h"
+#include "ArborApi/ArborInputTypes.h"
 
 namespace arbor_content
 {
+
+class CaloHitMergingTool;
 
 /** 
  *  @brief  SurroundingHitsMergingAlgorithm class
@@ -55,8 +58,6 @@ private:
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
 private:
-	typedef std::map<const pandora::CaloHit *, const pandora::Cluster *> CaloHitToClusterMap;
-
 	/**
 	 *  @brief  Get the pandora content to perform the algorithm
 	 *
@@ -73,26 +74,10 @@ private:
 	 */
 	pandora::StatusCode GetAvailableCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &availableCaloHitList) const;
 
-	/**
-	 *  @brief  Find a possible parent cluster for each hit
-	 *
-	 *  @param  caloHitList the input calo hit list
-	 *  @param  clusterVector the input cluster list
-	 *  @param  caloHitToClusterMap the map of calo hit to cluster to merge
-	 */
-	pandora::StatusCode FindCaloHitClusterMerging(const pandora::CaloHitList &caloHitList, const pandora::ClusterVector &clusterVector, CaloHitToClusterMap &caloHitToClusterMap) const;
-
-	/**
-	 *  @brief  Merge the calo hits in their target cluster
-	 *
-	 *  @param  caloHitToClusterMap the calo hit to cluster map to perform the merging
-	 */
-	pandora::StatusCode MergeCaloHits(const CaloHitToClusterMap &caloHitToClusterMap) const;
-
 private:
-	float                                    m_maxCaloHitDistanceFine;       ///< The max distance to merge a hit in a cluster (fine granularity)
- 	float                                    m_maxCaloHitDistanceCoarse;     ///< The max distance to merge a hit in a cluster (coarse granularity)
+	bool                                     m_shouldMergeIsolatedHits;      ///< Whether to merge isolated hits in clusters
 	pandora::StringVector                    m_additionalClusterListNames;   ///< Additional cluster list names to perform the merging
+	CaloHitMergingTool                      *m_pCaloHitMergingTool;          ///< The calo hit merging tool
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
