@@ -31,6 +31,7 @@
 
 #include "Pandora/Algorithm.h"
 #include "Pandora/PandoraInputTypes.h"
+#include "ArborApi/ArborInputTypes.h"
 
 namespace pandora { class ClusterFitResult; }
 
@@ -53,6 +54,23 @@ public:
 	};
 
 private:
+	pandora::StatusCode Run();
+	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+	/**
+	 *  @brief  Get the eligible clusters for parent-daughter association
+	 *
+	 *  @param  clusterVector the cluster vector to receive
+	 */
+	pandora::StatusCode GetEligibleClusters(pandora::ClusterVector &clusterVector) const;
+
+	/**
+	 *  @brief  Algorithm workhorse, find associations between daughter and parent cluster
+	 *
+	 *  @param  clusterVector the input cluster vector
+	 *  @param  clusterToClusterMap the map of daughter to parent cluster to receive
+	 */
+	pandora::StatusCode FindClustersToMerge(const pandora::ClusterVector &clusterVector, ClusterToClusterMap &clusterToClusterMap) const;
 
 	/**
 	 *  @brief  Whether the cluster is eligible for association
@@ -74,38 +92,29 @@ private:
 			const pandora::Cluster *&pBestParentCluster) const;
 
 	/**
+	 *  @brief  Get the cluster backward direction and the inner cluster position using a cluster fit of the n first layers
 	 *
+	 *  @param  pCluster the input cluster address
+	 *  @param  backwardDirection the backward direction cartesian vector to receive
+	 *  @param  innerPosition the inner cluster position to receive
 	 */
-	pandora::StatusCode PerformBarycentreClusterComputation(const pandora::ClusterFitResult &daughterClusterFitResult, const pandora::CartesianVector &daughterClusterCentroid,
-			const pandora::ClusterFitResult &parentClusterFitResult, const pandora::CartesianVector &parentClusterCentroid,
-			const pandora::Cluster *const pParentCluster, const pandora::Cluster *&pBestBarycentreCluster, float &bestImpactParameter) const;
+	pandora::StatusCode GetClusterBackwardDirection(const pandora::Cluster *const pCluster, pandora::CartesianVector &backwardDirection, pandora::CartesianVector &innerPosition) const;
 
-	/**
-	 *
-	 */
-	pandora::StatusCode PerformInterceptClusterComputation(const pandora::ClusterFitResult &daughterClusterFitResult, const pandora::CartesianVector &daughterClusterCentroid,
-			const pandora::ClusterFitResult &parentClusterFitResult, const pandora::CartesianVector &parentClusterCentroid,
-			const pandora::Cluster *const pParentCluster, const pandora::Cluster *&pBestInterceptCluster, float &bestImpactParameter) const;
-
-	/**
-	 *
-	 */
-	pandora::StatusCode ChooseBestParentCluster(const pandora::Cluster *const pBarycentreParentCluster, const pandora::Cluster *const pInterceptParentCluster,
-			const pandora::Cluster *const pDaughterCluster, const pandora::Cluster *&pBestParentCluster) const;
-
-	pandora::StatusCode Run();
-	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
-
-	unsigned int                    m_minNCaloHits;
-	unsigned int                    m_maxNCaloHits;
-	unsigned int                    m_minNPseudoLayers;
-	unsigned int                    m_maxNPseudoLayers;
+private:
+	bool                             m_discriminatePhotonPid;            ///< Whether to discriminate photons
+	bool                             m_allowNeutralParentMerging;
+	unsigned int                     m_minNCaloHits;
+	unsigned int                     m_maxNCaloHits;
+	unsigned int                     m_minNPseudoLayers;
+	unsigned int                     m_maxNPseudoLayers;
 	float                            m_chi2AssociationCut;
-	float                            m_clustersAngleCut;
-	float                            m_barycentreImpactParameterCut;
-	float                            m_interceptImpactParameterCut;
-	float                            m_interceptClosestDistanceApproachCut;
-}; 
+	unsigned int                     m_nBackwardLayersFit;
+	float                            m_maxBackwardAngle;
+	float                            m_maxBackwardDistanceFine;
+	float                            m_maxBackwardDistanceCoarse;
+	unsigned int                     m_maxBackwardPseudoLayer;
+	unsigned int                     m_minParentClusterBackwardNHits;
+};
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
