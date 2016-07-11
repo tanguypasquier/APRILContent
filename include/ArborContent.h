@@ -59,26 +59,27 @@
 #include "ArborPlugins/ArborPseudoLayerPlugin.h"
 #include "ArborPlugins/EnergyCorrectionPlugins.h"
 
-#include "ArborReclustering/NeutralVicinityReclusteringAlgorithm.h"
-#include "ArborReclustering/ChargedVicinityReclusteringAlgorithm.h"
+#include "ArborReclustering/EnergyExcessReclusteringAlgorithm.h"
 #include "ArborReclustering/MissingEnergyReclusteringAlgorithm.h"
+#include "ArborReclustering/SplitTrackReclusteringAlgorithm.h"
 
 #include "ArborTools/ConnectorCleaningTool.h"
 #include "ArborTools/ConnectorSeedingTool.h"
-#include "ArborTools/EnergyEstimateTools.h"
+#include "ArborTools/ConnectorAlignmentTool.h"
 #include "ArborTools/TrackDrivenSeedingTool.h"
+#include "ArborTools/CaloHitMergingTool.h"
 
 #include "ArborTopologicalAssociation/TopologicalAssociationParentAlgorithm.h"
 #include "ArborTopologicalAssociation/PointingClusterAssociationAlgorithm.h"
 #include "ArborTopologicalAssociation/ClosebySeedMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/ClusterFragmentMergingAlgorithm.h"
-#include "ArborTopologicalAssociation/ContactClusterMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/SurroundingHitsMergingAlgorithm.h"
-#include "ArborTopologicalAssociation/CloudClusterRemovalAlgorithm.h"
-#include "ArborTopologicalAssociation/ChargedClusterMergingAlgorithm.h"
+#include "ArborTopologicalAssociation/NearbyTrackPhotonRemovalAlg.h"
+#include "ArborTopologicalAssociation/MipFragmentMergingAlg.h"
+#include "ArborTopologicalAssociation/FragmentRemovalAlgorithm.h"
 
 #include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
-#include "ArborTrackClusterAssociation/TopologicalTrackClusterAssociationAlgorithm.h"
+#include "ArborTrackClusterAssociation/UnassociatedTrackRecoveryAlg.h"
 
 #include "ArborUtility/AlgorithmConfiguration.h"
 #include "ArborUtility/EventPreparationAlgorithm.h"
@@ -86,7 +87,8 @@
 #include "ArborUtility/TrackPreparationAlgorithm.h"
 #include "ArborUtility/ListChangingAlgorithm.h"
 #include "ArborUtility/ListMergingAlgorithm.h"
-#include "ArborUtility/CompositeAlgorithm.h"
+#include "ArborUtility/CaloHitPreparationAlgorithm.h"
+#include "ArborUtility/IsolatedHitClusteringAlgorithm.h"
 
 /** 
  * @brief  ArborContent class used to register arbor algorithms and plugins
@@ -103,19 +105,19 @@ public:
 	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
 	d("PerformanceMonitoring",               arbor_content::PerformanceMonitoringAlgorithm::Factory) \
 	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
-	d("NeutralVicinityReclustering",         arbor_content::NeutralVicinityReclusteringAlgorithm::Factory) \
-	d("ChargedVicinityReclustering",         arbor_content::ChargedVicinityReclusteringAlgorithm::Factory) \
+	d("EnergyExcessReclustering",            arbor_content::EnergyExcessReclusteringAlgorithm::Factory) \
 	d("MissingEnergyReclustering",           arbor_content::MissingEnergyReclusteringAlgorithm::Factory) \
+	d("SplitTrackReclustering",              arbor_content::SplitTrackReclusteringAlgorithm::Factory) \
 	d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
 	d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory) \
 	d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \
-	d("ContactClusterMerging",               arbor_content::ContactClusterMergingAlgorithm::Factory) \
 	d("ClusterFragmentMerging",              arbor_content::ClusterFragmentMergingAlgorithm::Factory) \
 	d("SurroundingHitsMerging",              arbor_content::SurroundingHitsMergingAlgorithm::Factory) \
-	d("CloudClusterRemoval",                 arbor_content::CloudClusterRemovalAlgorithm::Factory) \
-	d("ChargedClusterMerging",               arbor_content::ChargedClusterMergingAlgorithm::Factory) \
-	d("TopologicalTrackClusterAssociation",  arbor_content::TopologicalTrackClusterAssociationAlgorithm::Factory) \
+	d("NearbyTrackPhotonRemoval",            arbor_content::NearbyTrackPhotonRemovalAlg::Factory) \
+	d("MipFragmentMerging",                  arbor_content::MipFragmentMergingAlg::Factory) \
+	d("FragmentRemoval",                     arbor_content::FragmentRemovalAlgorithm::Factory) \
 	d("TrackClusterAssociation",             arbor_content::TrackClusterAssociationAlgorithm::Factory) \
+	d("UnassociatedTrackRecovery",           arbor_content::UnassociatedTrackRecoveryAlg::Factory) \
 	d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
 	d("ClusterPreparation",                  arbor_content::ClusterPreparationAlgorithm::Factory) \
 	d("TrackPreparation",                    arbor_content::TrackPreparationAlgorithm::Factory) \
@@ -126,17 +128,17 @@ public:
 	d("ClusterListMerging",                  arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Cluster>::Factory) \
 	d("VertexListMerging",                   arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Vertex>::Factory) \
 	d("ListChanging",                        arbor_content::ListChangingAlgorithm::Factory) \
-	d("CompositeAlgorithm",                  arbor_content::CompositeAlgorithm::Factory) \
-	d("AlgorithmConfiguration",              arbor_content::AlgorithmConfiguration::Factory)
+	d("AlgorithmConfiguration",              arbor_content::AlgorithmConfiguration::Factory) \
+	d("CaloHitPreparation",                  arbor_content::CaloHitPreparationAlgorithm::Factory) \
+	d("IsolatedHitClustering",               arbor_content::IsolatedHitClusteringAlgorithm::Factory)
 
 
 #define ARBOR_ALGORITHM_TOOL_LIST(d) \
-	d("LinearInputEnergyEstimate",           arbor_content::LinearInputEnergyEstimate::Factory) \
-	d("CombinedQuadraticEnergyEstimate",     arbor_content::CombinedQuadraticEnergyEstimate::Factory) \
-	d("LinearEnergyEstimate",                arbor_content::LinearEnergyEstimate::Factory) \
 	d("ConnectorCleaning",                   arbor_content::ConnectorCleaningTool::Factory) \
 	d("ConnectorSeeding",                    arbor_content::ConnectorSeedingTool::Factory) \
-	d("TrackDrivenSeeding",                  arbor_content::TrackDrivenSeedingTool::Factory)
+	d("TrackDrivenSeeding",                  arbor_content::TrackDrivenSeedingTool::Factory) \
+	d("ConnectorAlignment",                  arbor_content::ConnectorAlignmentTool::Factory) \
+	d("CaloHitMerging",                      arbor_content::CaloHitMergingTool::Factory)
 
 
  /**
