@@ -67,9 +67,6 @@ pandora::StatusCode EnergyExcessReclusteringAlgorithm::Run()
 		// negative chi means missing energy in the cluster
 		const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList);
 
-		ARBOR_LOG( "Cluster energy = " << clusterEnergyI << " GeV" << std::endl );
-	    ARBOR_LOG( "  => Track p = " << (*trackList.begin())->GetEnergyAtDca() << " GeV , chi = " << chi << std::endl );
-
 		// check for chi2, energy excess and asymmetric cluster
 		if( (chi*chi < m_minChi2ToRunReclustering || chi < 0.f)  || ((*trackList.begin())->GetEnergyAtDca() < m_minTrackMomentum))
 			continue;
@@ -161,17 +158,13 @@ pandora::StatusCode EnergyExcessReclusteringAlgorithm::Run()
 
 pandora::StatusCode EnergyExcessReclusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-	m_minChi2ToRunReclustering = 1.5f;
+	m_minChi2ToRunReclustering = 1.8f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MinChi2ToRunReclustering", m_minChi2ToRunReclustering));
 
 	m_maxChi2ToStopReclustering = 0.5f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxChi2ToStopReclustering", m_maxChi2ToStopReclustering));
-
-	m_maxClusterSymmetry = 0.5f;
-	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-		 "MaxClusterSymmetry", m_maxClusterSymmetry));
 
 	m_minTrackMomentum = 0.8f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

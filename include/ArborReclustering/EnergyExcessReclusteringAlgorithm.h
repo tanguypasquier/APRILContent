@@ -57,7 +57,6 @@ private:
 private:
 	float                  m_minChi2ToRunReclustering;
 	float                  m_maxChi2ToStopReclustering;
-	float                  m_maxClusterSymmetry;
 	float                  m_minTrackMomentum;
 	pandora::StringVector  m_clusteringAlgorithmList;
 	std::string            m_associationAlgorithmName;
