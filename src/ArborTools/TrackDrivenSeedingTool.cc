@@ -28,6 +28,8 @@
 
 #include "ArborTools/TrackDrivenSeedingTool.h"
 
+#include "ArborHelpers/GeometryHelper.h"
+
 #include "Pandora/AlgorithmHeaders.h"
 #include "Pandora/Algorithm.h"
 
@@ -71,6 +73,10 @@ pandora::StatusCode TrackDrivenSeedingTool::Process(const pandora::Algorithm &al
 pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
 		pandora::CaloHitVector &caloHitVector)
 {
+	const float bField(PandoraContentApi::GetPlugins(algorithm)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
+	const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
+			pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
+
 	for(pandora::CaloHitList::const_iterator iter = pInputCaloHitList->begin(), endIter = pInputCaloHitList->end() ;
 			endIter != iter ; ++iter)
 	{
@@ -82,16 +88,15 @@ pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::A
 		if(pCaloHit->GetPseudoLayer() > m_maxInitialPseudoLayer)
 			continue;
 
-		const pandora::CartesianVector &trackPositionAtCalorimeter(pTrack->GetTrackStateAtCalorimeter().GetPosition());
-		const pandora::CartesianVector &trackMomentumAtCalorimeter(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
-		const pandora::CartesianVector &trackToCaloHitVector(pCaloHit->GetPositionVector() - trackPositionAtCalorimeter);
-//		const float separationDistance = trackToCaloHitVector.GetMagnitude();
-		const float openingAngle = trackMomentumAtCalorimeter.GetOpeningAngle(trackToCaloHitVector);
+		if(!m_shouldUseIsolatedHits && pCaloHit->IsIsolated())
+			continue;
 
-//		if(separationDistance > m_maxInitialTrackDistance)
-//			continue;
+		pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
 
-		if(openingAngle > m_maxInitialTrackAngle)
+		if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, pCaloHit->GetPositionVector(), projectionOnHelix))
+			continue;
+
+		if((projectionOnHelix-pCaloHit->GetPositionVector()).GetMagnitude() > m_maxInitialTrackDistance)
 			continue;
 
 		caloHitVector.push_back(pCaloHit);
@@ -121,9 +126,20 @@ pandora::StatusCode TrackDrivenSeedingTool::ConnectCaloHits(const pandora::Algor
 	{
 		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHitVector.at(i));
 
+		if(!m_shouldUseIsolatedHits && pCaloHit->IsIsolated())
+			continue;
+
+		const pandora::CartesianVector &position(pCaloHit->GetPositionVector());
 		const unsigned int pseudoLayer = pCaloHit->GetPseudoLayer();
 
-		const pandora::CartesianVector extrapolatedMomentum(helix.GetExtrapolatedMomentum(pCaloHit->GetPositionVector()));
+		pandora::CartesianVector helixProjection(0.f, 0.f, 0.f);
+
+		if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, position, helixProjection))
+			continue;
+
+		const pandora::CartesianVector extrapolatedMomentum(helix.GetExtrapolatedMomentum(helixProjection));
+		const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
+
 		pandora::OrderedCaloHitList::const_iterator plIter = orderedCaloHitList.find(pseudoLayer);
 
 		// unexpected ???
@@ -229,6 +245,10 @@ pandora::StatusCode TrackDrivenSeedingTool::ReadSettings(const pandora::TiXmlHan
 	m_maxDistanceToTrackCoarse = std::numeric_limits<float>::max();
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxDistanceToTrackCoarse", m_maxDistanceToTrackCoarse));
+
+	m_shouldUseIsolatedHits = false;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"ShouldUseIsolatedHits", m_shouldUseIsolatedHits));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }

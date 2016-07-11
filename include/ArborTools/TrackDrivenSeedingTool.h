@@ -105,6 +105,8 @@ private:
 	float                           m_maxTransverseDistanceCoarse;
 	float                           m_maxDistanceToTrackFine;
 	float                           m_maxDistanceToTrackCoarse;
+
+	bool                            m_shouldUseIsolatedHits;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
