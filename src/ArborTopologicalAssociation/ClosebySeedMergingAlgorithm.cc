@@ -77,8 +77,10 @@ pandora::StatusCode ClosebySeedMergingAlgorithm::FindMergeCandidateClusters(cons
 		{
 			const CaloHit *pSeedCaloHit = dynamic_cast<const CaloHit *>(*hitIter);
 
-			if( ( pandora::ECAL == pSeedCaloHit->GetHitType() && !m_mergeECalSeedClusters )
-			|| ( pandora::HCAL == pSeedCaloHit->GetHitType() && !m_mergeHCalSeedClusters ) )
+			if(pandora::ECAL == pSeedCaloHit->GetHitType() && !m_mergeECalSeedClusters)
+				continue;
+
+			if(pandora::HCAL == pSeedCaloHit->GetHitType() && !m_mergeHCalSeedClusters)
 				continue;
 
 			if(!caloHitSeedToClusterMap.insert(std::pair<const CaloHit *, const pandora::Cluster *>(pSeedCaloHit, pCluster)).second)
@@ -129,11 +131,17 @@ pandora::StatusCode ClosebySeedMergingAlgorithm::MergeCloseBySeedClusters(CaloHi
 			if(std::max(pseudoLayerI, pseudoLayerJ) - std::min(pseudoLayerI, pseudoLayerJ) > m_maxSeedPseudoLayerDifference)
 				continue;
 
-			const float seedDistance = (pSeedCaloHitI->GetPositionVector() - pSeedCaloHitJ->GetPositionVector()).GetMagnitude();
+			const pandora::CartesianVector distanceVector(pSeedCaloHitJ->GetPositionVector() - pSeedCaloHitI->GetPositionVector());
+
+			const float seedTransverseDistance(distanceVector.GetMagnitude()*sin(pSeedCaloHitI->GetPositionVector().GetOpeningAngle(distanceVector)));
+			const float seedDistance(distanceVector.GetMagnitude());
+
 			const float maxSeedDistance = this->GetPandora().GetGeometry()->GetHitTypeGranularity(pSeedCaloHitI->GetHitType()) <= pandora::FINE ?
 					m_maxSeedDistanceFine : m_maxSeedDistanceCoarse;
+			const float maxSeedTransverseDistance = this->GetPandora().GetGeometry()->GetHitTypeGranularity(pSeedCaloHitI->GetHitType()) <= pandora::FINE ?
+					m_maxSeedTransverseDistanceFine : m_maxSeedTransverseDistanceCoarse;
 
-			if(seedDistance > maxSeedDistance)
+			if(seedDistance > maxSeedDistance || seedTransverseDistance > maxSeedTransverseDistance)
 				continue;
 
 			// replace the cluster that will be deleted by the one that will be enlarge
@@ -177,13 +185,21 @@ pandora::StatusCode ClosebySeedMergingAlgorithm::ReadSettings(const pandora::TiX
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxSeedPseudoLayerDifference", m_maxSeedPseudoLayerDifference));
 
-	m_maxSeedDistanceFine = 10.f;
+	m_maxSeedDistanceFine = 25.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxSeedDistanceFine", m_maxSeedDistanceFine));
 
-	m_maxSeedDistanceCoarse = 25.f;
+	m_maxSeedDistanceCoarse = 65.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxSeedDistanceCoarse", m_maxSeedDistanceCoarse));
+
+	m_maxSeedTransverseDistanceFine = 10.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+	     "MaxSeedTransverseDistanceFine", m_maxSeedTransverseDistanceFine));
+
+	m_maxSeedTransverseDistanceCoarse = 25.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+	     "MaxSeedTransverseDistanceCoarse", m_maxSeedTransverseDistanceCoarse));
 
 	m_mergeECalSeedClusters = true;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

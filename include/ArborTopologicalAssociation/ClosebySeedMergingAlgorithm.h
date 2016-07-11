@@ -75,9 +75,11 @@ private:
 			CaloHitSeedToClusterMap &caloHitSeedToClusterMap) const;
 
 	bool                                 m_discriminateSeedLeafHits;
-	unsigned int                        m_maxSeedPseudoLayerDifference;
+	unsigned int                         m_maxSeedPseudoLayerDifference;
 	float                                m_maxSeedDistanceFine;
 	float                                m_maxSeedDistanceCoarse;
+	float                                m_maxSeedTransverseDistanceFine;
+	float                                m_maxSeedTransverseDistanceCoarse;
 	bool                                 m_mergeECalSeedClusters;
 	bool                                 m_mergeHCalSeedClusters;
 };
