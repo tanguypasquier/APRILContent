@@ -260,11 +260,11 @@ pandora::StatusCode CaloHitPreparationAlgorithm::ReadSettings(const pandora::TiX
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
     		"IsolationPseudoLayerDifference", m_isolationPseudoLayerDifference));
 
-    m_isolationMaxSeparationDistanceFine = 17.f;
+    m_isolationMaxSeparationDistanceFine = 25.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
     		"IsolationMaxSeparationDistanceFine", m_isolationMaxSeparationDistanceFine));
 
-    m_isolationMaxSeparationDistanceCoarse = 35.f;
+    m_isolationMaxSeparationDistanceCoarse = 40.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
     		"IsolationMaxSeparationDistanceCoarse", m_isolationMaxSeparationDistanceCoarse));
 
