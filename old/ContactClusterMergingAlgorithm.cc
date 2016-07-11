@@ -58,6 +58,8 @@ pandora::StatusCode ContactClusterMergingAlgorithm::Run()
 		if(pParentCluster->GetAssociatedTrackList().empty())
 			continue;
 
+		std::cout << "Cluster with track p = " << (*pParentCluster->GetAssociatedTrackList().begin())->GetEnergyAtDca() << " GeV" << std::endl;
+
 		bool contactClusterFound = true;
 
 		while(contactClusterFound)
@@ -78,10 +80,14 @@ pandora::StatusCode ContactClusterMergingAlgorithm::Run()
 				if(!pDaughterCluster->GetAssociatedTrackList().empty())
 					continue;
 
+				std::cout << " ==> Checking for close contact with " << pDaughterCluster->GetCorrectedHadronicEnergy(this->GetPandora()) << std::endl;
+
 				if(this->AreClustersInCloseContact(pParentCluster, pDaughterCluster))
 				{
 					const pandora::TrackList &trackList(pParentCluster->GetAssociatedTrackList());
 					float trackEnergySum(0.f);
+
+					std::cout << " ==> ** !!! Close contact !!! **" << std::endl;
 
 				    for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end() ;
 				    		trackIter != trackIterEnd; ++trackIter)
@@ -97,6 +103,8 @@ pandora::StatusCode ContactClusterMergingAlgorithm::Run()
 
 				    if(improvesCompatibility)
 				    {
+				    	std::cout << " ==> ** !!! Merging !!! **" << std::endl;
+
 						// merge clusters
 						PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pParentCluster, pDaughterCluster));
 
@@ -150,18 +158,23 @@ bool ContactClusterMergingAlgorithm::AreClustersInCloseContact(const pandora::Cl
 				pEndIter != pIter ; ++pIter)
 		{
 			const pandora::CaloHit *const pParentCaloHit = *pIter;
+			pandora::Granularity granularity(PandoraContentApi::GetGeometry(*this)->GetHitTypeGranularity(pParentCaloHit->GetHitType()));
+			const float minClusterContactDistance(granularity > pandora::FINE ? m_minClusterContactDistanceCoarse : m_minClusterContactDistanceFine);
 
 			for(pandora::CaloHitList::const_iterator dIter = daughterClusterHits.begin(), dEndIter = daughterClusterHits.end() ;
 					dEndIter != dIter ; ++dIter)
 			{
 				const pandora::CaloHit *const pDaughterCaloHit = *dIter;
 
-				if((pDaughterCaloHit->GetPositionVector() - pParentCaloHit->GetPositionVector()).GetMagnitude() < m_minClusterContactDistance)
+				if((pDaughterCaloHit->GetPositionVector() - pParentCaloHit->GetPositionVector()).GetMagnitude() < minClusterContactDistance)
+				{
 					nContactCaloHits++;
+					break; // avoid double counting ...
+				}
 			}
 		}
 
-//		std::cout << "nContactCaloHits : " << nContactCaloHits << std::endl;
+		std::cout << "nContactCaloHits : " << nContactCaloHits << std::endl;
 
 		if(nContactCaloHits > m_minNHitContact)
 		{
@@ -184,9 +197,13 @@ pandora::StatusCode ContactClusterMergingAlgorithm::ReadSettings(const pandora::
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 	     "MaxClusterDistance", m_maxClusterDistance));
 
-	m_minClusterContactDistance = 10.f;
+	m_minClusterContactDistanceFine = 10.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-	     "MinClusterContactDistance", m_minClusterContactDistance));
+	     "MinClusterContactDistanceFine", m_minClusterContactDistanceFine));
+
+	m_minClusterContactDistanceCoarse = 20.f;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+	     "MinClusterContactDistanceCoarse", m_minClusterContactDistanceCoarse));
 
 	m_minNHitContact = 10;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

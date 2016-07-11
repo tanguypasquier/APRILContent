@@ -62,7 +62,8 @@ private:
 private:
 
 	float                     m_maxClusterDistance;
-	float                     m_minClusterContactDistance;
+	float                     m_minClusterContactDistanceFine;
+	float                     m_minClusterContactDistanceCoarse;
 	unsigned int             m_minNHitContact;
 	float                     m_maxEnergyChi2;
 };

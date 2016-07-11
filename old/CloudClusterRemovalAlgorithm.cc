@@ -54,6 +54,17 @@ pandora::StatusCode CloudClusterRemovalAlgorithm::Run()
 		if(!pCluster->GetAssociatedTrackList().empty())
 			continue;
 
+		// initial cuts on cluster size
+		if(m_maxClusterNHit > pCluster->GetNCaloHits())
+		{
+			pCluster->GetOrderedCaloHitList().GetCaloHitList(connectorRemovalCaloHitList);
+			clusterVector.push_back(pCluster);
+			continue;
+		}
+
+		if(m_maxClusterNHit2 < pCluster->GetNCaloHits())
+			continue;
+
 		// first check for cluster energy
 		float clusterEnergy(0.f);
 
@@ -69,22 +80,27 @@ pandora::StatusCode CloudClusterRemovalAlgorithm::Run()
 		if(clusterEnergy > m_maxClusterEnergy)
 			continue;
 
-		// discriminate on cluster size
-		if(m_maxClusterNHit > pCluster->GetNCaloHits())
+		float clusterExtension(0.f);
+
+		pandora::CaloHitList clusterCaloHits;
+		pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHits);
+
+		for(pandora::CaloHitList::const_iterator cIter = clusterCaloHits.begin(), cEndIter = clusterCaloHits.end() ;
+				cEndIter != cIter ; ++cIter)
 		{
-			pCluster->GetOrderedCaloHitList().GetCaloHitList(connectorRemovalCaloHitList);
-			clusterVector.push_back(pCluster);
-			continue;
+			for(pandora::CaloHitList::const_iterator cIter2 = cIter, cEndIter2 = clusterCaloHits.end() ;
+					cEndIter2 != cIter2 ; ++cIter2)
+			{
+				if(*cIter == *cIter2)
+					continue;
+
+				clusterExtension += ((*cIter)->GetPositionVector() - (*cIter2)->GetPositionVector()).GetMagnitude();
+			}
 		}
 
-		const pandora::ClusterFitResult &fitResult = pCluster->GetFitToAllHitsResult();
+		clusterExtension /= (clusterCaloHits.size() * clusterCaloHits.size());
 
-		if(!fitResult.IsFitSuccessful())
-			continue;
-
-		const float extension = fitResult.GetRms() / pCluster->GetNCaloHits();
-
-		if(extension < m_minClusterExtension)
+		if(clusterExtension < m_minClusterExtension)
 			continue;
 
 		pCluster->GetOrderedCaloHitList().GetCaloHitList(connectorRemovalCaloHitList);
@@ -164,15 +180,19 @@ pandora::StatusCode CloudClusterRemovalAlgorithm::GetClusterExtension(const pand
 
 pandora::StatusCode CloudClusterRemovalAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-	m_maxClusterEnergy = 2.f;
+	m_maxClusterEnergy = 1.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxClusterEnergy", m_maxClusterEnergy));
 
-	m_maxClusterNHit = 10;
+	m_maxClusterNHit = 5;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxClusterNHit", m_maxClusterNHit));
 
-	m_minClusterExtension = 0.5f;
+	m_maxClusterNHit2 = 20;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+		 "MaxClusterNHit2", m_maxClusterNHit2));
+
+	m_minClusterExtension = 15.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MinClusterExtension", m_minClusterExtension));
 

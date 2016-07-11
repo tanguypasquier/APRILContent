@@ -69,6 +69,16 @@ public:
 	/**
 	 *
 	 */
+	pandora::CaloHitList GetAvailableCaloHitList(const pandora::Algorithm &algorithm) const;
+
+	/**
+	 *
+	 */
+	float GetAvailableEnergy(const pandora::Algorithm &algorithm) const;
+
+	/**
+	 *
+	 */
 	float GetEnergy() const;
 
 	/**
@@ -206,14 +216,36 @@ public:
     unsigned int GetBinNCaloHits(const int binX, const int binY) const;
 
     /**
-     *  @brief  Get the number of calo hits in a specified bin
+     *  @brief  Get the number of available calo hits in a specified bin
+     *
+     *  @param  algorithm to access the calo hit availability
+     *  @param  binX the specified x bin number
+     *  @param  binY the specified y bin number
+     *
+     *  @return The number of available calo hits in the specified bin
+     */
+    unsigned int GetBinNAvailableCaloHits(const pandora::Algorithm &algorithm, const int binX, const int binY) const;
+
+    /**
+     *  @brief  Get the calo hits in a specified bin
      *
      *  @param  binX the specified x bin number
      *  @param  binY the specified y bin number
      *
-     *  @return The number of calo hits in the specified bin
+     *  @return The calo hits in the specified bin
      */
     pandora::CaloHitList GetBinCaloHitList(const int binX, const int binY) const;
+
+    /**
+     *  @brief  Get the available calo hits in a specified bin
+     *
+     *  @param  algorithm to access the calo hit availability
+     *  @param  binX the specified x bin number
+     *  @param  binY the specified y bin number
+     *
+     *  @return The available calo hits in the specified bin
+     */
+    pandora::CaloHitList GetBinAvailableCaloHitList(const pandora::Algorithm &algorithm, const int binX, const int binY) const;
 
     /**
      *  @brief  Get the energy in a specified bin
@@ -224,6 +256,16 @@ public:
      *  @return The energy in the specified bin
      */
     float GetBinEnergy(const int binX, const int binY) const;
+
+    /**
+     *  @brief  Get the energy in a specified bin
+     *
+     *  @param  binX the specified x bin number
+     *  @param  binY the specified y bin number
+     *
+     *  @return The energy in the specified bin
+     */
+    float GetBinAvailableEnergy(const pandora::Algorithm &algorithm, const int binX, const int binY) const;
 
     /**
      *  @brief  Get the maximum value in the histogram and the corresponding bin numbers (excludes overflow and underflow bins)
@@ -237,11 +279,30 @@ public:
     /**
      *  @brief  Get the maximum value in the histogram and the corresponding bin numbers (excludes overflow and underflow bins)
      *
+     *  @param  algorithm to access calo hit availability
+     *  @param  maximumValue to receive the maximum value
+     *  @param  maximumBinX to receive the x coordinate of the bin containing the maximum value
+     *  @param  maximumBinY to receive the y coordinate of the bin containing the maximum value
+     */
+    void GetMaximumNAvailableCaloHits(const pandora::Algorithm &algorithm, unsigned int &maximumValue, int &maximumBinX, int &maximumBinY) const;
+
+    /**
+     *  @brief  Get the maximum value in the histogram and the corresponding bin numbers (excludes overflow and underflow bins)
+     *
      *  @param  maximumValue to receive the maximum value
      *  @param  maximumBinX to receive the x coordinate of the bin containing the maximum value
      *  @param  maximumBinY to receive the y coordinate of the bin containing the maximum value
      */
     void GetMaximumEnergy(float &maximumValue, int &maximumBinX, int &maximumBinY) const;
+
+    /**
+     *  @brief  Get the maximum value in the histogram and the corresponding bin numbers (excludes overflow and underflow bins)
+     *
+     *  @param  maximumValue to receive the maximum value
+     *  @param  maximumBinX to receive the x coordinate of the bin containing the maximum value
+     *  @param  maximumBinY to receive the y coordinate of the bin containing the maximum value
+     */
+    void GetMaximumAvailableEnergy(const pandora::Algorithm &algorithm, float &maximumValue, int &maximumBinX, int &maximumBinY, bool checkBinAvailability = false) const;
 
     /**
      *  @brief  Set the contents of a specified bin
@@ -274,6 +335,12 @@ public:
      *  @brief
      */
     bool GetBinAvailability(const int binX, const int binY) const;
+
+    /**
+     *  @brief
+     */
+    void SetBinAvailability(const int binX, const int binY, bool availability);
+
 
 private:
     typedef std::map<int, ShowerBin> ShowerBinMap;
@@ -309,6 +376,11 @@ public:
 	/**
 	 *
 	 */
+	ShowerPeak(const pandora::CaloHitList &caloHitList, const Bin2D &maxBin);
+
+	/**
+	 *
+	 */
 	const pandora::CaloHitList &GetCaloHitList() const;
 
 	/**
@@ -325,6 +397,16 @@ public:
 	 *
 	 */
 	const Bin2D &GetMaxBin() const;
+
+	/**
+	 *
+	 */
+	pandora::StatusCode AddBin(const Bin2D &bin);
+
+	/**
+	 *
+	 */
+	void AddCaloHits(const pandora::CaloHitList &caloHitList);
 
 private:
 	pandora::CaloHitList          m_caloHitList;
@@ -374,17 +456,35 @@ private:
     /**
      *
      */
+    bool FindInitialShowerPeak(Shower2DHistogram &histogram, ShowerPeakList &showerPeakList, float &maximumPeakEnergy);
+
+    /**
+     *
+     */
+    pandora::StatusCode EnlargePeaks(Shower2DHistogram &histogram, ShowerPeakList &showerPeakList, float currentEnergyStep);
+
+    /**
+     *
+     */
+    pandora::StatusCode EnlargePeak(Shower2DHistogram &histogram, ShowerPeak &showerPeak, float currentEnergyStep);
+
+    /**
+     *
+     */
+    pandora::StatusCode EnlargePeakAroundBin(Shower2DHistogram &histogram, ShowerPeak &showerPeak, const ShowerPeak::Bin2D &bin, float currentEnergyStep);
+
+    /**
+     *
+     */
+    pandora::StatusCode FindNewShowerPeaks(Shower2DHistogram &histogram, ShowerPeakList &showerPeakList, float currentEnergyStep);
+
+
+
+
+    /**
+     *
+     */
     pandora::StatusCode FillProjectionHistogram(const pandora::CaloHitList &caloHitList, Shower2DHistogram &histogram);
-
-    /**
-     *
-     */
-    pandora::StatusCode BuildPeakAroundBin(Shower2DHistogram &histogram, pandora::CaloHitList &caloHitList, const ShowerPeak::Bin2D &bin, ShowerPeak::Bin2DList &bin2DList);
-
-    /**
-     *
-     */
-    bool BinAlreadyAdded(int thetaBin, int phiBin, const ShowerPeak::Bin2DList &bin2DList);
 
     /**
      *
@@ -416,27 +516,31 @@ private:
      */
     pandora::StatusCode MergeNearbyCaloHits(const pandora::ClusterVector &clusterVector, const pandora::CaloHitList &inputCaloHitList);
 
+    /**
+     *
+     */
+    pandora::StatusCode RemoveClustersByProperties(pandora::ClusterVector &clusterVector, pandora::CaloHitList &removalCaloHitList);
+
+    /**
+     *
+     */
+    pandora::StatusCode FlagClustersAsPhotons(const pandora::ClusterVector &clusterVector);
+
 private:
     bool                                          m_shouldUseIsolatedHits;
     unsigned int                                  m_maxCaloHitPseudoLayer;
     unsigned int                                  m_projectionNPhiBins;
     unsigned int                                  m_projectionNThetaBins;
-    float                                         m_projectionMinPeakSize;
-    float                                         m_thetaTrackProjectionDistance;
-    float                                         m_phiTrackProjectionDistance;
-    unsigned int                                  m_photonPeakMinSize;
-    unsigned int                                  m_photonPeakNPhiBins;
-    unsigned int                                  m_photonPeakNThetaBins;
-    float                                         m_photonPeakBestHitMaxDistance;
+    float                                         m_photonPeakMinEnergy;
     float                                         m_photonPeakHitMaxDistance;
     unsigned int                                  m_photonMinNHits;
     float                                         m_photonMaxTrackHitDistance;
     float                                         m_maxTrackClusterDistance;
     float                                         m_photonMaxAngleOrigin;
     float                                         m_photonMaxNearbyHitMergingDistance;
-
-    std::string                                   m_projectionDrawOption;
-    bool                                          m_monitoringMode;
+    float                                         m_clusterPropertiesMinTransverseRatio;
+    unsigned int                                  m_showerPeakNSteps;
+    unsigned int                                  m_showerPeakMinNHits;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

@@ -80,6 +80,47 @@ const pandora::CaloHitList &ShowerBin::GetCaloHitList() const
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+pandora::CaloHitList ShowerBin::GetAvailableCaloHitList(const pandora::Algorithm &algorithm) const
+{
+	pandora::CaloHitList availableCaloHitList;
+
+	for(pandora::CaloHitList::const_iterator iter = m_caloHitList.begin(), endIter = m_caloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit(*iter);
+
+		if(!PandoraContentApi::IsAvailable(algorithm, pCaloHit))
+			continue;
+
+		availableCaloHitList.insert(pCaloHit);
+	}
+
+	return availableCaloHitList;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+float ShowerBin::GetAvailableEnergy(const pandora::Algorithm &algorithm) const
+{
+	float availableEnergy(0.f);
+
+	for(pandora::CaloHitList::const_iterator iter = m_caloHitList.begin(), endIter = m_caloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit(*iter);
+
+		if(!PandoraContentApi::IsAvailable(algorithm, pCaloHit))
+			continue;
+
+		const float energy(pCaloHit->GetHitType() == pandora::ECAL ? pCaloHit->GetElectromagneticEnergy() : pCaloHit->GetHadronicEnergy());
+		availableEnergy += energy;
+	}
+
+	return availableEnergy;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 float ShowerBin::GetEnergy() const
 {
 	const_cast<ShowerBin*>(this)->CalculateProperties();
@@ -195,7 +236,7 @@ int Shower2DHistogram::GetBinX(float xValue)
 	if(xValue < m_xLow || xValue > m_xHigh)
 		return -1;
 
-	return static_cast<int>(( (xValue - m_xLow) / (m_xHigh - m_xLow) ) * static_cast<float>(m_nBinsX));
+	return(std::max(-1, std::min(m_nBinsX, static_cast<int>((xValue - m_xLow) / m_xBinWidth)) ));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -233,7 +274,7 @@ int Shower2DHistogram::GetBinY(float yValue)
 	if(yValue < m_yLow || yValue > m_yHigh)
 		return -1;
 
-	return static_cast<int>(( (yValue - m_yLow) / (m_yHigh - m_yLow) ) * static_cast<float>(m_nBinsY));
+    return (std::max(-1, std::min(m_nBinsY, static_cast<int>((yValue - m_yLow) / m_yBinWidth)) ));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -255,6 +296,33 @@ pandora::CaloHitList Shower2DHistogram::GetBinCaloHitList(const int binX, const 
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+pandora::CaloHitList Shower2DHistogram::GetBinAvailableCaloHitList(const pandora::Algorithm &algorithm, const int binX, const int binY) const
+{
+	TwoDShowerBinMap::const_iterator iterX = m_xyHistogramMap.find(binX);
+
+    if (m_xyHistogramMap.end() == iterX)
+        return pandora::CaloHitList();
+
+    ShowerBinMap::const_iterator iterXY = iterX->second.find(binY);
+
+    if (iterX->second.end() == iterXY)
+        return pandora::CaloHitList();
+
+    pandora::CaloHitList caloHitList(iterXY->second.GetCaloHitList());
+    pandora::CaloHitList availableCaloHitList;
+
+	for(pandora::CaloHitList::const_iterator iter = caloHitList.begin(), endIter = caloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		if(PandoraContentApi::IsAvailable(algorithm, *iter))
+			availableCaloHitList.insert(*iter);
+	}
+
+    return availableCaloHitList;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 unsigned int Shower2DHistogram::GetBinNCaloHits(const int binX, const int binY) const
 {
 	TwoDShowerBinMap::const_iterator iterX = m_xyHistogramMap.find(binX);
@@ -272,6 +340,33 @@ unsigned int Shower2DHistogram::GetBinNCaloHits(const int binX, const int binY) 
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+unsigned int Shower2DHistogram::GetBinNAvailableCaloHits(const pandora::Algorithm &algorithm, const int binX, const int binY) const
+{
+	TwoDShowerBinMap::const_iterator iterX = m_xyHistogramMap.find(binX);
+
+    if (m_xyHistogramMap.end() == iterX)
+        return 0;
+
+    ShowerBinMap::const_iterator iterXY = iterX->second.find(binY);
+
+    if (iterX->second.end() == iterXY)
+        return 0;
+
+    pandora::CaloHitList caloHitList(iterXY->second.GetCaloHitList());
+    unsigned int nAvailableCaloHits(0);
+
+	for(pandora::CaloHitList::const_iterator iter = caloHitList.begin(), endIter = caloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		if(PandoraContentApi::IsAvailable(algorithm, *iter))
+			nAvailableCaloHits++;
+	}
+
+    return nAvailableCaloHits;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 float Shower2DHistogram::GetBinEnergy(const int binX, const int binY) const
 {
 	TwoDShowerBinMap::const_iterator iterX = m_xyHistogramMap.find(binX);
@@ -285,6 +380,23 @@ float Shower2DHistogram::GetBinEnergy(const int binX, const int binY) const
         return 0;
 
     return iterXY->second.GetEnergy();
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+float Shower2DHistogram::GetBinAvailableEnergy(const pandora::Algorithm &algorithm, const int binX, const int binY) const
+{
+	TwoDShowerBinMap::const_iterator iterX = m_xyHistogramMap.find(binX);
+
+    if (m_xyHistogramMap.end() == iterX)
+        return 0;
+
+    ShowerBinMap::const_iterator iterXY = iterX->second.find(binY);
+
+    if (iterX->second.end() == iterXY)
+        return 0;
+
+    return iterXY->second.GetAvailableEnergy(algorithm);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -322,6 +434,39 @@ void Shower2DHistogram::GetMaximumNCaloHits(unsigned int &maximumValue, int &max
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+void Shower2DHistogram::GetMaximumNAvailableCaloHits(const pandora::Algorithm &algorithm, unsigned int &maximumValue, int &maximumBinX, int &maximumBinY) const
+{
+    maximumValue = 0;
+    maximumBinX = -1; maximumBinY = -1;
+
+    for(TwoDShowerBinMap::const_iterator iterX = m_xyHistogramMap.begin(), endIterX = m_xyHistogramMap.end() ;
+    		endIterX != iterX ; ++iterX)
+    {
+        for(ShowerBinMap::const_iterator iterY = iterX->second.begin(), endIterY = iterX->second.end() ;
+        		endIterY != iterY ; ++iterY)
+        {
+            pandora::CaloHitList caloHitList(iterY->second.GetCaloHitList());
+            unsigned int nAvailableCaloHits(0);
+
+        	for(pandora::CaloHitList::const_iterator iter = caloHitList.begin(), endIter = caloHitList.end() ;
+        			endIter != iter ; ++iter)
+        	{
+        		if(PandoraContentApi::IsAvailable(algorithm, *iter))
+        			nAvailableCaloHits++;
+        	}
+
+            if (nAvailableCaloHits > maximumValue)
+            {
+                maximumValue = nAvailableCaloHits;
+                maximumBinX = iterX->first;
+                maximumBinY = iterY->first;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 void Shower2DHistogram::GetMaximumEnergy(float &maximumValue, int &maximumBinX, int &maximumBinY) const
 {
     maximumValue = 0.f;
@@ -342,6 +487,42 @@ void Shower2DHistogram::GetMaximumEnergy(float &maximumValue, int &maximumBinX, 
                 continue;
 
             const float energy(iterY->second.GetEnergy());
+
+            if (energy > maximumValue)
+            {
+                maximumValue = energy;
+                maximumBinX = iterX->first;
+                maximumBinY = iterY->first;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+void Shower2DHistogram::GetMaximumAvailableEnergy(const pandora::Algorithm &algorithm, float &maximumValue, int &maximumBinX, int &maximumBinY, bool checkBinAvailability) const
+{
+    maximumValue = 0.f;
+    maximumBinX = -1; maximumBinY = -1;
+
+    for (int xBin = 0, xBinEnd = m_nBinsX - 1 ; xBin <= xBinEnd; ++xBin)
+    {
+    	TwoDShowerBinMap::const_iterator iterX = m_xyHistogramMap.find(xBin);
+
+        if (m_xyHistogramMap.end() == iterX)
+            continue;
+
+        for (int yBin = 0, yBinEnd = m_nBinsY - 1 ; yBin <= yBinEnd; ++yBin)
+        {
+        	ShowerBinMap::const_iterator iterY = iterX->second.find(yBin);
+
+            if (iterX->second.end() == iterY)
+                continue;
+
+            if(checkBinAvailability && !iterY->second.IsAvailable())
+            	continue;
+
+            const float energy(iterY->second.GetAvailableEnergy(algorithm));
 
             if (energy > maximumValue)
             {
@@ -431,11 +612,47 @@ bool Shower2DHistogram::GetBinAvailability(const int binX, const int binY) const
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
+
+void Shower2DHistogram::SetBinAvailability(const int binX, const int binY, bool availability)
+{
+	TwoDShowerBinMap::iterator iterX = m_xyHistogramMap.find(binX);
+
+    if (m_xyHistogramMap.end() == iterX)
+        return;
+
+    ShowerBinMap::iterator iterXY = iterX->second.find(binY);
+
+    if (iterX->second.end() == iterXY)
+        return;
+
+    return iterXY->second.SetAvailability(availability);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 ShowerPeak::ShowerPeak(const pandora::CaloHitList &caloHitList, const ShowerPeak::Bin2DList &binList, const ShowerPeak::Bin2D &maxBin) :
 		m_caloHitList(caloHitList),
 		m_binList(binList),
+		m_maxBin(maxBin)
+{
+	if(caloHitList.empty())
+		throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+
+	for(pandora::CaloHitList::const_iterator iter = caloHitList.begin(), endIter = caloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit(*iter);
+
+		const float energy(pCaloHit->GetHitType() == pandora::ECAL ? pCaloHit->GetElectromagneticEnergy() : pCaloHit->GetHadronicEnergy());
+		m_energy += energy;
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+ShowerPeak::ShowerPeak(const pandora::CaloHitList &caloHitList, const Bin2D &maxBin) :
+		m_caloHitList(caloHitList),
 		m_maxBin(maxBin)
 {
 	if(caloHitList.empty())
@@ -480,6 +697,39 @@ const ShowerPeak::Bin2D &ShowerPeak::GetMaxBin() const
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ShowerPeak::AddBin(const Bin2D &bin)
+{
+	for(Bin2DList::const_iterator iter = m_binList.begin(), endIter = m_binList.end() ;
+			endIter != iter ; ++iter)
+	{
+		if(iter->first == bin.first && iter->second == bin.second)
+			return pandora::STATUS_CODE_ALREADY_PRESENT;
+	}
+
+	m_binList.push_back(bin);
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+void ShowerPeak::AddCaloHits(const pandora::CaloHitList &caloHitList)
+{
+	m_caloHitList.insert(caloHitList.begin(), caloHitList.end());
+	m_energy = 0.f;
+
+	for(pandora::CaloHitList::const_iterator iter = caloHitList.begin(), endIter = caloHitList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const pandora::CaloHit *const pCaloHit(*iter);
+
+		const float energy(pCaloHit->GetHitType() == pandora::ECAL ? pCaloHit->GetElectromagneticEnergy() : pCaloHit->GetHadronicEnergy());
+		m_energy += energy;
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode PhotonReconstructionAlgorithm::Run()
@@ -501,21 +751,35 @@ pandora::StatusCode PhotonReconstructionAlgorithm::Run()
 	pandora::ClusterVector photonCandidateClusterVector;
 	ShowerPeakList showerPeakList;
 
-	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: FindShowerPeakCandidates" << std::endl );
+	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: FindShowerPeakCandidates " << photonCandidateClusterVector.size() << " input clusters" << std::endl );
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindShowerPeakCandidates(thetaPhiProjection, photonCandidateClusterVector, showerPeakList));
 
-	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: RemoveTrackSeededClusters" << std::endl );
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveTrackSeededClusters(photonCandidateClusterVector));
-
-	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: RemoveNearbyTrackCaloHits" << std::endl );
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveNearbyTrackCaloHits(photonCandidateClusterVector))
-
-	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: MergeNearbyCaloHits" << std::endl );
+	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: MergeNearbyCaloHits " << photonCandidateClusterVector.size() << " input clusters" << std::endl );
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->MergeNearbyCaloHits(photonCandidateClusterVector, allEcalCaloHitList));
 
-	// should be the last step !
-//	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: RemovePhotonsUsingParticleId" << std::endl );
-//	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemovePhotonsUsingParticleId(photonCandidateClusterVector));
+	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: RemoveTrackSeededClusters " << photonCandidateClusterVector.size() << " input clusters" << std::endl );
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveTrackSeededClusters(photonCandidateClusterVector));
+
+	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: RemoveNearbyTrackCaloHits " << photonCandidateClusterVector.size() << " input clusters" << std::endl );
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveNearbyTrackCaloHits(photonCandidateClusterVector))
+
+	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: RemoveClustersByProperties " << photonCandidateClusterVector.size() << " input clusters" << std::endl );
+	pandora::CaloHitList removalCaloHitList;
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->RemoveClustersByProperties(photonCandidateClusterVector, removalCaloHitList));
+
+	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: MergeNearbyCaloHits " << photonCandidateClusterVector.size() << " input clusters" << std::endl );
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->MergeNearbyCaloHits(photonCandidateClusterVector, removalCaloHitList));
+
+	ARBOR_LOG( "[PhotonReconstructionAlgorithm]: FlagClustersAsPhotons " << photonCandidateClusterVector.size() << " input clusters" << std::endl );
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FlagClustersAsPhotons(photonCandidateClusterVector));
+
+//	[PhotonReconstructionAlgorithm]: FindShowerPeakCandidates 0 input clusters
+//	[ VERBOSE "MyMarlinArbor"] maximumInitialEnergy = 3.91544
+//	[ VERBOSE "MyMarlinArbor"] showerPeakList.size() = 735
+//	[ VERBOSE "MyMarlinArbor"] [PhotonReconstructionAlgorithm]: MergeNearbyCaloHits 82 input clusters
+//	[ VERBOSE "MyMarlinArbor"] [PhotonReconstructionAlgorithm]: RemoveTrackSeededClusters 82 input clusters
+//	[ VERBOSE "MyMarlinArbor"] [PhotonReconstructionAlgorithm]: RemoveNearbyTrackCaloHits 44 input clusters
+//	[ VERBOSE "MyMarlinArbor"] [PhotonReconstructionAlgorithm]: RemoveClustersByProperties 44 input clusters
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -552,106 +816,204 @@ pandora::StatusCode PhotonReconstructionAlgorithm::GetECalCaloHitList(const pand
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode PhotonReconstructionAlgorithm::FindShowerPeakCandidates(const Shower2DHistogram &histogram,
-		pandora::ClusterVector &clusterVector, ShowerPeakList &showerPeakList)
+pandora::StatusCode PhotonReconstructionAlgorithm::FindShowerPeakCandidates(const Shower2DHistogram &histogram, pandora::ClusterVector &clusterVector, ShowerPeakList &showerPeakList)
 {
 	Shower2DHistogram projectionHistogram(histogram);
 
+	float maximumInitialEnergy(0.f);
+
+	// find the highest energy peak in the event
+	// and use it as reference
+	if(!this->FindInitialShowerPeak(projectionHistogram, showerPeakList, maximumInitialEnergy))
+		return pandora::STATUS_CODE_SUCCESS;
+
+	const float energyStep(maximumInitialEnergy/m_showerPeakNSteps);
+	float currentEnergyStep(maximumInitialEnergy - energyStep);
+
+	std::cout << "maximumInitialEnergy = " << maximumInitialEnergy << std::endl;
+
+	unsigned int currentStep(m_showerPeakNSteps);
+
 	while(1)
 	{
-		unsigned int maximumValue(0);
-		int maximumBinX(0), maximumBinY(0);
+		std::cout << "currentEnergyStep : " << currentEnergyStep << std::endl;
 
-		projectionHistogram.GetMaximumNCaloHits(maximumValue, maximumBinX, maximumBinY);
-
-		if(maximumValue < m_projectionMinPeakSize)
+		// check energy step
+		if(0 == currentStep)
 			break;
 
-		std::cout << "Peak size = " << maximumValue << std::endl;
+		// enlarge shower peaks
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->EnlargePeaks(projectionHistogram, showerPeakList, currentEnergyStep));
 
-		ShowerPeak::Bin2DList binList;
-		ShowerPeak::Bin2D bin(maximumBinX, maximumBinY);
-		pandora::CaloHitList showerPeakCaloHitList(projectionHistogram.GetBinCaloHitList(maximumBinX, maximumBinY));
+		// find new shower peak
+		ShowerPeakList newShowerPeakList;
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindNewShowerPeaks(projectionHistogram, newShowerPeakList, currentEnergyStep));
 
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->BuildPeakAroundBin(projectionHistogram, showerPeakCaloHitList, bin, binList));
+		if(!newShowerPeakList.empty())
+			showerPeakList.insert(showerPeakList.end(), newShowerPeakList.begin(), newShowerPeakList.end());
 
-		ShowerPeak showerPeak(showerPeakCaloHitList, binList, bin);
-		showerPeakList.push_back(showerPeak);
+		// decrease energy step
+		currentEnergyStep -= energyStep;
+		--currentStep;
+	}
 
-		Shower2DHistogram showerPeakProjection(m_photonPeakNThetaBins, -1.f*M_PI, M_PI, m_photonPeakNPhiBins, -1.f*M_PI, M_PI);
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FillProjectionHistogram(showerPeak.GetCaloHitList(), showerPeakProjection));
+//	currentEnergyStep : 3.13235
+//	[ VERBOSE "MyMarlinArbor"] currentEnergyStep : 2.34926
+//	[ VERBOSE "MyMarlinArbor"] currentEnergyStep : 1.56617
+//	[ VERBOSE "MyMarlinArbor"] currentEnergyStep : 0.783087
+//	[ VERBOSE "MyMarlinArbor"] currentEnergyStep : 1.19209e-07
+//	[ VERBOSE "MyMarlinArbor"] currentEnergyStep : -0.783087
 
-		maximumValue = 0;
-		maximumBinX = 0;
-		maximumBinY = 0;
+	std::cout << "showerPeakList.size() = " << showerPeakList.size() << std::endl;
 
-		showerPeakProjection.GetMaximumNCaloHits(maximumValue, maximumBinX, maximumBinY);
+	for(ShowerPeakList::const_iterator iter = showerPeakList.begin(), endIter = showerPeakList.end() ;
+			endIter != iter ; ++iter)
+	{
+		const unsigned int nCaloHits((*iter).GetCaloHitList().size());
 
-		const float maximumPeakTheta( (maximumBinX / static_cast<float>(m_photonPeakNThetaBins) ) * 2*M_PI - M_PI + showerPeakProjection.GetXBinWidth()/2.f);
-		const float maximumPeakPhi( (maximumBinY / static_cast<float>(m_photonPeakNPhiBins) ) * 2*M_PI - M_PI + showerPeakProjection.GetYBinWidth()/2.f);
-
-		pandora::OrderedCaloHitList orderedCaloHitList;
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, orderedCaloHitList.Add(showerPeakCaloHitList));
-
-		const float peakX(std::sin(maximumPeakTheta)*std::cos(maximumPeakPhi));
-		const float peakY(std::sin(maximumPeakTheta)*std::sin(maximumPeakPhi));
-		const float peakZ(std::cos(maximumPeakTheta));
-
-		pandora::CartesianVector photonPeakDirection(peakX, peakY, peakZ);
-		pandora::CaloHitList photonCaloHitList;
-
-		for(pandora::OrderedCaloHitList::const_iterator layerIter = orderedCaloHitList.begin(), layerEndIter = orderedCaloHitList.end() ;
-				layerEndIter != layerIter ; ++layerIter)
-		{
-			float maxSurroundingEnergy(std::numeric_limits<float>::min());
-			const pandora::CaloHit *pBestCaloHit = NULL;
-
-			for(pandora::CaloHitList::const_iterator iter = layerIter->second->begin(), endIter = layerIter->second->end() ;
-					endIter != iter ; ++iter)
-			{
-				if(!PandoraContentApi::IsAvailable(*this, *iter))
-					continue;
-
-				const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
-
-				const pandora::CartesianVector position(pCaloHit->GetPositionVector());
-				float distanceToPeak(0.f);
-
-				if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetClosestDistanceToLine(pandora::CartesianVector(0.f, 0.f, 0.f),
-						photonPeakDirection, position, distanceToPeak))
-					continue;
-
-				if(pCaloHit->GetSurroundingEnergy() > maxSurroundingEnergy && distanceToPeak < m_photonPeakBestHitMaxDistance)
-				{
-					pBestCaloHit = pCaloHit;
-					maxSurroundingEnergy = pCaloHit->GetSurroundingEnergy();
-				}
-			}
-
-			if(NULL == pBestCaloHit)
-				continue;
-
-			pandora::CaloHitList intraLayerCaloHitList;
-			intraLayerCaloHitList.insert(pBestCaloHit);
-
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->PerformPhotonPeakLayerClustering(*layerIter->second, pBestCaloHit, intraLayerCaloHitList));
-
-			photonCaloHitList.insert(intraLayerCaloHitList.begin(), intraLayerCaloHitList.end());
-		}
-
-		// remove the hits from the projection histogram
-		this->RemoveCaloHitsFromHistogram(photonCaloHitList, projectionHistogram);
-
-		if(photonCaloHitList.size() < m_photonMinNHits)
+		if(nCaloHits < m_photonMinNHits)
 			continue;
 
 		const pandora::Cluster *pCluster = NULL;
 		PandoraContentApi::ClusterParameters clusterParameters;
-		clusterParameters.m_caloHitList = photonCaloHitList;
+		clusterParameters.m_caloHitList = (*iter).GetCaloHitList();
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, clusterParameters, pCluster));
 
 		clusterVector.push_back(pCluster);
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+bool PhotonReconstructionAlgorithm::FindInitialShowerPeak(Shower2DHistogram &projectionHistogram, ShowerPeakList &showerPeakList, float &maximumPeakEnergy)
+{
+	maximumPeakEnergy = 0.f;
+
+	float maximumAvailableEnergy(0.f);
+	int maximumBinX(0), maximumBinY(0);
+
+	projectionHistogram.GetMaximumAvailableEnergy(*this, maximumAvailableEnergy, maximumBinX, maximumBinY);
+
+	if(maximumAvailableEnergy < m_photonPeakMinEnergy)
+		return false;
+
+	maximumPeakEnergy = maximumAvailableEnergy;
+
+	pandora::CaloHitList peakCaloHitList(projectionHistogram.GetBinAvailableCaloHitList(*this, maximumBinX, maximumBinY));
+	ShowerPeak::Bin2D initialBin(maximumBinX, maximumBinY);
+	ShowerPeak::Bin2DList binList;
+	binList.push_back(initialBin);
+	projectionHistogram.SetBinAvailability(maximumBinX, maximumBinY, false);
+
+	ShowerPeak initialShowerPeak(peakCaloHitList, binList, initialBin);
+	showerPeakList.push_back(initialShowerPeak);
+
+	return true;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode PhotonReconstructionAlgorithm::EnlargePeaks(Shower2DHistogram &projectionHistogram, ShowerPeakList &showerPeakList, float currentEnergyStep)
+{
+	for(ShowerPeakList::iterator peakIter = showerPeakList.begin(), peakEndIter = showerPeakList.end() ;
+			peakEndIter != peakIter ; ++peakIter)
+	{
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->EnlargePeak(projectionHistogram, *peakIter, currentEnergyStep));
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode PhotonReconstructionAlgorithm::EnlargePeak(Shower2DHistogram &projectionHistogram, ShowerPeak &showerPeak, float currentEnergyStep)
+{
+	const ShowerPeak::Bin2DList binList(showerPeak.GetBinList());
+
+	for(ShowerPeak::Bin2DList::const_iterator binIter = binList.begin(), binEndIter = binList.end() ;
+			binEndIter != binIter ; ++binIter)
+	{
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->EnlargePeakAroundBin(projectionHistogram, showerPeak, *binIter, currentEnergyStep));
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode PhotonReconstructionAlgorithm::EnlargePeakAroundBin(Shower2DHistogram &projectionHistogram, ShowerPeak &showerPeak, const ShowerPeak::Bin2D &bin, float currentEnergyStep)
+{
+	const int nBinTheta(projectionHistogram.GetNBinsX());
+	const int nBinPhi(projectionHistogram.GetNBinsY());
+
+	const int binU(bin.first);
+	const int binV(bin.second);
+
+	float energy(projectionHistogram.GetBinAvailableEnergy(*this, binU, binV));
+
+	for(int u=-1 ; u<=1 ; u++)
+	{
+		for(int v=-1 ; v<=1 ; v++)
+		{
+			const int thetaBinLookup((binU+u)%nBinTheta);
+			const int phiBinLookup((binV+v)%nBinPhi);
+
+			const float lookupEnergy(projectionHistogram.GetBinAvailableEnergy(*this, thetaBinLookup, phiBinLookup));
+			const unsigned int nCaloHits(projectionHistogram.GetBinNAvailableCaloHits(*this, thetaBinLookup, phiBinLookup));
+			const bool isBinAvailable(projectionHistogram.GetBinAvailability(thetaBinLookup, phiBinLookup));
+
+			if(!isBinAvailable || lookupEnergy > energy || nCaloHits == 0 || lookupEnergy < currentEnergyStep)
+				continue;
+
+			ShowerPeak::Bin2D lookupBin(thetaBinLookup, phiBinLookup);
+
+			if(pandora::STATUS_CODE_SUCCESS == showerPeak.AddBin(lookupBin))
+			{
+				pandora::CaloHitList binCaloHitList(projectionHistogram.GetBinAvailableCaloHitList(*this, thetaBinLookup, phiBinLookup));
+				showerPeak.AddCaloHits(binCaloHitList);
+
+				projectionHistogram.SetBinAvailability(thetaBinLookup, phiBinLookup, false);
+
+				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->EnlargePeakAroundBin(projectionHistogram, showerPeak, lookupBin, currentEnergyStep));
+			}
+		}
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode PhotonReconstructionAlgorithm::FindNewShowerPeaks(Shower2DHistogram &projectionHistogram, ShowerPeakList &showerPeakList, float currentEnergyStep)
+{
+	while(1)
+	{
+		float newMaximumAvailableEnergy(0.f);
+		int newMaximumBinX(0), newMaximumBinY(0);
+
+		projectionHistogram.GetMaximumAvailableEnergy(*this, newMaximumAvailableEnergy, newMaximumBinX, newMaximumBinY, true);
+
+		// no more peak to create ?
+		if(newMaximumAvailableEnergy < m_photonPeakMinEnergy)
+			break;
+
+		if(newMaximumAvailableEnergy < currentEnergyStep)
+			break;
+
+		pandora::CaloHitList newPeakCaloHitList(projectionHistogram.GetBinAvailableCaloHitList(*this, newMaximumBinX, newMaximumBinY));
+		ShowerPeak::Bin2D newBin(newMaximumBinX, newMaximumBinY);
+		ShowerPeak::Bin2DList binList;
+		binList.push_back(newBin);
+		projectionHistogram.SetBinAvailability(newMaximumBinX, newMaximumBinY, false);
+
+		ShowerPeak newShowerPeak(newPeakCaloHitList, binList, newBin);
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->EnlargePeak(projectionHistogram, newShowerPeak, currentEnergyStep));
+
+		showerPeakList.push_back(newShowerPeak);
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -666,68 +1028,21 @@ pandora::StatusCode PhotonReconstructionAlgorithm::FillProjectionHistogram(const
 	{
 		const pandora::CaloHit *const pCaloHit(*iter);
 
+		if(!PandoraContentApi::IsAvailable(*this, pCaloHit))
+			continue;
+
 		const pandora::CartesianVector position(pCaloHit->GetPositionVector());
 		float radius(0.f), theta(0.f), phi(0.f);
 
 		position.GetSphericalCoordinates(radius, phi, theta);
 
+		if(theta < 0.f)
+			std::cout << "Probleme : " << theta << std::endl;
+
 		histogram.Fill(theta, phi, pCaloHit);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-pandora::StatusCode PhotonReconstructionAlgorithm::BuildPeakAroundBin(Shower2DHistogram &histogram, pandora::CaloHitList &caloHitList, const ShowerPeak::Bin2D &bin, ShowerPeak::Bin2DList &bin2DList)
-{
-	const int nBinTheta(histogram.GetNBinsX());
-	const int nBinPhi(histogram.GetNBinsY());
-
-	const unsigned int binContent(histogram.GetBinNCaloHits(bin.first, bin.second));
-
-	for(int u=-1 ; u<=1 ; u++)
-	{
-		for(int v=-1 ; v<=1 ; v++)
-		{
-			const int thetaBinLookup((bin.first+u)%nBinTheta);
-			const int phiBinLookup((bin.second+v)%nBinPhi);
-			ShowerPeak::Bin2D lookupBin(thetaBinLookup, phiBinLookup);
-
-			if(this->BinAlreadyAdded(thetaBinLookup, phiBinLookup, bin2DList))
-				continue;
-
-			const unsigned int binContentLookup(histogram.GetBinNCaloHits(thetaBinLookup, phiBinLookup));
-
-			if(binContent <= binContentLookup)
-				continue;
-
-			if(binContentLookup < m_photonPeakMinSize)
-				continue;
-
-			pandora::CaloHitList binCaloHitList(histogram.GetBinCaloHitList(thetaBinLookup, phiBinLookup));
-			caloHitList.insert(binCaloHitList.begin(), binCaloHitList.end());
-
-			bin2DList.push_back(lookupBin);
-
-			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->BuildPeakAroundBin(histogram, caloHitList, lookupBin, bin2DList));
-		}
-	}
-
-	return pandora::STATUS_CODE_SUCCESS;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-bool PhotonReconstructionAlgorithm::BinAlreadyAdded(int thetaBin, int phiBin, const ShowerPeak::Bin2DList &bin2DList)
-{
-	for(ShowerPeak::Bin2DList::const_iterator iter = bin2DList.begin(), endIter = bin2DList.end() ; endIter != iter ; ++iter)
-	{
-		if(iter->first == thetaBin && iter->second == phiBin)
-			return true;
-	}
-
-	return false;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -788,7 +1103,8 @@ void PhotonReconstructionAlgorithm::RemoveCaloHitsFromHistogram(const pandora::C
 
 		if(!binCaloHitList.erase(pCaloHit))
 		{
-			std::cout << "Couldn't remove calo hit from histogram !" << std::endl;
+			std::cout << "Couldn't remove calo hit from histogram : theta/bin , binTheta/binPhi = " <<
+					theta << "/" << phi << " , " << thetaBin << "/" << phiBin << std::endl;
 			continue;
 		}
 
@@ -841,8 +1157,6 @@ pandora::StatusCode PhotonReconstructionAlgorithm::RemoveTrackSeededClusters(pan
 			break;
 		}
 	}
-
-	std::cout << "Track seeded clusters : " << clusterRemovalList.size() << " will be deleted !" << std::endl;
 
 	for(pandora::ClusterVector::const_iterator iter = clusterRemovalList.begin(), endIter = clusterRemovalList.end() ; endIter != iter ; ++iter)
 	{
@@ -925,8 +1239,6 @@ pandora::StatusCode PhotonReconstructionAlgorithm::RemoveNearbyTrackCaloHits(pan
 		}
 	}
 
-	std::cout << "Nearby tracks photons : " << clusterRemovalList.size() << " will be deleted !" << std::endl;
-
 	for(pandora::ClusterVector::const_iterator iter = clusterRemovalList.begin(), endIter = clusterRemovalList.end() ; endIter != iter ; ++iter)
 	{
 		const pandora::Cluster *const pCluster(*iter);
@@ -989,33 +1301,6 @@ pandora::StatusCode PhotonReconstructionAlgorithm::MergeNearbyCaloHits(const pan
 		}
 	}
 
-	std::cout << "map size = " << caloHitToClusterMap.size() << std::endl;
-
-	std::map<const pandora::Cluster *, unsigned int> clusterCoutingMap;
-
-	for(CaloHitToClusterMap::const_iterator iter = caloHitToClusterMap.begin(), endIter = caloHitToClusterMap.end() ;
-			endIter != iter ; ++iter)
-	{
-		const pandora::Cluster *const pCluster(iter->second);
-
-		std::map<const pandora::Cluster *, unsigned int>::iterator findIter = clusterCoutingMap.find(pCluster);
-
-		if(findIter == clusterCoutingMap.end())
-		{
-			clusterCoutingMap[pCluster] = 0;
-		}
-		else
-		{
-			findIter->second ++;
-		}
-	}
-
-	for(std::map<const pandora::Cluster *, unsigned int>::iterator iter = clusterCoutingMap.begin(), endIter = clusterCoutingMap.end() ;
-			endIter != iter ; ++iter)
-	{
-		std::cout << "Cluster with n calo hits = " << iter->first->GetNCaloHits() << " will absorbe " << iter->second << " hits" << std::endl;
-	}
-
 	for(CaloHitToClusterMap::const_iterator iter = caloHitToClusterMap.begin(), endIter = caloHitToClusterMap.end() ;
 			endIter != iter ; ++iter)
 	{
@@ -1044,8 +1329,6 @@ pandora::StatusCode PhotonReconstructionAlgorithm::RemovePhotonsUsingParticleId(
 			clusterRemovalList.push_back(pCluster);
 	}
 
-	std::cout << "Bad photons (pid) : " << clusterRemovalList.size() << " will be deleted !" << std::endl;
-
 	for(pandora::ClusterVector::const_iterator iter = clusterRemovalList.begin(), endIter = clusterRemovalList.end() ; endIter != iter ; ++iter)
 	{
 		const pandora::Cluster *const pCluster(*iter);
@@ -1060,6 +1343,105 @@ pandora::StatusCode PhotonReconstructionAlgorithm::RemovePhotonsUsingParticleId(
 		}
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(*this, pCluster));
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode PhotonReconstructionAlgorithm::RemoveClustersByProperties(pandora::ClusterVector &clusterVector, pandora::CaloHitList &removalCaloHitList)
+{
+	pandora::ClusterVector clusterRemovalList;
+
+	std::cout << "RemoveClustersByProperties input n clusters = " << clusterVector.size() << std::endl;
+
+	for(pandora::ClusterVector::const_iterator clusterIter = clusterVector.begin(), clusterEndIter = clusterVector.end() ; clusterEndIter != clusterIter ; ++clusterIter)
+	{
+		const pandora::Cluster *const pCluster(*clusterIter);
+
+		pandora::CartesianVector clusterCentroid(0.f, 0.f, 0.f);
+
+		if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetCentroid(pCluster, clusterCentroid))
+			continue;
+
+		std::cout << "Cluster centroid = " << clusterCentroid << std::endl;
+
+		if(2 > pCluster->GetNCaloHits())
+		{
+			std::cout << "  ===> Less than 2 hits !" << std::endl;
+			clusterRemovalList.push_back(pCluster);
+			continue;
+		}
+
+		ClusterPca clusterPca(pCluster);
+
+//		std::cout << " ==> transverse ratio = " << clusterPca.GetTransverseRatio() << std::endl;
+
+		if(clusterPca.GetTransverseRatio() < m_clusterPropertiesMinTransverseRatio)
+		{
+			std::cout << "  ===> Transverse ratio cut !" << std::endl;
+			clusterRemovalList.push_back(pCluster);
+			continue;
+		}
+
+		pandora::ClusterFitResult clusterFitResult;
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitFullCluster(pCluster, clusterFitResult));
+
+		if(clusterFitResult.IsFitSuccessful())
+		{
+			const float originAngle(clusterFitResult.GetDirection().GetOpeningAngle(clusterCentroid));
+
+			if(originAngle > m_photonMaxAngleOrigin)
+			{
+				std::cout << "  ===> Too high angle with origin !" << std::endl;
+				clusterRemovalList.push_back(pCluster);
+				continue;
+			}
+		}
+		else
+		{
+			std::cout << "  ===> Fit not successful !" << std::endl;
+			clusterRemovalList.push_back(pCluster);
+			continue;
+		}
+	}
+
+	std::cout << "RemoveClustersByProperties will remove : " << clusterRemovalList.size() << " clusters" << std::endl;
+
+	for(pandora::ClusterVector::const_iterator iter = clusterRemovalList.begin(), endIter = clusterRemovalList.end() ; endIter != iter ; ++iter)
+	{
+		const pandora::Cluster *const pCluster(*iter);
+
+		for(pandora::ClusterVector::const_iterator jter = clusterVector.begin(), endJter = clusterVector.end() ; endJter != jter ; ++jter)
+		{
+			if(*jter == pCluster)
+			{
+				clusterVector.erase(jter);
+				break;
+			}
+		}
+
+		pCluster->GetOrderedCaloHitList().GetCaloHitList(removalCaloHitList);
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(*this, pCluster));
+	}
+
+	return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode PhotonReconstructionAlgorithm::FlagClustersAsPhotons(const pandora::ClusterVector &clusterVector)
+{
+	for(pandora::ClusterVector::const_iterator clusterIter = clusterVector.begin(), clusterEndIter = clusterVector.end() ; clusterEndIter != clusterIter ; ++clusterIter)
+	{
+		const pandora::Cluster *const pCluster(*clusterIter);
+
+		PandoraContentApi::ClusterMetadata clusterMetadata;
+		clusterMetadata.m_particleId = pandora::PHOTON;
+
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AlterMetadata(*this, pCluster, clusterMetadata));
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
@@ -1085,44 +1467,9 @@ pandora::StatusCode PhotonReconstructionAlgorithm::ReadSettings(const pandora::T
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ProjectionNThetaBins", m_projectionNThetaBins));
 
-    m_projectionMinPeakSize = 1.f;
+    m_photonPeakMinEnergy = 0.01f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "ProjectionMinPeakSize", m_projectionMinPeakSize));
-
-    m_monitoringMode = false;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MonitoringMode", m_monitoringMode));
-
-    if(m_monitoringMode)
-    {
-        m_projectionDrawOption = "lego";
-        PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-            "ProjectionDrawOption", m_projectionDrawOption));
-    }
-
-    m_thetaTrackProjectionDistance = 2;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "ThetaTrackProjectionDistance", m_thetaTrackProjectionDistance));
-
-    m_phiTrackProjectionDistance = 2;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "PhiTrackProjectionDistance", m_phiTrackProjectionDistance));
-
-    m_photonPeakMinSize = 5;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "PhotonPeakMinSize", m_photonPeakMinSize));
-
-    m_photonPeakNPhiBins = 400;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "PhotonPeakNPhiBins", m_photonPeakNPhiBins));
-
-    m_photonPeakNThetaBins = 400;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "PhotonPeakNThetaBins", m_photonPeakNThetaBins));
-
-    m_photonPeakBestHitMaxDistance = 15.f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "PhotonPeakBestHitMaxDistance", m_photonPeakBestHitMaxDistance));
+        "PhotonPeakMinEnergy", m_photonPeakMinEnergy));
 
     m_photonPeakHitMaxDistance = 13.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
@@ -1147,6 +1494,14 @@ pandora::StatusCode PhotonReconstructionAlgorithm::ReadSettings(const pandora::T
     m_photonMaxNearbyHitMergingDistance = 10.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "PhotonMaxNearbyHitMergingDistance", m_photonMaxNearbyHitMergingDistance));
+
+    m_showerPeakNSteps = 200;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ShowerPeakNSteps", m_showerPeakNSteps));
+
+    m_clusterPropertiesMinTransverseRatio = 0.11;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ClusterPropertiesMinTransverseRatio", m_clusterPropertiesMinTransverseRatio));
 
     return pandora::STATUS_CODE_SUCCESS;
 }
