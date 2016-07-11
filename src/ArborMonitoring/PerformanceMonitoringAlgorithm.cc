@@ -28,6 +28,7 @@
 
 #include "ArborMonitoring/PerformanceMonitoringAlgorithm.h"
 #include "ArborHelpers/ReclusterHelper.h"
+#include "ArborHelpers/ClusterHelper.h"
 #include "ArborApi/ArborContentApi.h"
 
 namespace arbor_content
@@ -67,13 +68,19 @@ pandora::StatusCode PerformanceMonitoringAlgorithm::Run()
 			float trackEnergySum(0.f);
 			float clusterEnergySum(0.f);
 
-			for(pandora::ClusterList::const_iterator iter = clusterList.begin(), endIter = clusterList.end() ;
-					endIter != iter ; ++iter)
-				clusterEnergySum += (*iter)->GetCorrectedHadronicEnergy(this->GetPandora());
-
 			for(pandora::TrackList::const_iterator iter = trackList.begin(), endIter = trackList.end() ;
 					endIter != iter ; ++iter)
 				trackEnergySum += (*iter)->GetEnergyAtDca();
+
+			for(pandora::ClusterList::const_iterator iter = clusterList.begin(), endIter = clusterList.end() ;
+					endIter != iter ; ++iter)
+			{
+				const float clusterEnergy((*iter)->GetCorrectedHadronicEnergy(this->GetPandora()));
+
+				clusterEnergySum += (*iter)->GetCorrectedHadronicEnergy(this->GetPandora());
+
+				ARBOR_LOG( "Track p = " << trackEnergySum << " GeV , cluster energy = " << clusterEnergy << std::endl );
+			}
 
 			pfoTotalChi += ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), clusterEnergySum, trackEnergySum);
 		}
