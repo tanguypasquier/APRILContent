@@ -176,7 +176,7 @@ pandora::StatusCode NearbyTrackPhotonRemovalAlg::RemovePhotonFragments(const pan
 	for(pandora::ClusterVector::const_iterator iter = photonFragmentVector.begin(), endIter = photonFragmentVector.end() ; endIter != iter ; ++iter)
 	{
 		const pandora::Cluster *const pCluster(*iter);
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(*this, pCluster));
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(*this, pCluster, m_photonClusterListName));
 	}
 
 	return pandora::STATUS_CODE_SUCCESS;
