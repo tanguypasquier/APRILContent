@@ -60,6 +60,12 @@ pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algo
 			if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(algorithm, pCaloHitI))
 				continue;
 
+			if(!m_shouldUseIsolatedHits && pCaloHitI->IsIsolated())
+				continue;
+
+			if(m_shouldDiscriminateConnectedHits && !ArborContentApi::GetConnectorList(pCaloHitI, FORWARD_DIRECTION).empty())
+				continue;
+
 			const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
 			const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
 
@@ -129,7 +135,7 @@ pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandl
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"ConnectOnlyAvailable", m_connectOnlyAvailable));
 
-	m_maxConnectionAngleFine = 0.9;
+	m_maxConnectionAngleFine = 0.6;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxConnectionAngleFine", m_maxConnectionAngleFine));
 
@@ -144,6 +150,14 @@ pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandl
 	m_maxTransverseDistanceCoarse = 65.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 			"MaxTransverseDistanceCoarse", m_maxTransverseDistanceCoarse));
+
+	m_shouldUseIsolatedHits = false;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"ShouldUseIsolatedHits", m_shouldUseIsolatedHits));
+
+	m_shouldDiscriminateConnectedHits = false;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+			"ShouldDiscriminateConnectedHits", m_shouldDiscriminateConnectedHits));
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
