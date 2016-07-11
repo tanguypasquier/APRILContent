@@ -76,8 +76,7 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 		if(trackEnergySum < m_minTrackMomentum)
 			continue;
 
-		const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList);
-		const float clusterEnergyI(pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+		const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList));
 
 		// check for chi2 and missing energy in charged cluster
 		if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
@@ -116,8 +115,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
 			if(clusterHitsDistance < m_maxClusterHitsDistance)
 			{
-				const float clusterEnergyJ(pOtherCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
-
 				reclusterClusterList.insert(pOtherCluster);
 				originalClusterIndices.push_back(j);
 			}
@@ -135,8 +132,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
 				if( angle > m_maxNeighborClusterAngle )
 					continue;
-
-				const float clusterEnergyJ(pOtherCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
 
 				reclusterClusterList.insert(pOtherCluster);
 				originalClusterIndices.push_back(j);

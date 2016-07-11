@@ -62,10 +62,8 @@ pandora::StatusCode EnergyExcessReclusteringAlgorithm::Run()
 		if(trackList.empty() || trackList.size() > 1)
 			continue;
 
-		const float clusterEnergyI(pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
-
 		// negative chi means missing energy in the cluster
-		const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList);
+		const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList));
 
 		// check for chi2, energy excess and asymmetric cluster
 		if( (chi*chi < m_minChi2ToRunReclustering || chi < 0.f)  || ((*trackList.begin())->GetEnergyAtDca() < m_minTrackMomentum))
