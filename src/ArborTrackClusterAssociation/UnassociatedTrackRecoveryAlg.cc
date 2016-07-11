@@ -195,7 +195,7 @@ pandora::StatusCode UnassociatedTrackRecoveryAlg::ReadSettings(const pandora::Ti
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxClusterInnerPseudoLayer", m_maxClusterInnerPseudoLayer));
 
-	m_maxTrackClusterDistance = 200.f;
+	m_maxTrackClusterDistance = 400.f;
 	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
 		 "MaxTrackClusterDistance", m_maxTrackClusterDistance));
 
