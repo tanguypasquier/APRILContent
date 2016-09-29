@@ -43,6 +43,7 @@
 
 #include "ArborClustering/ArborClusteringAlgorithm.h"
 #include "ArborClustering/ClusteringParentAlgorithm.h"
+#include "ArborClustering/SimpleRegionClusteringAlgorithm.h"
 
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
@@ -102,6 +103,7 @@ public:
 	d("PerfectClustering",                   arbor_content::PerfectClusteringAlgorithm::Factory) \
 	d("ArborClustering",                     arbor_content::ArborClusteringAlgorithm::Factory) \
 	d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory) \
+	d("SimpleRegionClustering",              arbor_content::SimpleRegionClusteringAlgorithm::Factory) \
 	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
 	d("PerformanceMonitoring",               arbor_content::PerformanceMonitoringAlgorithm::Factory) \
 	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
