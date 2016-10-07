@@ -157,14 +157,15 @@ namespace arbor_content {
     PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "Eem",                &hitEmEnergy));
     PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "Ehad",               &hitHadEnergy));
     PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "time",               &hitTime));
+    PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "type",               &hitType));
     PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "region",             &hitRegion));
     PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "layer",              &hitLayer));
     PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "pseudoLayer",        &hitPseudoLayer));
     PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "isolated",           &hitIsolated));
     PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "gap",                &hitNearGap));
-    PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "clusterFitX",            clusterFitDirX));
-    PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "clusterFitY",            clusterFitDirY));
-    PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "clusterFitZ",            clusterFitDirZ));
+    PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "clusterFitX",         clusterFitDirX));
+    PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "clusterFitY",         clusterFitDirY));
+    PANDORA_MONITORING_API(SetTreeVariable(this->GetPandora(), m_treeName, "clusterFitZ",         clusterFitDirZ));
     PANDORA_MONITORING_API(FillTree(this->GetPandora(), m_treeName));
 
 #endif
