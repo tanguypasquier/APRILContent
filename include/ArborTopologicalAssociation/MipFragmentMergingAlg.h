@@ -66,6 +66,11 @@ private:
 	pandora::StatusCode FindMipFragments(const pandora::ClusterVector &clusterVector, ClusterToClusterMap &clusterToClusterMap) const;
 
 	/**
+	 *
+	 */
+	pandora::StatusCode FindChargedMipFragments(const pandora::ClusterVector &clusterVector, ClusterToClusterMap &clusterToClusterMap);
+
+	/**
 	 *  @brief  Whether the cluster is a mip fragment
 	 *
 	 *  @param  pCluster the target cluster address
@@ -120,9 +125,16 @@ private:
 	unsigned int                   m_minInnerPseudoLayer;              ///< The min inner pseudo layer id to consider a mip
 	float                          m_maxMipBackwardAngle;              ///< The max backward angle between a parent cluster and the mip
 	float                          m_maxMipBackwardDistance;           ///< The max backward distance between the parent cluster and the start of mip
-	float                          m_maxMipBackwardPseudoLayer;        ///< The max backward pseudo layer between the parent cluster and the start of mip
+	float                          m_maxClusterSeparationPseudoLayer;  ///< The max pseudo layer between two clusters
+        float                          m_maxClusterSeparationPseudoLayer2; ///< The max pseudo layer between two clusters
+        float                          m_maxClusterSeparationPseudoLayer3; ///< The max pseudo layer between two clusters
 	unsigned int                   m_minParentClusterBackwardNHits;    ///< The min number of hits within the ROI to consider a parent cluster
 	float                          m_minMipNEfficientLayerFraction;    ///< The min numer of efficient pseudo layer to consider a mip
+	float                          m_minMipChi2;
+	unsigned int                   m_nParentFitPseudoLayers;
+	float                          m_maxCosineDirection;
+        float                          m_maxCosineDirection2;
+        float                          m_maxCosineDirection3;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
