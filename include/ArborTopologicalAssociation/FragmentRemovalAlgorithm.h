@@ -80,6 +80,7 @@ private:
 private:
 	unsigned int                               m_maxNHitsForAutomaticRemoval;
 	float                                      m_maxEnergyForAutomaticRemoval;
+	float                                      m_maxHadronicEnergyForAutomaticRemoval;
 	unsigned int                               m_maxNHitsNonFragments;
 	float                                      m_maxEnergyNonFragments;
 	float                                      m_maxFragmentDensity;
