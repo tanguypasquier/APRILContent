@@ -53,6 +53,7 @@
 
 #include "ArborMonitoring/VisualMonitoringAlgorithm.h"
 #include "ArborMonitoring/PerformanceMonitoringAlgorithm.h"
+#include "ArborMonitoring/SingleParticleMonitoringAlgorithm.h"
 
 #include "ArborPfoConstruction/PfoCreationAlgorithm.h"
 
@@ -81,6 +82,7 @@
 
 #include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/UnassociatedTrackRecoveryAlg.h"
+#include "ArborTrackClusterAssociation/LoopingTrackAssociationAlgorithm.h"
 
 #include "ArborUtility/AlgorithmConfiguration.h"
 #include "ArborUtility/EventPreparationAlgorithm.h"
@@ -106,6 +108,7 @@ public:
 	d("SimpleRegionClustering",              arbor_content::SimpleRegionClusteringAlgorithm::Factory) \
 	d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
 	d("PerformanceMonitoring",               arbor_content::PerformanceMonitoringAlgorithm::Factory) \
+	d("SingleParticleMonitoring",            arbor_content::SingleParticleMonitoringAlgorithm::Factory) \
 	d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
 	d("EnergyExcessReclustering",            arbor_content::EnergyExcessReclusteringAlgorithm::Factory) \
 	d("MissingEnergyReclustering",           arbor_content::MissingEnergyReclusteringAlgorithm::Factory) \
@@ -120,6 +123,7 @@ public:
 	d("FragmentRemoval",                     arbor_content::FragmentRemovalAlgorithm::Factory) \
 	d("TrackClusterAssociation",             arbor_content::TrackClusterAssociationAlgorithm::Factory) \
 	d("UnassociatedTrackRecovery",           arbor_content::UnassociatedTrackRecoveryAlg::Factory) \
+	d("LoopingTrackAssociation",             arbor_content::LoopingTrackAssociationAlgorithm::Factory) \
 	d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
 	d("ClusterPreparation",                  arbor_content::ClusterPreparationAlgorithm::Factory) \
 	d("TrackPreparation",                    arbor_content::TrackPreparationAlgorithm::Factory) \
