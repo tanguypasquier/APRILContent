@@ -32,6 +32,7 @@
 #include "Pandora/PandoraInternal.h"
 #include "Pandora/PandoraInputTypes.h"
 #include "ArborApi/ArborInputTypes.h"
+#include "Helpers/ClusterFitHelper.h"
 
 namespace arbor_content
 {
@@ -217,6 +218,73 @@ public:
 	 *  @param  trackClusterDistance the track cluster distance to receive
 	 */
 	static pandora::StatusCode GetTrackClusterDistance(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::Track *const pTrack, const float maxTransverseDistance, float &trackClusterDistance);
+
+        /**
+         *  @brief  Whether a linear fit to a cluster crosses a registered gap region. Only the region between the startlayer and
+         *          endlayer is considered in the fit and in the comparison with registered gap regions.
+         *
+         *  @param  pandora the associated pandora instance
+         *  @param  pCluster address of the cluster
+         *  @param  startLayer the start layer (adjusted to maximum of specified layer and cluster inner layer)
+         *  @param  endLayer the end layer (adjusted to minimum of specified layer and cluster outer layer)
+         *  @param  pDetectorGap the crossing gap to receive, if any
+         *  @param  nSamplingPoints number of points at which to sample the fit within the specified layer region
+         *
+         *  @return boolean
+         */
+        static bool DoesClusterCrossGapRegion(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const unsigned int startLayer,
+            const unsigned int endLayer, const pandora::DetectorGap *&pDetectorGap, const unsigned int nSamplingPoints = 50);
+
+        /**
+         *  @brief  Whether a linear fit crosses a registered gap region. The fit will be propagated through the specified distance
+         *          from its closest approach to the startPosition. Within this propagation, the fit will be sampled a specified number
+         *          of times and the resulting position compared with registered gap regions.
+         *
+         *  @param  pandora the associated pandora instance
+         *  @param  clusterFitResult the cluster fit result
+         *  @param  startPosition the propagation start position (adjusted to closest point on fit trajectory)
+         *  @param  propagationDistance the propagation distance, which can be negative for propagation towards the ip
+         *  @param  pDetectorGap the detector gap to receive, if any
+         *  @param  nSamplingPoints number of points at which to sample the fit within its propagation
+         *
+         *  @return boolean
+         */
+        static bool DoesFitCrossGapRegion(const pandora::Pandora &pandora, const pandora::ClusterFitResult &clusterFitResult,
+            const pandora::CartesianVector &startPosition, const float propagationDistance, const pandora::DetectorGap *&pDetectorGap, const unsigned int nSamplingPoints = 50);
+
+        /**
+         *  @brief  Get the distance to detector gap
+         *
+         *  @param  positionVector the position in space to test
+         *  @param  pDetectorGap the detector gap to consider
+         *  @param  distanceToGap the distance to detector gap to receive
+         */
+        static pandora::StatusCode GetDistanceToDetectorGap(const pandora::CartesianVector &positionVector, const pandora::DetectorGap *const pDetectorGap, float &distanceToGap);
+
+        /**
+         *  @brief  Get the calo hit list belonging to the cluster, close to all registered detector gaps
+         *
+         *  @param  pandora the pandora instance to access pandora content
+         *  @param  pCluster the input cluster address
+         *  @param  maxDistance the maximum distance between the gap and a calo hit
+         *  @param  caloHitList the list of calo hit near a detector gap
+         *  @param  shouldUseIsolatedHits whether to consider isolated calo hits from the input cluster
+         */
+        static pandora::StatusCode GetCaloHitsNearDetectorGaps(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const float maxDistanceFine,
+            const float maxDistanceCoarse, pandora::CaloHitList &caloHitList, bool shouldUseIsolatedHits);
+
+        /**
+         *  @brief  Get the calo hit list belonging to the cluster, close to all registered detector gaps
+         *
+         *  @param  pandora the pandora instance to access pandora content
+         *  @param  pCluster the input cluster address
+         *  @param  pDetectorGap the detector gap to consider
+         *  @param  maxDistance the maximum distance between the gap and a calo hit
+         *  @param  caloHitList the list of calo hit near a detector gap
+         *  @param  shouldUseIsolatedHits whether to consider isolated calo hits from the input cluster
+         */
+        static pandora::StatusCode GetCaloHitsNearDetectorGap(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::DetectorGap *const pDetectorGap, const float maxDistanceFine,
+            const float maxDistanceCoarse, pandora::CaloHitList &caloHitList, bool shouldUseIsolatedHits);
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

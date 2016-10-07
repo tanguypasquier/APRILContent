@@ -509,5 +509,222 @@ pandora::StatusCode ClusterHelper::GetTrackClusterDistance(const pandora::Pandor
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+bool ClusterHelper::DoesClusterCrossGapRegion(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const unsigned int startLayer,
+    const unsigned int endLayer, const pandora::DetectorGap *&pDetectorGap, const unsigned int nSamplingPoints)
+{
+  const unsigned int fitStartLayer(std::max(startLayer, pCluster->GetInnerPseudoLayer()));
+  const unsigned int fitEndLayer(std::min(endLayer, pCluster->GetOuterPseudoLayer()));
+
+  if (fitStartLayer > fitEndLayer)
+      throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+
+  pandora::ClusterFitResult fitResult;
+  if (pandora::STATUS_CODE_SUCCESS != pandora::ClusterFitHelper::FitLayers(pCluster, fitStartLayer, fitEndLayer, fitResult))
+      return false;
+
+  const pandora::CartesianVector startLayerCentroid(pCluster->GetCentroid(fitStartLayer));
+  const float propagationDistance((pCluster->GetCentroid(fitEndLayer) - startLayerCentroid).GetDotProduct(fitResult.GetDirection()));
+
+  return ClusterHelper::DoesFitCrossGapRegion(pandora, fitResult, startLayerCentroid, propagationDistance, pDetectorGap, nSamplingPoints);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+bool ClusterHelper::DoesFitCrossGapRegion(const pandora::Pandora &pandora, const pandora::ClusterFitResult &clusterFitResult,
+    const pandora::CartesianVector &startPosition, const float propagationDistance, const pandora::DetectorGap *&pDetectorGap, const unsigned int nSamplingPoints)
+{
+  const pandora::CartesianVector &fitDirection(clusterFitResult.GetDirection());
+  const pandora::CartesianVector &fitIntercept(clusterFitResult.GetIntercept());
+
+  const float fitStartDistance((startPosition - fitIntercept).GetDotProduct(fitDirection));
+  const pandora::CartesianVector fitStartPosition(fitIntercept + (fitDirection * fitStartDistance));
+  const pandora::CartesianVector fitPropagation(fitDirection * propagationDistance);
+
+  const pandora::DetectorGapList &detectorGapList(pandora.GetGeometry()->GetDetectorGapList());
+
+  for (unsigned int i = 0; i < nSamplingPoints; ++i)
+  {
+      const pandora::CartesianVector fitPosition(fitStartPosition + (fitPropagation * (static_cast<float>(i) / static_cast<float>(nSamplingPoints))));
+
+      for (pandora::DetectorGapList::const_iterator iter = detectorGapList.begin(), iterEnd = detectorGapList.end(); iter != iterEnd; ++iter)
+      {
+          // ATTN Could pass (e.g. inner layer) hit type for cluster, but know that actually need to pass only any 3D hit type (hack)
+          if ((*iter)->IsInGap(fitPosition, pandora::ECAL))
+          {
+              pDetectorGap = *iter;
+              return true;
+          }
+      }
+  }
+
+  return false;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::GetDistanceToDetectorGap(const pandora::CartesianVector &positionVector, const pandora::DetectorGap *const pDetectorGap, float &distanceToGap)
+{
+  distanceToGap = 0.f;
+
+  if(NULL == pDetectorGap)
+    return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+  if(pDetectorGap->IsInGap(positionVector, pandora::ECAL))
+    return pandora::STATUS_CODE_FAILURE;
+
+  const pandora::BoxGap *const pBoxGap(dynamic_cast<const pandora::BoxGap *const>(pDetectorGap));
+
+  if(pBoxGap)
+  {
+    const pandora::CartesianVector relativePosition(positionVector - pBoxGap->GetVertex());
+
+    const float projection1(relativePosition.GetDotProduct(pBoxGap->GetSide1().GetUnitVector()));
+    const float projection2(relativePosition.GetDotProduct(pBoxGap->GetSide2().GetUnitVector()));
+    const float projection3(relativePosition.GetDotProduct(pBoxGap->GetSide3().GetUnitVector()));
+
+    distanceToGap = std::min(fabs(projection1), std::min(fabs(projection2), fabs(projection3)));
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  const pandora::ConcentricGap *const pConcentricGap(dynamic_cast<const pandora::ConcentricGap *const>(pDetectorGap));
+
+  if(pConcentricGap)
+  {
+    const float z(positionVector.GetZ());
+    const float x(positionVector.GetX()), y(positionVector.GetY());
+    const float r(std::sqrt(x * x + y * y));
+    bool inner(false), outer(false);
+    const bool inZ(pConcentricGap->GetMaxZCoordinate() < z && pConcentricGap->GetMinZCoordinate() > z);
+    float zDistance(0.f), rInnerDistance(0.f), rOuterDistance(0.f);
+
+    if(pConcentricGap->GetMaxZCoordinate() < z)
+    {
+      zDistance = fabs(z - pConcentricGap->GetMaxZCoordinate());
+    }
+
+    if(pConcentricGap->GetMinZCoordinate() > z)
+    {
+      zDistance = fabs(z - pConcentricGap->GetMinZCoordinate());
+    }
+
+    // inner r case
+    for(unsigned int i=0 ; i<pConcentricGap->GetInnerSymmetryOrder()+1 ; i++)
+    {
+      const float phi = pConcentricGap->GetInnerPhiCoordinate() + 2 * M_PI * (static_cast<float>(i) / static_cast<float>(pConcentricGap->GetInnerSymmetryOrder()));
+      const float phiMin = phi - (2 * M_PI / static_cast<float>(pConcentricGap->GetInnerSymmetryOrder())) / 2.f;
+      const float phiMax = phi + (2 * M_PI / static_cast<float>(pConcentricGap->GetInnerSymmetryOrder())) / 2.f;
+      const float phiPosition(std::atan2(y, x));
+
+      if(phiPosition > phiMin && phiPosition < phiMax)
+      {
+        const pandora::CartesianVector normaleVector(std::cos(phi), std::sin(phi), 0.f);
+
+        if(r*std::cos(normaleVector.GetOpeningAngle(positionVector)) < pConcentricGap->GetInnerRCoordinate())
+        {
+          rInnerDistance = fabs(pConcentricGap->GetInnerRCoordinate() - r*std::cos(normaleVector.GetOpeningAngle(positionVector)));
+          inner = true;
+        }
+
+        break;
+      }
+    }
+
+    // outer r case
+    for(unsigned int i=0 ; i<pConcentricGap->GetOuterSymmetryOrder()+1 ; i++)
+    {
+      const float phi = pConcentricGap->GetOuterPhiCoordinate() + 2 * M_PI * (static_cast<float>(i) / static_cast<float>(pConcentricGap->GetOuterSymmetryOrder()));
+      const float phiMin = phi - (2 * M_PI / static_cast<float>(pConcentricGap->GetOuterSymmetryOrder())) / 2.f;
+      const float phiMax = phi + (2 * M_PI / static_cast<float>(pConcentricGap->GetOuterSymmetryOrder())) / 2.f;
+      const float phiPosition(std::atan2(y, x));
+
+      if(phiPosition > phiMin && phiPosition < phiMax)
+      {
+        const pandora::CartesianVector normaleVector(std::cos(phi), std::sin(phi), 0.f);
+
+        if(r*std::cos(normaleVector.GetOpeningAngle(positionVector)) > pConcentricGap->GetOuterRCoordinate())
+        {
+          rOuterDistance = fabs(r*std::cos(normaleVector.GetOpeningAngle(positionVector)) - pConcentricGap->GetOuterRCoordinate());
+          outer = true;
+        }
+
+        break;
+      }
+    }
+
+    if(!inner && !outer)
+    {
+      distanceToGap = fabs(zDistance);
+    }
+    else if(inZ)
+    {
+      if(inner)
+        distanceToGap = fabs(rInnerDistance);
+      else
+        distanceToGap = fabs(rOuterDistance);
+    }
+    else
+    {
+      float rDistance(inner ? rInnerDistance : rOuterDistance);
+      distanceToGap = std::sqrt(fabs(rDistance)*fabs(rDistance) + fabs(zDistance)*fabs(zDistance));
+    }
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  return pandora::STATUS_CODE_FAILURE;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::GetCaloHitsNearDetectorGaps(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const float maxDistanceFine,
+    const float maxDistanceCoarse, pandora::CaloHitList &caloHitList, bool shouldUseIsolatedHits)
+{
+  const pandora::DetectorGapList &detectorGapList(pandora.GetGeometry()->GetDetectorGapList());
+
+  for (pandora::DetectorGapList::const_iterator iter = detectorGapList.begin(), iterEnd = detectorGapList.end(); iter != iterEnd; ++iter)
+  {
+    const pandora::DetectorGap *const pDetectorGap(*iter);
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCaloHitsNearDetectorGap(pandora, pCluster, pDetectorGap, maxDistanceFine, maxDistanceCoarse, caloHitList, shouldUseIsolatedHits));
+  }
+
+  return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::GetCaloHitsNearDetectorGap(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::DetectorGap *const pDetectorGap,
+    const float maxDistanceFine, const float maxDistanceCoarse, pandora::CaloHitList &caloHitList, bool shouldUseIsolatedHits)
+{
+  if(0 == pCluster->GetNCaloHits())
+    return pandora::STATUS_CODE_SUCCESS;
+
+  pandora::CaloHitList clusterCaloHitList;
+  pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+
+  for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
+      endIter != iter ; ++iter)
+  {
+    const pandora::CaloHit *const pCaloHit(*iter);
+
+    if(!shouldUseIsolatedHits && pCaloHit->IsIsolated())
+      continue;
+
+    const pandora::Granularity &granularity(pandora.GetGeometry()->GetHitTypeGranularity(pCaloHit->GetHitType()));
+    const float maxDistance(granularity <= pandora::FINE ? maxDistanceFine : maxDistanceCoarse);
+    float distanceToGap(0.f);
+
+    if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetDistanceToDetectorGap(pCaloHit->GetPositionVector(), pDetectorGap, distanceToGap))
+      continue;
+
+    if(distanceToGap < maxDistance)
+      caloHitList.insert(pCaloHit);
+  }
+
+  return pandora::STATUS_CODE_SUCCESS;
+}
+
 } 
 
