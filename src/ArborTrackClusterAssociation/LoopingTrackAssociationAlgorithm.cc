@@ -42,7 +42,6 @@ namespace arbor_content
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-//    const float ecalEndcapInnerRCoordinate(PandoraContentApi::GetGeometry(*this)->GetSubDetector(pandora::ECAL_ENDCAP).GetInnerRCoordinate());
     const float ecalEndcapInnerZCoordinate(PandoraContentApi::GetGeometry(*this)->GetSubDetector(pandora::ECAL_ENDCAP).GetInnerZCoordinate());
     const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
 
@@ -73,8 +72,6 @@ namespace arbor_content
       float bestXYDistance(std::numeric_limits<float>::max());
       float bestChi2(std::numeric_limits<float>::max());
 
-      std::cout << "Track p = " << pTrack->GetEnergyAtDca() << std::endl;
-
       for(pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterEndIter = pClusterList->end() ;
           clusterEndIter != clusterIter ; ++clusterIter)
       {
@@ -94,16 +91,7 @@ namespace arbor_content
         if(fabs(clusterInnerPosition.GetZ()) < fabs(ecalEndcapInnerZCoordinate))
           continue;
 
-        std::cout << "Cluster E = " << pCluster->GetHadronicEnergy() << " GeV" << std::endl;
-
         const float x(clusterInnerPosition.GetX()), y(clusterInnerPosition.GetY());
-//        const float r(std::sqrt(x*x + y*y));
-//        const unsigned int innerPseudoLayer(pCluster->GetInnerPseudoLayer());
-//        const float maxInnerPseudoLayer(r > ecalEndcapInnerRCoordinate ? m_maxInnerClusterPseudoLayer : m_maxInnerClusterPseudoLayerInnerRegion );
-//
-//        // check cluster inner pseudo layer
-//        if(innerPseudoLayer > maxInnerPseudoLayer)
-//          continue;
 
         // calculate track position at cluster starting point
         pandora::CartesianVector trackCrossingPoint(0.f, 0.f, 0.f);
@@ -149,7 +137,6 @@ namespace arbor_content
 
       if(NULL != pBestCluster)
       {
-        std::cout << "Association between track p = " << pTrack->GetEnergyAtDca() << " GeV and cluster E = " << pBestCluster->GetHadronicEnergy() << " GeV" << std::endl;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, pTrack, pBestCluster));
       }
     }

@@ -355,8 +355,6 @@ namespace arbor_content
       }
     }
 
-    std::cout << "Map size : " << clusterToClusterMap.size() << std::endl;
-
     return pandora::STATUS_CODE_SUCCESS;
   }
 
