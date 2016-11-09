@@ -285,6 +285,16 @@ public:
          */
         static pandora::StatusCode GetCaloHitsNearDetectorGap(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::DetectorGap *const pDetectorGap, const float maxDistanceFine,
             const float maxDistanceCoarse, pandora::CaloHitList &caloHitList, bool shouldUseIsolatedHits);
+
+        /**
+         *
+         */
+        static pandora::StatusCode CleanAndDeleteCluster(const pandora::Algorithm &algorithm, const pandora::Cluster *const pCluster);
+
+        /**
+         *
+         */
+        static pandora::StatusCode CleanAndDeleteClusters(const pandora::Algorithm &algorithm, const pandora::ClusterList &clusterList);
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

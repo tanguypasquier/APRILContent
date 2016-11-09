@@ -726,5 +726,41 @@ pandora::StatusCode ClusterHelper::GetCaloHitsNearDetectorGap(const pandora::Pan
   return pandora::STATUS_CODE_SUCCESS;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::CleanAndDeleteCluster(const pandora::Algorithm &algorithm, const pandora::Cluster *const pCluster)
+{
+  pandora::CaloHitList clusterCaloHitList;
+  pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+
+  for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
+      endIter != iter ; ++iter)
+  {
+    const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
+
+    if(NULL == pCaloHit)
+      continue;
+
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveAndDeleteAllConnections(pCaloHit));
+  }
+
+  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(algorithm, pCluster));
+
+  return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ClusterHelper::CleanAndDeleteClusters(const pandora::Algorithm &algorithm, const pandora::ClusterList &clusterList)
+{
+  for(pandora::ClusterList::const_iterator iter = clusterList.begin(), endIter = clusterList.end() ;
+      endIter != iter ; ++iter)
+  {
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::CleanAndDeleteCluster(algorithm, *iter));
+  }
+
+  return pandora::STATUS_CODE_SUCCESS;
+}
+
 } 
 
