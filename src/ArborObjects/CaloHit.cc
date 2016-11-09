@@ -30,114 +30,114 @@
 namespace arbor_content
 {
 
-CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
-		pandora::CaloHit(parameters),
-		m_surroundingEnergy(0.f),
-		m_density(0.f)
-{
-	m_pCaloHitMetaData = new CaloHitMetaData(this);
-}
+  CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
+		    pandora::CaloHit(parameters),
+		    m_surroundingEnergy(0.f),
+		    m_density(0.f)
+  {
+    m_pCaloHitMetaData = new CaloHitMetaData(this);
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-// TODO copy the connector list in the new calo hit
-CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameters) :
-		pandora::CaloHit(parameters),
-		m_surroundingEnergy(0.f),
-		m_density(0.f)
+  // TODO copy the connector list in the new calo hit
+  CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameters) :
+		    pandora::CaloHit(parameters),
+		    m_surroundingEnergy(0.f),
+		    m_density(0.f)
 
-{
-	const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit);
+  {
+    const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit);
 
-	if(NULL == pCaloHitCopy)
-		throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+    if(NULL == pCaloHitCopy)
+      throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
-	m_pCaloHitMetaData = new CaloHitMetaData(this);
-	m_hitTagMap = pCaloHitCopy->m_hitTagMap;
-	m_surroundingEnergy = pCaloHitCopy->m_surroundingEnergy;
-	m_density = pCaloHitCopy->m_density;
-}
+    m_pCaloHitMetaData = new CaloHitMetaData(this);
+    m_hitTagMap = pCaloHitCopy->m_hitTagMap;
+    m_surroundingEnergy = pCaloHitCopy->m_surroundingEnergy;
+    m_density = pCaloHitCopy->m_density;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-CaloHit::~CaloHit()
-{
-	PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveAndDeleteAllConnections(this));
-	delete m_pCaloHitMetaData;
-}
+  CaloHit::~CaloHit()
+  {
+    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveAndDeleteAllConnections(this));
+    delete m_pCaloHitMetaData;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-float CaloHit::GetSurroundingEnergy() const
-{
-	return m_surroundingEnergy;
-}
+  float CaloHit::GetSurroundingEnergy() const
+  {
+    return m_surroundingEnergy;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-float CaloHit::GetDensity() const
-{
-	return m_density;
-}
+  float CaloHit::GetDensity() const
+  {
+    return m_density;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-void CaloHit::ClearTagMap()
-{
-	m_hitTagMap.reset();
-}
+  void CaloHit::ClearTagMap()
+  {
+    m_hitTagMap.reset();
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode CaloHit::SaveReclusterMetaData(const std::string &clusterListName)
-{
-	ReclusterMetaDataMap::iterator findIter = m_reclusterMetaDataMap.find(clusterListName);
+  pandora::StatusCode CaloHit::SaveReclusterMetaData(const std::string &clusterListName)
+  {
+    ReclusterMetaDataMap::iterator findIter = m_reclusterMetaDataMap.find(clusterListName);
 
-	if(m_reclusterMetaDataMap.end() != findIter)
-		return pandora::STATUS_CODE_ALREADY_PRESENT;
+    if(m_reclusterMetaDataMap.end() != findIter)
+      return pandora::STATUS_CODE_ALREADY_PRESENT;
 
-	// backup the meta data
-	m_reclusterMetaDataMap.insert(ReclusterMetaDataMap::value_type(clusterListName, m_pCaloHitMetaData));
-	m_pCaloHitMetaData = new CaloHitMetaData(this);
+    // backup the meta data
+    m_reclusterMetaDataMap.insert(ReclusterMetaDataMap::value_type(clusterListName, m_pCaloHitMetaData));
+    m_pCaloHitMetaData = new CaloHitMetaData(this);
 
-	return pandora::STATUS_CODE_SUCCESS;
-}
+    return pandora::STATUS_CODE_SUCCESS;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode CaloHit::EndReclustering(const std::string &selectedClusterListName)
-{
-	ReclusterMetaDataMap::iterator findIter = m_reclusterMetaDataMap.find(selectedClusterListName);
+  pandora::StatusCode CaloHit::EndReclustering(const std::string &selectedClusterListName)
+  {
+    ReclusterMetaDataMap::iterator findIter = m_reclusterMetaDataMap.find(selectedClusterListName);
 
-	if(m_reclusterMetaDataMap.end() == findIter)
-		return pandora::STATUS_CODE_NOT_FOUND;
+    if(m_reclusterMetaDataMap.end() == findIter)
+      return pandora::STATUS_CODE_NOT_FOUND;
 
-	for(ReclusterMetaDataMap::iterator iter = m_reclusterMetaDataMap.begin(), endIter = m_reclusterMetaDataMap.end() ;
-			endIter != iter ; ++iter)
-	{
-		// adopt the selected meta data
-		if(iter->first == selectedClusterListName)
-		{
-			delete m_pCaloHitMetaData;
-			m_pCaloHitMetaData = iter->second;
+    for(ReclusterMetaDataMap::iterator iter = m_reclusterMetaDataMap.begin(), endIter = m_reclusterMetaDataMap.end() ;
+        endIter != iter ; ++iter)
+    {
+      // adopt the selected meta data
+      if(iter->first == selectedClusterListName)
+      {
+        delete m_pCaloHitMetaData;
+        m_pCaloHitMetaData = iter->second;
 
-			continue;
-		}
+        continue;
+      }
 
-		// get connector list copy
-		ConnectorList connectorList(iter->second->GetConnectorList(FORWARD_DIRECTION));
+      // get connector list copy
+      ConnectorList connectorList(iter->second->GetConnectorList(FORWARD_DIRECTION));
 
-		for(ConnectorList::iterator coIter = connectorList.begin(), coEndIter = connectorList.end() ;
-				coEndIter != coIter ; ++coIter)
-			delete *coIter;
+      for(ConnectorList::iterator coIter = connectorList.begin(), coEndIter = connectorList.end() ;
+          coEndIter != coIter ; ++coIter)
+        delete *coIter;
 
-		delete iter->second;
-	}
+      delete iter->second;
+    }
 
-	m_reclusterMetaDataMap.clear();
+    m_reclusterMetaDataMap.clear();
 
-	return pandora::STATUS_CODE_SUCCESS;
-}
+    return pandora::STATUS_CODE_SUCCESS;
+  }
 
 } 
 
