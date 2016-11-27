@@ -88,7 +88,7 @@ namespace arbor_content
           continue;
 
         // must be in endcap
-        if(fabs(clusterInnerPosition.GetZ()) < fabs(ecalEndcapInnerZCoordinate))
+        if(fabs(clusterInnerPosition.GetZ()) > fabs(ecalEndcapInnerZCoordinate))
           continue;
 
         const float x(clusterInnerPosition.GetX()), y(clusterInnerPosition.GetY());
