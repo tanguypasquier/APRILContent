@@ -31,9 +31,9 @@ namespace arbor_content
 {
 
   CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
-		    pandora::CaloHit(parameters),
-		    m_surroundingEnergy(0.f),
-		    m_density(0.f)
+      pandora::CaloHit(parameters),
+      m_surroundingEnergy(0.f),
+      m_density(0.f)
   {
     m_pCaloHitMetaData = new CaloHitMetaData(this);
   }
@@ -42,9 +42,9 @@ namespace arbor_content
 
   // TODO copy the connector list in the new calo hit
   CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameters) :
-		    pandora::CaloHit(parameters),
-		    m_surroundingEnergy(0.f),
-		    m_density(0.f)
+      pandora::CaloHit(parameters),
+      m_surroundingEnergy(0.f),
+      m_density(0.f)
 
   {
     const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit);

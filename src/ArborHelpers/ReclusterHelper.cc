@@ -32,210 +32,210 @@
 namespace arbor_content
 {
 
-float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::TrackList &trackList,
-		float energyResolutionFactor)
-{
+  float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::TrackList &trackList,
+      float energyResolutionFactor)
+  {
     float trackEnergySum(0.);
 
     for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
-        trackEnergySum += (*trackIter)->GetEnergyAtDca();
+      trackEnergySum += (*trackIter)->GetEnergyAtDca();
 
     const float hadronicEnergyResolution(pandora.GetSettings()->GetHadronicEnergyResolution());
 
     if ((trackEnergySum < std::numeric_limits<float>::epsilon()) || (hadronicEnergyResolution < std::numeric_limits<float>::epsilon()))
-        throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+      throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
     const float sigmaE(hadronicEnergyResolution * trackEnergySum / std::sqrt(trackEnergySum));
     const float chi((pCluster->GetTrackComparisonEnergy(pandora) - trackEnergySum) / (energyResolutionFactor * sigmaE));
 
     return chi;
-}
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const float clusterEnergy, const float trackEnergy,
-		float energyResolutionFactor)
-{
+  float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const float clusterEnergy, const float trackEnergy,
+      float energyResolutionFactor)
+  {
     const float hadronicEnergyResolution(pandora.GetSettings()->GetHadronicEnergyResolution());
 
     if ((trackEnergy < std::numeric_limits<float>::epsilon()) || (hadronicEnergyResolution < std::numeric_limits<float>::epsilon()))
-        throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+      throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
     const float sigmaE(hadronicEnergyResolution * trackEnergy / std::sqrt(trackEnergy));
     const float chi((clusterEnergy - trackEnergy) / (energyResolutionFactor * sigmaE));
 
     return chi;
-}
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode ReclusterHelper::ExtractReclusterResults(const pandora::Pandora &pandora, const pandora::ClusterList &clusterList, ReclusterResult &reclusterResult)
-{
-	if(clusterList.empty())
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
+  pandora::StatusCode ReclusterHelper::ExtractReclusterResults(const pandora::Pandora &pandora, const pandora::ClusterList &clusterList, ReclusterResult &reclusterResult)
+  {
+    if(clusterList.empty())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	unsigned int nDof(0);
-	float chi(0.f), chi2(0.f), neutralEnergy(0.f), chargedEnergy(0.f), chiWorstAssociation(0.f);
+    unsigned int nDof(0);
+    float chi(0.f), chi2(0.f), neutralEnergy(0.f), chargedEnergy(0.f), chiWorstAssociation(0.f);
 
-	for(pandora::ClusterList::const_iterator iter = clusterList.begin(), endIter = clusterList.end() ; endIter != iter ; ++iter)
-	{
-		const pandora::Cluster *const pCluster = *iter;
+    for(pandora::ClusterList::const_iterator iter = clusterList.begin(), endIter = clusterList.end() ; endIter != iter ; ++iter)
+    {
+      const pandora::Cluster *const pCluster = *iter;
 
-		const float clusterEnergy(pCluster->GetCorrectedHadronicEnergy(pandora));
-		const pandora::TrackList &trackList(pCluster->GetAssociatedTrackList());
-		const unsigned int nTracks(trackList.size());
+      const float clusterEnergy(pCluster->GetCorrectedHadronicEnergy(pandora));
+      const pandora::TrackList &trackList(pCluster->GetAssociatedTrackList());
+      const unsigned int nTracks(trackList.size());
 
-		if(nTracks == 0)
-		{
-			neutralEnergy += clusterEnergy;
-			continue;
-		}
+      if(nTracks == 0)
+      {
+        neutralEnergy += clusterEnergy;
+        continue;
+      }
 
-		chargedEnergy += clusterEnergy;
+      chargedEnergy += clusterEnergy;
 
-		const float newChi(ReclusterHelper::GetTrackClusterCompatibility(pandora, pCluster, trackList));
+      const float newChi(ReclusterHelper::GetTrackClusterCompatibility(pandora, pCluster, trackList));
 
-		chi += newChi;
-		chi2 += newChi * newChi;
+      chi += newChi;
+      chi2 += newChi * newChi;
 
-		++nDof;
+      ++nDof;
 
-		if( (newChi * newChi) > chiWorstAssociation*chiWorstAssociation )
-			chiWorstAssociation = newChi;
-	}
+      if( (newChi * newChi) > chiWorstAssociation*chiWorstAssociation )
+        chiWorstAssociation = newChi;
+    }
 
-	if(0 == nDof)
-		return pandora::STATUS_CODE_FAILURE;
+    if(0 == nDof)
+      return pandora::STATUS_CODE_FAILURE;
 
-	reclusterResult.SetChi(chi);
-	reclusterResult.SetChi2(chi2);
-	reclusterResult.SetChiPerDof(chi / nDof);
-	reclusterResult.SetChi2PerDof(chi2 / nDof);
-	reclusterResult.SetNeutralEnergy(neutralEnergy);
-	reclusterResult.SetChargedEnergy(chargedEnergy);
-	reclusterResult.SetChiWorstAssociation(chiWorstAssociation);
+    reclusterResult.SetChi(chi);
+    reclusterResult.SetChi2(chi2);
+    reclusterResult.SetChiPerDof(chi / nDof);
+    reclusterResult.SetChi2PerDof(chi2 / nDof);
+    reclusterResult.SetNeutralEnergy(neutralEnergy);
+    reclusterResult.SetChargedEnergy(chargedEnergy);
+    reclusterResult.SetChiWorstAssociation(chiWorstAssociation);
 
-	return pandora::STATUS_CODE_SUCCESS;
-}
+    return pandora::STATUS_CODE_SUCCESS;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode ReclusterHelper::SplitTreeFromCluster(const pandora::Algorithm &algorithm, const arbor_content::CaloHit *const pSeedCaloHit,
-		const pandora::Cluster *const pOriginalCluster, const pandora::Cluster *&pSeparatedTreeCluster, const std::string &originalClusterListName)
-{
-	if(NULL == pOriginalCluster || NULL == pSeedCaloHit)
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
+  pandora::StatusCode ReclusterHelper::SplitTreeFromCluster(const pandora::Algorithm &algorithm, const arbor_content::CaloHit *const pSeedCaloHit,
+      const pandora::Cluster *const pOriginalCluster, const pandora::Cluster *&pSeparatedTreeCluster, const std::string &originalClusterListName)
+  {
+    if(NULL == pOriginalCluster || NULL == pSeedCaloHit)
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	if(!ArborContentApi::IsSeed(pSeedCaloHit))
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
+    if(!ArborContentApi::IsSeed(pSeedCaloHit))
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	pandora::CaloHitList clusterCaloHitList;
-	pandora::CaloHitList seedCaloHitList;
-	pOriginalCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pandora::CaloHitList clusterCaloHitList;
+    pandora::CaloHitList seedCaloHitList;
+    pOriginalCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, false));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, false));
 
-	// if only one seed in the original cluster, can't create a separate tree from this cluster
-	if(seedCaloHitList.size() <= 1)
-		return pandora::STATUS_CODE_NOT_ALLOWED;
+    // if only one seed in the original cluster, can't create a separate tree from this cluster
+    if(seedCaloHitList.size() <= 1)
+      return pandora::STATUS_CODE_NOT_ALLOWED;
 
-	// seed calo hit must be contained in the original cluster
-	if(seedCaloHitList.end() == seedCaloHitList.find(pSeedCaloHit))
-		return pandora::STATUS_CODE_FAILURE;
+    // seed calo hit must be contained in the original cluster
+    if(seedCaloHitList.end() == seedCaloHitList.find(pSeedCaloHit))
+      return pandora::STATUS_CODE_FAILURE;
 
-	pandora::CaloHitList treeCaloHitList;
-	treeCaloHitList.insert(pSeedCaloHit);
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pSeedCaloHit, FORWARD_DIRECTION, treeCaloHitList));
+    pandora::CaloHitList treeCaloHitList;
+    treeCaloHitList.insert(pSeedCaloHit);
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pSeedCaloHit, FORWARD_DIRECTION, treeCaloHitList));
 
-	// remove all the hits from the original cluster
-	for(pandora::CaloHitList::const_iterator iter = treeCaloHitList.begin(), endIter = treeCaloHitList.end() ;
-			endIter != iter ; ++iter)
-	{
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveFromCluster(algorithm, pOriginalCluster, *iter));
-	}
+    // remove all the hits from the original cluster
+    for(pandora::CaloHitList::const_iterator iter = treeCaloHitList.begin(), endIter = treeCaloHitList.end() ;
+        endIter != iter ; ++iter)
+    {
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveFromCluster(algorithm, pOriginalCluster, *iter));
+    }
 
-	// create the separated tree cluster
-	PandoraContentApi::ClusterParameters clusterParameters;
-	clusterParameters.m_caloHitList = treeCaloHitList;
-	pSeparatedTreeCluster = NULL;
+    // create the separated tree cluster
+    PandoraContentApi::ClusterParameters clusterParameters;
+    clusterParameters.m_caloHitList = treeCaloHitList;
+    pSeparatedTreeCluster = NULL;
 
-	std::string clusterListName;
-	std::string temporaryClusterListName;
-	const pandora::ClusterList *pTemporaryClusterList = NULL;
+    std::string clusterListName;
+    std::string temporaryClusterListName;
+    const pandora::ClusterList *pTemporaryClusterList = NULL;
 
-	// in order to create a separate tree cluster, cluster creation must be enabled by pandora sdk first
-	if(originalClusterListName.empty())
-	{
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentListName<pandora::Cluster>(algorithm, clusterListName));
-	}
-	else
-	{
-		clusterListName = originalClusterListName;
-	}
+    // in order to create a separate tree cluster, cluster creation must be enabled by pandora sdk first
+    if(originalClusterListName.empty())
+    {
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentListName<pandora::Cluster>(algorithm, clusterListName));
+    }
+    else
+    {
+      clusterListName = originalClusterListName;
+    }
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(algorithm, pTemporaryClusterList, temporaryClusterListName));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(algorithm, pTemporaryClusterList, temporaryClusterListName));
 
-	// create the tree cluster and save it
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pSeparatedTreeCluster));
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<pandora::Cluster>(algorithm, temporaryClusterListName, clusterListName));
+    // create the tree cluster and save it
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pSeparatedTreeCluster));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<pandora::Cluster>(algorithm, temporaryClusterListName, clusterListName));
 
-	return pandora::STATUS_CODE_SUCCESS;
-}
+    return pandora::STATUS_CODE_SUCCESS;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode ReclusterHelper::SplitClusterIntoTreeClusters(const pandora::Algorithm &algorithm, const pandora::Cluster *const pCluster,
-		pandora::ClusterVector &treeClusterVector)
-{
-	if(NULL == pCluster)
-		return pandora::STATUS_CODE_INVALID_PARAMETER;
+  pandora::StatusCode ReclusterHelper::SplitClusterIntoTreeClusters(const pandora::Algorithm &algorithm, const pandora::Cluster *const pCluster,
+      pandora::ClusterVector &treeClusterVector)
+  {
+    if(NULL == pCluster)
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-	pandora::CaloHitList clusterCaloHitList;
-	pandora::CaloHitList seedCaloHitList;
-	pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pandora::CaloHitList clusterCaloHitList;
+    pandora::CaloHitList seedCaloHitList;
+    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
 
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, false));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, false));
 
-	// if only one seed in the original cluster, can't create a separate tree from this cluster
-	if(seedCaloHitList.size() <= 1)
-		return pandora::STATUS_CODE_NOT_ALLOWED;
+    // if only one seed in the original cluster, can't create a separate tree from this cluster
+    if(seedCaloHitList.size() <= 1)
+      return pandora::STATUS_CODE_NOT_ALLOWED;
 
-	pandora::ClusterList reclusterClusterList;
-	reclusterClusterList.insert(pCluster);
+    pandora::ClusterList reclusterClusterList;
+    reclusterClusterList.insert(pCluster);
 
-	std::string originalClusterListName;
-	std::string fragmentsClustersListName;
+    std::string originalClusterListName;
+    std::string fragmentsClustersListName;
 
-	// fragment the cluster
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::InitializeFragmentation(algorithm, reclusterClusterList, originalClusterListName, fragmentsClustersListName));
+    // fragment the cluster
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::InitializeFragmentation(algorithm, reclusterClusterList, originalClusterListName, fragmentsClustersListName));
 
-	for(pandora::CaloHitList::const_iterator iter = seedCaloHitList.begin(), endIter = seedCaloHitList.end() ;
-			endIter != iter ; ++iter)
-	{
-		const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
+    for(pandora::CaloHitList::const_iterator iter = seedCaloHitList.begin(), endIter = seedCaloHitList.end() ;
+        endIter != iter ; ++iter)
+    {
+      const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
 
-		if(NULL == pCaloHit)
-			return pandora::STATUS_CODE_FAILURE;
+      if(NULL == pCaloHit)
+        return pandora::STATUS_CODE_FAILURE;
 
-		pandora::CaloHitList treeCaloHitList;
-		treeCaloHitList.insert(pCaloHit);
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pCaloHit, FORWARD_DIRECTION, treeCaloHitList));
+      pandora::CaloHitList treeCaloHitList;
+      treeCaloHitList.insert(pCaloHit);
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pCaloHit, FORWARD_DIRECTION, treeCaloHitList));
 
-		// create a separated tree cluster
-		PandoraContentApi::ClusterParameters clusterParameters;
-		clusterParameters.m_caloHitList = treeCaloHitList;
-		const pandora::Cluster *pTreeCluster = NULL;
+      // create a separated tree cluster
+      PandoraContentApi::ClusterParameters clusterParameters;
+      clusterParameters.m_caloHitList = treeCaloHitList;
+      const pandora::Cluster *pTreeCluster = NULL;
 
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pTreeCluster));
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pTreeCluster));
 
-		treeClusterVector.push_back(pTreeCluster);
-	}
+      treeClusterVector.push_back(pTreeCluster);
+    }
 
-	// save fragmented clusters
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::EndFragmentation(algorithm, fragmentsClustersListName, originalClusterListName));
+    // save fragmented clusters
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::EndFragmentation(algorithm, fragmentsClustersListName, originalClusterListName));
 
-	return pandora::STATUS_CODE_SUCCESS;
-}
+    return pandora::STATUS_CODE_SUCCESS;
+  }
 
 
 } 

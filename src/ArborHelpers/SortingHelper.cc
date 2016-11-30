@@ -70,7 +70,7 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   SortingHelper::SortClusterByOmegaTracks::SortClusterByOmegaTracks(const pandora::Pandora *const pPandora) :
-    m_pPandora(pPandora)
+        m_pPandora(pPandora)
   {
   }
 
@@ -104,7 +104,7 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   SortingHelper::SortByTrackClusterCompatibility::SortByTrackClusterCompatibility(const pandora::Pandora *const pPandora) :
-    m_pPandora(pPandora)
+        m_pPandora(pPandora)
   {
   }
 

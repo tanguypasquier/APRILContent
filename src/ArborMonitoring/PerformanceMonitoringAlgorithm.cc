@@ -102,7 +102,7 @@ namespace arbor_content
     if(fabs(pfoTotalEnergy - m_expectedPfoTotalEnergy) > m_pfoTotalEnergyDeviation)
     {
       ARBOR_LOG( "** Energy exceeded ! E = " << pfoTotalEnergy << " GeV, excepted = " << m_expectedPfoTotalEnergy << " GeV **" << std::endl );
-      
+
       if(!m_visualMonitoringAlgorithmName.empty())
       {
         runVisualMonitoring = true;
@@ -113,7 +113,7 @@ namespace arbor_content
     ARBOR_LOG( "Neutral pfo energy = " << pfoTotalNeutralEnergy << " GeV" << std::endl );
     ARBOR_LOG( "Charged pfo energy = " << pfoTotalChargedEnergy << " GeV" << std::endl );
     ARBOR_LOG( "Total chi = " << pfoTotalChi << std::endl );
-    
+
     if(runVisualMonitoring)
     {
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_visualMonitoringAlgorithmName));

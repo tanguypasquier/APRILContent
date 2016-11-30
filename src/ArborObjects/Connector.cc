@@ -31,96 +31,95 @@
 namespace arbor_content
 {
 
-Connector::Connector(const arbor_content::CaloHit *const pFromCaloHit, const arbor_content::CaloHit *const pToCaloHit,
-		float referenceLength) :
-		m_pFromCaloHit(pFromCaloHit),
-		m_pToCaloHit(pToCaloHit),
-		m_referenceLength(referenceLength)
-{
-	/* nop */
-}
+  Connector::Connector(const arbor_content::CaloHit *const pFromCaloHit, const arbor_content::CaloHit *const pToCaloHit, float referenceLength) :
+      m_pFromCaloHit(pFromCaloHit),
+      m_pToCaloHit(pToCaloHit),
+      m_referenceLength(referenceLength)
+  {
+    /* nop */
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-Connector::~Connector() 
-{
-	m_pFromCaloHit = NULL;
-	m_pToCaloHit = NULL;
-}
+  Connector::~Connector()
+  {
+    m_pFromCaloHit = NULL;
+    m_pToCaloHit = NULL;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-const CaloHit *Connector::GetFrom() const
-{
-	return m_pFromCaloHit;
-}
+  const CaloHit *Connector::GetFrom() const
+  {
+    return m_pFromCaloHit;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-const CaloHit *Connector::GetTo() const
-{
-	return m_pToCaloHit;
-}
+  const CaloHit *Connector::GetTo() const
+  {
+    return m_pToCaloHit;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-const arbor_content::CaloHit *Connector::Get(ConnectorDirection direction) const
-{
-	return direction == BACKWARD_DIRECTION ? this->GetFrom() : this->GetTo();
-}
+  const arbor_content::CaloHit *Connector::Get(ConnectorDirection direction) const
+  {
+    return direction == BACKWARD_DIRECTION ? this->GetFrom() : this->GetTo();
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-float Connector::GetLength() const
-{
-	return (this->GetFrom()->GetPositionVector() - this->GetTo()->GetPositionVector()).GetMagnitude();
-}
+  float Connector::GetLength() const
+  {
+    return (this->GetFrom()->GetPositionVector() - this->GetTo()->GetPositionVector()).GetMagnitude();
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-float Connector::GetReferenceLength() const
-{
-	return m_referenceLength;
-}
+  float Connector::GetReferenceLength() const
+  {
+    return m_referenceLength;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-float Connector::GetNormalizedLength() const
-{
-	return (this->GetLength() / m_referenceLength);
-}
+  float Connector::GetNormalizedLength() const
+  {
+    return (this->GetLength() / m_referenceLength);
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::CartesianVector Connector::GetVector(ConnectorDirection direction) const
-{
-	pandora::CartesianVector vector = GetTo()->GetPositionVector() - GetFrom()->GetPositionVector();
-	return direction == FORWARD_DIRECTION ? vector : vector * -1.f;
-}
+  pandora::CartesianVector Connector::GetVector(ConnectorDirection direction) const
+  {
+    pandora::CartesianVector vector = GetTo()->GetPositionVector() - GetFrom()->GetPositionVector();
+    return direction == FORWARD_DIRECTION ? vector : vector * -1.f;
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-bool Connector::IsFrom(const CaloHit *const pCaloHit) const
-{
-	return (pCaloHit == this->GetFrom());
-}
+  bool Connector::IsFrom(const CaloHit *const pCaloHit) const
+  {
+    return (pCaloHit == this->GetFrom());
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-bool Connector::IsTo(const CaloHit *const pCaloHit) const
-{
-	return (pCaloHit == this->GetTo());
-}
+  bool Connector::IsTo(const CaloHit *const pCaloHit) const
+  {
+    return (pCaloHit == this->GetTo());
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-float Connector::GetOpeningAngle(const Connector *const pConnector) const
-{
-	const pandora::CartesianVector direction(GetTo()->GetPositionVector() - GetFrom()->GetPositionVector());
-	const pandora::CartesianVector otherDirection(pConnector->GetTo()->GetPositionVector() - pConnector->GetTo()->GetPositionVector());
+  float Connector::GetOpeningAngle(const Connector *const pConnector) const
+  {
+    const pandora::CartesianVector direction(GetTo()->GetPositionVector() - GetFrom()->GetPositionVector());
+    const pandora::CartesianVector otherDirection(pConnector->GetTo()->GetPositionVector() - pConnector->GetTo()->GetPositionVector());
 
-	return direction.GetOpeningAngle(otherDirection);
-}
+    return direction.GetOpeningAngle(otherDirection);
+  }
 
 } 
 
