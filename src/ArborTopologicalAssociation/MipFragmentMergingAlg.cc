@@ -327,15 +327,15 @@ namespace arbor_content
         const unsigned int pseudoLayerDifference(daughterInnerPseudoLayer-parentOuterPseudoLayer);
         bool possibleAssociation(false);
 
-        if(pseudoLayerDifference < m_maxClusterSeparationPseudoLayer & cosineDirection > m_maxCosineDirection)
+        if((pseudoLayerDifference < m_maxClusterSeparationPseudoLayer) && (cosineDirection > m_maxCosineDirection))
         {
           possibleAssociation = true;
         }
-        else if(pseudoLayerDifference < m_maxClusterSeparationPseudoLayer2 && cosineDirection > m_maxCosineDirection2)
+        else if((pseudoLayerDifference < m_maxClusterSeparationPseudoLayer2) && (cosineDirection > m_maxCosineDirection2))
         {
           possibleAssociation = true;
         }
-        else if(pseudoLayerDifference < m_maxClusterSeparationPseudoLayer3 && cosineDirection > m_maxCosineDirection3)
+        else if((pseudoLayerDifference < m_maxClusterSeparationPseudoLayer3) && (cosineDirection > m_maxCosineDirection3))
         {
           possibleAssociation = true;
         }
