@@ -58,6 +58,7 @@ namespace arbor_content
     clusterVector.clear(); mipToParentClusterMap.clear();
     clusterVector.insert(clusterVector.end(), pClusterList->begin(), pClusterList->end());
     std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortClustersByInnerLayer);
+    std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortClusterByOmegaTracks(&this->GetPandora()));
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindChargedMipFragments(clusterVector, mipToParentClusterMap));
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->MergeClusters(mipToParentClusterMap));
@@ -283,12 +284,6 @@ namespace arbor_content
       if(pParentCluster->GetAssociatedTrackList().empty())
         continue;
 
-      const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pParentCluster, pParentCluster->GetAssociatedTrackList()));
-
-      // if chi2 is OK, continue ...
-      if(chi*chi < m_minMipChi2)
-        continue;
-
       const unsigned int parentOuterPseudoLayer(pParentCluster->GetOuterPseudoLayer());
 
       pandora::ClusterFitResult parentClusterFitResult;
@@ -330,19 +325,19 @@ namespace arbor_content
         const pandora::CartesianVector daughterStartPoint(pDaughterCluster->GetCentroid(daughterInnerPseudoLayer));
         const float cosineDirection( (daughterStartPoint-parentEndPoint).GetCosOpeningAngle(parentClusterDirection) );
         const unsigned int pseudoLayerDifference(daughterInnerPseudoLayer-parentOuterPseudoLayer);
-        bool possibleAssociation(true);
+        bool possibleAssociation(false);
 
-        if(pseudoLayerDifference > m_maxClusterSeparationPseudoLayer && cosineDirection < m_maxCosineDirection)
+        if(pseudoLayerDifference < m_maxClusterSeparationPseudoLayer & cosineDirection > m_maxCosineDirection)
         {
-          possibleAssociation = false;
+          possibleAssociation = true;
         }
-        else if(pseudoLayerDifference > m_maxClusterSeparationPseudoLayer2 && cosineDirection < m_maxCosineDirection2)
+        else if(pseudoLayerDifference < m_maxClusterSeparationPseudoLayer2 && cosineDirection > m_maxCosineDirection2)
         {
-          possibleAssociation = false;
+          possibleAssociation = true;
         }
-        else if(pseudoLayerDifference > m_maxClusterSeparationPseudoLayer3 && cosineDirection < m_maxCosineDirection3)
+        else if(pseudoLayerDifference < m_maxClusterSeparationPseudoLayer3 && cosineDirection > m_maxCosineDirection3)
         {
-          possibleAssociation = false;
+          possibleAssociation = true;
         }
 
         if(possibleAssociation)
