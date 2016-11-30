@@ -143,6 +143,11 @@ namespace arbor_content
     };
 
     /**
+     *  @brief  Whether the calo hit is near a detector gap
+     */
+    bool IsNearbyGap(const pandora::CaloHit *const pCaloHit) const;
+
+    /**
      *  @brief  Get the calo hit approach to barrel module gap
      */
     Approach GetApproach(const pandora::CaloHit *const pCaloHit) const;
@@ -150,12 +155,14 @@ namespace arbor_content
   private:
     pandora::FloatVector                m_ecalZGapPositions;
     pandora::FloatVector                m_hcalZGapPositions;
+
     float                               m_ecalDistanceToGap;
     float                               m_hcalDistanceToGap;
-    float                               m_ecalInnerGapApproachFactor;
-    float                               m_ecalOuterGapApproachFactor;
-    float                               m_hcalInnerGapApproachFactor;
-    float                               m_hcalOuterGapApproachFactor;
+
+    float                               m_ecalGapAlpha;
+    float                               m_ecalGapBeta;
+    float                               m_hcalGapAlpha;
+    float                               m_hcalGapBeta;
   };
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -193,18 +200,38 @@ namespace arbor_content
      */
     float GetCosTheta(const pandora::Cluster *const pCluster) const;
 
+    /**
+     *  @brief  Get the corrected energy in the barrel region
+     *
+     *  @param  The input cluster energy
+     *  @param  The cluster cos theta
+     */
+    float GetBarrelCorrectedEnergy(float inputEnergy, float cosTheta) const;
+
+    /**
+     *  @brief  Get the corrected energy in the endcap region
+     *
+     *  @param  The input cluster energy
+     *  @param  The cluster cos theta
+     */
+    float GetEndcapCorrectedEnergy(float inputEnergy, float cosTheta) const;
+
   private:
-    float                       m_barrelEndcapSeparationCosTheta;
-    float                       m_barrelInterceptP0;
-    float                       m_barrelInterceptP1;
-    float                       m_barrelSlopeP0;
-    float                       m_barrelSlopeP1;
-    float                       m_endcapInterceptP0;
-    float                       m_endcapInterceptP1;
-    float                       m_endcapSlopeP0;
-    float                       m_endcapSlopeP1;
     float                       m_lowEnergyCut;
 
+    float                       m_barrelP00;
+    float                       m_barrelP01;
+    float                       m_barrelP02;
+    float                       m_barrelP10;
+    float                       m_barrelP11;
+    float                       m_barrelP12;
+
+    float                       m_endcapP00;
+    float                       m_endcapP01;
+    float                       m_endcapP02;
+    float                       m_endcapP10;
+    float                       m_endcapP11;
+    float                       m_endcapP12;
   };
 
 } 

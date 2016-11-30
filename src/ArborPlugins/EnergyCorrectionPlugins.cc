@@ -231,12 +231,12 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   BarrelGapEnergyFunction::BarrelGapEnergyFunction() :
-        m_ecalDistanceToGap(5.f),
-        m_hcalDistanceToGap(10.f),
-        m_ecalInnerGapApproachFactor(0.f),
-        m_ecalOuterGapApproachFactor(0.f),
-        m_hcalInnerGapApproachFactor(0.f),
-        m_hcalOuterGapApproachFactor(0.f)
+        m_ecalDistanceToGap(10.f),  // 8 mm + 2 mm
+        m_hcalDistanceToGap(30.f),  // 20 mm + 10 mm
+        m_ecalGapAlpha(0),
+        m_ecalGapBeta(0),
+        m_hcalGapAlpha(1.5254),
+        m_hcalGapBeta(0)
   {
   }
 
@@ -244,15 +244,13 @@ namespace arbor_content
 
   pandora::StatusCode BarrelGapEnergyFunction::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const
   {
-    std::cout << "BarrelGapEnergyFunction: input E = " << correctedEnergy << " GeV" << std::endl;
-
     if(m_ecalZGapPositions.empty() && m_hcalZGapPositions.empty())
       return pandora::STATUS_CODE_SUCCESS;
 
     if(pCluster->GetNCaloHits() == 0)
       return pandora::STATUS_CODE_SUCCESS;
 
-    float ecalInnerGapEnergy(0), ecalOuterGapEnergy(0), hcalInnerGapEnergy(0), hcalOuterGapEnergy(0);
+    float ecalGapEnergy(0), hcalGapEnergy(0);
 
     pandora::CaloHitList clusterCaloHitList;
     pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
@@ -261,38 +259,51 @@ namespace arbor_content
         endIter != iter ; ++iter)
     {
       const pandora::CaloHit *const pCaloHit(*iter);
-      const Approach &approach(this->GetApproach(pCaloHit));
+      const bool nearbyGap(this->IsNearbyGap(pCaloHit));
 
-      if(approach == FAR_FROM_GAP)
+      if(!nearbyGap)
         continue;
 
       if(pCaloHit->GetHitType() == pandora::ECAL)
-      {
-        if(approach == INNER_GAP_APPROACH)
-          ecalInnerGapEnergy += pCaloHit->GetElectromagneticEnergy();
-
-        if(approach == OUTER_GAP_APPROACH)
-          ecalOuterGapEnergy += pCaloHit->GetElectromagneticEnergy();
-      }
+        ecalGapEnergy += pCaloHit->GetHadronicEnergy();
       else if(pCaloHit->GetHitType() == pandora::HCAL)
-      {
-        if(approach == INNER_GAP_APPROACH)
-          hcalInnerGapEnergy += pCaloHit->GetHadronicEnergy();
-
-        if(approach == OUTER_GAP_APPROACH)
-          hcalOuterGapEnergy += pCaloHit->GetHadronicEnergy();
-      }
+        hcalGapEnergy += pCaloHit->GetHadronicEnergy();
     }
 
     correctedEnergy +=
-        ecalInnerGapEnergy * m_ecalInnerGapApproachFactor +
-        ecalOuterGapEnergy * m_ecalOuterGapApproachFactor +
-        hcalInnerGapEnergy * m_hcalInnerGapApproachFactor +
-        hcalOuterGapEnergy * m_hcalOuterGapApproachFactor;
-
-    std::cout << "BarrelGapEnergyFunction: output E = " << correctedEnergy << " GeV" << std::endl;
+        m_ecalGapAlpha * ecalGapEnergy + m_ecalGapBeta * ecalGapEnergy * ecalGapEnergy +
+        m_hcalGapAlpha * hcalGapEnergy + m_hcalGapBeta * hcalGapEnergy * hcalGapEnergy;
 
     return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  bool BarrelGapEnergyFunction::IsNearbyGap(const pandora::CaloHit *const pCaloHit) const
+  {
+    if(pCaloHit->GetHitRegion() != pandora::BARREL)
+      return false;
+
+    if(pCaloHit->GetHitType() != pandora::ECAL && pCaloHit->GetHitType() != pandora::HCAL)
+      return false;
+
+    const pandora::FloatVector zGapPositions(pCaloHit->GetHitType() == pandora::ECAL ? m_ecalZGapPositions : m_hcalZGapPositions);
+    const float distanceToGap(pCaloHit->GetHitType() == pandora::ECAL ? m_ecalDistanceToGap : m_hcalDistanceToGap);
+    const float hitZ(pCaloHit->GetPositionVector().GetZ());
+
+    for(pandora::FloatVector::const_iterator iter = zGapPositions.begin(), endIter = zGapPositions.end() ;
+        endIter != iter ; ++iter)
+    {
+      const float gapZPosition(*iter);
+
+      if( ((hitZ < gapZPosition) && (hitZ > gapZPosition-distanceToGap))
+       || ((hitZ > gapZPosition) && (hitZ < gapZPosition+distanceToGap)) )
+      {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -312,73 +323,37 @@ namespace arbor_content
         "HcalDistanceToGap", m_hcalDistanceToGap));
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EcalInnerGapApproachFactor", m_ecalInnerGapApproachFactor));
+        "EcalGapAlpha", m_ecalGapAlpha));
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EcalOuterGapApproachFactor", m_ecalOuterGapApproachFactor));
+        "EcalGapBeta", m_ecalGapBeta));
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "HcalInnerGapApproachFactor", m_hcalInnerGapApproachFactor));
+        "HcalGapAlpha", m_hcalGapAlpha));
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "HcalOuterGapApproachFactor", m_hcalOuterGapApproachFactor));
+        "HcalGapBeta", m_hcalGapBeta));
 
     return pandora::STATUS_CODE_SUCCESS;
-  }
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
-  BarrelGapEnergyFunction::Approach BarrelGapEnergyFunction::GetApproach(const pandora::CaloHit *const pCaloHit) const
-  {
-    if(pCaloHit->GetHitRegion() != pandora::BARREL)
-      return FAR_FROM_GAP;
-
-    if(pCaloHit->GetHitType() != pandora::ECAL && pCaloHit->GetHitType() != pandora::HCAL)
-      return FAR_FROM_GAP;
-
-    const pandora::FloatVector zGapPositions(pCaloHit->GetHitType() == pandora::ECAL ? m_ecalZGapPositions : m_hcalZGapPositions);
-    const float distanceToGap(pCaloHit->GetHitType() == pandora::ECAL ? m_ecalDistanceToGap : m_hcalDistanceToGap);
-    const float hitZ(pCaloHit->GetPositionVector().GetZ());
-
-    int approach(FAR_FROM_GAP);
-
-    for(pandora::FloatVector::const_iterator iter = zGapPositions.begin(), endIter = zGapPositions.end() ;
-        endIter != iter ; ++iter)
-    {
-      const float gapZPosition(*iter);
-
-      if( (hitZ < gapZPosition) && (hitZ > gapZPosition-distanceToGap) )
-        approach = INNER_GAP_APPROACH;
-
-      if( (hitZ > gapZPosition) && (hitZ < gapZPosition+distanceToGap) )
-        approach = OUTER_GAP_APPROACH;
-
-      if(approach != FAR_FROM_GAP)
-      {
-        if(gapZPosition < 0)
-          approach *= -1;
-
-        break;
-      }
-    }
-
-    return static_cast<Approach>(approach);
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   ThetaEnergyFunction::ThetaEnergyFunction() :
-        m_barrelEndcapSeparationCosTheta(0.78),
-        m_barrelInterceptP0(-0.931485),
-        m_barrelInterceptP1(1.01681),
-        m_barrelSlopeP0(-0.327193),
-        m_barrelSlopeP1(-0.141193),
-        m_endcapInterceptP0(-2.46562),
-        m_endcapInterceptP1(0.769711),
-        m_endcapSlopeP0(1.58449),
-        m_endcapSlopeP1(0.259714),
-        m_lowEnergyCut(3.f)
+        m_lowEnergyCut(3.f),
+        m_barrelP00(-2.36284),
+        m_barrelP01(1.14627),
+        m_barrelP02(-0.00152029),
+        m_barrelP10(0.325533),
+        m_barrelP11(-0.126941),
+        m_barrelP12(0.000462463),
+        m_endcapP00(-2.16956),
+        m_endcapP01(0.801878),
+        m_endcapP02(1.27263e-05),
+        m_endcapP10(0.157559),
+        m_endcapP11(0.34754),
+        m_endcapP12(-0.00122559)
   {
   }
 
@@ -386,8 +361,6 @@ namespace arbor_content
 
   pandora::StatusCode ThetaEnergyFunction::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const
   {
-    std::cout << "ThetaEnergyFunction: input E = " << correctedEnergy << " GeV" << std::endl;
-
     if(pCluster->GetNCaloHits() == 0)
       return pandora::STATUS_CODE_SUCCESS;
 
@@ -403,18 +376,36 @@ namespace arbor_content
 
     pandora::CaloHitList clusterCaloHitList;
     pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+
+    const float clusterEnergy(pCluster->GetHadronicEnergy());
     float startingHadronicEnergySum(0.f);
+    float barrelEnergyFraction(0.f);
+    float endcapEnergyFraction(0.f);
+    bool noShowerHit(true);
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
         endIter != iter ; ++iter)
     {
       const pandora::CaloHit *const pCaloHit(*iter);
 
+      if(pCaloHit->GetHitRegion() == pandora::BARREL)
+      {
+        barrelEnergyFraction += pCaloHit->GetHadronicEnergy();
+      }
+      else if(pCaloHit->GetHitRegion() == pandora::ENDCAP)
+      {
+        endcapEnergyFraction += pCaloHit->GetHadronicEnergy();
+      }
+
       if(pCaloHit->GetPseudoLayer() >= startingPseudoLayer)
         continue;
 
       startingHadronicEnergySum += pCaloHit->GetHadronicEnergy();
+      noShowerHit = false;
     }
+
+    if(noShowerHit)
+      return pandora::STATUS_CODE_SUCCESS;
 
     // evaluate corrected energy fraction of the main shower part
     // used in following computation since calibration of this correction is done
@@ -423,48 +414,21 @@ namespace arbor_content
     const float correctedStartingHadronicEnergy(startingHadronicEnergyFraction*correctedEnergy);
     const float mainCorrectedShowerEnergy(correctedEnergy - correctedStartingHadronicEnergy);
 
-    // calculate energy correction wrt theta angle
-    const float interceptBarrel(m_barrelInterceptP0 + mainCorrectedShowerEnergy*m_barrelInterceptP1);
-    const float slopeBarrel(m_barrelSlopeP0 + mainCorrectedShowerEnergy*m_barrelSlopeP1);
-    const float interceptEndcap(m_endcapInterceptP0 + mainCorrectedShowerEnergy*m_endcapInterceptP1);
-    const float slopeEndcap(m_endcapSlopeP0 + mainCorrectedShowerEnergy*m_endcapSlopeP1);
-    const float eBarrel0(mainCorrectedShowerEnergy - interceptBarrel);
-    const float eeSeparation(interceptEndcap+m_barrelEndcapSeparationCosTheta*slopeEndcap);
+    barrelEnergyFraction /= clusterEnergy;
+    endcapEnergyFraction /= clusterEnergy;
 
     try
     {
       const float clusterCosTheta(this->GetCosTheta(pCluster));
-      float energy(mainCorrectedShowerEnergy);
 
-      energy += eBarrel0;
-//      correctedEnergy += eBarrel0;
-
-      if(fabs(clusterCosTheta) < m_barrelEndcapSeparationCosTheta)
-      {
-        std::cout << "Contributions : Ecor = E + " << eBarrel0 << " - " << (fabs(clusterCosTheta)*slopeBarrel) << std::endl;
-        energy -= (fabs(clusterCosTheta)*slopeBarrel);
-//        correctedEnergy -= (fabs(clusterCosTheta)*slopeBarrel);
-      }
-      else
-      {
-        std::cout << "Contributions : Ecor = E + " << eBarrel0 << " + " << (mainCorrectedShowerEnergy-eeSeparation) << " - " << ((fabs(clusterCosTheta)-m_barrelEndcapSeparationCosTheta)*slopeEndcap) << std::endl;
-
-        energy += (mainCorrectedShowerEnergy-eeSeparation);
-        energy -= ((fabs(clusterCosTheta)-m_barrelEndcapSeparationCosTheta)*slopeEndcap);
-
-//        correctedEnergy += (correctedEnergy-eeSeparation);
-//        correctedEnergy -= ((fabs(clusterCosTheta)-m_barrelEndcapSeparationCosTheta)*slopeEndcap);
-      }
-
-      correctedEnergy = startingHadronicEnergyFraction + energy;
+      correctedEnergy = barrelEnergyFraction*this->GetBarrelCorrectedEnergy(mainCorrectedShowerEnergy, clusterCosTheta)
+          + endcapEnergyFraction*this->GetEndcapCorrectedEnergy(mainCorrectedShowerEnergy, clusterCosTheta);
     }
     catch(const pandora::StatusCodeException &exception)
     {
       std::cerr << "ThetaEnergyFunction::MakeEnergyCorrections: Couldn't evaluate cluster cos theta : " << exception.ToString() << std::endl;
       return pandora::STATUS_CODE_SUCCESS;
     }
-
-    std::cout << "ThetaEnergyFunction: output E = " << correctedEnergy << " GeV" << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -481,37 +445,62 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  float ThetaEnergyFunction::GetBarrelCorrectedEnergy(float inputEnergy, float cosTheta) const
+  {
+    return (-1*(m_barrelP01+m_barrelP11*cosTheta) + std::sqrt((m_barrelP01+m_barrelP11*cosTheta)*(m_barrelP01+m_barrelP11*cosTheta)
+        - 4*(m_barrelP02+m_barrelP12*cosTheta)*(m_barrelP00+m_barrelP10*cosTheta - inputEnergy)))/(2*(m_barrelP02+m_barrelP12*cosTheta));
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float ThetaEnergyFunction::GetEndcapCorrectedEnergy(float inputEnergy, float cosTheta) const
+  {
+    return (-1*(m_endcapP01+m_endcapP11*cosTheta) + std::sqrt((m_endcapP01+m_endcapP11*cosTheta)*(m_endcapP01+m_endcapP11*cosTheta)
+        - 4*(m_endcapP02+m_endcapP12*cosTheta)*(m_endcapP00+m_endcapP10*cosTheta - inputEnergy)))/(2*(m_endcapP02+m_endcapP12*cosTheta));
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   pandora::StatusCode ThetaEnergyFunction::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelEndcapSeparationCosTheta", m_barrelEndcapSeparationCosTheta));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelInterceptP0", m_barrelInterceptP0));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelInterceptP1", m_barrelInterceptP1));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelSlopeP0", m_barrelSlopeP0));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelSlopeP1", m_barrelSlopeP1));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapInterceptP0", m_endcapInterceptP0));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapInterceptP1", m_endcapInterceptP1));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapSlopeP0", m_endcapSlopeP0));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapSlopeP1", m_endcapSlopeP1));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "LowEnergyCut", m_lowEnergyCut));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP00", m_barrelP00));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP01", m_barrelP01));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP02", m_barrelP02));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP10", m_barrelP10));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP11", m_barrelP11));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP12", m_barrelP12));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP00", m_endcapP00));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP01", m_endcapP01));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP02", m_endcapP02));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP10", m_endcapP10));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP11", m_endcapP11));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP12", m_endcapP12));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
