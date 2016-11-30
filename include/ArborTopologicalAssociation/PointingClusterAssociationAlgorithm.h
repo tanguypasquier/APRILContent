@@ -114,6 +114,10 @@ private:
 	float                            m_maxBackwardDistanceCoarse;
 	unsigned int                     m_maxBackwardPseudoLayer;
 	unsigned int                     m_minParentClusterBackwardNHits;
+	float                            m_maxClusterFitDca;
+	float                            m_minClusterCosOpeningAngle;
+	float                            m_minClusterFitCosOpeningAngle;
+	float                            m_minClusterFitCosOpeningAngle2;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
