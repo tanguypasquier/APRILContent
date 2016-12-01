@@ -29,6 +29,7 @@
 #include "ArborTools/CaloHitMergingTool.h"
 
 #include "Pandora/AlgorithmHeaders.h"
+#include "Pandora/Algorithm.h"
 
 #include "ArborApi/ArborContentApi.h"
 #include "ArborHelpers/ClusterHelper.h"
