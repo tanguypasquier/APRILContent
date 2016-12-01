@@ -225,7 +225,7 @@ namespace arbor_content
     if(nHitPerLayer < m_minNHitPerLayer)
       return false;
 
-    const bool isPhoton(PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pCluster));
+    const bool isPhoton(pCluster->IsPhotonFast(this->GetPandora()));
 
     if(isPhoton)
       return false;
