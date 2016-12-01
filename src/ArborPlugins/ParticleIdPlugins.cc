@@ -306,54 +306,55 @@ namespace arbor_content
       return false;
     }
 
-    pandora::CartesianVector centroid(0.f, 0.f, 0.f);
-
-    try
-    {
-      centroid = this->GetEnergyWeightedCentroid(pCluster, startPseudoLayer, endPseudoLayer);
-    }
-    catch(...)
-    {
-      return false;
-    }
-
-    // TODO movre this piece of code to photon id
-    // since electrons can have angles
-
     // TODO add piece of code to cut on transverse ratio
-    pandora::ClusterFitPointList photonFitPoints;
 
-    for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
-        endIter != iter ; ++iter)
+    if(pCluster->GetAssociatedTrackList().empty())
     {
-      const pandora::CaloHit *const pCaloHit(*iter);
+      pandora::CartesianVector centroid(0.f, 0.f, 0.f);
 
-      if(pCaloHit->IsIsolated() || pCaloHit->GetHitType() != pandora::ECAL)
+      try
       {
-        continue;
+        centroid = this->GetEnergyWeightedCentroid(pCluster, startPseudoLayer, endPseudoLayer);
+      }
+      catch(...)
+      {
+        return false;
       }
 
-      if(pCaloHit->GetPseudoLayer() < startPseudoLayer || pCaloHit->GetPseudoLayer() > endPseudoLayer)
+      pandora::ClusterFitPointList photonFitPoints;
+
+      for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
+          endIter != iter ; ++iter)
       {
-        continue;
+        const pandora::CaloHit *const pCaloHit(*iter);
+
+        if(pCaloHit->IsIsolated() || pCaloHit->GetHitType() != pandora::ECAL)
+        {
+          continue;
+        }
+
+        if(pCaloHit->GetPseudoLayer() < startPseudoLayer || pCaloHit->GetPseudoLayer() > endPseudoLayer)
+        {
+          continue;
+        }
+
+        photonFitPoints.push_back(pandora::ClusterFitPoint(pCaloHit));
       }
 
-      photonFitPoints.push_back(pandora::ClusterFitPoint(pCaloHit));
-    }
+      pandora::ClusterFitResult clusterFitResult;
 
-    pandora::ClusterFitResult clusterFitResult;
+      if(pandora::STATUS_CODE_SUCCESS != pandora::ClusterFitHelper::FitPoints(photonFitPoints, clusterFitResult))
+        return false;
 
-    if(pandora::STATUS_CODE_SUCCESS != pandora::ClusterFitHelper::FitPoints(photonFitPoints, clusterFitResult))
-      return false;
+      if(!clusterFitResult.IsFitSuccessful())
+        return false;
 
-    if(!clusterFitResult.IsFitSuccessful())
-      return false;
+      const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
 
-    const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
-
-    if(clusterDirection.GetOpeningAngle(centroid) > m_maxAngleWithOrigin)
-    {
-      return false;
+      if(clusterDirection.GetOpeningAngle(centroid) > m_maxAngleWithOrigin)
+      {
+        return false;
+      }
     }
 
     return true;
