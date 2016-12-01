@@ -81,6 +81,9 @@ namespace arbor_content
     {
       const pandora::Cluster *const pCluster(*clusterIter);
 
+      if(pCluster->IsPhotonFast(this->GetPandora()))
+        continue;
+
       // discriminate charged particles
       if(!pCluster->GetAssociatedTrackList().empty())
       {
