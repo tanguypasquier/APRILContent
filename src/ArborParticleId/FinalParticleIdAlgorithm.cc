@@ -71,7 +71,6 @@ namespace arbor_content
       const pandora::ParticleId *const pParticleId(PandoraContentApi::GetPlugins(*this)->GetParticleId());
 
       PandoraContentApi::ParticleFlowObject::Metadata metadata;
-      const float energy = pPfo->GetEnergy();
 
       if(pParticleId->IsElectron(pCluster))
       {
