@@ -80,6 +80,9 @@ namespace arbor_content
         if(!pCluster->GetAssociatedTrackList().empty())
           continue;
 
+        if(pCluster->IsPhotonFast(this->GetPandora()))
+          continue;
+
         const pandora::CartesianVector clusterInnerPosition(pCluster->GetCentroid(pCluster->GetInnerPseudoLayer()));
         const pandora::Granularity granularity(PandoraContentApi::GetGeometry(*this)->GetHitTypeGranularity(pCluster->GetInnerLayerHitType()));
 

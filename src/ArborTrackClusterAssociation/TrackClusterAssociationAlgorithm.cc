@@ -215,11 +215,7 @@ namespace arbor_content
     const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
     const pandora::CartesianVector trackProjection(pTrack->GetTrackStateAtCalorimeter().GetPosition());
     const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
-
     unsigned int nDof(0);
-
-    //	std::cout << "Track p = " << pTrack->GetEnergyAtDca() << " GeV" <<  std::endl;
-    //	std::cout << " ==> Cluster E = " << pCluster->GetHadronicEnergy() << " GeV" <<  std::endl;
 
     for(pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.begin(), endIter = orderedCaloHitList.end() ; endIter != iter ; ++iter)
     {

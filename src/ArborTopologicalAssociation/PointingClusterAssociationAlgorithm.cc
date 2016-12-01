@@ -101,6 +101,9 @@ namespace arbor_content
     if(nPseudoLayers < m_minNPseudoLayers || nPseudoLayers >= m_maxNPseudoLayers)
       return false;
 
+    if(m_discriminatePhotonPid && pCluster->IsPhotonFast(this->GetPandora()))
+      continue;
+
     return true;
   }
 

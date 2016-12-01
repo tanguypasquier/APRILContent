@@ -66,7 +66,7 @@ namespace arbor_content
       if(pCluster->GetInnerPseudoLayer() > m_maxClusterInnerPseudoLayer)
         continue;
 
-      if(pCluster->GetParticleIdFlag() == pandora::PHOTON)
+      if(pCluster->IsPhotonFast(this->GetPandora()))
         continue;
 
       clusterVector.push_back(pCluster);

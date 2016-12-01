@@ -217,10 +217,7 @@ namespace arbor_content
     if(pCluster->GetNCaloHits() < m_minDaughterClusterNHits)
       return false;
 
-//    if(pCluster->GetInnerPseudoLayer() < m_minInnerPseudoLayer)
-//      return false;
-
-    if(m_discriminatePhotonPid && pCluster->GetParticleIdFlag() == pandora::PHOTON)
+    if(m_discriminatePhotonPid && pCluster->IsPhotonFast(this->GetPandora()))
       return false;
 
     try
