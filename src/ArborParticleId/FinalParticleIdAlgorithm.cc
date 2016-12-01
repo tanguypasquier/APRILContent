@@ -73,21 +73,16 @@ namespace arbor_content
       PandoraContentApi::ParticleFlowObject::Metadata metadata;
       const float energy = pPfo->GetEnergy();
 
-      std::cout << "Running pid for pfo E = " << energy << "GeV" << std::endl;
-
       if(pParticleId->IsElectron(pCluster))
       {
-        std::cout << " ==> FinalParticleIdAlgorithm: Flagged as electron !!" << std::endl;
         metadata.m_particleId = (charge > 0) ? pandora::E_PLUS : pandora::E_MINUS;
       }
       else if(pParticleId->IsMuon(pCluster))
       {
-        std::cout << " ==> FinalParticleIdAlgorithm: Flagged as muon !!" << std::endl;
         metadata.m_particleId = (charge > 0) ? pandora::MU_PLUS : pandora::MU_MINUS;
       }
       else if(charge == 0 && pParticleId->IsPhoton(pCluster))
       {
-        std::cout << " ==> FinalParticleIdAlgorithm: Flagged as photon !!" << std::endl;
         metadata.m_particleId = pandora::PHOTON;
       }
 
