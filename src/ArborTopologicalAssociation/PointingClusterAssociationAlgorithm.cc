@@ -102,7 +102,7 @@ namespace arbor_content
       return false;
 
     if(m_discriminatePhotonPid && pCluster->IsPhotonFast(this->GetPandora()))
-      continue;
+      return false;
 
     return true;
   }
