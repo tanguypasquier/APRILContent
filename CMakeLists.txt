@@ -123,7 +123,7 @@ ENDIF()
 INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
 
 # install header files
-INSTALL( DIRECTORY include/ DESTINATION . )
+INSTALL( DIRECTORY include/ DESTINATION include )
 
 # display some variables and write them to cache
 PANDORA_DISPLAY_STD_VARIABLES()
