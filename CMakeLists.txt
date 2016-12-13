@@ -12,12 +12,16 @@ SET( ${PROJECT_NAME}_VERSION_MAJOR 01 )
 SET( ${PROJECT_NAME}_VERSION_MINOR 05 )
 SET( ${PROJECT_NAME}_VERSION_PATCH 00 )
 
-# --------------- ilcsoft dependencies -----------
-FIND_PACKAGE( ILCUTIL COMPONENTS ILCSOFT_CMAKE_MODULES REQUIRED )
-INCLUDE( ilcsoft_default_settings )
+INCLUDE( PandoraCMakeSettings )
 
-OPTION( PANDORA_MONITORING "Whether to use PandoraMonitoring (requires ROOT)" ON )
+OPTION( PANDORA_MONITORING "Whether to use PandoraMonitoring (requires ROOT)" OFF )
+MESSAGE( STATUS "PANDORA_MONITORING : ${PANDORA_MONITORING}" )
+
 OPTION( ARBOR_PARALLEL "Whether to use multithreading (requires OpenMP)" OFF )
+MESSAGE( STATUS "ARBOR_PARALLEL : ${ARBOR_PARALLEL}" )
+
+OPTION( INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF )
+MESSAGE( STATUS "INSTALL_DOC : ${INSTALL_DOC}" )
 
 ### SOURCE ##################################################################
 
@@ -68,50 +72,32 @@ SET( CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -ansi -pedantic -Wno-long-long -Wno-
 
 # -------------- packages -------------
 FIND_PACKAGE( PandoraSDK 02.00.00 REQUIRED )
+INCLUDE_DIRECTORIES( ${PandoraSDK_INCLUDE_DIRS} )
+LINK_LIBRARIES( ${PandoraSDK_LIBRARIES} )
+ADD_DEFINITIONS ( ${PandoraSDK_DEFINITIONS} )
 
-FOREACH( pkg PandoraSDK )
-  IF( ${pkg}_FOUND )
-    INCLUDE_DIRECTORIES( ${${pkg}_INCLUDE_DIRS} )
-    LINK_LIBRARIES( ${${pkg}_LIBRARIES} )
-    ADD_DEFINITIONS ( ${${pkg}_DEFINITIONS} )
-  ENDIF()
-ENDFOREACH()
+
+FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Core Matrix ) # minimum required ROOT version
+INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
+LINK_LIBRARIES( ${ROOT_LIBRARIES} ${ROOT_COMPONENT_LIBRARIES} )
+ADD_DEFINITIONS ( ${ROOT_DEFINITIONS} )
+
 
 IF( PANDORA_MONITORING )
-
-  FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Eve Geom RGL EG Core Matrix ) # minimum required ROOT version
-  INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
-  LINK_LIBRARIES( ${ROOT_LIBRARIES} ${ROOT_COMPONENT_LIBRARIES} )
-
   FIND_PACKAGE( PandoraMonitoring REQUIRED )
-  
-  IF( PandoraMonitoring_FOUND )
-    INCLUDE_DIRECTORIES( ${PandoraMonitoring_INCLUDE_DIRS} )
-    LINK_LIBRARIES( ${PandoraMonitoring_LIBRARIES} )
-    ADD_DEFINITIONS ( ${PandoraMonitoring_DEFINITIONS} )
-    ADD_DEFINITIONS( "-DMONITORING" )
-  ENDIF()
+  INCLUDE_DIRECTORIES( ${PandoraMonitoring_INCLUDE_DIRS} )
+  LINK_LIBRARIES( ${PandoraMonitoring_LIBRARIES} )
+  ADD_DEFINITIONS ( ${PandoraMonitoring_DEFINITIONS} )
+  ADD_DEFINITIONS( "-DMONITORING" )
 ELSE()
 
-  FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Core Matrix ) # minimum required ROOT version
-  INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
-  LINK_LIBRARIES( ${ROOT_LIBRARIES} ${ROOT_COMPONENT_LIBRARIES} )
-
-ENDIF()
 
 IF( ARBOR_PARALLEL )
-    FIND_PACKAGE( OpenMP )
-    
-    IF( NOT OPENMP_FOUND )
-        MESSAGE( FATAL "Couldn't find OpenMP ! Please set the ARBOR_PARALLEL option to OFF" )
-    ENDIF()
-    
+    FIND_PACKAGE( OpenMP REQUIRED )
     ADD_DEFINITIONS( ${OpenMP_CXX_FLAGS} )
-    ADD_DEFINITIONS( "-DARBOR_PARALLEL" )
+    ADD_DEFINITIONS( "-DARBOR_PARALLEL=1" )
 ENDIF()
 
-
-OPTION( INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF )
 
 IF( INSTALL_DOC AND EXISTS "${PROJECT_SOURCE_DIR}/doc/CMakeLists.txt" )
     ADD_SUBDIRECTORY( ./doc )
@@ -123,7 +109,8 @@ ENDIF()
 ### LIBRARY #################################################################
 
 # add library
-ADD_SHARED_LIBRARY( ${PROJECT_NAME} ${ArborContent_SRCS} )
+ADD_LIBRARY( ${PROJECT_NAME} SHARED ${ArborContent_SRCS} )
+SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
 IF( ARBOR_PARALLEL )
     TARGET_LINK_LIBRARIES( ${PROJECT_NAME} gomp )
@@ -136,11 +123,11 @@ ENDIF()
 INSTALL_SHARED_LIBRARY( ArborContent DESTINATION lib )
 
 # install header files
-INSTALL_DIRECTORY( ./include DESTINATION . )
+INSTALL(DIRECTORY include/ DESTINATION . )
 
 # display some variables and write them to cache
-DISPLAY_STD_VARIABLES()
+PANDORA_DISPLAY_STD_VARIABLES()
 
 # generate and install following configuration files
-GENERATE_PACKAGE_CONFIGURATION_FILES( ${PROJECT_NAME}Config.cmake ${PROJECT_NAME}ConfigVersion.cmake ${PROJECT_NAME}LibDeps.cmake )
+PANDORA_GENERATE_PACKAGE_CONFIGURATION_FILES( ${PROJECT_NAME}Config.cmake ${PROJECT_NAME}ConfigVersion.cmake ${PROJECT_NAME}LibDeps.cmake )
 
