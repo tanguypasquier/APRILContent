@@ -27,7 +27,6 @@ MESSAGE( STATUS "INSTALL_DOC : ${INSTALL_DOC}" )
 
 #include directories
 INCLUDE_DIRECTORIES( ./include )
-INSTALL_DIRECTORY( ./include DESTINATION . FILES_MATCHING PATTERN "*.h" )
 
 AUX_SOURCE_DIRECTORY( ./src/ ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborApi ArborContent_SRCS )
@@ -120,10 +119,10 @@ ENDIF()
 ### INSTALL #################################################################
 
 # install library
-INSTALL_SHARED_LIBRARY( ArborContent DESTINATION lib )
+INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
 
 # install header files
-INSTALL(DIRECTORY include/ DESTINATION . )
+INSTALL( DIRECTORY include/ DESTINATION . )
 
 # display some variables and write them to cache
 PANDORA_DISPLAY_STD_VARIABLES()
