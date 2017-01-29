@@ -68,7 +68,13 @@ IF( NOT COMPILER_SUPPORTS_CXX_FLAGS )
     UNSET( CMAKE_CXX_FLAGS )
 ENDIF()
 
-SET( CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -ansi -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
+if(APPLE)
+   SET( CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
+else()
+   SET( CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -ansi -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
+endif()
+
+
 
 # -------------- packages -------------
 FIND_PACKAGE( PandoraSDK 02.00.00 REQUIRED )
@@ -77,7 +83,7 @@ LINK_LIBRARIES( ${PandoraSDK_LIBRARIES} )
 ADD_DEFINITIONS ( ${PandoraSDK_DEFINITIONS} )
 
 
-FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Core Matrix ) # minimum required ROOT version
+FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Core Matrix Eve Geom RGL EG) # minimum required ROOT version
 INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
 LINK_LIBRARIES( ${ROOT_LIBRARIES} ${ROOT_COMPONENT_LIBRARIES} )
 ADD_DEFINITIONS ( ${ROOT_DEFINITIONS} )

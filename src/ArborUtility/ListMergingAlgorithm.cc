@@ -80,6 +80,7 @@ pandora::StatusCode InputObjectListMergingAlgorithm<T>::Run()
 template <typename T>
 pandora::StatusCode AlgorithmObjectListMergingAlgorithm<T>::Run()
 {
+#if 0
 	std::string temporaryListName;
 	const std::MANAGED_CONTAINER<const T *> *pList = NULL;
 
@@ -99,6 +100,7 @@ pandora::StatusCode AlgorithmObjectListMergingAlgorithm<T>::Run()
 
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<T>(*this, ListMergingAlgorithm<T>::m_outputListName));
 
+#endif
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
