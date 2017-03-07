@@ -80,7 +80,6 @@ pandora::StatusCode InputObjectListMergingAlgorithm<T>::Run()
 template <typename T>
 pandora::StatusCode AlgorithmObjectListMergingAlgorithm<T>::Run()
 {
-#if 0
 	std::string temporaryListName;
 	const std::MANAGED_CONTAINER<const T *> *pList = NULL;
 
@@ -100,7 +99,6 @@ pandora::StatusCode AlgorithmObjectListMergingAlgorithm<T>::Run()
 
 	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<T>(*this, ListMergingAlgorithm<T>::m_outputListName));
 
-#endif
 	return pandora::STATUS_CODE_SUCCESS;
 }
 
@@ -137,7 +135,7 @@ template pandora::StatusCode arbor_content::ListMergingAlgorithm<pandora::Vertex
 template pandora::StatusCode arbor_content::InputObjectListMergingAlgorithm<pandora::CaloHitList>::Run();
 template pandora::StatusCode arbor_content::InputObjectListMergingAlgorithm<pandora::TrackList>::Run();
 template pandora::StatusCode arbor_content::InputObjectListMergingAlgorithm<pandora::MCParticleList>::Run();
-template pandora::StatusCode arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::ClusterList>::Run();
-template pandora::StatusCode arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::PfoList>::Run();
-template pandora::StatusCode arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::VertexList>::Run();
+template pandora::StatusCode arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Cluster>::Run();
+template pandora::StatusCode arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Pfo>::Run();
+template pandora::StatusCode arbor_content::AlgorithmObjectListMergingAlgorithm<pandora::Vertex>::Run();
 
