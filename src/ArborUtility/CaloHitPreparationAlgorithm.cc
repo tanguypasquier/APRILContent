@@ -49,6 +49,7 @@ namespace arbor_content
     pandora::OrderedCaloHitList orderedCaloHitList;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, orderedCaloHitList.Add(*pCaloHitList));
 
+	int nHits(0);
     for(pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.begin(), endIter = orderedCaloHitList.end() ;
         endIter != iter ; ++iter)
     {
@@ -62,6 +63,7 @@ namespace arbor_content
         if(NULL == pCaloHit)
           return pandora::STATUS_CODE_FAILURE;
 
+		++nHits;
         const float energy(pCaloHit->GetHitType() == pandora::ECAL ? pCaloHit->GetElectromagneticEnergy() : pCaloHit->GetHadronicEnergy());
 
         const pandora::CartesianVector position(pCaloHit->GetPositionVector());
@@ -172,6 +174,7 @@ namespace arbor_content
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::AlterMetadata(*this, pCaloHit, caloHitMetadata));
       }
     }
+	//std::cout << "# of hits: " << nHits << std::endl;
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FlagIsolatedHitsWithTracks(orderedCaloHitList));
 

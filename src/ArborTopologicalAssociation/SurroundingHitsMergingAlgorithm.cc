@@ -78,6 +78,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetAvailableCaloHitList(pCaloHitList, caloHitList));
 
     // get cluster list
+	//
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 

@@ -43,6 +43,7 @@ namespace arbor_content
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
+	//std::cout << "pClusterList: " << pClusterList->size() << std::endl;
     if( pClusterList->empty() )
       return pandora::STATUS_CODE_SUCCESS;
 

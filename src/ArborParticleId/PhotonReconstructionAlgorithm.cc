@@ -37,6 +37,7 @@ namespace arbor_content
   {
     // If specified, change the current calo hit list, i.e. the input to the clustering algorithm
     std::string originalCaloHitListName;
+	  //std::cout << "originalCaloHitListName: " << originalCaloHitListName << std::endl;
 
     if (!m_inputCaloHitListName.empty())
     {
@@ -115,6 +116,8 @@ namespace arbor_content
         nonPhotonClusters.insert(*iter);
       }
     }
+
+	//std::cout << "-------- Photon cluster: " << photonClusters.size() << std::endl;
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::CleanAndDeleteClusters(*this, nonPhotonClusters));
 

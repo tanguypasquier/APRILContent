@@ -49,6 +49,8 @@ pandora::StatusCode PfoCreationAlgorithm::Run()
     const pandora::PfoList *pPfoList = NULL; std::string pfoListName;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pPfoList, pfoListName));
 
+	//std::cout << "PfoCreationAlgorithm: pPfoList: " << pPfoList->size() << std::endl;
+
     if (m_shouldCreateTrackBasedPfos)
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreateTrackBasedPfos());
 
@@ -60,6 +62,9 @@ pandora::StatusCode PfoCreationAlgorithm::Run()
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<pandora::Pfo>(*this, m_outputPfoListName));
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::Pfo>(*this, m_outputPfoListName));
     }
+
+    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
+	//std::cout << "check the pPfoList: " << pPfoList->size() << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -86,6 +91,25 @@ pandora::StatusCode PfoCreationAlgorithm::CreateTrackBasedPfos() const
         // Create the pfo
         const pandora::ParticleFlowObject *pPfo(NULL);
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
+#if 0
+		std::cout << "track based pfo, energy: " << pPfo->GetEnergy() << ", pfoParameters.energy: " 
+			      << pfoParameters.m_energy.Get() << std::endl;
+
+		const pandora::MCParticleWeightMap& mcpMap = pTrack->GetMCParticleWeightMap();
+
+		if(mcpMap.empty()) std::cout << "MCP map is empty..." << std::endl;
+
+		for(pandora::MCParticleWeightMap::const_iterator mapIter = mcpMap.begin(); mapIter != mcpMap.end(); ++mapIter) 
+		{ 
+			//std::map<const MCParticle *, float>
+			const pandora::MCParticle* mcp = (*mapIter).first;
+			float weight = (*mapIter).second;
+
+			std::cout << "------> a MCP: energy: " << mcp->GetEnergy() 
+				      << ", p: " << mcp->GetMomentum() 
+				      << ", weight: " << weight << std::endl;
+		}
+#endif
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -97,15 +121,18 @@ pandora::StatusCode PfoCreationAlgorithm::PopulateTrackBasedPfo(const pandora::T
 {
     // Add track to the pfo
     pfoParameters.m_trackList.insert(pTrack);
+	//std::cout << std::endl;
 
     // Add any cluster associated with this track to the pfo
     try
     {
         const pandora::Cluster *const pAssociatedCluster(pTrack->GetAssociatedCluster());
         pfoParameters.m_clusterList.insert(pAssociatedCluster);
+		//std::cout << "track, with energy: " << pTrack->GetEnergyAtDca() << ", added cluster" << std::endl;
     }
     catch (pandora::StatusCodeException &)
     {
+		//std::cout << "track, with energy: " << pTrack->GetEnergyAtDca() << ", not add cluster" << std::endl;
     }
 
     // Consider any sibling tracks
@@ -145,11 +172,15 @@ pandora::StatusCode PfoCreationAlgorithm::SetTrackBasedPfoParameters(const pando
     if (hasSibling && hasDaughter)
         return pandora::STATUS_CODE_NOT_ALLOWED;
 
-    if (hasSibling)
+    if (hasSibling) {
+		//std::cout << "hasSibling..." << std::endl;
         return this->SetSiblingTrackBasedPfoParameters(pTrack, pfoParameters);
+	}
 
-    if (hasDaughter)
+    if (hasDaughter) {
+		//std::cout << "hasDaughter, this track energy: " << pTrack->GetEnergyAtDca() << std::endl;
         return this->SetDaughterTrackBasedPfoParameters(pTrack, pfoParameters);
+	}
 
     return this->SetSimpleTrackBasedPfoParameters(pTrack, pfoParameters);
 }
@@ -187,6 +218,7 @@ pandora::StatusCode PfoCreationAlgorithm::SetSiblingTrackBasedPfoParameters(cons
     pfoParameters.m_mass = std::sqrt(std::max(energy * energy - momentum.GetDotProduct(momentum), 0.f));
     pfoParameters.m_charge = charge;
     pfoParameters.m_particleId = pandora::PHOTON;
+	//std::cout << "PfoCreationAlgorithm::SetSiblingTrackBasedPfoParameters: " << energy << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -211,7 +243,25 @@ pandora::StatusCode PfoCreationAlgorithm::SetDaughterTrackBasedPfoParameters(con
 
         daughterCharge += pDaughterTrack->GetCharge();
         energy += pDaughterTrack->GetEnergyAtDca();
+		//std::cout << "daughter energy: " << pDaughterTrack->GetEnergyAtDca() << std::endl;
         momentum += pDaughterTrack->GetMomentumAtDca();
+
+#if 0
+		const pandora::MCParticleWeightMap& mcpMap = pDaughterTrack->GetMCParticleWeightMap();
+
+		if(mcpMap.empty()) std::cout << "MCP map is empty..." << std::endl;
+
+		for(pandora::MCParticleWeightMap::const_iterator mapIter = mcpMap.begin(); mapIter != mcpMap.end(); ++mapIter) 
+		{ 
+			//std::map<const MCParticle *, float>
+			const pandora::MCParticle* mcp = (*mapIter).first;
+			float weight = (*mapIter).second;
+
+			std::cout << "------> a MCP: energy: " << mcp->GetEnergy() 
+				      << ", p: " << mcp->GetMomentum() 
+				      << ", weight: " << weight << std::endl;
+		}
+#endif
     }
 
     pfoParameters.m_energy = energy;
@@ -219,6 +269,7 @@ pandora::StatusCode PfoCreationAlgorithm::SetDaughterTrackBasedPfoParameters(con
     pfoParameters.m_mass = std::sqrt(std::max(energy * energy - momentum.GetDotProduct(momentum), 0.f));
     pfoParameters.m_charge = (nDaughters > 1) ? pTrack->GetCharge() : daughterCharge;
     pfoParameters.m_particleId = (pfoParameters.m_charge.Get() > 0) ? pandora::PI_PLUS : pandora::PI_MINUS;
+	//std::cout << "PfoCreationAlgorithm::SetDaughterTrackBasedPfoParameters: " << energy << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -233,6 +284,7 @@ pandora::StatusCode PfoCreationAlgorithm::SetSimpleTrackBasedPfoParameters(const
     pfoParameters.m_charge = pTrack->GetCharge();
     pfoParameters.m_particleId = (pTrack->GetCharge() > 0) ? pandora::PI_PLUS : pandora::PI_MINUS;
 
+	//std::cout << "PfoCreationAlgorithm::SetSimpleTrackBasedPfoParameters: " << pTrack->GetEnergyAtDca() << std::endl;
     return pandora::STATUS_CODE_SUCCESS;
 }
 
@@ -242,6 +294,7 @@ pandora::StatusCode PfoCreationAlgorithm::CreateNeutralPfos() const
 {
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+	//std::cout << "check the cluster again: " << pClusterList->size() << std::endl;
 
     // Examine clusters with no associated tracks to form neutral pfos
     for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)

@@ -30,6 +30,12 @@
 #include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborHelpers/ReclusterHelper.h"
 
+
+bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs)
+{
+   	return (pLhs->GetEnergyAtDca() > pRhs->GetEnergyAtDca());
+}
+
 namespace arbor_content
 {
 
@@ -42,6 +48,7 @@ namespace arbor_content
     if(trackList.empty() || clusterList.empty())
       return pandora::STATUS_CODE_SUCCESS;
 
+	//std::cout << "trackList size: " << trackList.size() << std::endl;
     // reset the track-cluster associations
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
 
@@ -115,6 +122,7 @@ namespace arbor_content
         trackEndIter != trackIter ; ++trackIter)
     {
       const pandora::Track *const pTrack = *trackIter;
+	  //std::cout << "track energy: " << pTrack->GetEnergyAtDca() << std::endl;
 
       const pandora::Cluster *pBestCluster = NULL;
       float bestCompatibility(std::numeric_limits<float>::max());
@@ -192,14 +200,41 @@ namespace arbor_content
 
   pandora::StatusCode TrackClusterAssociationAlgorithm::PerformAssociations(const AssociationMap &associationMap)
   {
+#if 0	  
+    std::cout << "TrackClusterAssociationAlgorithm::PerformAssociations" << std::endl;
+
+	pandora::TrackVector trackVector;
+
+    for(AssociationMap::const_iterator iter = associationMap.begin() , endIter = associationMap.end() ;
+        endIter != iter ; ++iter)
+    { 
+		const pandora::Track *const pTrack(iter->first);
+		trackVector.push_back(pTrack);
+	}
+
+	std::sort(trackVector.begin(), trackVector.end(), SortTracksByEnergy);
+
+	std::cout << "# of pfo track: " << trackVector.size() << std::endl;
+
+    for (pandora::TrackVector::const_iterator trackIter = trackVector.begin(), trackIterEnd = trackVector.end(); trackIter != trackIterEnd; ++trackIter)
+    {
+        const pandora::Track *const pTrack = *trackIter;
+
+        std::cout << "Pandora: track energy: " << pTrack->GetEnergyAtDca() << std::endl; 
+	}
+#endif
     for(AssociationMap::const_iterator iter = associationMap.begin() , endIter = associationMap.end() ;
         endIter != iter ; ++iter)
     {
       const pandora::Track *const pTrack(iter->first);
       const pandora::Cluster *const pCluster(iter->second);
+	  //std::cout << "--track energy: " << pTrack->GetEnergyAtDca() << std::endl;
 
-      if((NULL == pTrack) || (NULL == pCluster))
+      if((NULL == pTrack) || (NULL == pCluster)) {
+		  //if(pTrack!=NULL) std::cout << "track has no cluster, track energy:  " << pTrack->GetEnergyAtDca() << std::endl;
+		  //if(pCluster!=NULL) std::cout << "cluster has no track, cluster energy:  " << std::endl;
         continue;
+	  }
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, pTrack, pCluster));
     }

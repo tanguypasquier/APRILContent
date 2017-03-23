@@ -47,7 +47,8 @@ namespace arbor_content
 
     // get current track list
     const pandora::TrackList *pTrackList = NULL;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pTrackList));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pTrackList));      
+    //std::cout << "pTrackList: " << pTrackList->size() << std::endl;
 
     if(pTrackList->empty())
       return pandora::STATUS_CODE_SUCCESS;

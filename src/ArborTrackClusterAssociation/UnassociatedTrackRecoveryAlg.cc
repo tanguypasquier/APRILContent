@@ -131,6 +131,7 @@ namespace arbor_content
 
   pandora::StatusCode UnassociatedTrackRecoveryAlg::PerformPossibleTrackClusterAssociations(const pandora::ClusterVector &clusterVector, const pandora::TrackVector &trackVector) const
   {
+	int nUnassociatedTrack(0);
     for(pandora::TrackVector::const_iterator trackIter = trackVector.begin(), trackEndIter = trackVector.end() ;
         trackEndIter != trackIter ; ++trackIter)
     {
@@ -170,6 +171,8 @@ namespace arbor_content
         continue;
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, pTrack, pBestCluster));
+	  ++nUnassociatedTrack;
+	  //std::cout << "UnassociatedTrack " << nUnassociatedTrack << ", energy: " << energyAtDca << std::endl;
     }
 
     return pandora::STATUS_CODE_SUCCESS;

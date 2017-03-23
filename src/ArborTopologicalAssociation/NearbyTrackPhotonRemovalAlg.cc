@@ -64,6 +64,7 @@ namespace arbor_content
 
     clusterVector.insert(clusterVector.end(), pClusterList->begin(), pClusterList->end());
 
+	//std::cout << "clusterVector size: " << clusterVector.size() << std::endl;
     // Get the track list to be used as veto
     const pandora::TrackList *pTrackList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
@@ -185,6 +186,12 @@ namespace arbor_content
       const pandora::Cluster *const pCluster(*iter);
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(*this, pCluster, m_photonClusterListName));
     }
+#if 0
+    const pandora::ClusterList *pClusterList = NULL;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, m_photonClusterListName, pClusterList));
+
+	std::cout << "the photon cluster number after remove photon fragments: " << pClusterList->size() << std::endl;
+#endif
 
     return pandora::STATUS_CODE_SUCCESS;
   }

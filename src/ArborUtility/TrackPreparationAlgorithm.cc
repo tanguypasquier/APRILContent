@@ -31,6 +31,11 @@
 namespace arbor_content
 {
 
+bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs)
+{
+   	return (pLhs->GetEnergyAtDca() > pRhs->GetEnergyAtDca());
+}
+
 TrackPreparationAlgorithm::TrackPreparationAlgorithm() :
     m_shouldMakeAssociations(true),
     m_shouldMakePfoTrackList(true)
@@ -51,10 +56,14 @@ pandora::StatusCode TrackPreparationAlgorithm::Run()
         if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList<pandora::TrackList>(*this, *iter, pTrackList))
             continue;
 
+		//int nCandiTrack(0);
+
         for (pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackIterEnd = pTrackList->end(); trackIter != trackIterEnd; ++trackIter)
         {
-            if ((*trackIter)->IsAvailable())
+            if ((*trackIter)->IsAvailable()) {
                 candidateTrackList.insert(*trackIter);
+				//std::cout << "candi track: " << ++nCandiTrack << ", energy: " << (*trackIter)->GetEnergyAtDca() << std::endl;
+			}
         }
     }
 
@@ -80,6 +89,8 @@ pandora::StatusCode TrackPreparationAlgorithm::Run()
     	pandora::TrackList pfoTrackList;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreatePfoTrackList(candidateTrackList, pfoTrackList));
 
+		//std::cout << "candi Track: " << candidateTrackList.size() << "   Arbor: TrackList: " << pfoTrackList.size() << std::endl;
+
         // Save the filtered list and set it to be the current list for future algorithms
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, pfoTrackList, m_pfoTrackListName));
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::Track>(*this, m_pfoTrackListName));
@@ -92,14 +103,39 @@ pandora::StatusCode TrackPreparationAlgorithm::Run()
 
 pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora::TrackList &inputTrackList, pandora::TrackList &pfoTrackList) const
 {
+	//std::cout << "---------> TrackPreparationAlgorithm::CreatePfoTrackList <---------" << std::endl;
+
 	pandora::TrackList siblingTracks;
 
-    for (pandora::TrackList::const_iterator iter = inputTrackList.begin(), iterEnd = inputTrackList.end(); iter != iterEnd; ++iter)
-    {
-        const pandora::Track *const pTrack = *iter;
+	int nTrackInsert(0);
 
-        if (!pTrack->GetParentTrackList().empty())
+	/////
+	pandora::TrackVector trackVector;
+
+    for(pandora::TrackList::const_iterator iter = inputTrackList.begin() , endIter = inputTrackList.end() ;
+        endIter != iter ; ++iter)
+    { 
+		const pandora::Track *const pTrack = *iter;
+		trackVector.push_back(pTrack);
+	}
+
+	std::sort(trackVector.begin(), trackVector.end(), SortTracksByEnergy);
+
+	/////
+
+    for (int i = 0; i < trackVector.size(); ++i)
+    {
+        const pandora::Track *const pTrack = trackVector[i];
+
+		//std::cout << "candi track energy: " << pTrack->GetEnergyAtDca() << std::endl;
+
+        if (!pTrack->GetParentTrackList().empty()) 
+		{
+			//std::cout << "parent track list is not empty, so ignore this track... " << std::endl;
+		
+			//std::cout << std::endl;
             continue;
+		}
 
         // Sibling tracks as first evidence of pfo target
         const pandora::TrackList &siblingTrackList(pTrack->GetSiblingTrackList());
@@ -107,20 +143,42 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
         if (!siblingTrackList.empty())
         {
             if (siblingTracks.end() != siblingTracks.find(pTrack))
+			{
+				//std::cout << "Sibling tracks is not empty, but it is strange that this track is not included..." << std::endl;
+				//std::cout << std::endl;
                 continue;
+			}
 
             if (this->HasAssociatedClusters(pTrack))
             {
                 pfoTrackList.insert(pTrack);
                 siblingTracks.insert(siblingTrackList.begin(), siblingTrackList.end());
+				++nTrackInsert;
+			    //std::cout << "TrackPreparationAlgorithm insert(has sibling track) : " << nTrackInsert  << ", with energy: " << pTrack->GetEnergyAtDca() << std::endl << std::endl;
             }
         }
         // Single parent track as pfo target
         else if (this->HasAssociatedClusters(pTrack))
         {
             pfoTrackList.insert(pTrack);
+			++nTrackInsert;
+			//std::cout << "TrackPreparationAlgorithm insert(has cluster) : " << nTrackInsert 
+     //<< ", with energy: " << pTrack->GetEnergyAtDca() << ", cluster: "  << pTrack->GetAssociatedCluster()<< std::endl << std::endl;
+
+
+       //std::cout << "TrackPreparationAlgorithm insert(has cluster) : " << nTrackInsert 
+     //<< ", with energy: " << pTrack->GetEnergyAtDca() << std::endl << std::endl;
         }
+		else 
+		{
+			//std::cout << "ignore this track ..." << std::endl;
+			//std::cout << std::endl;
+		}
+
+		//std::cout << std::endl;
     }
+
+	//std::cout << "---------> TrackPreparationAlgorithm::CreatePfoTrackList ends <---------" << std::endl << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -129,6 +187,19 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
 
 bool TrackPreparationAlgorithm::HasAssociatedClusters(const pandora::Track *const pTrack, const bool readSiblingInfo) const
 {
+    // Consider any daughter tracks
+    const pandora::TrackList &daughterTrackList(pTrack->GetDaughterTrackList());
+    const pandora::TrackList &siblingTrackList(pTrack->GetSiblingTrackList());
+#if 0
+	std::cout << "-----> HasAssociatedClusters: " << ", CanFormPfo: " << pTrack->CanFormPfo() 
+		      << ", HasAssociatedCluster: " << pTrack->HasAssociatedCluster() << ", CanFormClusterlessPfo: " 
+			  << pTrack->CanFormClusterlessPfo() << ", siblingTrackList: " << siblingTrackList.size() 
+			  << ", daughterTrackList: " << daughterTrackList.size() << std::endl;
+#endif
+
+	//if(pTrack->HasAssociatedCluster()) std::cout << "track->Clu: " << pTrack->GetAssociatedCluster() << " e: " << 
+	//	pTrack->GetAssociatedCluster()->GetElectromagneticEnergy() + pTrack->GetAssociatedCluster()->GetHadronicEnergy() << std::endl;
+
     if ((pTrack->CanFormPfo() && pTrack->HasAssociatedCluster()) || (pTrack->CanFormClusterlessPfo()))
         return true;
 
@@ -138,7 +209,6 @@ bool TrackPreparationAlgorithm::HasAssociatedClusters(const pandora::Track *cons
     // Consider any sibling tracks
     if (readSiblingInfo)
     {
-        const pandora::TrackList &siblingTrackList(pTrack->GetSiblingTrackList());
 
         for (pandora::TrackList::const_iterator iter = siblingTrackList.begin(), iterEnd = siblingTrackList.end(); iter != iterEnd; ++iter)
         {
@@ -147,8 +217,6 @@ bool TrackPreparationAlgorithm::HasAssociatedClusters(const pandora::Track *cons
         }
     }
 
-    // Consider any daughter tracks
-    const pandora::TrackList &daughterTrackList(pTrack->GetDaughterTrackList());
 
     for (pandora::TrackList::const_iterator iter = daughterTrackList.begin(), iterEnd = daughterTrackList.end(); iter != iterEnd; ++iter)
     {

@@ -38,6 +38,10 @@ namespace arbor_content
     const pandora::PfoList *pPfoList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
 
+	//std::cout << "FinalParticleIdAlgorithm..." << std::endl;
+
+	//int nPFO(0);
+
     for (pandora::PfoList::const_iterator iter = pPfoList->begin(), iterEnd = pPfoList->end();
         iter != iterEnd; ++iter)
     {
@@ -47,6 +51,19 @@ namespace arbor_content
       const pandora::ClusterList &clusterList(pPfo->GetClusterList());
       const bool neutralPfo(trackList.empty());
       const int charge(pPfo->GetCharge());
+#if 0
+	  if(trackList.empty()) {
+		  std::cout << "pfo " << ++nPFO << ", energy: " << pPfo->GetEnergy() << ", neutralPfo: " << neutralPfo << std::endl;
+	  }
+	  else {
+		 std::cout << "pfo " << ++nPFO << ", energy: " << pPfo->GetEnergy() << ", neutralPfo: " << neutralPfo 
+		           << ", track energy: " << std::endl;
+
+		 for(pandora::TrackList::const_iterator trackIter = trackList.begin(); trackIter!=trackList.end(); ++trackIter) {
+			 std::cout << "---> " << (*trackIter)->GetEnergyAtDca() << std::endl;
+		 }
+	  }
+#endif
 
       // Consider only pfos with a single cluster and no track sibling relationships
       if ((clusterList.size() != 1) || this->ContainsSiblingTrack(trackList))

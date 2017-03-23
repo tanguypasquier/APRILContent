@@ -43,10 +43,13 @@ pandora::StatusCode ClusterPreparationAlgorithm::Run()
 
         pandora::ClusterList clustersToSave;
 
+		//std::cout << "the name of clusters: " << *iter << ", size: " << pClusterList->size() << std::endl;
         for (pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterIterEnd = pClusterList->end(); clusterIter != clusterIterEnd; ++clusterIter)
         {
             if ((*clusterIter)->IsAvailable())
                 clustersToSave.insert(*clusterIter);
+			//else
+				//std::cout << "a cluster is not available..." << std::endl;
         }
 
         PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, PandoraContentApi::SaveList(*this,
@@ -59,6 +62,11 @@ pandora::StatusCode ClusterPreparationAlgorithm::Run()
         std::cout << "ClusterPreparationAlgorithm: empty cluster list for subsequent pfo construction." << std::endl;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::DropCurrentList<pandora::Cluster>(*this));
     }
+#if 0
+    const pandora::ClusterList *pClusterList = NULL;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+	std::cout << "check the pClusterList: " << pClusterList->size() << std::endl;
+#endif
 
     return pandora::STATUS_CODE_SUCCESS;
 }

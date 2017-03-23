@@ -45,6 +45,8 @@ namespace arbor_content
     const float ecalEndcapInnerZCoordinate(PandoraContentApi::GetGeometry(*this)->GetSubDetector(pandora::ECAL_ENDCAP).GetInnerZCoordinate());
     const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
 
+	int nLoopingTrack(0);
+
     for(pandora::TrackList::const_iterator iter = pTrackList->begin(), endIter = pTrackList->end() ;
         endIter != iter ; ++iter)
     {
@@ -141,6 +143,9 @@ namespace arbor_content
       if(NULL != pBestCluster)
       {
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, pTrack, pBestCluster));
+		++nLoopingTrack;
+
+		//std::cout << "Looping track " << nLoopingTrack << ", energy: " << pTrack->GetEnergyAtDca() << std::endl;
       }
     }
     return pandora::STATUS_CODE_SUCCESS;
