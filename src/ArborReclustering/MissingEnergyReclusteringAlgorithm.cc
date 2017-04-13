@@ -47,11 +47,42 @@ namespace arbor_content
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
+	// FIXME:: maybe we should also include the photon clusters
+    const pandora::ClusterList *pPhotonClusterList = NULL;
+	std::string clusterName = "PhotonClusters";
+
+    if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, clusterName, pPhotonClusterList)) 
+	{
+		std::cout << clusterName << " is not found." << std::endl;
+	} 
+	else 
+	{
+		std::cout << clusterName << " is found." << std::endl;
+	}	
+
     if(pClusterList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
+	//std::cout << "cluster size: " << pClusterList->size() << ", photon cluster size: " << pPhotonClusterList->size() << std::endl;
+
     pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
+
+	//std::cout << "cluster size stage 1: " << clusterVector.size() << std::endl;
+
+	clusterVector.insert(clusterVector.end(), pPhotonClusterList->begin(), pPhotonClusterList->end());
+	
+	//std::cout << "cluster size stage 2: " << clusterVector.size() << std::endl;
+
     std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortByTrackClusterCompatibility(&this->GetPandora()));
+	
+	pandora::ClusterList photonClusters; 
+	photonClusters.insert(pPhotonClusterList->begin(), pPhotonClusterList->end());
+
+	std::string treeName("PrimaryTrees");
+	std::string photonName("PhotonClusters");
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
+	       		                  PandoraContentApi::SaveList(*this, photonName, treeName, photonClusters));
 
     for(unsigned int i=0 ; i<clusterVector.size() ; ++i)
     {
@@ -83,6 +114,9 @@ namespace arbor_content
       // check for clusters that leave the detector
       if(ClusterHelper::IsClusterLeavingDetector(this->GetPandora(), pCluster))
         continue;
+
+	  //std::cout << "chi: " << chi << ", trackEnergySum: " << trackEnergySum 
+		//        << ", cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
 
       // prepare clusters and tracks for reclustering
       pandora::ClusterList reclusterClusterList;
@@ -136,6 +170,12 @@ namespace arbor_content
         }
       }
 
+	  //std::cout << "find the nearby cluster... size: " << reclusterClusterList.size() << std::endl;
+	  for(pandora::ClusterList::const_iterator cluIter = reclusterClusterList.begin(); cluIter != reclusterClusterList.end(); ++cluIter) 
+	  {
+		  const pandora::Cluster* photon = *cluIter;
+	  }
+
       if(1 == reclusterClusterList.size())
         continue;
 
@@ -155,6 +195,7 @@ namespace arbor_content
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RunReclusteringAlgorithm(*this,
             *clusteringAlgIter, pReclusterClusterList, reclusterClusterListName));
 
+		//std::cout << "pReclusterClusterList: " << pReclusterClusterList->size() << std::endl;
         if(pReclusterClusterList->empty())
           continue;
 
@@ -173,6 +214,8 @@ namespace arbor_content
             clusterEndIter != clusterIter ; ++ clusterIter)
         {
           const pandora::Cluster *const pReclusterCluster = *clusterIter;
+
+		  //std::cout << "recluster: energy: " << pReclusterCluster->GetElectromagneticEnergy() << std::endl;
 
           if( pReclusterCluster->GetAssociatedTrackList().empty() )
             continue;
@@ -205,6 +248,7 @@ namespace arbor_content
 
       // Recreate track-cluster associations for chosen recluster candidates
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
+	  //std::cout << "m_trackClusterAssociationAlgName: " << m_trackClusterAssociationAlgName << std::endl;
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
 
       // tidy the cluster vector used for reclustering
@@ -212,12 +256,26 @@ namespace arbor_content
       {
         // remove clusters used in reclustering from the list
         for(UIntVector::const_iterator iter = originalClusterIndices.begin(), endIter = originalClusterIndices.end() ;
-            endIter != iter ; ++iter)
-          clusterVector[*iter] = NULL;
+            endIter != iter ; ++iter) 
+		{
+		  //std::cout << "the cluster to be removed: " << (clusterVector[*iter])->GetElectromagneticEnergy() << std::endl;
 
-        // add the newly created neutral clusters to the list
+		  pandora::ClusterList::const_iterator cluIter = photonClusters.find(clusterVector[*iter]);
+		  if(cluIter != photonClusters.end())
+		  {
+			  photonClusters.erase(cluIter);
+		  }
+
+          clusterVector[*iter] = NULL;
+		}
+
+		std::cout << "clusterVector size:: " << clusterVector.size() << std::endl;
+
+        // add the newly created clusters to the list
         const pandora::ClusterList *pReclusterClusterList = NULL;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, bestReclusterClusterListName, pReclusterClusterList));
+
+		//std::cout << "pReclusterClusterList size: " << pReclusterClusterList->size() << std::endl;
 
         for(pandora::ClusterList::const_iterator clusterIter = pReclusterClusterList->begin(), clusterEndIter = pReclusterClusterList->end() ;
             clusterEndIter != clusterIter ; ++ clusterIter)
@@ -233,6 +291,13 @@ namespace arbor_content
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
     }
+
+	// put photon clusters back from clusters
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
+	        		                PandoraContentApi::SaveList(*this, treeName, photonName, photonClusters));
+
+	//std::cout << "pClusterList: " << pClusterList->size() << std::endl;
+	//std::cout << "pPhotonClusterList: " << pPhotonClusterList->size() << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
   }
