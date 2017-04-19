@@ -122,7 +122,7 @@ namespace arbor_content
         trackEndIter != trackIter ; ++trackIter)
     {
       const pandora::Track *const pTrack = *trackIter;
-	  //std::cout << "track energy: " << pTrack->GetEnergyAtDca() << std::endl;
+	  //std::cout << "-------> track energy: " << pTrack->GetEnergyAtDca() << std::endl;
 
       const pandora::Cluster *pBestCluster = NULL;
       float bestCompatibility(std::numeric_limits<float>::max());
@@ -133,14 +133,25 @@ namespace arbor_content
       {
         const pandora::Cluster *const pCluster = *iter;
 
+		//double trackEnergy = pTrack->GetEnergyAtDca();
+		//double clusterEnergy = pCluster->GetElectromagneticEnergy();
+		//bool canPrint = fabs(trackEnergy - 3.2) < 0.1 && fabs(clusterEnergy - 3.32) < 0.1;
+		//bool canPrint = fabs(trackEnergy - 3.2) < 0.1;
+
         if( ! this->PassesInitialCuts(pCluster, pTrack) )
+		{
+		  //if(canPrint) std::cout << "track: " << trackEnergy << ", cluster: " << clusterEnergy << ", not pass init" << std::endl;
           continue;
+		}
 
         AssociationConstraints constraints;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CalculateAssociationConstraints(pCluster, pTrack, constraints));
 
         if( ! this->FitConstraints(constraints) )
+		{
+		  //if(canPrint) std::cout << "track: " << trackEnergy << ", cluster: " << clusterEnergy << ", not pass Fit" << std::endl;
           continue;
+		}
 
         if(constraints.m_compatibility < bestCompatibility)
         {
@@ -191,6 +202,10 @@ namespace arbor_content
           multiAssociationMap[pBestCluster] = pTrack;
         }
       }
+	  else
+	  {
+		//std::cout << "-------> track energy: " << pTrack->GetEnergyAtDca() << ", no cluster" << std::endl;
+	  }
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -200,8 +215,8 @@ namespace arbor_content
 
   pandora::StatusCode TrackClusterAssociationAlgorithm::PerformAssociations(const AssociationMap &associationMap)
   {
-#if 0	  
-    std::cout << "TrackClusterAssociationAlgorithm::PerformAssociations" << std::endl;
+#if 1	  
+    //std::cout << "TrackClusterAssociationAlgorithm::PerformAssociations" << std::endl;
 
 	pandora::TrackVector trackVector;
 
@@ -214,13 +229,13 @@ namespace arbor_content
 
 	std::sort(trackVector.begin(), trackVector.end(), SortTracksByEnergy);
 
-	std::cout << "# of pfo track: " << trackVector.size() << std::endl;
+	//std::cout << "# of pfo track: " << trackVector.size() << std::endl;
 
     for (pandora::TrackVector::const_iterator trackIter = trackVector.begin(), trackIterEnd = trackVector.end(); trackIter != trackIterEnd; ++trackIter)
     {
-        const pandora::Track *const pTrack = *trackIter;
+        //const pandora::Track *const pTrack = *trackIter;
 
-        std::cout << "Pandora: track energy: " << pTrack->GetEnergyAtDca() << std::endl; 
+        //std::cout << "Pandora: track energy: " << pTrack->GetEnergyAtDca() << std::endl; 
 	}
 #endif
     for(AssociationMap::const_iterator iter = associationMap.begin() , endIter = associationMap.end() ;
@@ -228,7 +243,7 @@ namespace arbor_content
     {
       const pandora::Track *const pTrack(iter->first);
       const pandora::Cluster *const pCluster(iter->second);
-	  //std::cout << "--track energy: " << pTrack->GetEnergyAtDca() << std::endl;
+	  //std::cout << "--track energy: " << pTrack->GetEnergyAtDca() << " cluster: " << pCluster->GetElectromagneticEnergy() << std::endl;
 
       if((NULL == pTrack) || (NULL == pCluster)) {
 		  //if(pTrack!=NULL) std::cout << "track has no cluster, track energy:  " << pTrack->GetEnergyAtDca() << std::endl;
@@ -294,7 +309,11 @@ namespace arbor_content
     pandora::CartesianVector innerCentroid(0.f, 0.f, 0.f);
 
     if(pandora::STATUS_CODE_SUCCESS != this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid))
+	{
+		//std::cout << "ComputeInnerCentroid failed" << std::endl;
+		//std::cout << "pCluster: " << pCluster->GetElectromagneticEnergy() << " track: " << pTrack->GetEnergyAtDca() << " ComputeInnerCentroid failed" << std::endl;
       return false;
+	}
 
     // get b field and track helix
     const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
@@ -309,7 +328,11 @@ namespace arbor_content
     helix.GetDistanceToPoint(innerCentroid, distanceToHelix);
 
     if( distanceToHelix.GetZ() > m_maxDistanceToHelix )
+	{
+		//std::cout << "distanceToHelix.Z: " << distanceToHelix.GetZ() << ", m_maxDistanceToHelix: " << m_maxDistanceToHelix << std::endl;
+		//std::cout << "pCluster: " << pCluster->GetElectromagneticEnergy() << " track: " << pTrack->GetEnergyAtDca() << " ComputeInnerCentroid failed" << std::endl;
       return false;
+	}
 
     return true;
   }

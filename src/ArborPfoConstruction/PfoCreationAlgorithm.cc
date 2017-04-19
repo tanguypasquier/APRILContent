@@ -310,6 +310,9 @@ pandora::StatusCode PfoCreationAlgorithm::CreateNeutralPfos() const
         const bool isPhoton(pCluster->IsPhotonFast(this->GetPandora()));
         float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
 
+		//std::cout << "----cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
+		//std::cout << "----- h_energy: " << pCluster->GetCorrectedHadronicEnergy(this->GetPandora()) << std::endl;
+
         // Veto non-photon clusters below hadronic energy threshold and those occupying a single layer
         if (!isPhoton)
         {
@@ -331,6 +334,8 @@ pandora::StatusCode PfoCreationAlgorithm::CreateNeutralPfos() const
         pfoParameters.m_charge = 0;
         pfoParameters.m_mass = (isPhoton ? pandora::PdgTable::GetParticleMass(pandora::PHOTON) : pandora::PdgTable::GetParticleMass(pandora::NEUTRON));
         pfoParameters.m_energy = clusterEnergy;
+
+		//std::cout << "----- energy: " << clusterEnergy << std::endl;
         pfoParameters.m_clusterList.insert(pCluster);
 
         // Photon position: 0) unweighted inner centroid, 1) energy-weighted inner centroid, 2+) energy-weighted centroid for all layers

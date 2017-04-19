@@ -65,10 +65,12 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
     // loop start from here
     // the condition of loop ending is: each cluster in the improper track-cluster associations has no nearby cluster
-    bool canLoop = true;
+    bool canLoop(true);
 
     while(canLoop)
     {
+		canLoop = false;
+
         //std::cout << "cluster size: " << pClusterList->size() << ", photon cluster size: " << pPhotonClusterList->size() << std::endl;
 
         pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
@@ -85,10 +87,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
         // move the photon clusters to the clusters list
         PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=,
                                         PandoraContentApi::SaveList(*this, photonName, treeName, photonClusters));
-
-
-        int numberOfUnbalancedCluster(0);
-        int timesOfFindingNoCluster(0);
 
         for(unsigned int i=0 ; i<clusterVector.size() ; ++i)
         {
@@ -123,8 +121,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
             //std::cout << "chi: " << chi << ", trackEnergySum: " << trackEnergySum
             //        << ", cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
-
-            ++numberOfUnbalancedCluster;
 
             // prepare clusters and tracks for reclustering
             pandora::ClusterList reclusterClusterList;
@@ -182,7 +178,6 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
             if(1 == reclusterClusterList.size())
             {
-                ++timesOfFindingNoCluster;
                 continue;
             }
 
@@ -298,7 +293,13 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
 
                     clusterVector.push_back(pReclusterCluster);
                 }
+
+				canLoop = true;
             }
+			else
+			{
+				//std::cout << "no reclustering..." << std::endl;
+			}
 
             PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
         }
@@ -306,16 +307,7 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
         // put photon clusters back from clusters
         PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=,
                                         PandoraContentApi::SaveList(*this, treeName, photonName, photonClusters));
-
-        if(numberOfUnbalancedCluster == timesOfFindingNoCluster)
-        {
-            canLoop = false;
-            // std::cout << "numberOfUnbalancedCluster: " << numberOfUnbalancedCluster << ",  timesOfFindingNoCluster: "
-            //	      << timesOfFindingNoCluster << std::endl;
-        }
-
-    }
-    // loop ends
+    } // loop ends
 
     //std::cout << "pClusterList: " << pClusterList->size() << std::endl;
     //std::cout << "pPhotonClusterList: " << pPhotonClusterList->size() << std::endl;

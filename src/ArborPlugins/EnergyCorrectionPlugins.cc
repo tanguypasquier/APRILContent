@@ -244,6 +244,7 @@ namespace arbor_content
 
   pandora::StatusCode BarrelGapEnergyFunction::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const
   {
+	  //std::cout << "BarrelGapEnergyFunction::MakeEnergyCorrections" << std::endl;
     if(m_ecalZGapPositions.empty() && m_hcalZGapPositions.empty())
       return pandora::STATUS_CODE_SUCCESS;
 
@@ -361,14 +362,24 @@ namespace arbor_content
 
   pandora::StatusCode ThetaEnergyFunction::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const
   {
+	//std::cout << "ThetaEnergyFunction::MakeEnergyCorrections" << std::endl;
+
+	// FIXME: we should investigate this function ... 
+    return pandora::STATUS_CODE_SUCCESS;
+
     if(pCluster->GetNCaloHits() == 0)
       return pandora::STATUS_CODE_SUCCESS;
 
     if(correctedEnergy < m_lowEnergyCut)
       return pandora::STATUS_CODE_SUCCESS;
 
+	//std::cout << "the energy to correct: " << correctedEnergy << std::endl;
+
     unsigned int startingPseudoLayer(std::numeric_limits<unsigned int>::max());
+
     const pandora::StatusCode statusCode(ParticleIdHelper::GetStartingPseudoLayer(this->GetPandora(), pCluster, ParticleIdHelper::StartingLayerSettings(), startingPseudoLayer));
+
+	//std::cout << "startingPseudoLayer: " << startingPseudoLayer << std::endl;
 
     // do not apply energy corrections if starting layer not found
     if(pandora::STATUS_CODE_SUCCESS != statusCode)
@@ -398,7 +409,13 @@ namespace arbor_content
       }
 
       if(pCaloHit->GetPseudoLayer() >= startingPseudoLayer)
+	  {
         continue;
+	  }
+	  else
+	  {
+		  //std::cout << "calo hit pseudo layer: " << pCaloHit->GetPseudoLayer() << std::endl;
+	  }
 
       startingHadronicEnergySum += pCaloHit->GetHadronicEnergy();
       noShowerHit = false;
@@ -411,11 +428,17 @@ namespace arbor_content
     // used in following computation since calibration of this correction is done
     // with kaon0L particles. This avoid to correct energy of mip like hadrons
     const float startingHadronicEnergyFraction(startingHadronicEnergySum/pCluster->GetHadronicEnergy());
+	//std::cout << "startingHadronicEnergySum: " << startingHadronicEnergySum << ", cluster hadronicEnergy: " << 
+		//pCluster->GetHadronicEnergy() << std::endl;
+
     const float correctedStartingHadronicEnergy(startingHadronicEnergyFraction*correctedEnergy);
     const float mainCorrectedShowerEnergy(correctedEnergy - correctedStartingHadronicEnergy);
+	//std::cout << "mainCorrectedShowerEnergy: " << mainCorrectedShowerEnergy << std::endl;
 
     barrelEnergyFraction /= clusterEnergy;
     endcapEnergyFraction /= clusterEnergy;
+
+	//std::cout << "barrelEnergyFraction: " << barrelEnergyFraction << " endcapEnergyFraction: " << endcapEnergyFraction << std::endl;
 
     try
     {
@@ -423,10 +446,12 @@ namespace arbor_content
 
       correctedEnergy = barrelEnergyFraction*this->GetBarrelCorrectedEnergy(mainCorrectedShowerEnergy, clusterCosTheta)
           + endcapEnergyFraction*this->GetEndcapCorrectedEnergy(mainCorrectedShowerEnergy, clusterCosTheta);
+
+	  //std::cout << "correctedEnergy: " << correctedEnergy << std::endl;
     }
     catch(const pandora::StatusCodeException &exception)
     {
-      std::cerr << "ThetaEnergyFunction::MakeEnergyCorrections: Couldn't evaluate cluster cos theta : " << exception.ToString() << std::endl;
+      //std::cerr << "ThetaEnergyFunction::MakeEnergyCorrections: Couldn't evaluate cluster cos theta : " << exception.ToString() << std::endl;
       return pandora::STATUS_CODE_SUCCESS;
     }
 
@@ -447,6 +472,7 @@ namespace arbor_content
 
   float ThetaEnergyFunction::GetBarrelCorrectedEnergy(float inputEnergy, float cosTheta) const
   {
+	  std::cout << "inputEnergy: " << inputEnergy << ", cosTheta: " << cosTheta << std::endl;
     return (-1*(m_barrelP01+m_barrelP11*cosTheta) + std::sqrt((m_barrelP01+m_barrelP11*cosTheta)*(m_barrelP01+m_barrelP11*cosTheta)
         - 4*(m_barrelP02+m_barrelP12*cosTheta)*(m_barrelP00+m_barrelP10*cosTheta - inputEnergy)))/(2*(m_barrelP02+m_barrelP12*cosTheta));
   }
