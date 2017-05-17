@@ -55,7 +55,7 @@ namespace arbor_content
 
   pandora::StatusCode ClosebySeedMergingAlgorithm::FindMergeCandidateClusters(const pandora::ClusterList *const pClusterList, CaloHitSeedToClusterMap &caloHitSeedToClusterMap) const
   {
-	//std::cout << "FindMergeCandidateClusters: ClusterList size: " << pClusterList->size() << std::endl;
+	//std::cout << "FindMergeCandidateClusters: ClusterList size: " << pClusterList->size() << std::endl;	
     for(pandora::ClusterList::const_iterator iter = pClusterList->begin(), endIter = pClusterList->end() ;
         endIter != iter ; ++iter)
     {
@@ -97,6 +97,8 @@ namespace arbor_content
 
   pandora::StatusCode ClosebySeedMergingAlgorithm::MergeCloseBySeedClusters(CaloHitSeedToClusterMap &caloHitSeedToClusterMap) const
   {
+	//std::cout << "MergeCloseBySeedClusters: the caloHitSeedToClusterMap size: " << caloHitSeedToClusterMap.size() << std::endl;
+	
     for(CaloHitSeedToClusterMap::iterator iterI = caloHitSeedToClusterMap.begin(), endIterI = caloHitSeedToClusterMap.end() ;
         endIterI != iterI ; ++iterI)
     {
@@ -127,6 +129,12 @@ namespace arbor_content
         if(pSeedCaloHitI->GetHitType() != pSeedCaloHitJ->GetHitType())
           continue;
 
+#if 0
+		std::cout << "Two clusters are trying to be merged: " <<  std::endl;
+		std::cout << "pClusterI: " << pClusterI->GetElectromagneticEnergy() << std::endl;
+		std::cout << "pClusterJ: " << pClusterJ->GetElectromagneticEnergy() << std::endl;
+#endif
+
         const unsigned int pseudoLayerI = pSeedCaloHitI->GetPseudoLayer();
         const unsigned int pseudoLayerJ = pSeedCaloHitJ->GetPseudoLayer();
 
@@ -143,6 +151,13 @@ namespace arbor_content
         const float maxSeedTransverseDistance = this->GetPandora().GetGeometry()->GetHitTypeGranularity(pSeedCaloHitI->GetHitType()) <= pandora::FINE ?
             m_maxSeedTransverseDistanceFine : m_maxSeedTransverseDistanceCoarse;
 
+#if 0
+		std::cout << "maxSeedDistance: " << maxSeedDistance << ", seedDistance: " << seedDistance
+			      << ", seedTransverseDistance: " << seedTransverseDistance << ", maxSeedTransverseDistance: " << maxSeedTransverseDistance
+				  <<  std::endl;
+#endif
+
+		//std::cout << "-------" <<  std::endl;
         if(seedDistance > maxSeedDistance || seedTransverseDistance > maxSeedTransverseDistance)
           continue;
 
@@ -153,6 +168,7 @@ namespace arbor_content
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pClusterI, pClusterJ));
       }
     }
+
 #if 0
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));

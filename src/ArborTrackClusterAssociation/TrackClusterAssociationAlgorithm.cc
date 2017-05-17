@@ -48,6 +48,7 @@ namespace arbor_content
     if(trackList.empty() || clusterList.empty())
       return pandora::STATUS_CODE_SUCCESS;
 
+	//std::cout << "clusterList size: " << clusterList.size() << std::endl;
 	//std::cout << "trackList size: " << trackList.size() << std::endl;
     // reset the track-cluster associations
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));

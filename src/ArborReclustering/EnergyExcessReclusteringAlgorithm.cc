@@ -56,14 +56,20 @@ namespace arbor_content
         endIter != iter ; ++iter)
     {
       const pandora::Cluster *const pCluster = *iter;
+
+	  //std::cout << "EnergyExcess: cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
       const pandora::TrackList &trackList(pCluster->GetAssociatedTrackList());
 
       // need exactly one track
       if(trackList.empty() || trackList.size() > 1)
         continue;
 
+	  //const pandora::Track* track = *(trackList.begin());
+	  //std::cout << "track energy: " << track->GetEnergyAtDca() << ", m_minTrackMomentum: " << m_minTrackMomentum << std::endl;
+
       // negative chi means missing energy in the cluster
       const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList));
+	  //std::cout << "chi: " << chi << ", chi2: " << chi*chi << ", m_minChi2ToRunReclustering: " << m_minChi2ToRunReclustering << std::endl;
 
       // check for chi2, energy excess and asymmetric cluster
       if( (chi*chi < m_minChi2ToRunReclustering || chi < 0.f)  || ((*trackList.begin())->GetEnergyAtDca() < m_minTrackMomentum))
@@ -86,14 +92,14 @@ namespace arbor_content
       float bestChi(chi);
       std::string bestReclusterClusterListName(originalClusterListName);
 
-      for(pandora::StringVector::const_iterator clusteringAlgIter = m_clusteringAlgorithmList.begin(), endClusteringAlgIter = m_clusteringAlgorithmList.end() ;
-          endClusteringAlgIter != clusteringAlgIter ; ++clusteringAlgIter)
+      for(pandora::StringVector::const_iterator clusteringAlgIter = m_clusteringAlgorithmList.begin(), endClusteringAlgIter = m_clusteringAlgorithmList.end() ; endClusteringAlgIter != clusteringAlgIter ; ++clusteringAlgIter)
       {
         const pandora::ClusterList *pReclusterClusterList = NULL;
         std::string reclusterClusterListName;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RunReclusteringAlgorithm(*this,
             *clusteringAlgIter, pReclusterClusterList, reclusterClusterListName));
 
+		//std::cout << "pReclusterClusterList is empty: " << pReclusterClusterList->empty() << std::endl;
         if(pReclusterClusterList->empty())
           continue;
 
@@ -101,6 +107,9 @@ namespace arbor_content
             m_associationAlgorithmName));
 
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::PostRunReclusteringAlgorithm(*this, reclusterClusterListName));
+
+		//Bo: build the association betweeen track and cluster
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
 
         // run monitoring algorithm if provided
         if(!m_monitoringAlgorithmName.empty())
@@ -111,17 +120,26 @@ namespace arbor_content
 
         bool shouldStopReclustering = false;
 
+		//std::cout << "pReclusterClusterList is empty: " << pReclusterClusterList->empty() << std::endl;
+        //if(pReclusterClusterList->empty())
+        // continue;
+
         // find the cluster associated with original track and look at the compatibility
         for(pandora::ClusterList::const_iterator reclusterIter = pReclusterClusterList->begin(), reclusterEndIter = pReclusterClusterList->end() ;
             reclusterEndIter != reclusterIter ; ++reclusterIter)
         {
           const pandora::Cluster *const pReclusterCluster = *reclusterIter;
+		  //std::cout << "recluster: cluster energy: " << pReclusterCluster->GetElectromagneticEnergy() << std::endl;
           const pandora::TrackList &newTrackList(pReclusterCluster->GetAssociatedTrackList());
+
+		  //std::cout << "newTrack list empty: " << newTrackList.empty() << std::endl;
 
           if(newTrackList.empty())
             continue;
 
           const float newChi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pReclusterCluster, newTrackList);
+
+		  //std::cout << "newChi: " << newChi << ", bestChi: " << bestChi << std::endl;
 
           // if we see an improvement on separation update the best list
           if(newChi < bestChi && newChi*newChi < bestChi*bestChi/* && newClusterSymmetry < bestClusterSymmetry*/)

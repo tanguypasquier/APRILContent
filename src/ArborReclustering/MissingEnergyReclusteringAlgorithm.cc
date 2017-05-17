@@ -5,25 +5,27 @@
  * Creation date : mer. f�vr. 24 2016
  *
  * This file is part of ArborContent libraries.
- *
+ * 
  * ArborContent is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * based upon these libraries are permitted. Any copy of these libraries
  * must include this copyright notice.
- *
+ * 
  * ArborContent is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with ArborContent.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  * @author Remi Ete
  * @copyright CNRS , IPNL
  */
+
+#define __DEBUG__
 
 
 #include "ArborReclustering/MissingEnergyReclusteringAlgorithm.h"
@@ -34,12 +36,13 @@
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/SortingHelper.h"
+#include "ArborHelpers/BDTBasedClusterIdHelper.h"
 
 namespace arbor_content
 {
 
-pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
-{
+  pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
+  {
     // start by recalculating track-cluster association
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
 
@@ -47,321 +50,479 @@ pandora::StatusCode MissingEnergyReclusteringAlgorithm::Run()
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-    // FIXME:: maybe we should also include the photon clusters
+	// FIXME:: maybe we should also include the photon clusters
     const pandora::ClusterList *pPhotonClusterList = NULL;
-    std::string clusterName = "PhotonClusters";
+	std::string clusterName = "PhotonClusters";
 
-    if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, clusterName, pPhotonClusterList))
-    {
-        std::cout << clusterName << " is not found." << std::endl;
-    }
-    else
-    {
-        std::cout << clusterName << " is found." << std::endl;
-    }
+    if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, clusterName, pPhotonClusterList)) 
+	{
+#ifdef __DEBUG__
+		std::cout << clusterName << " is not found." << std::endl;
+#endif
+	} 
+	else 
+	{
+#ifdef __DEBUG__
+		std::cout << clusterName << " is found." << std::endl;
+#endif
+
+	  for(pandora::ClusterList::const_iterator iter = pPhotonClusterList->begin(); iter != pPhotonClusterList->end(); ++iter) 
+	  {
+		  const pandora::Cluster* photonCluster = *iter;
+#if 1
+	  // photon re-identification
+	  float bdtVal(1000.);
+	  BDTBasedClusterIdHelper::BDTEvaluate(photonCluster, bdtVal);
+	  if(bdtVal<-0.2) std::cout << "*********************strange!!! photon cluster BDTID value: " << bdtVal 
+		  << ", cluster energy: "<< photonCluster->GetElectromagneticEnergy() << std::endl;
+#endif
+	  }
+	}	
 
     if(pClusterList->empty())
-        return pandora::STATUS_CODE_SUCCESS;
+      return pandora::STATUS_CODE_SUCCESS;
 
-    // loop start from here
-    // the condition of loop ending is: each cluster in the improper track-cluster associations has no nearby cluster
-    bool canLoop(true);
+#ifdef __DEBUG__
+	std::cout << "cluster size: " << pClusterList->size() << ", photon cluster size: " << pPhotonClusterList->size() << std::endl;
+#endif
 
-    while(canLoop)
+    pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
+
+
+#ifdef __DEBUG__
+	std::cout << "cluster size stage 1: " << clusterVector.size() << std::endl;
+#endif
+
+	clusterVector.insert(clusterVector.end(), pPhotonClusterList->begin(), pPhotonClusterList->end());
+	
+#ifdef __DEBUG__
+	std::cout << "cluster size stage 2: " << clusterVector.size() << std::endl;
+#endif
+
+#ifdef __DEBUG__
+    for(unsigned int i=0 ; i<clusterVector.size() ; ++i)
     {
-		canLoop = false;
+      const pandora::Cluster *const pCluster = clusterVector[i];
+#ifdef __DEBUG__
+	  std::cout << "energy of cluster: " << pCluster->GetElectromagneticEnergy() << std::endl;
+#endif
 
-        //std::cout << "cluster size: " << pClusterList->size() << ", photon cluster size: " << pPhotonClusterList->size() << std::endl;
+      const pandora::TrackList trackList(pCluster->GetAssociatedTrackList());
+      for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter) {
+#ifdef __DEBUG__
+		  std::cout << "::::track energy: " << (*trackIter)->GetEnergyAtDca() << std::endl;
+#endif
+	  }
+	}
+#endif
 
-        pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
-        clusterVector.insert(clusterVector.end(), pPhotonClusterList->begin(), pPhotonClusterList->end());
+	///////
+    std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortByTrackClusterCompatibility(&this->GetPandora()));
+	std::reverse(clusterVector.begin(), clusterVector.end());
+	
+	pandora::ClusterList photonClusters;
+	photonClusters.insert(pPhotonClusterList->begin(), pPhotonClusterList->end());
 
-        std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortByTrackClusterCompatibility(&this->GetPandora()));
+	
 
-        pandora::ClusterList photonClusters;
-        photonClusters.insert(pPhotonClusterList->begin(), pPhotonClusterList->end());
+	std::string treeName("PrimaryTrees");
+	std::string photonName("PhotonClusters");
 
-        std::string treeName("PrimaryTrees");
-        std::string photonName("PhotonClusters");
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
+	       		                  PandoraContentApi::SaveList(*this, photonName, treeName, photonClusters));
 
-        // move the photon clusters to the clusters list
-        PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=,
-                                        PandoraContentApi::SaveList(*this, photonName, treeName, photonClusters));
+#ifdef __DEBUG__
+	std::cout << "-----------------> Sorted cluster-track" << std::endl;
 
-        for(unsigned int i=0 ; i<clusterVector.size() ; ++i)
+    for(unsigned int i=0 ; i<clusterVector.size() ; ++i)
+    {
+      const pandora::Cluster *const pCluster = clusterVector[i];
+	  std::cout << "---energy of cluster: " << pCluster->GetElectromagneticEnergy() << std::endl;
+
+
+      const pandora::TrackList trackList(pCluster->GetAssociatedTrackList());
+      for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter) {
+		  std::cout << "::::track energy: " << (*trackIter)->GetEnergyAtDca() << std::endl;
+	  }
+	}
+#endif
+
+    for(unsigned int i=0 ; i<clusterVector.size() ; ++i)
+    {
+      const pandora::Cluster *const pCluster = clusterVector[i];
+	  //std::cout << "the cluster we are looking at is:  " << i << ", " << pCluster << std::endl;
+
+      if( NULL == pCluster )
+        continue;
+
+      const pandora::TrackList trackList(pCluster->GetAssociatedTrackList());
+      unsigned int nTrackAssociations(trackList.size());
+
+      if((nTrackAssociations < m_minTrackAssociations) || (nTrackAssociations > m_maxTrackAssociations))
+        continue;
+
+      float trackEnergySum(0.);
+
+      for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
+        trackEnergySum += (*trackIter)->GetEnergyAtDca();
+
+      if(trackEnergySum < m_minTrackMomentum)
+        continue;
+
+      const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList));
+
+#ifdef __DEBUG__
+	  std::cout << "chi: " << chi << ", minChi2: " << m_minChi2ToRunReclustering << ", trackEnergySum: " << trackEnergySum 
+		        << ", cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
+#endif
+
+      // check for chi2 and missing energy in charged cluster
+      if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
+        continue;
+
+      // check for clusters that leave the detector
+      if(ClusterHelper::IsClusterLeavingDetector(this->GetPandora(), pCluster))
+        continue;
+
+      // prepare clusters and tracks for reclustering
+      pandora::ClusterList reclusterClusterList;
+      reclusterClusterList.insert(pCluster);
+      pandora::TrackList reclusterTrackList(trackList);
+
+      UIntVector originalClusterIndices(1, i);
+
+      pandora::ClusterFitResult parentFitResult;
+      pandora::CartesianVector parentCentroid(0.f, 0.f, 0.f);
+      pandora::ClusterFitHelper::FitFullCluster(pCluster, parentFitResult);
+
+	  pandora::CartesianVector clusterInitialDirection = pCluster->GetInitialDirection();
+
+      const pandora::StatusCode centroidStatusCode(ClusterHelper::GetCentroid(pCluster, parentCentroid));
+
+      // find nearby clusters to potentially merge-in
+      for(unsigned int j=0 ; j<clusterVector.size() ; ++j)
+      {
+        const pandora::Cluster *const pOtherCluster = clusterVector[j];
+
+        if((NULL == pOtherCluster) || (pCluster == pOtherCluster))
+          continue;
+
+        if( ! pOtherCluster->GetAssociatedTrackList().empty() )
+          continue;
+
+#ifdef __DEBUG__
+		std::cout << "------------------" << std::endl;
+		std::cout << "the cluster we are checking, energy: " << pOtherCluster->GetElectromagneticEnergy() << 
+			 ", hit: " << pOtherCluster->GetNCaloHits() << ", PID: " << pOtherCluster->GetParticleIdFlag() << std::endl;
+#endif
+        float clusterHitsDistance = std::numeric_limits<float>::max();
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pOtherCluster, pCluster, clusterHitsDistance));
+
+#ifdef __DEBUG__
+		  std::cout << "clusterHitsDistance: " << clusterHitsDistance << ", m_maxClusterHitsDistance: " << m_maxClusterHitsDistance 
+			    << std::endl;
+#endif
+
+        if(clusterHitsDistance < m_maxClusterHitsDistance)
         {
-            const pandora::Cluster *const pCluster = clusterVector[i];
+          reclusterClusterList.insert(pOtherCluster);
+          originalClusterIndices.push_back(j);
+        }
+        else
+        {
+			//FIXME
+          if(clusterHitsDistance > 1000.)
+			  continue;
 
-            if( NULL == pCluster )
-                continue;
+#ifdef __DEBUG__
+		  std::cout << "try to check angle..." << std::endl;
+#endif
 
-            const pandora::TrackList trackList(pCluster->GetAssociatedTrackList());
-            unsigned int nTrackAssociations(trackList.size());
+          if(pandora::STATUS_CODE_SUCCESS != centroidStatusCode || !parentFitResult.IsFitSuccessful())
+            continue;
 
-            if((nTrackAssociations < m_minTrackAssociations) || (nTrackAssociations > m_maxTrackAssociations))
-                continue;
+          pandora::CartesianVector daughterCentroid(0.f, 0.f, 0.f);
 
-            float trackEnergySum(0.);
+          if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetCentroid(pOtherCluster, daughterCentroid))
+            continue;
 
-            for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
-                trackEnergySum += (*trackIter)->GetEnergyAtDca();
+          //const float angle( parentFitResult.GetDirection().GetOpeningAngle( daughterCentroid - parentCentroid ) );
+		  const float angle2( clusterInitialDirection.GetOpeningAngle( daughterCentroid - parentCentroid ) );
 
-            if(trackEnergySum < m_minTrackMomentum)
-                continue;
+#ifdef __DEBUG__
 
-            const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList));
+#if 0
+		      pandora::CartesianVector parentDir = parentFitResult.GetDirection();
+		      std::cout << "parentFitResult dir: " << parentDir.GetX() << ", " << parentDir.GetY() << ", " << parentDir.GetZ() << std::endl;
+			  std::cout << "daughterCentroid: " << daughterCentroid.GetX() << ", " << daughterCentroid.GetY() << 
+				  ", " << daughterCentroid.GetZ();
+			  std::cout << "parentCentroid: " <<  parentCentroid.GetX() << ", " << parentCentroid.GetY() <<
+				  ", " << parentCentroid.GetZ() << std::endl;
 
-            // check for chi2 and missing energy in charged cluster
-            if(chi*chi < m_minChi2ToRunReclustering || chi > 0.f)
-                continue;
+			  std::cout << "angle: " << angle << ", m_maxNeighborClusterAngle: " << m_maxNeighborClusterAngle << std::endl;
+#endif
 
-            // check for clusters that leave the detector
-            if(ClusterHelper::IsClusterLeavingDetector(this->GetPandora(), pCluster))
-                continue;
+			  std::cout << "clusterInitialDirection: " << clusterInitialDirection.GetX() << ", " << clusterInitialDirection.GetY() 
+				   << ", " << clusterInitialDirection.GetZ() << std::endl;
 
-            //std::cout << "chi: " << chi << ", trackEnergySum: " << trackEnergySum
-            //        << ", cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
+			  std::cout << "angle2: " << angle2 << std::endl;
+#endif
 
-            // prepare clusters and tracks for reclustering
-            pandora::ClusterList reclusterClusterList;
-            reclusterClusterList.insert(pCluster);
-            pandora::TrackList reclusterTrackList(trackList);
+          //if( angle > m_maxNeighborClusterAngle )
+          if( angle2 > m_maxNeighborClusterAngle )
+            continue;
 
-            UIntVector originalClusterIndices(1, i);
+          reclusterClusterList.insert(pOtherCluster);
+          originalClusterIndices.push_back(j);
+        }
+      }
 
-            pandora::ClusterFitResult parentFitResult;
-            pandora::CartesianVector parentCentroid(0.f, 0.f, 0.f);
-            pandora::ClusterFitHelper::FitFullCluster(pCluster, parentFitResult);
+#ifdef __DEBUG__
+	  std::cout << "find the nearby cluster... size: " << reclusterClusterList.size() << std::endl;
+	  for(pandora::ClusterList::const_iterator cluIter = reclusterClusterList.begin(); cluIter != reclusterClusterList.end(); ++cluIter) 
+	  {
+		  const pandora::Cluster* cluster = *cluIter;
+#ifdef __DEBUG__
+		  std::cout << "nearby cluster energy: " << cluster->GetElectromagneticEnergy() << std::endl;
+#endif
+	  }
+#endif
 
-            const pandora::StatusCode centroidStatusCode(ClusterHelper::GetCentroid(pCluster, parentCentroid));
+      if(1 == reclusterClusterList.size())
+        continue;
 
-            // find nearby clusters to potentially merge-in
-            for(unsigned int j=0 ; j<clusterVector.size() ; ++j)
-            {
-                const pandora::Cluster *const pOtherCluster = clusterVector[j];
+      // initialize reclustering
+      std::string originalClusterListName;
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::InitializeReclustering(*this,
+          reclusterTrackList, reclusterClusterList, originalClusterListName));
 
-                if((NULL == pOtherCluster) || (pCluster == pOtherCluster))
-                    continue;
+      float bestChi(chi);
+      std::string bestReclusterClusterListName(originalClusterListName);
 
-                if( ! pOtherCluster->GetAssociatedTrackList().empty() )
-                    continue;
+      for(pandora::StringVector::const_iterator clusteringAlgIter = m_clusteringAlgorithmList.begin(), endClusteringAlgIter = m_clusteringAlgorithmList.end() ;
+          endClusteringAlgIter != clusteringAlgIter ; ++clusteringAlgIter)
+      {
+        const pandora::ClusterList *pReclusterClusterList = NULL;
+        std::string reclusterClusterListName;
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RunReclusteringAlgorithm(*this,
+            *clusteringAlgIter, pReclusterClusterList, reclusterClusterListName));
 
-                float clusterHitsDistance = std::numeric_limits<float>::max();
-                PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pOtherCluster, pCluster, clusterHitsDistance));
+#ifdef __DEBUG__
+		std::cout << "the ReclusterClusterList: " << pReclusterClusterList->size() << std::endl;
+#endif
 
-                if(clusterHitsDistance < m_maxClusterHitsDistance)
-                {
-                    reclusterClusterList.insert(pOtherCluster);
-                    originalClusterIndices.push_back(j);
-                }
-                else
-                {
-                    if(pandora::STATUS_CODE_SUCCESS != centroidStatusCode || !parentFitResult.IsFitSuccessful())
-                        continue;
+        if(pReclusterClusterList->empty())
+          continue;
 
-                    pandora::CartesianVector daughterCentroid(0.f, 0.f, 0.f);
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_associationAlgorithmName));
 
-                    if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetCentroid(pOtherCluster, daughterCentroid))
-                        continue;
+        const pandora::ClusterList *pTestReclusterClusterList0 = NULL;
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, reclusterClusterListName,
+				    	pTestReclusterClusterList0) );
+#ifdef __DEBUG__
+		std::cout << "pTestReclusterClusterList0 size: " << pTestReclusterClusterList0->size() << std::endl;
+#endif
 
-                    const float angle( parentFitResult.GetDirection().GetOpeningAngle( daughterCentroid - parentCentroid ) );
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::PostRunReclusteringAlgorithm(*this, reclusterClusterListName));
 
-                    if( angle > m_maxNeighborClusterAngle )
-                        continue;
+		//////
+#ifdef __DEBUG__
+        const pandora::ClusterList *pTestReclusterClusterList = NULL;
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, reclusterClusterListName,
+				    	pTestReclusterClusterList) );
 
-                    reclusterClusterList.insert(pOtherCluster);
-                    originalClusterIndices.push_back(j);
-                }
-            }
+		std::cout << "pTestReclusterClusterList size: " << pTestReclusterClusterList->size() << std::endl;
 
-            //std::cout << "find the nearby cluster... size: " << reclusterClusterList.size() << std::endl;
+        for(pandora::ClusterList::const_iterator clusterIter = pTestReclusterClusterList->begin(), clusterEndIter = pTestReclusterClusterList->end() ;
+            clusterEndIter != clusterIter ; ++ clusterIter)
+        {
+          const pandora::Cluster *const pReclusterCluster = *clusterIter;
+		  std::cout << "test: cluster energy: "  << pReclusterCluster->GetElectromagneticEnergy() << std::endl; 
+		}
+#endif
+		//////////
 
-            if(1 == reclusterClusterList.size())
-            {
-                continue;
-            }
-
-            // initialize reclustering
-            std::string originalClusterListName;
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::InitializeReclustering(*this,
-                                     reclusterTrackList, reclusterClusterList, originalClusterListName));
-
-            float bestChi(chi);
-            std::string bestReclusterClusterListName(originalClusterListName);
-
-            for(pandora::StringVector::const_iterator clusteringAlgIter = m_clusteringAlgorithmList.begin(), endClusteringAlgIter = m_clusteringAlgorithmList.end() ;
-                    endClusteringAlgIter != clusteringAlgIter ; ++clusteringAlgIter)
-            {
-
-                const pandora::ClusterList *pReclusterClusterList = NULL;
-                std::string reclusterClusterListName;
-                PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::RunReclusteringAlgorithm(*this,
-                                         *clusteringAlgIter, pReclusterClusterList, reclusterClusterListName));
-
-                //std::cout << "pReclusterClusterList: " << pReclusterClusterList->size() << std::endl;
-                if(pReclusterClusterList->empty())
-                    continue;
-
-                PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_associationAlgorithmName));
-                PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::PostRunReclusteringAlgorithm(*this, reclusterClusterListName));
-
-
-                // run monitoring algorithm if provided
-
-                if(!m_monitoringAlgorithmName.empty())
-                {
-                    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this,
-                                             m_monitoringAlgorithmName));
-                }
-
-
-                // find the original tracks that triggered the reclustering
-                for(pandora::ClusterList::const_iterator clusterIter = pReclusterClusterList->begin(), clusterEndIter = pReclusterClusterList->end() ;
-                        clusterEndIter != clusterIter ; ++ clusterIter)
-                {
-                    const pandora::Cluster *const pReclusterCluster = *clusterIter;
-
-                    //std::cout << "recluster: energy: " << pReclusterCluster->GetElectromagneticEnergy() << std::endl;
-
-                    if( pReclusterCluster->GetAssociatedTrackList().empty() )
-                        continue;
-
-                    if( pReclusterCluster->GetAssociatedTrackList().size() != trackList.size() )
-                        continue;
-
-                    pandora::ClusterList reclusterList;
-                    reclusterList.insert(pReclusterCluster);
-
-                    ReclusterResult reclusterResult;
-                    if(pandora::STATUS_CODE_SUCCESS != ReclusterHelper::ExtractReclusterResults(this->GetPandora(), *pReclusterClusterList, reclusterResult))
-                        continue;
-
-                    const float newChi(reclusterResult.GetChi());
-                    const float newChi2(reclusterResult.GetChi2());
-
-                    if(newChi2 < bestChi*bestChi)
-                    {
-                        bestChi = newChi;
-                        bestReclusterClusterListName = reclusterClusterListName;
-
-                        if(newChi2 < m_maxChi2ToStopReclustering)
-                            break;
-                    }
-
-                    break;
-                }
-            }
-
-            // Recreate track-cluster associations for chosen recluster candidates
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
-            //std::cout << "m_trackClusterAssociationAlgName: " << m_trackClusterAssociationAlgName << std::endl;
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
-
-            // tidy the cluster vector used for reclustering
-            if( originalClusterListName != bestReclusterClusterListName )
-            {
-                // remove clusters used in reclustering from the list
-                for(UIntVector::const_iterator iter = originalClusterIndices.begin(), endIter = originalClusterIndices.end() ;
-                        endIter != iter ; ++iter)
-                {
-                    //std::cout << "the cluster to be removed: " << (clusterVector[*iter])->GetElectromagneticEnergy() << std::endl;
-
-                    pandora::ClusterList::const_iterator cluIter = photonClusters.find(clusterVector[*iter]);
-                    if(cluIter != photonClusters.end())
-                    {
-                        photonClusters.erase(cluIter);
-                    }
-
-                    clusterVector[*iter] = NULL;
-                }
-
-                std::cout << "clusterVector size:: " << clusterVector.size() << std::endl;
-
-                // add the newly created clusters to the list
-                const pandora::ClusterList *pReclusterClusterList = NULL;
-                PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, bestReclusterClusterListName, pReclusterClusterList));
-
-                //std::cout << "pReclusterClusterList size: " << pReclusterClusterList->size() << std::endl;
-
-                for(pandora::ClusterList::const_iterator clusterIter = pReclusterClusterList->begin(),
-                        clusterEndIter = pReclusterClusterList->end() ; clusterEndIter != clusterIter ; ++ clusterIter)
-                {
-                    const pandora::Cluster *const pReclusterCluster = *clusterIter;
-
-                    if(!pReclusterCluster->GetAssociatedTrackList().empty())
-                        continue;
-
-                    clusterVector.push_back(pReclusterCluster);
-                }
-
-				canLoop = true;
-            }
-			else
-			{
-				//std::cout << "no reclustering..." << std::endl;
-			}
-
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
+        // run monitoring algorithm if provided
+        if(!m_monitoringAlgorithmName.empty())
+        {
+          PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this,
+              m_monitoringAlgorithmName));
         }
 
-        // put photon clusters back from clusters
-        PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=,
-                                        PandoraContentApi::SaveList(*this, treeName, photonName, photonClusters));
-    } // loop ends
+        // find the original tracks that triggered the reclustering
+        for(pandora::ClusterList::const_iterator clusterIter = pReclusterClusterList->begin(), clusterEndIter = pReclusterClusterList->end() ;
+            clusterEndIter != clusterIter ; ++ clusterIter)
+        {
+          const pandora::Cluster *const pReclusterCluster = *clusterIter;
 
-    //std::cout << "pClusterList: " << pClusterList->size() << std::endl;
-    //std::cout << "pPhotonClusterList: " << pPhotonClusterList->size() << std::endl;
+#ifdef __DEBUG__
+		  std::cout << "recluster: energy: " << pReclusterCluster->GetElectromagneticEnergy() << std::endl;
+#endif
+
+          if( pReclusterCluster->GetAssociatedTrackList().empty() )
+            continue;
+
+          if( pReclusterCluster->GetAssociatedTrackList().size() != trackList.size() )
+            continue;
+
+          pandora::ClusterList reclusterList;
+          reclusterList.insert(pReclusterCluster);
+
+          ReclusterResult reclusterResult;
+          if(pandora::STATUS_CODE_SUCCESS != ReclusterHelper::ExtractReclusterResults(this->GetPandora(), *pReclusterClusterList, reclusterResult))
+            continue;
+
+          const float newChi(reclusterResult.GetChi());
+          const float newChi2(reclusterResult.GetChi2());
+
+          std::cout << "reclustering algorithm: " << clusteringAlgIter - m_clusteringAlgorithmList.begin()
+                    << ", the new chi: " << newChi << std::endl;
+
+          if(newChi2 < bestChi*bestChi)
+          {
+            bestChi = newChi;
+            bestReclusterClusterListName = reclusterClusterListName;
+#ifdef __DEBUG__
+			std::cout << "a best clustering: " << bestReclusterClusterListName << std::endl;
+#endif
+
+            if(newChi2 < m_maxChi2ToStopReclustering)
+              break;
+          }
+
+          break;
+        }
+      }
+
+      // Recreate track-cluster associations for chosen recluster candidates
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::TemporarilyReplaceCurrentList<pandora::Cluster>(*this, bestReclusterClusterListName));
+
+#ifdef __DEBUG__
+	  std::cout << "m_trackClusterAssociationAlgName: " << m_trackClusterAssociationAlgName << std::endl;
+#endif
+
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
+
+      // tidy the cluster vector used for reclustering
+      if( originalClusterListName != bestReclusterClusterListName )
+      {
+        // remove clusters used in reclustering from the list
+        for(UIntVector::const_iterator iter = originalClusterIndices.begin(), endIter = originalClusterIndices.end() ;
+            endIter != iter ; ++iter) 
+		{
+#ifdef __DEBUG__
+		  std::cout << "the cluster to be removed: " << clusterVector[*iter] << ", " << (clusterVector[*iter])->GetElectromagneticEnergy() << std::endl;
+#endif
+
+		  pandora::ClusterList::const_iterator cluIter = photonClusters.find(clusterVector[*iter]);
+		  if(cluIter != photonClusters.end())
+		  {
+			  photonClusters.erase(cluIter);
+		  }
+
+          clusterVector[*iter] = NULL;
+		}
+
+#ifdef __DEBUG__
+		std::cout << "clusterVector size:: " << clusterVector.size() << std::endl;
+#endif
+
+        // add the newly created clusters to the list
+        const pandora::ClusterList *pReclusterClusterList = NULL;
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, bestReclusterClusterListName, pReclusterClusterList));
+
+#ifdef __DEBUG__
+		std::cout << "pReclusterClusterList size: " << pReclusterClusterList->size() << std::endl;
+#endif
+
+        for(pandora::ClusterList::const_iterator clusterIter = pReclusterClusterList->begin(), clusterEndIter = pReclusterClusterList->end() ;
+            clusterEndIter != clusterIter ; ++ clusterIter)
+        {
+          const pandora::Cluster *const pReclusterCluster = *clusterIter;
+
+#ifdef __DEBUG__
+		  std::cout << "check the cluster vector: " << pReclusterCluster << ", energy: " 
+		  	      << pReclusterCluster->GetElectromagneticEnergy() << std::endl;
+#endif
+
+          if(pReclusterCluster->GetAssociatedTrackList().empty())
+		  {
+#ifdef __DEBUG__
+			std::cout << "the cluster asso. track is " <<  pReclusterCluster->GetAssociatedTrackList().size() 
+				      << ", it is neutral" << std::endl;
+#endif
+            continue;
+		  }
+
+          clusterVector.push_back(pReclusterCluster);
+#ifdef __DEBUG__
+		  std::cout << "a cluster added in cluster vector: " << pReclusterCluster << std::endl;
+#endif
+        }
+      }
+
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, bestReclusterClusterListName));
+    }
+
+	// put photon clusters back from clusters
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
+	        		                PandoraContentApi::SaveList(*this, treeName, photonName, photonClusters));
+
+#ifdef __DEBUG__
+	std::cout << "pClusterList: " << pClusterList->size() << std::endl;
+	std::cout << "pPhotonClusterList: " << pPhotonClusterList->size() << std::endl;
+#endif
 
     return pandora::STATUS_CODE_SUCCESS;
-}
+  }
 
-//------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode MissingEnergyReclusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
-{
+  pandora::StatusCode MissingEnergyReclusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+  {
     m_minTrackAssociations = 1;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-                                    "MinTrackAssociations", m_minTrackAssociations));
+        "MinTrackAssociations", m_minTrackAssociations));
 
     m_maxTrackAssociations = 1;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-                                    "MaxTrackAssociations", m_maxTrackAssociations));
+        "MaxTrackAssociations", m_maxTrackAssociations));
 
     m_minChi2ToRunReclustering = 1.8f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-                                    "MinChi2ToRunReclustering", m_minChi2ToRunReclustering));
+        "MinChi2ToRunReclustering", m_minChi2ToRunReclustering));
 
     m_maxChi2ToStopReclustering = 0.5f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-                                    "MaxChi2ToStopReclustering", m_maxChi2ToStopReclustering));
+        "MaxChi2ToStopReclustering", m_maxChi2ToStopReclustering));
 
     m_maxClusterHitsDistance = 70.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-                                    "MaxClusterHitsDistance", m_maxClusterHitsDistance));
+        "MaxClusterHitsDistance", m_maxClusterHitsDistance));
 
     m_maxNeighborClusterAngle = 0.5f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-                                    "MaxNeighborClusterAngle", m_maxNeighborClusterAngle));
+        "MaxNeighborClusterAngle", m_maxNeighborClusterAngle));
 
     m_minTrackMomentum = 0.8f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-                                    "MinTrackMomentum", m_minTrackMomentum));
+        "MinTrackMomentum", m_minTrackMomentum));
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithmList(*this, xmlHandle,
-                             "clusteringAlgorithms", m_clusteringAlgorithmList));
+        "clusteringAlgorithms", m_clusteringAlgorithmList));
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
-                             "ClusterAssociation", m_associationAlgorithmName));
+        "ClusterAssociation", m_associationAlgorithmName));
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
-                             "TrackClusterAssociation", m_trackClusterAssociationAlgName));
+        "TrackClusterAssociation", m_trackClusterAssociationAlgName));
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
-                                    "Monitoring", m_monitoringAlgorithmName));
+        "Monitoring", m_monitoringAlgorithmName));
 
     return pandora::STATUS_CODE_SUCCESS;
-}
+  }
 
 
-}
+} 
 

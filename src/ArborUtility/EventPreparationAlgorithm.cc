@@ -79,11 +79,16 @@ pandora::StatusCode EventPreparationAlgorithm::Run()
     // Save the lists, setting one of the list to be the current list for subsequent algorithms
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, muonCaloHitList, m_outputMuonCaloHitListName));
 
+	std::cout << "muonCaloHitList: " << muonCaloHitList.size() << std::endl;
+
     if(m_mergeECalHCalCaloHitLists)
     {
     	pandora::CaloHitList caloHitList;
     	caloHitList.insert(ecalCaloHitList.begin(), ecalCaloHitList.end());
     	caloHitList.insert(hcalCaloHitList.begin(), hcalCaloHitList.end());
+
+		//Bo: insert muon hits
+    	caloHitList.insert(muonCaloHitList.begin(), muonCaloHitList.end());
 
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, caloHitList, m_outputCaloHitListName));
     }

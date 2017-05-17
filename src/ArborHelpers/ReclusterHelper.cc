@@ -29,6 +29,8 @@
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/CaloHitHelper.h"
 
+//#define __DEBUG__
+
 namespace arbor_content
 {
 
@@ -45,8 +47,28 @@ namespace arbor_content
     if ((trackEnergySum < std::numeric_limits<float>::epsilon()) || (hadronicEnergyResolution < std::numeric_limits<float>::epsilon()))
       throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
+	const pandora::ParticleId *const pParticleId(pandora.GetPlugins()->GetParticleId());
+
+    float comparisonEnergy(0.);
+
+    if (pParticleId->IsEmShower(pCluster))
+    {   
+        comparisonEnergy = pCluster->GetElectromagneticEnergy();
+    }       
+    else
+    {   
+        comparisonEnergy = pCluster->GetHadronicEnergy();
+    }
+
+	//comparisonEnergy = pCluster->GetTrackComparisonEnergy(pandora);
     const float sigmaE(hadronicEnergyResolution * trackEnergySum / std::sqrt(trackEnergySum));
-    const float chi((pCluster->GetTrackComparisonEnergy(pandora) - trackEnergySum) / (energyResolutionFactor * sigmaE));
+    const float chi((comparisonEnergy - trackEnergySum) / (energyResolutionFactor * sigmaE));
+
+#ifdef __DEBUG__
+	std::cout << "Sigma_h: " << hadronicEnergyResolution << ", trackEnergySum: " << trackEnergySum  
+		      << ", Track_comp: " << comparisonEnergy << ", energyResolutionFactor: " << energyResolutionFactor
+		      << ", chi: " << chi << std::endl;
+#endif
 
     return chi;
   }

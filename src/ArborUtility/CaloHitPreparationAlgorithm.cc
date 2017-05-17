@@ -41,6 +41,8 @@ namespace arbor_content
     const pandora::CaloHitList *pCaloHitList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
 
+	std::cout << "****************** pCaloHitList size: " << pCaloHitList->size() << std::endl;
+
     if(pCaloHitList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
@@ -174,7 +176,7 @@ namespace arbor_content
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::AlterMetadata(*this, pCaloHit, caloHitMetadata));
       }
     }
-	//std::cout << "# of hits: " << nHits << std::endl;
+	std::cout << "# of hits: " << nHits << std::endl;
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FlagIsolatedHitsWithTracks(orderedCaloHitList));
 

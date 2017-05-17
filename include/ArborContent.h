@@ -48,9 +48,12 @@
 
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
+#include "ArborHelpers/ClusterPropertiesHelper.h"
 #include "ArborHelpers/GeometryHelper.h"
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/SortingHelper.h"
+#include "ArborHelpers/BDTBasedClusterIdHelper.h"
+#include "ArborHelpers/ClusterPropertiesFillingHelper.h"
 
 #include "ArborMonitoring/VisualMonitoringAlgorithm.h"
 #include "ArborMonitoring/PerformanceMonitoringAlgorithm.h"
@@ -60,6 +63,7 @@
 
 #include "ArborParticleId/FinalParticleIdAlgorithm.h"
 #include "ArborParticleId/PhotonReconstructionAlgorithm.h"
+#include "ArborParticleId/SingleClusterIdAlgorithm.h"
 
 #include "ArborPlugins/ArborBFieldPlugin.h"
 #include "ArborPlugins/ArborPseudoLayerPlugin.h"
@@ -117,6 +121,7 @@ public:
     d("SingleParticleMonitoring",            arbor_content::SingleParticleMonitoringAlgorithm::Factory) \
     d("FinalParticleId",                     arbor_content::FinalParticleIdAlgorithm::Factory) \
     d("PhotonReconstruction",                arbor_content::PhotonReconstructionAlgorithm::Factory) \
+    d("SingleClusterId",                     arbor_content::SingleClusterIdAlgorithm::Factory) \
     d("PfoCreation",                         arbor_content::PfoCreationAlgorithm::Factory) \
     d("EnergyExcessReclustering",            arbor_content::EnergyExcessReclusteringAlgorithm::Factory) \
     d("MissingEnergyReclustering",           arbor_content::MissingEnergyReclusteringAlgorithm::Factory) \
