@@ -55,6 +55,18 @@ public:
 private:
 	pandora::StatusCode Run();
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+  
+	pandora::StatusCode PrepareClusters();
+	pandora::StatusCode ReclusterCluster();
+  
+	bool ShouldReclusterCluster(const pandora::Cluster *const pCluster);
+	bool IsBestReclustering(const std::string reclusterClusterListName);
+
+    pandora::StatusCode SearchNearbyClusters(const pandora::Cluster *const pCluster, pandora::ClusterList& reclusterClusterList);
+	pandora::StatusCode ExecuteReclustering(const pandora::Cluster *const pCluster, pandora::ClusterList& reclusterClusterList);
+  
+	pandora::StatusCode ReAssociateTrackCluster();
+  
 
 private:
 	unsigned int                        m_minTrackAssociations;
@@ -66,11 +78,27 @@ private:
 	float                               m_maxNeighborClusterAngle;
 	float                               m_minTrackMomentum;
 
+	float                               m_bestChi;
+
 	pandora::StringVector	            m_clusteringAlgorithmList;
 
 	std::string                         m_associationAlgorithmName;
 	std::string                         m_trackClusterAssociationAlgName;
 	std::string                         m_monitoringAlgorithmName;
+
+	std::string                         m_clusterName;
+	std::string                         m_photonClusterName;
+
+    std::string                         m_bestReclusterClusterListName;
+
+    pandora::ClusterVector              m_clusterVector;
+
+    const pandora::ClusterList*         m_pClusterList;
+    const pandora::ClusterList*         m_pPhotonClusterList;
+
+	// FIXME:: maybe we can just use m_pPhotonClusterList ...
+    pandora::ClusterList                m_photonList;
+
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

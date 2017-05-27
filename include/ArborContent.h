@@ -54,6 +54,7 @@
 #include "ArborHelpers/SortingHelper.h"
 #include "ArborHelpers/BDTBasedClusterIdHelper.h"
 #include "ArborHelpers/ClusterPropertiesFillingHelper.h"
+#include "ArborHelpers/PrintTrackCluster.h"
 
 #include "ArborMonitoring/VisualMonitoringAlgorithm.h"
 #include "ArborMonitoring/PerformanceMonitoringAlgorithm.h"
