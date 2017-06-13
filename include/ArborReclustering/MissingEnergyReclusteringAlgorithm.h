@@ -83,30 +83,28 @@ private:
 	float                               m_maxClusterHitsDistance;
 	float                               m_maxNeighborClusterAngle;
 	float                               m_minTrackMomentum;
-	float                               m_bestChi;
 
 	pandora::StringVector	            m_clusteringAlgorithmList;
-
 	std::string                         m_associationAlgorithmName;
 	std::string                         m_trackClusterAssociationAlgName;
 	std::string                         m_monitoringAlgorithmName;
 
-	std::string                         m_clusterName;
-	std::string                         m_photonClusterName;
+	float                               m_bestChi;
 
-    std::string                         m_bestReclusterClusterListName;
-	std::string                         m_originalClusterListName;
+	static std::string                  m_clusterName;
+	static std::string                  m_photonClusterName;
+    static std::string                  m_bestReclusterClusterListName;
+	static std::string                  m_originalClusterListName;
+
+    static UIntVector                   m_originalClusterIndices;
 
     //pandora::ClusterVector              m_clusterVector;
 
-    const pandora::ClusterList*         m_pClusterList;
-    const pandora::ClusterList*         m_pPhotonClusterList;
+    //const pandora::ClusterList*         m_pClusterList;
+    //const pandora::ClusterList*         m_pPhotonClusterList;
 
 	// FIXME:: maybe we can just use m_pPhotonClusterList ...
     //pandora::ClusterList                m_photonList;
-
-    UIntVector                          m_originalClusterIndices;
-
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

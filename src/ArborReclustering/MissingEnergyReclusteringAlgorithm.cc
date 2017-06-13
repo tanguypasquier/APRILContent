@@ -27,7 +27,6 @@
 
 #define __DEBUG__
 
-
 #include "ArborReclustering/MissingEnergyReclusteringAlgorithm.h"
 
 #include "Pandora/AlgorithmHeaders.h"
@@ -36,8 +35,16 @@
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/SortingHelper.h"
-#include "ArborHelpers/BDTBasedClusterIdHelper.h"
+//#include "ArborHelpers/BDTBasedClusterIdHelper.h"
 #include "ArborHelpers/TrackClusterPrintHelper.h"
+
+std::string arbor_content::MissingEnergyReclusteringAlgorithm::m_clusterName = "";
+std::string arbor_content::MissingEnergyReclusteringAlgorithm::m_photonClusterName = "";
+std::string arbor_content::MissingEnergyReclusteringAlgorithm::m_originalClusterListName = "";
+std::string arbor_content::MissingEnergyReclusteringAlgorithm::m_bestReclusterClusterListName = "";
+
+arbor_content::MissingEnergyReclusteringAlgorithm::UIntVector 
+arbor_content::MissingEnergyReclusteringAlgorithm::m_originalClusterIndices = UIntVector(1,0);
 
 namespace arbor_content
 {
@@ -48,11 +55,10 @@ namespace arbor_content
 	m_clusterName = "PrimaryTrees";
 	m_photonClusterName = "PhotonClusters";
 
-#if 0
+	// FIXME
 	// Do we really need this recalculating ? optional ?
     // start by recalculating track-cluster association
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
-#endif
 
 	//////
 	std::cout << "Preparing clusters" << std::endl;
@@ -64,21 +70,25 @@ namespace arbor_content
 	PrepareClusters(clusterVector, photonList);
 
 	//std::cout << "Recluster clusters" << std::endl;
-	//ReclusterCluster();
+	ReclusterCluster(clusterVector, photonList);
 
 	/////////////// do we need to check the of each track ? the unassociated track ?
 
     return pandora::STATUS_CODE_SUCCESS;
   }
 
+#if 1
   //////////////////////////////////////////////
   pandora::StatusCode MissingEnergyReclusteringAlgorithm::PrepareClusters(pandora::ClusterVector& clusterVector,
 		                                                                  pandora::ClusterList&   photonList)
   {
     // get current cluster list
-    m_pClusterList = NULL;
+	const pandora::ClusterList* clusterList = NULL;
+	clusterList = NULL;
+
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, clusterList));
 	
-	if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, m_clusterName, m_pClusterList))
+	if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, m_clusterName, clusterList))
 	{
 #ifdef __DEBUG__
 		std::cout << m_clusterName << " is not found." << std::endl;
@@ -93,7 +103,7 @@ namespace arbor_content
 
 	// we include the photon clusters in reclustering, since there is a probability that hadronic
 	// cluster is identified as photon cluster
-    m_pPhotonClusterList = NULL;
+    const pandora::ClusterList* m_pPhotonClusterList = NULL;
 
     if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, m_photonClusterName, m_pPhotonClusterList)) 
 	{
@@ -110,22 +120,22 @@ namespace arbor_content
 
 #ifdef __DEBUG__ 
 #if 0
-	std::cout << "Print clusters: m_pClusterList " << std::endl;
-    if(m_pClusterList !=NULL) TrackClusterPrintHelper::PrintCluster(m_pClusterList);
+	std::cout << "Print clusters: clusterList " << std::endl;
+    if(clusterList != NULL) TrackClusterPrintHelper::PrintCluster(clusterList);
 	std::cout << "Print clusters: m_pPhotonClusterList " << std::endl;
 	if(m_pPhotonClusterList != NULL) TrackClusterPrintHelper::PrintCluster(m_pPhotonClusterList);
 #endif
 #endif
 
-    if(m_pClusterList !=NULL && !m_pClusterList->empty())
+    if(clusterList != NULL && !clusterList->empty())
 	{
 		std::cout << "insert cluster" << std::endl;
-		clusterVector.insert(clusterVector.begin(), m_pClusterList->begin(), m_pClusterList->end());
+		clusterVector.insert(clusterVector.begin(), clusterList->begin(), clusterList->end());
     
 		std::cout << "done ..." << std::endl;
 
 #ifdef __DEBUG__ 
-		std::cout << "cluster size: " << m_pClusterList->size() << ", clusterVector size: " << clusterVector.size() << std::endl;
+		std::cout << "cluster size: " << clusterList->size() << ", clusterVector size: " << clusterVector.size() << std::endl;
 #endif
 	}
 
@@ -162,6 +172,10 @@ namespace arbor_content
 
 	std::reverse(clusterVector.begin(), clusterVector.end());
 
+	// m_photonList is the recorder of all clusters in the photon cluster list
+	// maybe just using pPhotonClusterList is OK ...
+	photonList.insert(m_pPhotonClusterList->begin(), m_pPhotonClusterList->end());
+
 #ifdef __DEBUG__
 	std::cout << "-----------------> the sorted cluster:" << std::endl;
 
@@ -179,9 +193,6 @@ namespace arbor_content
 	}
 #endif
 
-	// m_photonList is the recorder of all clusters in the photon cluster list
-	// maybe just using pPhotonClusterList is OK ...
-	photonList.insert(m_pPhotonClusterList->begin(), m_pPhotonClusterList->end());
 
 	// move all clusters in the photon cluster list into the cluster list
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
@@ -189,7 +200,9 @@ namespace arbor_content
 
 	return pandora::STATUS_CODE_SUCCESS;
   }
+#endif
 
+#if 1
   pandora::StatusCode MissingEnergyReclusteringAlgorithm::ReclusterCluster(pandora::ClusterVector& clusterVector,
 		                                                                   pandora::ClusterList&   photonList)
   {
@@ -199,16 +212,15 @@ namespace arbor_content
       const pandora::Cluster *const pCluster = clusterVector[i];
 
 	  if( NULL == pCluster || !ShouldReclusterCluster(pCluster) ) continue;
+	  std::cout << "deal with cluster: " << pCluster->GetElectromagneticEnergy() << std::endl;
 
       // the clusters and tracks for reclustering
-	
       pandora::ClusterList reclusterClusterList;
       reclusterClusterList.insert(pCluster);
       pandora::TrackList reclusterTrackList(pCluster->GetAssociatedTrackList());
 
 	  // FIXME: maybe should set the vector as this
       // UIntVector originalClusterIndices(1, i);  // one int with value i
-
 	  m_originalClusterIndices.clear();
 	  m_originalClusterIndices.push_back(i);
 
@@ -223,14 +235,14 @@ namespace arbor_content
 
 	  /////
 	  TidyClusters(clusterVector, photonList);
+
+  	  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, m_bestReclusterClusterListName));
     }
 
-#if 0
 	// put photon clusters back from clusters
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
-	        		                PandoraContentApi::SaveList(*this, m_clusterName, m_photonClusterName, m_photonList));
+	        		                PandoraContentApi::SaveList(*this, m_clusterName, m_photonClusterName, photonList));
 
-#endif
 
 #if 0
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
@@ -259,6 +271,8 @@ namespace arbor_content
       if(trackEnergySum < m_minTrackMomentum) return false;
 
       const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList));
+	  m_bestChi = chi;
+	  
 
 #ifdef __DEBUG__
 	  std::cout << "chi: " << chi << ", minChi2: " << m_minChi2ToRunReclustering << ", trackEnergySum: " << trackEnergySum 
@@ -292,12 +306,14 @@ namespace arbor_content
         const pandora::Cluster *const pOtherCluster = clusterVector[j];
         if((NULL == pOtherCluster) || (pCluster == pOtherCluster)) continue;
 
+#if 0
 		float bdtVal(1000.);
 		BDTBasedClusterIdHelper::BDTEvaluate(pOtherCluster, bdtVal);
 
 		// if it is photon cluster which is identified by BDT
 		//FIXME: cut for BDT
 		if(bdtVal>0.2) continue;
+#endif
 
 		// only neutral cluster ???
         if( !pOtherCluster->GetAssociatedTrackList().empty() ) continue;
@@ -328,6 +344,9 @@ namespace arbor_content
         }
       }
 
+	  std::cout << "the nearby clusters: " << std::endl;
+	  TrackClusterPrintHelper::PrintCluster(&reclusterClusterList);
+
       if(1 == reclusterClusterList.size()) 
 	  { 
 		  return pandora::STATUS_CODE_FAILURE;
@@ -342,10 +361,6 @@ namespace arbor_content
 		  pandora::ClusterList& reclusterClusterList)
   {
 	  //------------>>>>>> do reclustering 
-	  // FIXME:: need to get chi ...
-      //float bestChi(chi);
-      //float bestChi(0.);
-
       pandora::TrackList reclusterTrackList(pCluster->GetAssociatedTrackList());
 
       // initialize reclustering
@@ -382,7 +397,6 @@ namespace arbor_content
 
       }// for each algorithm
 
-  	  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::EndReclustering(*this, m_bestReclusterClusterListName));
 
 	return pandora::STATUS_CODE_SUCCESS;
   }
@@ -391,6 +405,10 @@ namespace arbor_content
   {
         const pandora::ClusterList *pReclusterClusterList = NULL;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, reclusterClusterListName, pReclusterClusterList));
+
+		bool isBestReclustering = false;
+
+		std::cout << "pReclusterClusterList size: " << pReclusterClusterList->size() << std::endl;
 
         for(pandora::ClusterList::const_iterator clusterIter = pReclusterClusterList->begin(), clusterEndIter = pReclusterClusterList->end() ;
             clusterEndIter != clusterIter ; ++ clusterIter)
@@ -411,21 +429,26 @@ namespace arbor_content
           const float newChi(reclusterResult.GetChi());
           const float newChi2(reclusterResult.GetChi2());
 
+		  std::cout << "reclustering algorithm: " << ", the new chi: " << newChi 
+			        << ", m_bestChi: " << m_bestChi << std::endl;  
+
           if(newChi2 < m_bestChi*m_bestChi)
           {
             m_bestChi = newChi;
-
+			isBestReclustering = true;
+			std::cout << "a best clustering: " << std::endl;
+			
             if(newChi2 < m_maxChi2ToStopReclustering)
               break;
           }
 
-          break;
+		  // FIXME
+          //break;
         }
 		//------->>>> record the best reclustering
 
 		// FIXME
-		return true;
-		//return trueorfalse;
+		return isBestReclustering;
   }
 
   pandora::StatusCode MissingEnergyReclusteringAlgorithm::ReAssociateTrackCluster()
@@ -463,7 +486,6 @@ namespace arbor_content
         const pandora::ClusterList *pReclusterClusterList = NULL;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetList(*this, m_bestReclusterClusterListName, pReclusterClusterList));
 
-
         for(pandora::ClusterList::const_iterator clusterIter = pReclusterClusterList->begin(), clusterEndIter = pReclusterClusterList->end() ;
             clusterEndIter != clusterIter ; ++ clusterIter)
         {
@@ -477,6 +499,8 @@ namespace arbor_content
     return pandora::STATUS_CODE_SUCCESS;
   }
 
+
+#endif
 
 #endif
 
@@ -517,7 +541,7 @@ namespace arbor_content
         "clusteringAlgorithms", m_clusteringAlgorithmList));
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
-        "ClusterAssociation", m_associationAlgorithmName));
+       "ClusterAssociation", m_associationAlgorithmName));
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
         "TrackClusterAssociation", m_trackClusterAssociationAlgName));
