@@ -89,6 +89,7 @@ namespace arbor_content
           const pandora::CartesianVector position2(pCaloHit2->GetPositionVector());
 
           // WTF ??
+          // N.B. how about the case of hits in different time but the same position ?
           if(position == position2)
             continue;
 
@@ -302,4 +303,3 @@ namespace arbor_content
 
 
 } 
-
