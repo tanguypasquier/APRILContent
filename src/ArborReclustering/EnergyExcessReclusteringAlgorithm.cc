@@ -34,20 +34,14 @@
 #include "ArborHelpers/ReclusterHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/SortingHelper.h"
-#include "ArborHelpers/TrackClusterPrintHelper.h"
 
 namespace arbor_content
 {
 
   pandora::StatusCode EnergyExcessReclusteringAlgorithm::Run()
   {
-
-#if 0
-	std::cout << "--------- >>>>>> Running the track-cluster association algorithm" << std::endl;
-
     // start by recalculating track-cluster association
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_trackClusterAssociationAlgName));
-#endif
 
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
@@ -63,21 +57,19 @@ namespace arbor_content
     {
       const pandora::Cluster *const pCluster = *iter;
 
-	  std::cout << "----> EnergyExcess: cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
+	  //std::cout << "EnergyExcess: cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
       const pandora::TrackList &trackList(pCluster->GetAssociatedTrackList());
-	  if(trackList.empty()) std::cout << "   --->no associatied track " << std::endl;
-	  if(trackList.size()>1) std::cout << "   --->the size of associatied track is greater than 1" << std::endl;
 
       // need exactly one track
       if(trackList.empty() || trackList.size() > 1)
         continue;
 
-	  const pandora::Track* track = *(trackList.begin());
-	  std::cout << "   ---track energy: " << track->GetEnergyAtDca() << ", m_minTrackMomentum: " << m_minTrackMomentum << std::endl;
+	  //const pandora::Track* track = *(trackList.begin());
+	  //std::cout << "track energy: " << track->GetEnergyAtDca() << ", m_minTrackMomentum: " << m_minTrackMomentum << std::endl;
 
       // negative chi means missing energy in the cluster
       const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList));
-	  std::cout << "   ---chi: " << chi << ", chi2: " << chi*chi << ", m_minChi2ToRunReclustering: " << m_minChi2ToRunReclustering << std::endl;
+	  //std::cout << "chi: " << chi << ", chi2: " << chi*chi << ", m_minChi2ToRunReclustering: " << m_minChi2ToRunReclustering << std::endl;
 
       // check for chi2, energy excess and asymmetric cluster
       if( (chi*chi < m_minChi2ToRunReclustering || chi < 0.f)  || ((*trackList.begin())->GetEnergyAtDca() < m_minTrackMomentum))
@@ -174,9 +166,6 @@ namespace arbor_content
 
       (*iter) = NULL;
     }
-
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
-	TrackClusterPrintHelper::PrintCluster(pClusterList);
 
     return pandora::STATUS_CODE_SUCCESS;
   }

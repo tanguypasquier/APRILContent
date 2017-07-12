@@ -42,6 +42,7 @@ namespace arbor_content
 	std::cout << "timing:  " << m_timing << std::endl;
 	std::cout << "time cut:  " << m_timeCut << std::endl;
 
+
     const pandora::CaloHitList *pCaloHitList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
 
@@ -65,13 +66,17 @@ namespace arbor_content
 
 		// a calo hit list for late hits
 		pandora::CaloHitList caloLateHitList;
+	
 
 		for(pandora::CaloHitList::iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
 		{
 			float hitTime = (*iter)->GetTime();
+			const pandora::CartesianVector& hitPos  = (*iter)->GetPositionVector();
 #if 0
 			std::cout << "hit time: " << hitTime << std::endl;
 #endif
+
+			caloHitsMonitor->Fill(hitPos.GetX(), hitPos.GetY(), hitPos.GetZ(), hitTime);
 
 			if(hitTime < m_timeCut)
 				caloHitList.insert(*iter);
@@ -99,6 +104,23 @@ namespace arbor_content
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
+  }
+
+
+  pandora::StatusCode CaloHitTimingAlgorithm::Initialize()
+  {
+	  std::cout << "********* CaloHitTimingAlgorithm init ********" << std::endl;
+	  caloHitsMonitor = new TNtupleD("calohits", "calohits", "x:y:z:t");
+    
+	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  CaloHitTimingAlgorithm::~CaloHitTimingAlgorithm()
+  {
+	  std::cout << "********* CaloHitTimingAlgorithm destructor ********" << std::endl;
+	  //if(caloHitsMonitor != NULL) delete caloHitsMonitor;
+
+	  Algorithm::~Algorithm();
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

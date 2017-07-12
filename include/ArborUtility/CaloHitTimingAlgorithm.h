@@ -32,6 +32,9 @@
 #include "Pandora/Algorithm.h"
 #include "Pandora/PandoraInternal.h"
 
+#include "TNtupleD.h"
+
+
 namespace arbor_content
 {
 
@@ -50,20 +53,26 @@ public:
         pandora::Algorithm *CreateAlgorithm() const;
     };
 
+	~CaloHitTimingAlgorithm();
+
 private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+	pandora::StatusCode	Initialize();
 
     bool                            m_timing;
 
     float                           m_timeCut;
+
+	TNtupleD*                       caloHitsMonitor;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 inline pandora::Algorithm *CaloHitTimingAlgorithm::Factory::CreateAlgorithm() const
 {
-    return new CaloHitTimingAlgorithm();
+	CaloHitTimingAlgorithm * algo = new CaloHitTimingAlgorithm();
+	return algo;
 }
 
 } 
