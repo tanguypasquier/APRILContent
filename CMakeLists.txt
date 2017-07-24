@@ -2,7 +2,7 @@
 # cmake file for building ArborContent framework
 # @author Eté Rémi ,IPNL
 # Copyright (c) CNRS / IPNL
-CMAKE_MINIMUM_REQUIRED( VERSION 2.6 FATAL_ERROR )
+CMAKE_MINIMUM_REQUIRED( VERSION 2.8.2 FATAL_ERROR )
 #################################################
 
 # project name
@@ -83,7 +83,7 @@ LINK_LIBRARIES( ${PandoraSDK_LIBRARIES} )
 ADD_DEFINITIONS ( ${PandoraSDK_DEFINITIONS} )
 
 
-FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Core Matrix Eve Geom RGL EG TMVA) # minimum required ROOT version
+FIND_PACKAGE( ROOT 5.26.00 REQUIRED COMPONENTS Core Tree Physics Matrix Eve Geom RGL EG TMVA ) # minimum required ROOT version
 INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
 LINK_LIBRARIES( ${ROOT_LIBRARIES} ${ROOT_COMPONENT_LIBRARIES} )
 ADD_DEFINITIONS ( ${ROOT_DEFINITIONS} )
