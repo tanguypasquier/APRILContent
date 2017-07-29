@@ -114,7 +114,7 @@ inline bool pandora::PandoraInputType<arbor_content::SemiDigitalThresholdList>::
 
 	for(unsigned int i=0 ; i<list.size() ; i++)
 	{
-		if( !(IS_NAN(static_cast<unsigned int>(list.at(i))) || IS_INF(static_cast<unsigned int>(list.at(i)))) )
+		if( !(std::isnan(static_cast<unsigned int>(list.at(i))) || std::isinf(static_cast<unsigned int>(list.at(i)))) )
 			return false;
 	}
 
@@ -126,7 +126,7 @@ inline bool pandora::PandoraInputType<arbor_content::SemiDigitalThresholdList>::
 template <>
 inline bool pandora::PandoraInputType<arbor_content::SemiDigitalThreshold>::IsValid(const arbor_content::SemiDigitalThreshold &t) const
 {
-	return !(IS_NAN(static_cast<unsigned int>(t)) || IS_INF(static_cast<unsigned int>(t)));
+	return !(std::isnan(static_cast<unsigned int>(t)) || std::isinf(static_cast<unsigned int>(t)));
 }
 
 }

@@ -40,7 +40,7 @@ pandora::StatusCode ArborContentApi::AlterMetadata(const pandora::Algorithm &alg
   const pandora::CaloHit *const pPandoraCaloHit(pCaloHit);
   const PandoraContentApi::CaloHit::Metadata pandoraCaloHitMetadata(caloHitMetadata);
 
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AlterMetadata(algorithm, pPandoraCaloHit, pandoraCaloHitMetadata));
+  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::CaloHit::AlterMetadata(algorithm, pPandoraCaloHit, pandoraCaloHitMetadata));
 
   if(caloHitMetadata.m_surroundingEnergy.IsInitialized())
     ArborContentApi::Modifiable(pCaloHit)->m_surroundingEnergy = caloHitMetadata.m_surroundingEnergy.Get();
