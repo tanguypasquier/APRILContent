@@ -31,18 +31,18 @@ INCLUDE_DIRECTORIES( ./include )
 AUX_SOURCE_DIRECTORY( ./src/ ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborApi ArborContent_SRCS )
 AUX_SOURCE_DIRECTORY( ./src/ArborObjects ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborCheating ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborClustering ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborHelpers ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborMonitoring ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborPfoConstruction ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborParticleId ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborPlugins ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborReclustering ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborTools ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborTopologicalAssociation ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborTrackClusterAssociation ArborContent_SRCS )
-AUX_SOURCE_DIRECTORY( ./src/ArborUtility ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborCheating ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborClustering ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborHelpers ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborMonitoring ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborPfoConstruction ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborParticleId ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborPlugins ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborReclustering ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborTools ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborTopologicalAssociation ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborTrackClusterAssociation ArborContent_SRCS )
+#AUX_SOURCE_DIRECTORY( ./src/ArborUtility ArborContent_SRCS )
 
 ### C++11 check #############################################################
 
@@ -125,14 +125,14 @@ ENDIF()
 ### INSTALL #################################################################
 
 # install library
-INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
+#INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
 
 # install header files
-INSTALL( DIRECTORY include/ DESTINATION include )
+#INSTALL( DIRECTORY include/ DESTINATION include )
+INSTALL( FILES "ChangeLog.txt" DESTINATION "${PROJECT_SOURCE_DIR}/docs" OPTIONAL )
 
 # display some variables and write them to cache
 #PANDORA_DISPLAY_STD_VARIABLES()
 
 # generate and install following configuration files
 #PANDORA_GENERATE_PACKAGE_CONFIGURATION_FILES( ${PROJECT_NAME}Config.cmake ${PROJECT_NAME}ConfigVersion.cmake ${PROJECT_NAME}LibDeps.cmake )
-
