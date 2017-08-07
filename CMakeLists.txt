@@ -141,7 +141,7 @@ ENDIF()
 ### INSTALL #################################################################
 
 # install library
-INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
+#INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
 
 # install header files
 INSTALL( DIRECTORY include/ DESTINATION include )
