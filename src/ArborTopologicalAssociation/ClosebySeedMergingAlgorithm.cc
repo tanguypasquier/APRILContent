@@ -66,7 +66,7 @@ namespace arbor_content
         continue;
 
       pandora::CaloHitList clusterCaloHitList;
-      pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+      pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
       pandora::CaloHitList seedCaloHitList;
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, m_discriminateSeedLeafHits));

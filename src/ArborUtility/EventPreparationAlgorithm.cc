@@ -43,8 +43,8 @@ pandora::StatusCode EventPreparationAlgorithm::Run()
 
     for (pandora::TrackList::const_iterator iter = pCurrentTrackList->begin(), iterEnd = pCurrentTrackList->end(); iter != iterEnd; ++iter)
     {
-        if ((*iter)->GetDaughterTrackList().empty())
-            clusteringTrackList.insert(*iter);
+        if ((*iter)->GetDaughterList().empty())
+            clusteringTrackList.push_back(*iter);
     }
 
     // Save the filtered list and set it to be the current list for subsequent algorithms
@@ -61,18 +61,24 @@ pandora::StatusCode EventPreparationAlgorithm::Run()
     {
         if (pandora::MUON == (*hitIter)->GetHitType())
         {
-            if (!muonCaloHitList.insert(*hitIter).second)
-                return pandora::STATUS_CODE_ALREADY_PRESENT;
+			// FIXME:: check existence
+			muonCaloHitList.push_back(*hitIter);
+            //if (!muonCaloHitList.push_back(*hitIter).second)
+            //   return pandora::STATUS_CODE_ALREADY_PRESENT;
         }
         else if(pandora::ECAL == (*hitIter)->GetHitType())
         {
-            if (!ecalCaloHitList.insert(*hitIter).second)
-                return pandora::STATUS_CODE_ALREADY_PRESENT;
+			// FIXME
+            ecalCaloHitList.push_back(*hitIter);
+            //if (!ecalCaloHitList.push_back(*hitIter).second)
+            //    return pandora::STATUS_CODE_ALREADY_PRESENT;
         }
         else if(pandora::HCAL == (*hitIter)->GetHitType())
         {
-            if (!hcalCaloHitList.insert(*hitIter).second)
-                return pandora::STATUS_CODE_ALREADY_PRESENT;
+			// FIXME
+            hcalCaloHitList.push_back(*hitIter);
+            //if (!hcalCaloHitList.push_back(*hitIter).second)
+            //    return pandora::STATUS_CODE_ALREADY_PRESENT;
         }
     }
 
@@ -84,11 +90,11 @@ pandora::StatusCode EventPreparationAlgorithm::Run()
     if(m_mergeECalHCalCaloHitLists)
     {
     	pandora::CaloHitList caloHitList;
-    	caloHitList.insert(ecalCaloHitList.begin(), ecalCaloHitList.end());
-    	caloHitList.insert(hcalCaloHitList.begin(), hcalCaloHitList.end());
+    	caloHitList.insert(caloHitList.begin(), ecalCaloHitList.begin(), ecalCaloHitList.end());
+    	caloHitList.insert(caloHitList.end(), hcalCaloHitList.begin(), hcalCaloHitList.end());
 
 		//Bo: insert muon hits
-    	caloHitList.insert(muonCaloHitList.begin(), muonCaloHitList.end());
+    	caloHitList.insert(caloHitList.end(), muonCaloHitList.begin(), muonCaloHitList.end());
 
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, caloHitList, m_outputCaloHitListName));
     }

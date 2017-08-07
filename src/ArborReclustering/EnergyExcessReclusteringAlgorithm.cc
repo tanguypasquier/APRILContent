@@ -81,7 +81,7 @@ namespace arbor_content
 
       // prepare clusters and tracks for reclustering
       pandora::ClusterList reclusterClusterList;
-      reclusterClusterList.insert(pCluster);
+      reclusterClusterList.push_back(pCluster);
       pandora::TrackList reclusterTrackList(trackList);
 
       // initialize reclustering

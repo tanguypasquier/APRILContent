@@ -56,7 +56,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_FAILURE;
 
     pandora::CaloHitList clusterCaloHitList, nonIsolatedCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
     pandora::ClusterFitPointList clusterFitPointList;
     unsigned int innerPseudoLayer(std::numeric_limits<unsigned int>::max());
 
@@ -68,7 +68,7 @@ namespace arbor_content
       if(pCaloHit->IsIsolated())
         continue;
 
-      nonIsolatedCaloHitList.insert(pCaloHit);
+      nonIsolatedCaloHitList.push_back(pCaloHit);
       clusterFitPointList.push_back(pandora::ClusterFitPoint(pCaloHit));
 
       if(pCaloHit->GetPseudoLayer() < innerPseudoLayer)
@@ -233,7 +233,7 @@ namespace arbor_content
     unsigned int endPseudoLayer(0);
 
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     float totalEcalEnergy(0.f), totalHcalEnergy(0.f), totalOuterEmEnergy(0.f);
 
@@ -451,7 +451,7 @@ namespace arbor_content
 
   bool ArborPhotonId::IsMatch(const pandora::Cluster *const pCluster) const
   {
-    if (pandora::PHOTON == pCluster->GetParticleIdFlag())
+    if (pandora::PHOTON == pCluster->GetParticleId())
     {
       return true;
     }
@@ -481,7 +481,7 @@ namespace arbor_content
 
   bool ArborElectronId::IsMatch(const pandora::Cluster *const pCluster) const
   {
-    if (pandora::E_MINUS == std::abs(pCluster->GetParticleIdFlag()))
+    if (pandora::E_MINUS == std::abs(pCluster->GetParticleId()))
       return true;
 
     if(this->GetPandora().GetPlugins()->GetParticleId()->IsEmShower(pCluster))
@@ -523,7 +523,7 @@ namespace arbor_content
 
   bool ArborMuonId::IsMatch(const pandora::Cluster *const pCluster) const
   {
-    if (pandora::MU_MINUS == std::abs(pCluster->GetParticleIdFlag()))
+    if (pandora::MU_MINUS == std::abs(pCluster->GetParticleId()))
       return true;
 
     if(pCluster->GetAssociatedTrackList().empty())

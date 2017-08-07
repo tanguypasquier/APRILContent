@@ -55,7 +55,7 @@ namespace arbor_content
       if(!pTrack->CanFormPfo() || !pTrack->ReachesCalorimeter())
         continue;
 
-      if(!pTrack->GetDaughterTrackList().empty() || pTrack->HasAssociatedCluster())
+      if(!pTrack->GetDaughterList().empty() || pTrack->HasAssociatedCluster())
         continue;
 
       const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
@@ -82,7 +82,7 @@ namespace arbor_content
         if(!pCluster->GetAssociatedTrackList().empty())
           continue;
 
-        if(pCluster->IsPhotonFast(this->GetPandora()))
+        if(pCluster->PassPhotonId(this->GetPandora()))
           continue;
 
         const pandora::CartesianVector clusterInnerPosition(pCluster->GetCentroid(pCluster->GetInnerPseudoLayer()));
@@ -127,7 +127,7 @@ namespace arbor_content
           continue;
 
         pandora::TrackList trackList;
-        trackList.insert(pTrack);
+        trackList.push_back(pTrack);
 
         // calculate track-cluster compatibility
         const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList));

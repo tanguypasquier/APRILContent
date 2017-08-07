@@ -47,7 +47,7 @@ pandora::StatusCode ClusterPreparationAlgorithm::Run()
         for (pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(), clusterIterEnd = pClusterList->end(); clusterIter != clusterIterEnd; ++clusterIter)
         {
             if ((*clusterIter)->IsAvailable())
-                clustersToSave.insert(*clusterIter);
+                clustersToSave.push_back(*clusterIter);
 			//else
 				//std::cout << "a cluster is not available..." << std::endl;
         }

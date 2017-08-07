@@ -87,7 +87,7 @@ namespace arbor_content
       if( innerPseudoLayer > m_maxClusterInnerPseudoLayer )
         continue;
 
-      clusterList.insert(pCluster);
+      clusterList.push_back(pCluster);
     }
 
     // filter tracks
@@ -105,7 +105,7 @@ namespace arbor_content
       if(!pTrack->CanFormPfo())
         continue;
 
-      trackList.insert(pTrack);
+      trackList.push_back(pTrack);
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -184,8 +184,8 @@ namespace arbor_content
           }
 
           pandora::TrackList chiTrackList, newChiTrackList;
-          chiTrackList.insert(iter->second);
-          newChiTrackList.insert(pTrack);
+          chiTrackList.push_back(iter->second);
+          newChiTrackList.push_back(pTrack);
 
           const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pBestCluster, chiTrackList);
           const float newChi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pBestCluster, newChiTrackList);
@@ -359,7 +359,7 @@ namespace arbor_content
     helix.GetDistanceToPoint(innerCentroid, distanceToHelix);
 
     pandora::TrackList trackList;
-    trackList.insert(pTrack);
+    trackList.push_back(pTrack);
 
     const float openingAngle(trackMomentum.GetOpeningAngle(innerCentroid - trackProjection));
     const float chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), pCluster, trackList);

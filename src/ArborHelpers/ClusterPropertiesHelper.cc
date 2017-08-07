@@ -17,7 +17,7 @@ pandora::StatusCode arbor_content::ClusterPropertiesHelper::GetClusterProperties
 	float hcalEnergy(0.);
 
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
 	std::vector<TVector3> relativePositionVector;
 	std::vector<float> hitWeightVector;

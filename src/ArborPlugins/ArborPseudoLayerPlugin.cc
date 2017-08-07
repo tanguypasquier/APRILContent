@@ -209,9 +209,9 @@ namespace arbor_content
       throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
     }
 
-    const pandora::SubDetector::SubDetectorLayerList &subDetectorLayerList(subDetector.GetSubDetectorLayerList());
+    const pandora::SubDetector::SubDetectorLayerVector &subDetectorLayerList(subDetector.GetSubDetectorLayerVector());
 
-    for (pandora::SubDetector::SubDetectorLayerList::const_iterator iter = subDetectorLayerList.begin(), iterEnd = subDetectorLayerList.end(); iter != iterEnd; ++iter)
+    for (pandora::SubDetector::SubDetectorLayerVector::const_iterator iter = subDetectorLayerList.begin(), iterEnd = subDetectorLayerList.end(); iter != iterEnd; ++iter)
     {
       layerPositionList.push_back(iter->GetClosestDistanceToIp());
     }

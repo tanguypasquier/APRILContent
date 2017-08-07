@@ -154,12 +154,12 @@ namespace arbor_content
     if (mcParticleToHitListMap.end() == iter)
     {
       CaloHitList *const pCaloHitList = new CaloHitList();
-      pCaloHitList->insert(pCaloHitToAdd);
+      pCaloHitList->push_back(pCaloHitToAdd);
       (void) mcParticleToHitListMap.insert(MCParticleToHitListMap::value_type(pMCParticle, pCaloHitList));
     }
     else
     {
-      iter->second->insert(pCaloHitToAdd);
+      iter->second->push_back(pCaloHitToAdd);
     }
   }
 
@@ -196,7 +196,7 @@ namespace arbor_content
         }
 
         if (metadata.m_particleId.IsInitialized())
-          PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AlterMetadata(*this, pCluster, metadata));
+		  PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::AlterMetadata(*this, pCluster, metadata));
       }
       delete pCaloHitList;
     }

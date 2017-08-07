@@ -140,14 +140,14 @@ namespace arbor_content
         if(orderParameter< bestOrderParameter)
         {
           if(NULL != pBestCaloHit)
-            deleteConnectionCaloHitList.insert(pBestCaloHit);
+            deleteConnectionCaloHitList.push_back(pBestCaloHit);
 
           bestOrderParameter = orderParameter;
           pBestCaloHit = pFromCaloHit;
         }
         else
         {
-          deleteConnectionCaloHitList.insert(pFromCaloHit);
+          deleteConnectionCaloHitList.push_back(pFromCaloHit);
         }
       }
 

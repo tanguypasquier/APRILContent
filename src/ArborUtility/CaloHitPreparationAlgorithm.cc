@@ -207,7 +207,7 @@ namespace arbor_content
       if(!pTrack->ReachesCalorimeter())
         continue;
 
-      if (!pTrack->GetDaughterTrackList().empty())
+      if (!pTrack->GetDaughterList().empty())
         continue;
 
       const pandora::CartesianVector enteringPoint(pTrack->GetTrackStateAtCalorimeter().GetPosition());
@@ -242,10 +242,11 @@ namespace arbor_content
           // un-flag isolated hit if near helix
           if(distanceToHelix < maxDistanceToHelix)
           {
-            PandoraContentApi::CaloHitMetadata caloHitMetadata;
+            object_creation::CaloHitMetadata caloHitMetadata;
             caloHitMetadata.m_isIsolated = false;
 
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AlterMetadata(*this, pCaloHit, caloHitMetadata));
+            //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AlterMetadata(*this, pCaloHit, caloHitMetadata));
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::CaloHit::AlterMetadata(*this, pCaloHit, caloHitMetadata));
           }
         }
       }

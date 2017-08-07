@@ -62,7 +62,7 @@ namespace arbor_content
       if(!m_shouldMergeIsolatedHits && pCaloHit->IsIsolated())
         continue;
 
-      availableCaloHitList.insert(pCaloHit);
+      availableCaloHitList.push_back(pCaloHit);
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -95,7 +95,7 @@ namespace arbor_content
         continue;
       }
 
-      clusterList.insert(pAdditionalClusterList->begin(), pAdditionalClusterList->end());
+      clusterList.insert(clusterList.begin(), pAdditionalClusterList->begin(), pAdditionalClusterList->end());
     }
 
     clusterVector.insert(clusterVector.end(), clusterList.begin(), clusterList.end());

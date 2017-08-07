@@ -61,13 +61,13 @@ namespace arbor_content
       if(distance > m_distance)
         continue;
 
-      clusterCaloHitList.insert(pCaloHit);
+      clusterCaloHitList.push_back(pCaloHit);
     }
 
     if(!clusterCaloHitList.empty())
     {
       const pandora::Cluster *pCluster = NULL;
-      PandoraContentApi::ClusterParameters clusterParameters;
+	  object_creation::ClusterParameters clusterParameters;
       clusterParameters.m_caloHitList = clusterCaloHitList;
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, clusterParameters, pCluster));

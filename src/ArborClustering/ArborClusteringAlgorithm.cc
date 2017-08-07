@@ -76,11 +76,11 @@ namespace arbor_content
         continue;
 
       if(pCaloHit->GetHitType() == pandora::ECAL)
-        ecalCaloHitList.insert(pCaloHit);
+        ecalCaloHitList.push_back(pCaloHit);
       else if(pCaloHit->GetHitType() == pandora::HCAL)
-        hcalCaloHitList.insert(pCaloHit);
+        hcalCaloHitList.push_back(pCaloHit);
       else if(pCaloHit->GetHitType() == pandora::MUON)
-        muonCaloHitList.insert(pCaloHit);
+        muonCaloHitList.push_back(pCaloHit);
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -189,14 +189,15 @@ namespace arbor_content
         continue;
 
       pandora::CaloHitList clusterCaloHitList;
-      clusterCaloHitList.insert(pCaloHit);
+      clusterCaloHitList.push_back(pCaloHit);
 
       // get the whole tree calo hit list
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pCaloHit, FORWARD_DIRECTION, clusterCaloHitList));
 
       // create a cluster with this list
       const pandora::Cluster *pCluster = NULL;
-      PandoraContentApi::ClusterParameters clusterParameters;
+      //PandoraContentApi::ClusterParameters clusterParameters;
+	  object_creation::ClusterParameters clusterParameters;
       clusterParameters.m_caloHitList = clusterCaloHitList;
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, clusterParameters, pCluster));
@@ -209,11 +210,11 @@ namespace arbor_content
 
   pandora::StatusCode ArborClusteringAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
-    pandora::AlgorithmToolList algorithmToolList;
+    pandora::AlgorithmToolVector algorithmToolList;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
         "ECalConnectionTools", algorithmToolList));
 
-    for(pandora::AlgorithmToolList::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
+    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
         endIter != iter ; ++iter)
     {
       ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);
@@ -229,7 +230,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
         "HCalConnectionTools", algorithmToolList));
 
-    for(pandora::AlgorithmToolList::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
+    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
         endIter != iter ; ++iter)
     {
       ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);
@@ -245,7 +246,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
         "MuonConnectionTools", algorithmToolList));
 
-    for(pandora::AlgorithmToolList::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
+    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
         endIter != iter ; ++iter)
     {
       ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);
@@ -261,7 +262,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
         "AdditionalConnectionTools", algorithmToolList));
 
-    for(pandora::AlgorithmToolList::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
+    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
         endIter != iter ; ++iter)
     {
       ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);

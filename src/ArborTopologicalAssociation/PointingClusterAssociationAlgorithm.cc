@@ -74,7 +74,7 @@ namespace arbor_content
       if(!this->CanMergeCluster(pCluster))
         continue;
 
-      if(m_discriminatePhotonPid && pCluster->IsPhotonFast(this->GetPandora()))
+      if(m_discriminatePhotonPid && pCluster->PassPhotonId(this->GetPandora()))
         continue;
 
       clusterVector.push_back(pCluster);
@@ -101,7 +101,7 @@ namespace arbor_content
     if(nPseudoLayers < m_minNPseudoLayers || nPseudoLayers >= m_maxNPseudoLayers)
       return false;
 
-    if(m_discriminatePhotonPid && pCluster->IsPhotonFast(this->GetPandora()))
+    if(m_discriminatePhotonPid && pCluster->PassPhotonId(this->GetPandora()))
       return false;
 
     return true;

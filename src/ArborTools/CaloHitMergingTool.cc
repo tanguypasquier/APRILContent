@@ -109,7 +109,7 @@ namespace arbor_content
   float CaloHitMergingTool::GetMaxCaloHitDistance(const pandora::Algorithm &algorithm, const pandora::CaloHit *const pCaloHit, const pandora::Cluster *const pCluster) const
   {
     const pandora::Granularity &granularity(PandoraContentApi::GetGeometry(algorithm)->GetHitTypeGranularity(pCaloHit->GetHitType()));
-    const int pidFlag(pCluster->IsPhotonFast(algorithm.GetPandora()) ? pandora::PHOTON : pCluster->GetParticleIdFlag());
+    const int pidFlag(pCluster->PassPhotonId(algorithm.GetPandora()) ? pandora::PHOTON : pCluster->GetParticleId());
 
     // default distance for all clusters
     float maxCaloHitDistance((granularity <= pandora::FINE) ? m_maxCaloHitDistanceFine : m_maxCaloHitDistanceCoarse);

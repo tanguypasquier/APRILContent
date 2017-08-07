@@ -82,7 +82,7 @@ namespace arbor_content
       if(!pTrack->ReachesCalorimeter())
         continue;
 
-      if(!pTrack->GetDaughterTrackList().empty())
+      if(!pTrack->GetDaughterList().empty())
         continue;
 
       const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
@@ -110,7 +110,7 @@ namespace arbor_content
       const pandora::Cluster *const pCluster(*clusterIter);
 
       pandora::CaloHitList clusterCaloHits;
-      pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHits);
+      pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHits);
 
       pandora::CaloHitList caloHitListRemoval;
 
@@ -144,7 +144,7 @@ namespace arbor_content
           if(distanceToHelix > m_maxTrackHitDistance)
             continue;
 
-          caloHitListRemoval.insert(pCaloHit);
+          caloHitListRemoval.push_back(pCaloHit);
           ++totalRemovedNHits;
         }
       }

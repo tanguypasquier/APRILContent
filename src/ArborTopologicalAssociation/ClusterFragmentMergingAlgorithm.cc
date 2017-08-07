@@ -97,7 +97,7 @@ namespace arbor_content
           continue;
 
         pandora::CaloHitList parentClusterCaloHitList;
-        pParentCluster->GetOrderedCaloHitList().GetCaloHitList(parentClusterCaloHitList);
+        pParentCluster->GetOrderedCaloHitList().FillCaloHitList(parentClusterCaloHitList);
 
         pandora::CaloHitList leafCaloHitList;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractLeafCaloHitList(&parentClusterCaloHitList, leafCaloHitList));
@@ -225,7 +225,7 @@ namespace arbor_content
     if(nHitPerLayer < m_minNHitPerLayer)
       return false;
 
-    const bool isPhoton(pCluster->IsPhotonFast(this->GetPandora()));
+    const bool isPhoton(pCluster->PassPhotonId(this->GetPandora()));
 
     if(isPhoton)
       return false;

@@ -47,7 +47,7 @@ namespace arbor_content
   pandora::StatusCode AnalogicEnergyFunction::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const
   {
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     correctedEnergy = 0.f;
 
@@ -137,7 +137,7 @@ namespace arbor_content
     unsigned int NHadronicHit3 = 0;
 
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     float emEnergy = 0.f;
     float otherEnergy = 0.f;
@@ -254,7 +254,7 @@ namespace arbor_content
     float ecalGapEnergy(0), hcalGapEnergy(0);
 
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
         endIter != iter ; ++iter)
@@ -386,7 +386,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_SUCCESS;
 
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     const float clusterEnergy(pCluster->GetHadronicEnergy());
     float startingHadronicEnergySum(0.f);

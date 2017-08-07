@@ -104,16 +104,16 @@ namespace arbor_content
     {
       if(PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(*iter))
       {
-        PandoraContentApi::ClusterMetadata metadata;
+		object_creation::ClusterMetadata metadata;
         metadata.m_particleId = pandora::PHOTON;
 
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AlterMetadata(*this, *iter, metadata));
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::AlterMetadata(*this, *iter, metadata));
 
-        photonClusters.insert(*iter);
+        photonClusters.push_back(*iter);
       }
       else
       {
-        nonPhotonClusters.insert(*iter);
+        nonPhotonClusters.push_back(*iter);
       }
     }
 

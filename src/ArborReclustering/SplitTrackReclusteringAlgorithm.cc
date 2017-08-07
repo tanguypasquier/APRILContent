@@ -70,13 +70,13 @@ namespace arbor_content
 
       // Remove arbor connections
       pandora::CaloHitList clusterCaloHitList;
-      orderedCaloHitList.GetCaloHitList(clusterCaloHitList);
+      orderedCaloHitList.FillCaloHitList(clusterCaloHitList);
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::RemoveConnections(&clusterCaloHitList));
 
       // Initialize cluster fragmentation
       pandora::ClusterList clusterList;
-      clusterList.insert(pOriginalCluster);
+      clusterList.push_back(pOriginalCluster);
       std::string originalClustersListName, fragmentClustersListName;
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::InitializeFragmentation(*this, clusterList,

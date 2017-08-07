@@ -47,13 +47,13 @@ pandora::StatusCode IsolatedHitClusteringAlgorithm::Run()
 			hitEndIter != hitIter ; ++hitIter)
 	{
 		if((*hitIter)->IsIsolated())
-			isolatedCaloHitList.insert(*hitIter);
+			isolatedCaloHitList.push_back(*hitIter);
 	}
 
 	if(!isolatedCaloHitList.empty())
 	{
 		const pandora::Cluster *pCluster = NULL;
-		PandoraContentApi::ClusterParameters clusterParameters;
+		object_creation::ClusterParameters clusterParameters;
 		clusterParameters.m_caloHitList = isolatedCaloHitList;
 
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, clusterParameters, pCluster));

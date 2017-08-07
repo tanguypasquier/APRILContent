@@ -68,7 +68,7 @@ namespace arbor_content
 		pandora::CaloHitList caloLateHitList;
 	
 
-		for(pandora::CaloHitList::iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
+		for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
 		{
 			float hitTime = (*iter)->GetTime();
 			const pandora::CartesianVector& hitPos  = (*iter)->GetPositionVector();
@@ -79,9 +79,9 @@ namespace arbor_content
 			caloHitsMonitor->Fill(hitPos.GetX(), hitPos.GetY(), hitPos.GetZ(), hitTime);
 
 			if(hitTime < m_timeCut)
-				caloHitList.insert(*iter);
+				caloHitList.push_back(*iter);
 			else
-				caloLateHitList.insert(*iter);
+				caloLateHitList.push_back(*iter);
 		}
 
 		// Save the current list in a list with the specified new name

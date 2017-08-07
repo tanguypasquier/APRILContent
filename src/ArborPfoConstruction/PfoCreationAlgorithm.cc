@@ -120,14 +120,14 @@ pandora::StatusCode PfoCreationAlgorithm::CreateTrackBasedPfos() const
 pandora::StatusCode PfoCreationAlgorithm::PopulateTrackBasedPfo(const pandora::Track *const pTrack, PfoParameters &pfoParameters, const bool readSiblingInfo) const
 {
     // Add track to the pfo
-    pfoParameters.m_trackList.insert(pTrack);
+    pfoParameters.m_trackList.push_back(pTrack);
 	//std::cout << std::endl;
 
     // Add any cluster associated with this track to the pfo
     try
     {
         const pandora::Cluster *const pAssociatedCluster(pTrack->GetAssociatedCluster());
-        pfoParameters.m_clusterList.insert(pAssociatedCluster);
+        pfoParameters.m_clusterList.push_back(pAssociatedCluster);
 		//std::cout << "track, with energy: " << pTrack->GetEnergyAtDca() << ", added cluster" << std::endl;
     }
     catch (pandora::StatusCodeException &)
@@ -138,7 +138,7 @@ pandora::StatusCode PfoCreationAlgorithm::PopulateTrackBasedPfo(const pandora::T
     // Consider any sibling tracks
     if (readSiblingInfo)
     {
-        const pandora::TrackList &siblingTrackList(pTrack->GetSiblingTrackList());
+        const pandora::TrackList &siblingTrackList(pTrack->GetSiblingList());
 
         for (pandora::TrackList::const_iterator iter = siblingTrackList.begin(), iterEnd = siblingTrackList.end(); iter != iterEnd; ++iter)
         {
@@ -147,7 +147,7 @@ pandora::StatusCode PfoCreationAlgorithm::PopulateTrackBasedPfo(const pandora::T
     }
 
     // Consider any daughter tracks
-    const pandora::TrackList &daughterTrackList(pTrack->GetDaughterTrackList());
+    const pandora::TrackList &daughterTrackList(pTrack->GetDaughterList());
 
     for (pandora::TrackList::const_iterator iter = daughterTrackList.begin(), iterEnd = daughterTrackList.end(); iter != iterEnd; ++iter)
     {
@@ -161,13 +161,13 @@ pandora::StatusCode PfoCreationAlgorithm::PopulateTrackBasedPfo(const pandora::T
 
 pandora::StatusCode PfoCreationAlgorithm::SetTrackBasedPfoParameters(const pandora::Track *const pTrack, PfoParameters &pfoParameters) const
 {
-    const bool hasParent(!pTrack->GetParentTrackList().empty());
+    const bool hasParent(!pTrack->GetParentList().empty());
 
     if (hasParent)
         return pandora::STATUS_CODE_NOT_ALLOWED;
 
-    const bool hasSibling(!pTrack->GetSiblingTrackList().empty());
-    const bool hasDaughter(!pTrack->GetDaughterTrackList().empty());
+    const bool hasSibling(!pTrack->GetSiblingList().empty());
+    const bool hasDaughter(!pTrack->GetDaughterList().empty());
 
     if (hasSibling && hasDaughter)
         return pandora::STATUS_CODE_NOT_ALLOWED;
@@ -193,8 +193,8 @@ pandora::StatusCode PfoCreationAlgorithm::SetSiblingTrackBasedPfoParameters(cons
     float energy(0.f);
     pandora::CartesianVector momentum(0.f, 0.f, 0.f);
 
-    pandora::TrackList fullSiblingTrackList(pTrack->GetSiblingTrackList());
-    fullSiblingTrackList.insert(pTrack);
+    pandora::TrackList fullSiblingTrackList(pTrack->GetSiblingList());
+    fullSiblingTrackList.push_back(pTrack);
 
     for (pandora::TrackList::const_iterator iter = fullSiblingTrackList.begin(), iterEnd = fullSiblingTrackList.end(); iter != iterEnd; ++iter)
     {
@@ -231,7 +231,7 @@ pandora::StatusCode PfoCreationAlgorithm::SetDaughterTrackBasedPfoParameters(con
     float energy(0.f);
     pandora::CartesianVector momentum(0.f, 0.f, 0.f);
 
-    const pandora::TrackList &daughterTrackList(pTrack->GetDaughterTrackList());
+    const pandora::TrackList &daughterTrackList(pTrack->GetDaughterList());
     const unsigned int nDaughters(daughterTrackList.size());
 
     for (pandora::TrackList::const_iterator iter = daughterTrackList.begin(), iterEnd = daughterTrackList.end(); iter != iterEnd; ++iter)
@@ -307,7 +307,7 @@ pandora::StatusCode PfoCreationAlgorithm::CreateNeutralPfos() const
         if (pCluster->GetNCaloHits() < m_minHitsInCluster)
             continue;
 
-        const bool isPhoton(pCluster->IsPhotonFast(this->GetPandora()));
+        const bool isPhoton(pCluster->PassPhotonId(this->GetPandora()));
         float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
 
 		//std::cout << "----cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
@@ -336,7 +336,7 @@ pandora::StatusCode PfoCreationAlgorithm::CreateNeutralPfos() const
         pfoParameters.m_energy = clusterEnergy;
 
 		//std::cout << "----- energy: " << clusterEnergy << std::endl;
-        pfoParameters.m_clusterList.insert(pCluster);
+        pfoParameters.m_clusterList.push_back(pCluster);
 
         // Photon position: 0) unweighted inner centroid, 1) energy-weighted inner centroid, 2+) energy-weighted centroid for all layers
         pandora::CartesianVector positionVector(0.f, 0.f, 0.f);

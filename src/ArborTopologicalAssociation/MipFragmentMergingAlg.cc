@@ -217,7 +217,7 @@ namespace arbor_content
     if(pCluster->GetNCaloHits() < m_minDaughterClusterNHits)
       return false;
 
-    if(m_discriminatePhotonPid && pCluster->IsPhotonFast(this->GetPandora()))
+    if(m_discriminatePhotonPid && pCluster->PassPhotonId(this->GetPandora()))
       return false;
 
     try
@@ -257,7 +257,7 @@ namespace arbor_content
     if(pCluster->GetHadronicEnergy() < m_minParentClusterEnergy || pCluster->GetNCaloHits() < m_minParentClusterNHits)
       return false;
 
-    if(m_discriminatePhotonPid && pCluster->GetParticleIdFlag() == pandora::PHOTON)
+    if(m_discriminatePhotonPid && pCluster->GetParticleId() == pandora::PHOTON)
       return false;
 
     return true;
@@ -307,7 +307,9 @@ namespace arbor_content
         if(daughterInnerPseudoLayer <= parentOuterPseudoLayer)
           continue;
 
-        if(associatedDaughterClusterList.find(pDaughterCluster) != associatedDaughterClusterList.end())
+        //if(associatedDaughterClusterList.find(pDaughterCluster) != associatedDaughterClusterList.end())
+        if(std::find(associatedDaughterClusterList.begin(), associatedDaughterClusterList.end(), pDaughterCluster) 
+				!= associatedDaughterClusterList.end())
           continue;
 
         float oldChi(0.f), newChi(0.f);
@@ -339,8 +341,10 @@ namespace arbor_content
 
         if(possibleAssociation)
         {
-          if(!associatedDaughterClusterList.insert(pDaughterCluster).second)
-            continue;
+		  // FIXME:: check existence
+          associatedDaughterClusterList.push_back(pDaughterCluster);
+          //if(!associatedDaughterClusterList.push_back(pDaughterCluster).second)
+          //  continue;
 
           clusterToClusterMap[pDaughterCluster] = pParentCluster;
         }

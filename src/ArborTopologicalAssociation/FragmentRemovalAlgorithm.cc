@@ -81,7 +81,7 @@ namespace arbor_content
     {
       const pandora::Cluster *const pCluster(*clusterIter);
 
-      if(pCluster->IsPhotonFast(this->GetPandora()))
+      if(pCluster->PassPhotonId(this->GetPandora()))
         continue;
 
       // discriminate charged particles
@@ -139,7 +139,7 @@ namespace arbor_content
       const pandora::Cluster *const pFragmentCluster(*fragIter);
 
       pandora::CaloHitList fragmentCaloHitList;
-      pFragmentCluster->GetOrderedCaloHitList().GetCaloHitList(fragmentCaloHitList);
+      pFragmentCluster->GetOrderedCaloHitList().FillCaloHitList(fragmentCaloHitList);
 
       bool foundNearbyCluster(false);
       unsigned int nHitsContact(0);
@@ -156,7 +156,7 @@ namespace arbor_content
           continue;
 
         pandora::CaloHitList clusterCaloHitList;
-        pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+        pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
         for(pandora::CaloHitList::const_iterator hitIter = fragmentCaloHitList.begin(), hitEndIter = fragmentCaloHitList.end() ;
             hitEndIter != hitIter ; ++hitIter)
@@ -205,12 +205,12 @@ namespace arbor_content
         endIter != iter ; ++iter)
     {
       pandora::CaloHitList caloHitList;
-      (*iter)->GetOrderedCaloHitList().GetCaloHitList(caloHitList);
+      (*iter)->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::RemoveConnections(&caloHitList));
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(*this, *iter));
 
-      removalCaloHitList.insert(caloHitList.begin(), caloHitList.end());
+      removalCaloHitList.insert(removalCaloHitList.begin(), caloHitList.begin(), caloHitList.end());
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -238,7 +238,7 @@ namespace arbor_content
         continue;
       }
 
-      clusterList.insert(pAdditionalClusterList->begin(), pAdditionalClusterList->end());
+      clusterList.insert(clusterList.begin(), pAdditionalClusterList->begin(), pAdditionalClusterList->end());
     }
 
     clusterVector.insert(clusterVector.end(), clusterList.begin(), clusterList.end());

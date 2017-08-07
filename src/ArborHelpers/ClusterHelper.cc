@@ -58,7 +58,7 @@ namespace arbor_content
     float mean[3] = {0.f};
 
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     const unsigned nDofs(clusterCaloHitList.size());
 
@@ -150,7 +150,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_FAILURE;
 
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
         endIter != iter ; ++iter)
@@ -200,7 +200,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_FAILURE;
 
     pandora::CaloHitList clusterCaloHitList1;
-    pCluster1->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList1);
+    pCluster1->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList1);
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList1.begin() , endIter = clusterCaloHitList1.end() ;
         endIter != iter ; ++iter)
@@ -228,7 +228,7 @@ namespace arbor_content
     pandora::CaloHitList clusterCaloHitList;
     pandora::CaloHitList seedsCaloHitList;
 
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedsCaloHitList));
 
@@ -246,7 +246,7 @@ namespace arbor_content
       throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
 
     // muons escape detector
-    if( abs(pCluster->GetParticleIdFlag()) == 13 || ClusterHelper::ContainsHitType(pCluster, pandora::MUON))
+    if( abs(pCluster->GetParticleId()) == 13 || ClusterHelper::ContainsHitType(pCluster, pandora::MUON))
       return true;
 
     if(pandora::HCAL != pCluster->GetOuterLayerHitType())
@@ -409,7 +409,7 @@ namespace arbor_content
     const pandora::TrackList trackList(pClusterToEnlarge->GetAssociatedTrackList());
 
     pandora::TrackList trackListCombined(pClusterToMerge->GetAssociatedTrackList());
-    trackListCombined.insert(trackList.begin(), trackList.end());
+    trackListCombined.insert(trackListCombined.begin(), trackList.begin(), trackList.end());
 
     if(trackList.empty())
       return pandora::STATUS_CODE_INVALID_PARAMETER;
@@ -468,7 +468,7 @@ namespace arbor_content
   pandora::StatusCode ClusterHelper::GetTrackClusterDistance(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::Track *const pTrack, const float maxTransverseDistance, float &trackClusterDistance)
   {
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     const float bField(pandora.GetPlugins()->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
     const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
@@ -702,7 +702,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_SUCCESS;
 
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
         endIter != iter ; ++iter)
@@ -720,7 +720,7 @@ namespace arbor_content
         continue;
 
       if(distanceToGap < maxDistance)
-        caloHitList.insert(pCaloHit);
+        caloHitList.push_back(pCaloHit);
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -731,7 +731,7 @@ namespace arbor_content
   pandora::StatusCode ClusterHelper::CleanAndDeleteCluster(const pandora::Algorithm &algorithm, const pandora::Cluster *const pCluster)
   {
     pandora::CaloHitList clusterCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
         endIter != iter ; ++iter)

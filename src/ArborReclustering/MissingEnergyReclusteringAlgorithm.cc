@@ -129,7 +129,7 @@ namespace arbor_content
 
     if(clusterList != NULL && !clusterList->empty())
 	{
-		std::cout << "insert cluster" << std::endl;
+		std::cout << "push_back cluster" << std::endl;
 		clusterVector.insert(clusterVector.begin(), clusterList->begin(), clusterList->end());
     
 		std::cout << "done ..." << std::endl;
@@ -174,7 +174,7 @@ namespace arbor_content
 
 	// m_photonList is the recorder of all clusters in the photon cluster list
 	// maybe just using pPhotonClusterList is OK ...
-	photonList.insert(m_pPhotonClusterList->begin(), m_pPhotonClusterList->end());
+	photonList.insert(photonList.begin(), m_pPhotonClusterList->begin(), m_pPhotonClusterList->end());
 
 #ifdef __DEBUG__
 	std::cout << "-----------------> the sorted cluster:" << std::endl;
@@ -216,7 +216,7 @@ namespace arbor_content
 
       // the clusters and tracks for reclustering
       pandora::ClusterList reclusterClusterList;
-      reclusterClusterList.insert(pCluster);
+      reclusterClusterList.push_back(pCluster);
       pandora::TrackList reclusterTrackList(pCluster->GetAssociatedTrackList());
 
 	  // FIXME: maybe should set the vector as this
@@ -291,7 +291,7 @@ namespace arbor_content
   pandora::StatusCode MissingEnergyReclusteringAlgorithm::SearchNearbyClusters( pandora::ClusterVector& clusterVector, 
 		   const pandora::Cluster *const pCluster, pandora::ClusterList& reclusterClusterList)
   {
-      reclusterClusterList.insert(pCluster);
+      reclusterClusterList.push_back(pCluster);
 
       pandora::ClusterFitResult parentFitResult;
       pandora::CartesianVector parentCentroid(0.f, 0.f, 0.f);
@@ -323,7 +323,7 @@ namespace arbor_content
 
         if(clusterHitsDistance < m_maxClusterHitsDistance)
         {
-          reclusterClusterList.insert(pOtherCluster);
+          reclusterClusterList.push_back(pOtherCluster);
           m_originalClusterIndices.push_back(j);
         }
         else
@@ -339,7 +339,7 @@ namespace arbor_content
 		  const float angle2( clusterInitialDirection.GetOpeningAngle( daughterCentroid - parentCentroid ) );
           if( angle2 > m_maxNeighborClusterAngle ) continue;
 
-          reclusterClusterList.insert(pOtherCluster);
+          reclusterClusterList.push_back(pOtherCluster);
           m_originalClusterIndices.push_back(j);
         }
       }
@@ -420,7 +420,7 @@ namespace arbor_content
           //if( pReclusterCluster->GetAssociatedTrackList().size() != trackList.size() ) continue;
 
           pandora::ClusterList reclusterList;
-          reclusterList.insert(pReclusterCluster);
+          reclusterList.push_back(pReclusterCluster);
 
           ReclusterResult reclusterResult;
           if(pandora::STATUS_CODE_SUCCESS != ReclusterHelper::ExtractReclusterResults(this->GetPandora(), *pReclusterClusterList, reclusterResult))
@@ -473,7 +473,9 @@ namespace arbor_content
             endIter != iter ; ++iter)
 		{
 		  // if a photon cluster, also remove it in the photon cluster
-		  pandora::ClusterList::const_iterator cluIter = photonList.find(clusterVector[*iter]);
+		  //pandora::ClusterList::const_iterator cluIter = photonList.find(clusterVector[*iter]);
+		  pandora::ClusterList::const_iterator cluIter = std::find(photonList.begin(), photonList.end(), clusterVector[*iter]);
+
 		  if(cluIter != photonList.end())
 		  {
 			  photonList.erase(cluIter);

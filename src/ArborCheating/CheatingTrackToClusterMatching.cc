@@ -36,21 +36,24 @@ namespace arbor_content
       try
       {
         const Track *const pTrack = *iter;
-        const MCParticle *const pMCParticle(pTrack->GetMainMCParticle());
+        //const MCParticle *const pMCParticle(pTrack->GetMainMCParticle());
+		const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pTrack));
 
         TracksPerMCParticle::iterator itTracksPerMCParticle(tracksPerMCParticle.find(pMCParticle));
 
         if (tracksPerMCParticle.end() == itTracksPerMCParticle)
         {
           TrackList trackList;
-          trackList.insert(pTrack);
+          trackList.push_back(pTrack);
 
-          if (!tracksPerMCParticle.insert(TracksPerMCParticle::value_type(pMCParticle, trackList)).second)
+		  //FIME:: check existence
+		  if(!tracksPerMCParticle.insert(TracksPerMCParticle::value_type(pMCParticle, TrackList(1, pTrack))).second)
             throw StatusCodeException(STATUS_CODE_FAILURE);
+          //if (!tracksPerMCParticle.push_back(TracksPerMCParticle::value_type(pMCParticle, trackList)).second)
         }
         else
         {
-          itTracksPerMCParticle->second.insert(pTrack);
+          itTracksPerMCParticle->second.push_back(pTrack);
         }
       }
       catch (StatusCodeException &)
@@ -74,14 +77,16 @@ namespace arbor_content
         if (clustersPerMCParticle.end() == itClustersPerMCParticle)
         {
           ClusterList clusterList;
-          clusterList.insert(pCluster);
+          clusterList.push_back(pCluster);
 
-          if (!clustersPerMCParticle.insert(ClustersPerMCParticle::value_type(pMCParticle, clusterList)).second)
+		  //FIXME
+		  if(!clustersPerMCParticle.insert(ClustersPerMCParticle::value_type(pMCParticle, ClusterList(1, pCluster))).second)
             throw StatusCodeException(STATUS_CODE_FAILURE);
+          //if (!clustersPerMCParticle.push_back(ClustersPerMCParticle::value_type(pMCParticle, clusterList)).second)
         }
         else
         {
-          itClustersPerMCParticle->second.insert(pCluster);
+          itClustersPerMCParticle->second.push_back(pCluster);
         }
       }
       catch (StatusCodeException &)

@@ -106,7 +106,7 @@ namespace arbor_content
       {
         metadata.m_mass = pandora::PdgTable::GetParticleMass(metadata.m_particleId.Get());
         metadata.m_energy = std::sqrt(metadata.m_mass.Get() * metadata.m_mass.Get() + pPfo->GetMomentum().GetMagnitudeSquared());
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AlterMetadata(*this, pPfo, metadata));
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::AlterMetadata(*this, pPfo, metadata));
       }
     }
 
@@ -119,7 +119,7 @@ namespace arbor_content
   {
     for (pandora::TrackList::const_iterator iter = trackList.begin(), iterEnd = trackList.end(); iter != iterEnd; ++iter)
     {
-      if (!(*iter)->GetSiblingTrackList().empty())
+      if (!(*iter)->GetSiblingList().empty())
       {
         return true;
       }

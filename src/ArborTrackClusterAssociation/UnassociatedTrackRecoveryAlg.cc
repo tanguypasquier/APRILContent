@@ -66,7 +66,7 @@ namespace arbor_content
       if(pCluster->GetInnerPseudoLayer() > m_maxClusterInnerPseudoLayer)
         continue;
 
-      if(pCluster->IsPhotonFast(this->GetPandora()))
+      if(pCluster->PassPhotonId(this->GetPandora()))
         continue;
 
       clusterVector.push_back(pCluster);
@@ -95,7 +95,7 @@ namespace arbor_content
       if(!pTrack->ReachesCalorimeter())
         continue;
 
-      if(!pTrack->GetDaughterTrackList().empty())
+      if(!pTrack->GetDaughterList().empty())
         continue;
 
       const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),

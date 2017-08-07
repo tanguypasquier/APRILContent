@@ -91,7 +91,7 @@ namespace arbor_content
         continue;
 
       if(ArborContentApi::IsSeed(pCaloHit) && !(ArborContentApi::IsLeaf(pCaloHit) && discriminateLeafHits))
-        seedCaloHitList.insert(pCaloHit);
+        seedCaloHitList.push_back(pCaloHit);
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -122,7 +122,7 @@ namespace arbor_content
         continue;
 
       if(ArborContentApi::IsLeaf(pCaloHit) && !(discriminateSeedHits && !ArborContentApi::IsSeed(pCaloHit)))
-        leafCaloHitList.insert(pCaloHit);
+        leafCaloHitList.push_back(pCaloHit);
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -142,8 +142,10 @@ namespace arbor_content
 
       const CaloHit *const pConnectedCaloHit = pConnector->Get(direction);
 
-      if(!calohitList.insert(pConnectedCaloHit).second)
-        return pandora::STATUS_CODE_FAILURE;
+	  // FIXME:: check existence 
+      calohitList.push_back(pConnectedCaloHit);
+      //if(!calohitList.push_back(pConnectedCaloHit).second)
+      //  return pandora::STATUS_CODE_FAILURE;
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pConnectedCaloHit, direction, calohitList));
     }
@@ -174,8 +176,10 @@ namespace arbor_content
       if(pseudoLayerDifference > pseudoLayerLimit)
         continue;
 
-      if(!calohitList.insert(pConnectedCaloHit).second)
-        return pandora::STATUS_CODE_FAILURE;
+	  // FIXME:: check existence 
+      calohitList.push_back(pConnectedCaloHit);
+      //if(!calohitList.insert(pConnectedCaloHit).second)
+      //  return pandora::STATUS_CODE_FAILURE;
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pConnectedCaloHit, direction, calohitList, connectionDepthLimit-1, pseudoLayerLimit-pseudoLayerDifference));
     }

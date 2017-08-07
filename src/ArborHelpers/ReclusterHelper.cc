@@ -153,7 +153,7 @@ namespace arbor_content
 
     pandora::CaloHitList clusterCaloHitList;
     pandora::CaloHitList seedCaloHitList;
-    pOriginalCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pOriginalCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, false));
 
@@ -162,11 +162,13 @@ namespace arbor_content
       return pandora::STATUS_CODE_NOT_ALLOWED;
 
     // seed calo hit must be contained in the original cluster
-    if(seedCaloHitList.end() == seedCaloHitList.find(pSeedCaloHit))
+    //if(seedCaloHitList.end() == seedCaloHitList.find(pSeedCaloHit))
+    pandora::CaloHitList::iterator listIter = std::find(seedCaloHitList.begin(), seedCaloHitList.end(), pSeedCaloHit);
+	if(seedCaloHitList.end() == listIter )
       return pandora::STATUS_CODE_FAILURE;
 
     pandora::CaloHitList treeCaloHitList;
-    treeCaloHitList.insert(pSeedCaloHit);
+    treeCaloHitList.push_back(pSeedCaloHit);
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pSeedCaloHit, FORWARD_DIRECTION, treeCaloHitList));
 
     // remove all the hits from the original cluster
@@ -177,7 +179,7 @@ namespace arbor_content
     }
 
     // create the separated tree cluster
-    PandoraContentApi::ClusterParameters clusterParameters;
+    object_creation::ClusterParameters clusterParameters;
     clusterParameters.m_caloHitList = treeCaloHitList;
     pSeparatedTreeCluster = NULL;
 
@@ -214,7 +216,7 @@ namespace arbor_content
 
     pandora::CaloHitList clusterCaloHitList;
     pandora::CaloHitList seedCaloHitList;
-    pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::ExtractSeedCaloHitList(&clusterCaloHitList, seedCaloHitList, false));
 
@@ -223,7 +225,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_NOT_ALLOWED;
 
     pandora::ClusterList reclusterClusterList;
-    reclusterClusterList.insert(pCluster);
+    reclusterClusterList.push_back(pCluster);
 
     std::string originalClusterListName;
     std::string fragmentsClustersListName;
@@ -240,11 +242,11 @@ namespace arbor_content
         return pandora::STATUS_CODE_FAILURE;
 
       pandora::CaloHitList treeCaloHitList;
-      treeCaloHitList.insert(pCaloHit);
+      treeCaloHitList.push_back(pCaloHit);
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::BuildCaloHitList(pCaloHit, FORWARD_DIRECTION, treeCaloHitList));
 
       // create a separated tree cluster
-      PandoraContentApi::ClusterParameters clusterParameters;
+      object_creation::ClusterParameters clusterParameters;
       clusterParameters.m_caloHitList = treeCaloHitList;
       const pandora::Cluster *pTreeCluster = NULL;
 

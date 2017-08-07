@@ -215,7 +215,7 @@ namespace arbor_content
       if ((pCaloHit->GetElectromagneticEnergy() > m_thresholdEnergy) &&
           (!m_showOnlyAvailable || PandoraContentApi::IsAvailable(*this, pCaloHit)))
       {
-        caloHitList.insert(pCaloHit);
+        caloHitList.push_back(pCaloHit);
       }
     }
 
@@ -273,7 +273,7 @@ namespace arbor_content
       const pandora::Track *const pTrack = *iter;
 
       if (!m_showOnlyAvailable || pTrack->IsAvailable())
-        trackList.insert(pTrack);
+        trackList.push_back(pTrack);
     }
 
     PANDORA_MONITORING_API(VisualizeTracks(this->GetPandora(), &trackList, listName.empty() ? "CurrentTracks" : listName.c_str(), ::GRAY));
@@ -313,7 +313,7 @@ namespace arbor_content
 
       if (!m_showOnlyAvailable || PandoraContentApi::IsAvailable(*this, pCluster))
       {
-        clusterList.insert(pCluster);
+        clusterList.push_back(pCluster);
       }
     }
 
@@ -461,7 +461,7 @@ namespace arbor_content
       const pandora::Vertex *const pVertex = *iter;
 
       if (!m_showOnlyAvailable || pVertex->IsAvailable())
-        vertexList.insert(pVertex);
+        vertexList.push_back(pVertex);
     }
 
     PANDORA_MONITORING_API(VisualizeVertices(this->GetPandora(), &vertexList, listName.empty() ? "CurrentVertices" : listName.c_str(), ::AUTO));
