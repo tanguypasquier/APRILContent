@@ -129,7 +129,7 @@ ENDIF()
 INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
 
 # install header files
-#INSTALL( DIRECTORY include/ DESTINATION include )
+INSTALL( DIRECTORY include/ DESTINATION include )
 INSTALL( FILES "ChangeLog.txt" DESTINATION "${PROJECT_SOURCE_DIR}/docs" OPTIONAL )
 
 # display some variables and write them to cache
