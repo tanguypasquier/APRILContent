@@ -13,6 +13,7 @@ SET( ${PROJECT_NAME}_VERSION_MINOR 05 )
 SET( ${PROJECT_NAME}_VERSION_PATCH 01 )
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+INCLUDE( PandoraCMakeSettings )
 
 OPTION( PANDORA_MONITORING "Whether to use PandoraMonitoring (requires ROOT)" OFF )
 MESSAGE( STATUS "PANDORA_MONITORING : ${PANDORA_MONITORING}" )
@@ -125,7 +126,7 @@ ENDIF()
 ### INSTALL #################################################################
 
 # install library
-#INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
+INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
 
 # install header files
 #INSTALL( DIRECTORY include/ DESTINATION include )
