@@ -133,7 +133,7 @@ INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
 INSTALL( FILES "ChangeLog.txt" DESTINATION "${PROJECT_SOURCE_DIR}/docs" OPTIONAL )
 
 # display some variables and write them to cache
-#PANDORA_DISPLAY_STD_VARIABLES()
+PANDORA_DISPLAY_STD_VARIABLES()
 
 # generate and install following configuration files
-#PANDORA_GENERATE_PACKAGE_CONFIGURATION_FILES( ${PROJECT_NAME}Config.cmake ${PROJECT_NAME}ConfigVersion.cmake ${PROJECT_NAME}LibDeps.cmake )
+PANDORA_GENERATE_PACKAGE_CONFIGURATION_FILES( ${PROJECT_NAME}Config.cmake ${PROJECT_NAME}ConfigVersion.cmake ${PROJECT_NAME}LibDeps.cmake )
