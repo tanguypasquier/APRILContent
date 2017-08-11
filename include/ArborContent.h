@@ -162,10 +162,10 @@ public:
     d("CaloHitMerging",                      arbor_content::CaloHitMergingTool::Factory)
 
 #define ARBOR_PARTICLE_ID_LIST(d) \
-    d("ArborEmShowerId",                     arbor_content::ArborEmShowerId) \
-    d("ArborPhotonId",                       arbor_content::ArborPhotonId) \
-    d("ArborElectronId",                     arbor_content::ArborElectronId) \
-    d("ArborMuonId",                         arbor_content::ArborMuonId)
+    d("ArborEmShowerId",                     arbor_content::ArborParticleIdPlugins::ArborEmShowerId) \
+    d("ArborPhotonId",                       arbor_content::ArborParticleIdPlugins::ArborPhotonId) \
+    d("ArborElectronId",                     arbor_content::ArborParticleIdPlugins::ArborElectronId) \
+    d("ArborMuonId",                         arbor_content::ArborParticleIdPlugins::ArborMuonId)
 
 
   /**

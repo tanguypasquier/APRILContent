@@ -73,89 +73,102 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  /**
-   *  @brief  ArborEmShowerId class
-   */
-  class ArborEmShowerId : public pandora::ParticleIdPlugin
-  {
-  public:
-    /**
-     *  @brief  Default constructor
-     */
-    ArborEmShowerId();
+/**
+*  @brief  LCParticleIdPlugins class
+*/
+class ArborParticleIdPlugins
+{
+public:
 
-    bool IsMatch(const pandora::Cluster *const pCluster) const;
-    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+	  /**
+	   *  @brief  ArborEmShowerId class
+	   */
+	  class ArborEmShowerId : public pandora::ParticleIdPlugin
+	  {
+	  public:
+	    /**
+	     *  @brief  Default constructor
+	     */
+	    ArborEmShowerId();
+	
+	    bool IsMatch(const pandora::Cluster *const pCluster) const;
+		bool IsMatch(const pandora::ParticleFlowObject *const pPfo) const;
+	    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+	
+	    /**
+	     *
+	     */
+	    const pandora::CartesianVector GetEnergyWeightedCentroid(const pandora::Cluster *const pCluster, const unsigned int innerPseudoLayer,
+	        const unsigned int outerPseudoLayer) const;
+	
+	  private:
+	    ParticleIdHelper::StartingLayerSettings      m_startingLayerSettings;
+	    unsigned int                                 m_maxStartPseudoLayer;
+	    unsigned int                                 m_maxPseudoLayerExtension;
+	    float                                        m_maxAngleWithOrigin;
+	    float                                        m_maxHadronicEnergyFraction;
+	    unsigned int                                 m_minOuterEcalPseudoLayerEnergyCut;
+	    float                                        m_maxOuterEcalEnergyFraction;
+	  };
+	
+	  //------------------------------------------------------------------------------------------------------------------------------------------
+	  //------------------------------------------------------------------------------------------------------------------------------------------
+	
+	  /**
+	   *  @brief  ArborPhotonId class
+	   */
+	  class ArborPhotonId : public pandora::ParticleIdPlugin
+	  {
+	  public:
+	    bool IsMatch(const pandora::Cluster *const pCluster) const;
+		bool IsMatch(const pandora::ParticleFlowObject *const pPfo) const;
+	    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+	  };
+	
+	  //------------------------------------------------------------------------------------------------------------------------------------------
+	  //------------------------------------------------------------------------------------------------------------------------------------------
+	
+	  /**
+	   *  @brief  ArborElectronId class
+	   */
+	  class ArborElectronId : public pandora::ParticleIdPlugin
+	  {
+	  public:
+	    bool IsMatch(const pandora::Cluster *const pCluster) const;
+		bool IsMatch(const pandora::ParticleFlowObject *const pPfo) const;
+	    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+	  };
+	
+	  //------------------------------------------------------------------------------------------------------------------------------------------
+	  //------------------------------------------------------------------------------------------------------------------------------------------
+	
+	  /**
+	   *  @brief  ArborMuonId class
+	   */
+	  class ArborMuonId : public pandora::ParticleIdPlugin
+	  {
+	  public:
+	    /**
+	     *  @brief  Default constructor
+	     */
+	    ArborMuonId();
+	
+	    bool IsMatch(const pandora::Cluster *const pCluster) const;
+		bool IsMatch(const pandora::ParticleFlowObject *const pPfo) const;
+	    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+	
+	  private:
+	    float                     m_lowMomentumMuonCut;
+	    unsigned int              m_maxNCaloHitsInPseudoLayerFine;
+	    unsigned int              m_maxNCaloHitsInPseudoLayerCoarse;
+	    unsigned int              m_maxNHighDensityPseudoLayer;
+	    unsigned int              m_minEcalPseudoLayers;
+	    unsigned int              m_minEcalLayers;
+	    unsigned int              m_minHcalPseudoLayers;
+	    unsigned int              m_minHcalLayers;
+	  };
+};
 
-    /**
-     *
-     */
-    const pandora::CartesianVector GetEnergyWeightedCentroid(const pandora::Cluster *const pCluster, const unsigned int innerPseudoLayer,
-        const unsigned int outerPseudoLayer) const;
-
-  private:
-    ParticleIdHelper::StartingLayerSettings      m_startingLayerSettings;
-    unsigned int                                 m_maxStartPseudoLayer;
-    unsigned int                                 m_maxPseudoLayerExtension;
-    float                                        m_maxAngleWithOrigin;
-    float                                        m_maxHadronicEnergyFraction;
-    unsigned int                                 m_minOuterEcalPseudoLayerEnergyCut;
-    float                                        m_maxOuterEcalEnergyFraction;
-  };
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
-  /**
-   *  @brief  ArborPhotonId class
-   */
-  class ArborPhotonId : public pandora::ParticleIdPlugin
-  {
-  public:
-    bool IsMatch(const pandora::Cluster *const pCluster) const;
-    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
-  };
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
-  /**
-   *  @brief  ArborElectronId class
-   */
-  class ArborElectronId : public pandora::ParticleIdPlugin
-  {
-  public:
-    bool IsMatch(const pandora::Cluster *const pCluster) const;
-    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
-  };
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
-  /**
-   *  @brief  ArborMuonId class
-   */
-  class ArborMuonId : public pandora::ParticleIdPlugin
-  {
-  public:
-    /**
-     *  @brief  Default constructor
-     */
-    ArborMuonId();
-
-    bool IsMatch(const pandora::Cluster *const pCluster) const;
-    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
-
-  private:
-    float                     m_lowMomentumMuonCut;
-    unsigned int              m_maxNCaloHitsInPseudoLayerFine;
-    unsigned int              m_maxNCaloHitsInPseudoLayerCoarse;
-    unsigned int              m_maxNHighDensityPseudoLayer;
-    unsigned int              m_minEcalPseudoLayers;
-    unsigned int              m_minEcalLayers;
-    unsigned int              m_minHcalPseudoLayers;
-    unsigned int              m_minHcalLayers;
-  };
 } 
 
 #endif  //  PARTICLEIDPLUGINS_H

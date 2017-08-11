@@ -211,7 +211,7 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  ArborEmShowerId::ArborEmShowerId() :
+  ArborParticleIdPlugins::ArborEmShowerId::ArborEmShowerId() :
         m_maxStartPseudoLayer(10),
         m_maxPseudoLayerExtension(20),
         m_maxAngleWithOrigin(M_PI/4.f),
@@ -223,7 +223,7 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  bool ArborEmShowerId::IsMatch(const pandora::Cluster *const pCluster) const
+  bool ArborParticleIdPlugins::ArborEmShowerId::IsMatch(const pandora::Cluster *const pCluster) const
   {
     if(!ClusterHelper::ContainsHitType(pCluster, pandora::ECAL))
     {
@@ -362,7 +362,14 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  const pandora::CartesianVector ArborEmShowerId::GetEnergyWeightedCentroid(const pandora::Cluster *const pCluster, const unsigned int innerPseudoLayer,
+  bool ArborParticleIdPlugins::ArborEmShowerId::IsMatch(const pandora::ParticleFlowObject *const ) const
+  {
+	  return true;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  
+  const pandora::CartesianVector ArborParticleIdPlugins::ArborEmShowerId::GetEnergyWeightedCentroid(const pandora::Cluster *const pCluster, const unsigned int innerPseudoLayer,
       const unsigned int outerPseudoLayer) const
   {
     float energySum(0.f);
@@ -393,7 +400,7 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode ArborEmShowerId::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+  pandora::StatusCode ArborParticleIdPlugins::ArborEmShowerId::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
     unsigned int maxForwardPseudoLayer = m_startingLayerSettings.m_maxForwardPseudoLayer.Get();
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
@@ -449,7 +456,7 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  bool ArborPhotonId::IsMatch(const pandora::Cluster *const pCluster) const
+  bool ArborParticleIdPlugins::ArborPhotonId::IsMatch(const pandora::Cluster *const pCluster) const
   {
     if (pandora::PHOTON == pCluster->GetParticleId())
     {
@@ -470,8 +477,15 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
+  
+  bool ArborParticleIdPlugins::ArborPhotonId::IsMatch(const pandora::ParticleFlowObject *const ) const
+  {
+	  return true;
+  }
 
-  pandora::StatusCode ArborPhotonId::ReadSettings(const pandora::TiXmlHandle /*xmlHandle*/)
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode ArborParticleIdPlugins::ArborPhotonId::ReadSettings(const pandora::TiXmlHandle /*xmlHandle*/)
   {
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -479,7 +493,7 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  bool ArborElectronId::IsMatch(const pandora::Cluster *const pCluster) const
+  bool ArborParticleIdPlugins::ArborElectronId::IsMatch(const pandora::Cluster *const pCluster) const
   {
     if (pandora::E_MINUS == std::abs(pCluster->GetParticleId()))
       return true;
@@ -499,7 +513,13 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode ArborElectronId::ReadSettings(const pandora::TiXmlHandle /*xmlHandle*/)
+  bool ArborParticleIdPlugins::ArborElectronId::IsMatch(const pandora::ParticleFlowObject *const ) const
+  {
+	  return true;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode ArborParticleIdPlugins::ArborElectronId::ReadSettings(const pandora::TiXmlHandle /*xmlHandle*/)
   {
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -507,7 +527,7 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  ArborMuonId::ArborMuonId() :
+  ArborParticleIdPlugins::ArborMuonId::ArborMuonId() :
         m_lowMomentumMuonCut(0.5),
         m_maxNCaloHitsInPseudoLayerFine(2),
         m_maxNCaloHitsInPseudoLayerCoarse(4),
@@ -521,7 +541,7 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  bool ArborMuonId::IsMatch(const pandora::Cluster *const pCluster) const
+  bool ArborParticleIdPlugins::ArborMuonId::IsMatch(const pandora::Cluster *const pCluster) const
   {
     if (pandora::MU_MINUS == std::abs(pCluster->GetParticleId()))
       return true;
@@ -619,8 +639,15 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
+  
+  bool ArborParticleIdPlugins::ArborMuonId::IsMatch(const pandora::ParticleFlowObject *const ) const
+  {
+	  return true;
+  }
 
-  pandora::StatusCode ArborMuonId::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode ArborParticleIdPlugins::ArborMuonId::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "LowMomentumMuonCut", m_lowMomentumMuonCut));
