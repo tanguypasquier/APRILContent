@@ -120,7 +120,7 @@ namespace arbor_content
 	  std::cout << "********* CaloHitTimingAlgorithm destructor ********" << std::endl;
 	  //if(caloHitsMonitor != NULL) delete caloHitsMonitor;
 
-	  Algorithm::~Algorithm();
+	  pandora::Algorithm::~Algorithm();
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
