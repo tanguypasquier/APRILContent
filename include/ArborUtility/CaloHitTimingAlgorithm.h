@@ -53,7 +53,7 @@ public:
         pandora::Algorithm *CreateAlgorithm() const;
     };
 
-	~CaloHitTimingAlgorithm();
+	//~CaloHitTimingAlgorithm();
 
 private:
     pandora::StatusCode Run();

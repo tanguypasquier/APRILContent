@@ -115,6 +115,7 @@ namespace arbor_content
 	  return pandora::STATUS_CODE_SUCCESS;
   }
 
+/*
   CaloHitTimingAlgorithm::~CaloHitTimingAlgorithm()
   {
 	  std::cout << "********* CaloHitTimingAlgorithm destructor ********" << std::endl;
@@ -122,6 +123,7 @@ namespace arbor_content
 
 	  pandora::Algorithm::~Algorithm();
   }
+*/
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
