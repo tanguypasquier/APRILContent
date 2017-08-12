@@ -336,7 +336,7 @@ namespace arbor_content
             endIter != iter ; ++iter)
         {
           pandora::CaloHitList clusterHits;
-          (*iter)->GetOrderedCaloHitList().GetCaloHitList(clusterHits);
+          (*iter)->GetOrderedCaloHitList().FillCaloHitList(clusterHits);
 
           this->VisualizeConnectors(&clusterHits, listName.empty() ? "CurrentClustersConnectors" : (listName+"Connectors").c_str(), pConnectorDirectory,
               (m_hitColors.find("particleid") != std::string::npos) ? ::AUTOID :
@@ -407,7 +407,7 @@ namespace arbor_content
               endIter != iter ; ++iter)
           {
             pandora::CaloHitList clusterHits;
-            (*iter)->GetOrderedCaloHitList().GetCaloHitList(clusterHits);
+            (*iter)->GetOrderedCaloHitList().FillCaloHitList(clusterHits);
 
             this->VisualizeConnectors(&clusterHits, listName.empty() ? "CurrentPfoConnectors" : (listName+"Connectors").c_str(), pConnectorDirectory,
                 (m_hitColors.find("particleid") != std::string::npos) ? ::AUTOID :

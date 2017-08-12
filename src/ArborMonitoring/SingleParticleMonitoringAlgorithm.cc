@@ -91,7 +91,7 @@ namespace arbor_content {
         clusterFitDirZ = pCluster->GetFitToAllHitsResult().GetDirection().GetZ();
 
         pandora::CaloHitList clusterCaloHitList;
-        pCluster->GetOrderedCaloHitList().GetCaloHitList(clusterCaloHitList);
+        pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
         pandora::CaloHitList nearbyGapCaloHitList;
 
         ClusterHelper::GetCaloHitsNearDetectorGaps(this->GetPandora(), pCluster, m_gapDistanceFine,
@@ -133,7 +133,7 @@ namespace arbor_content {
 
           hitIsolated.push_back(static_cast<int>(pCaloHit->IsIsolated()));
 
-          bool nearGap(nearbyGapCaloHitList.find(pCaloHit) != nearbyGapCaloHitList.end());
+          bool nearGap(std::find(nearbyGapCaloHitList.begin(), nearbyGapCaloHitList.end(), pCaloHit) != nearbyGapCaloHitList.end());
           hitNearGap.push_back(static_cast<int>(nearGap));
         }
       }
