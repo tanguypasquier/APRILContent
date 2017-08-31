@@ -66,6 +66,8 @@ namespace arbor_content
     std::string newClusterListName;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunClusteringAlgorithm(*this, m_clusteringAlgorithmName,
         pClusterList, newClusterListName));
+      
+    //std::cout << "  ---> The name of cluster list : " << newClusterListName << ", size: " << pClusterList->size() << std::endl;
 
     // Run the topological association algorithms to modify clusters
     if (!pClusterList->empty() && !m_associationAlgorithmName.empty())
@@ -74,12 +76,17 @@ namespace arbor_content
     // Select photons from created clusters
     pandora::ClusterList photonClusters;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SelectPhotonsAndRemoveOthers(pClusterList, photonClusters));
+      
+    //std::cout << "photon cluster size: " << photonClusters.size() << std::endl;
+    //std::cout << "the new cluster list name: " << newClusterListName << ", size: " << pClusterList->size() << std::endl;
 
 	std::cout << "photonClusters: " << photonClusters.size() << std::endl;
 
     // Save the new cluster list
     if (!photonClusters.empty())
     {
+      //std::cout << "  ---> The photon cluster size: " << photonClusters.size() << std::endl;
+        
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, m_clusterListName, photonClusters));
 
       if (m_replaceCurrentClusterList)
@@ -123,6 +130,7 @@ namespace arbor_content
 
 	//std::cout << "-------- Photon cluster: " << photonClusters.size() << std::endl;
 
+    // Maybe we can leave the non-photon clusters there, and use them for the later algorithms
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::CleanAndDeleteClusters(*this, nonPhotonClusters));
 
     return pandora::STATUS_CODE_SUCCESS;
