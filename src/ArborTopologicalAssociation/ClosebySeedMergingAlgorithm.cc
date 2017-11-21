@@ -170,7 +170,7 @@ namespace arbor_content
       }
     }
 
-#if 0
+#if 1
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 

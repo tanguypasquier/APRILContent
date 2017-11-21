@@ -75,7 +75,9 @@ namespace arbor_content
 
     // Select photons from created clusters
     pandora::ClusterList photonClusters;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SelectPhotonsAndRemoveOthers(pClusterList, photonClusters));
+    pandora::ClusterList nonPhotonClusters;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
+			                 this->SelectPhotonsAndRemoveOthers(pClusterList, photonClusters, nonPhotonClusters));
       
     //std::cout << "photon cluster size: " << photonClusters.size() << std::endl;
     //std::cout << "the new cluster list name: " << newClusterListName << ", size: " << pClusterList->size() << std::endl;
@@ -93,6 +95,16 @@ namespace arbor_content
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::Cluster>(*this, m_clusterListName));
     }
 
+#if 0
+    if (!nonPhotonClusters.empty())
+    {
+      std::cout << "  ---> The nonPhoton cluster size: " << nonPhotonClusters.size() << std::endl;
+        
+	  std::string nonPhotonListName("nonPhotonClusters");
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, nonPhotonListName, nonPhotonClusters));
+	}
+#endif
+
     // Unless specified, return current calo hit list to that when algorithm started
     if (m_restoreOriginalCaloHitList && !m_inputCaloHitListName.empty())
     {
@@ -104,12 +116,10 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode PhotonReconstructionAlgorithm::SelectPhotonsAndRemoveOthers(const pandora::ClusterList *const pInputClusterList, pandora::ClusterList &photonClusters)
+  pandora::StatusCode PhotonReconstructionAlgorithm::SelectPhotonsAndRemoveOthers(const pandora::ClusterList *const pInputClusterList, 
+		                 pandora::ClusterList &photonClusters,
+		                 pandora::ClusterList &nonPhotonClusters)
   {
-    pandora::ClusterList nonPhotonClusters;
-
-	std::cout << "select photons: total : " << pInputClusterList->size() << std::endl;
-
     for(pandora::ClusterList::const_iterator iter = pInputClusterList->begin(), endIter = pInputClusterList->end() ;
         endIter != iter ; ++iter)
     {
