@@ -172,7 +172,7 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
         }
 		else 
 		{
-			std::cout << "ignore this track ... energy: " << pTrack->GetEnergyAtDca() << std::endl;
+			//std::cout << "ignore this track ... energy: " << pTrack->GetEnergyAtDca() << std::endl;
             // FIXME we should be very careful here !!!!!!!!!!!!!
             // energy, reach ecal can form pfo ???????????
             
