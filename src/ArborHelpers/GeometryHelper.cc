@@ -28,7 +28,7 @@
 #include "ArborHelpers/GeometryHelper.h"
 
 #include "Managers/GeometryManager.h"
-#include "Objects/SubDetector.h"
+#include "Geometry/SubDetector.h"
 #include "Objects/Helix.h"
 #include "Objects/CaloHit.h"
 
