@@ -165,16 +165,25 @@ namespace arbor_content
       const pandora::TrackList trackList(pCluster->GetAssociatedTrackList());
       for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter) 
 	  {
-		  std::cout << "  ->track energy: " << (*trackIter)->GetEnergyAtDca() << std::endl;
+		  //std::cout << "  ->track energy: " << (*trackIter)->GetEnergyAtDca() << std::endl;
 	  }
 	}
 #endif
 
+	std::cout << "reversing the collection..."  << std::endl;
+
 	std::reverse(clusterVector.begin(), clusterVector.end());
+
+	std::cout << "reversing done..."  << std::endl;
 
 	// m_photonList is the recorder of all clusters in the photon cluster list
 	// maybe just using pPhotonClusterList is OK ...
-	photonList.insert(photonList.begin(), m_pPhotonClusterList->begin(), m_pPhotonClusterList->end());
+	if(m_pPhotonClusterList != NULL) 
+	{
+		photonList.insert(photonList.end(), m_pPhotonClusterList->begin(), m_pPhotonClusterList->end());
+	}
+
+	std::cout << "inserting done..."  << std::endl;
 
 #ifdef __DEBUG__
 	std::cout << "-----------------> the sorted cluster:" << std::endl;
@@ -197,6 +206,8 @@ namespace arbor_content
 	// move all clusters in the photon cluster list into the cluster list
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
 	       		                  PandoraContentApi::SaveList(*this, m_photonClusterName, m_clusterName, photonList));
+
+	std::cout << " ======> PrepareClusters done. " << std::endl;
 
 	return pandora::STATUS_CODE_SUCCESS;
   }

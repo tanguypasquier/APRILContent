@@ -57,13 +57,18 @@ namespace arbor_content
     {
       const unsigned int pseudoLayer(iter->first);
 
+	  //std::cout << "pseudoLayer: " << pseudoLayer << std::endl;
+
       for(pandora::CaloHitList::const_iterator hitIter = iter->second->begin(), hitEndIter = iter->second->end() ;
           hitEndIter != hitIter ; ++hitIter)
       {
         const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *>(*hitIter));
 
         if(NULL == pCaloHit)
+		{
+			//std::cout << "pointer is null..."  << std::endl;
           return pandora::STATUS_CODE_FAILURE;
+		}
 
 		++nHits;
         const float energy(pCaloHit->GetHitType() == pandora::ECAL ? pCaloHit->GetElectromagneticEnergy() : pCaloHit->GetHadronicEnergy());
@@ -82,6 +87,8 @@ namespace arbor_content
             hitEndIter2 != hitIter2 ; ++hitIter2)
         {
           const pandora::CaloHit *const pCaloHit2(*hitIter2);
+
+		  //std::cout << "loop..." << std::endl;
 
           if(pCaloHit == pCaloHit2)
             continue;

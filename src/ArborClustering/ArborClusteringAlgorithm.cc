@@ -47,9 +47,9 @@ namespace arbor_content
     pandora::CaloHitList ecalCaloHitList, hcalCaloHitList, muonCaloHitList;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SplitCaloHitList(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
 
-	//std::cout << "*********** ecalCaloHitList: " << ecalCaloHitList.size() << std::endl;
-	//std::cout << "*********** hcalCaloHitList: " << hcalCaloHitList.size() << std::endl;
-	//std::cout << "*********** muonCaloHitList: " << muonCaloHitList.size() << std::endl;
+	std::cout << "*********** ecalCaloHitList: " << ecalCaloHitList.size() << std::endl;
+	std::cout << "*********** hcalCaloHitList: " << hcalCaloHitList.size() << std::endl;
+	std::cout << "*********** muonCaloHitList: " << muonCaloHitList.size() << std::endl;
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreateClusters());
@@ -65,7 +65,7 @@ namespace arbor_content
     if( m_ecalToolList.empty() && m_hcalToolList.empty() && m_muonToolList.empty() )
       return pandora::STATUS_CODE_SUCCESS;
 
-	//std::cout << "Calo hits: " << pCaloHitList->size() << std::endl;
+	std::cout << "Calo hits: " << pCaloHitList->size() << std::endl;
 
     for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
         endIter !=iter ; ++iter)
@@ -141,8 +141,8 @@ namespace arbor_content
       // single core algorithm
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(ecalCaloHitList, m_ecalToolList));
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList));
-	  //std::cout << "ConnectCaloHits(muonCaloHitList, m_muonToolList))" << ", muonCaloHitList: " << muonCaloHitList.size()
-		//        << ", hcalCaloHitList: " << hcalCaloHitList.size() << std::endl;
+	  std::cout << "ConnectCaloHits(muonCaloHitList, m_muonToolList))" << ", muonCaloHitList: " << muonCaloHitList.size()
+		        << ", hcalCaloHitList: " << hcalCaloHitList.size() << std::endl;
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(muonCaloHitList, m_muonToolList));
     }
 

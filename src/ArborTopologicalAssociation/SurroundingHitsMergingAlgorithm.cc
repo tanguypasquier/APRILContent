@@ -84,6 +84,8 @@ namespace arbor_content
 
     pandora::ClusterList clusterList(pClusterList->begin(), pClusterList->end());
 
+	std::cout << "cluster: " << clusterList.size() << std::endl;
+
     for(pandora::StringVector::const_iterator iter = m_additionalClusterListNames.begin(), endIter = m_additionalClusterListNames.end() ;
         endIter != iter ; ++iter)
     {

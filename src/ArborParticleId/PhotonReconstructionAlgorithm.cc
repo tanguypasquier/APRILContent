@@ -75,6 +75,8 @@ namespace arbor_content
     pandora::ClusterList photonClusters;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SelectPhotonsAndRemoveOthers(pClusterList, photonClusters));
 
+	std::cout << "photonClusters: " << photonClusters.size() << std::endl;
+
     // Save the new cluster list
     if (!photonClusters.empty())
     {
@@ -98,6 +100,8 @@ namespace arbor_content
   pandora::StatusCode PhotonReconstructionAlgorithm::SelectPhotonsAndRemoveOthers(const pandora::ClusterList *const pInputClusterList, pandora::ClusterList &photonClusters)
   {
     pandora::ClusterList nonPhotonClusters;
+
+	std::cout << "select photons: total : " << pInputClusterList->size() << std::endl;
 
     for(pandora::ClusterList::const_iterator iter = pInputClusterList->begin(), endIter = pInputClusterList->end() ;
         endIter != iter ; ++iter)

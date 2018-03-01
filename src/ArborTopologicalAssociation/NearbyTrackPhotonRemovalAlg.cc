@@ -64,7 +64,12 @@ namespace arbor_content
 
     clusterVector.insert(clusterVector.end(), pClusterList->begin(), pClusterList->end());
 
-	//std::cout << "clusterVector size: " << clusterVector.size() << std::endl;
+	std::cout << "clusterVector size: " << clusterVector.size() << std::endl;
+
+	if(clusterVector.empty()) 
+	{
+		return pandora::STATUS_CODE_SUCCESS;
+	}
     // Get the track list to be used as veto
     const pandora::TrackList *pTrackList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));

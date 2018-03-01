@@ -12,6 +12,19 @@ SET( ${PROJECT_NAME}_VERSION_MAJOR 01 )
 SET( ${PROJECT_NAME}_VERSION_MINOR 05 )
 SET( ${PROJECT_NAME}_VERSION_PATCH 01 )
 
+FOREACH( _path ${CMAKE_PREFIX_PATH} )                                                                                    
+   FIND_PATH(pandora_cmake_path "PandoraCMakeSettings.cmake" ${_path}/cmakemodules)
+   IF (pandora_cmake_path)
+      BREAK()
+   ENDIF()
+ENDFOREACH() 
+
+IF (pandora_cmake_path)
+   LIST(APPEND CMAKE_MODULE_PATH ${pandora_cmake_path})
+ENDIF()
+
+INCLUDE(PandoraCMakeSettings)
+
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 INCLUDE( PandoraCMakeSettings )
 
