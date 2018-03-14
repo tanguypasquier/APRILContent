@@ -119,7 +119,7 @@ namespace arbor_content
 	  }
 
 	  clusterList.clear();
-	  clusterList.insert(firstCluster);
+	  clusterList.push_back(firstCluster);
 	}
 #endif
 

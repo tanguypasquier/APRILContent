@@ -95,7 +95,7 @@ namespace arbor_content
 				      << " --|-- " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << std::endl;
 #endif
 
-			caloHitList.insert(caloHit);
+			caloHitList.push_back(caloHit);
 		}
 	
 		clusterHitsCollection.push_back(caloHitList);
@@ -124,7 +124,7 @@ namespace arbor_content
           continue;
 
 		//energyMissingHits += pCaloHit->GetHadronicEnergy();
-		isoHitList.insert(pCaloHit);
+		isoHitList.push_back(pCaloHit);
       }
       catch (StatusCodeException &)
       {

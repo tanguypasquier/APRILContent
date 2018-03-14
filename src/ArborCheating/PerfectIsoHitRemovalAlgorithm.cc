@@ -141,12 +141,12 @@ namespace arbor_content
     if (mcParticleToCaloHitListMap.end() == iter)
     {
       CaloHitList *const pCaloHitList = new CaloHitList();
-      pCaloHitList->insert(pCaloHitToAdd);
+      pCaloHitList->push_back(pCaloHitToAdd);
       (void) mcParticleToCaloHitListMap.insert(MCParticleToCaloHitListMap::value_type(pMCParticle, pCaloHitList));
     }
     else
     {
-      iter->second->insert(pCaloHitToAdd);
+      iter->second->push_back(pCaloHitToAdd);
     }
   }
 

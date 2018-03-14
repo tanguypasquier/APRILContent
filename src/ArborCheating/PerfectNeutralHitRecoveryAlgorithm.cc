@@ -260,12 +260,12 @@ namespace arbor_content
     if (mcParticleToClusterListMap.end() == iter)
     {
       ClusterList *const pClusterList = new ClusterList();
-      pClusterList->insert(pClusterToAdd);
+      pClusterList->push_back(pClusterToAdd);
       (void) mcParticleToClusterListMap.insert(MCParticleToClusterListMap::value_type(pMCParticle, pClusterList));
     }
     else
     {
-      iter->second->insert(pClusterToAdd);
+      iter->second->push_back(pClusterToAdd);
     }
   }
 
@@ -279,12 +279,12 @@ namespace arbor_content
     if (mcParticleToCaloHitListMap.end() == iter)
     {
       CaloHitList *const pCaloHitList = new CaloHitList();
-      pCaloHitList->insert(pCaloHitToAdd);
+      pCaloHitList->push_back(pCaloHitToAdd);
       (void) mcParticleToCaloHitListMap.insert(MCParticleToCaloHitListMap::value_type(pMCParticle, pCaloHitList));
     }
     else
     {
-      iter->second->insert(pCaloHitToAdd);
+      iter->second->push_back(pCaloHitToAdd);
     }
   }
 

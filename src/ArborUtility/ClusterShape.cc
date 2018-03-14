@@ -20,7 +20,7 @@ void ClusterShape::FillHits()
 	const pandora::OrderedCaloHitList& orderedCaloHitList = m_cluster->GetOrderedCaloHitList();
 	pandora::CaloHitList caloHitList;
 
-	orderedCaloHitList.GetCaloHitList(caloHitList);
+	orderedCaloHitList.FillCaloHitList(caloHitList);
 
     for(pandora::CaloHitList::iterator iter = caloHitList.begin(); iter != caloHitList.end(); ++iter)
     {

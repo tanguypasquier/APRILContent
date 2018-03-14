@@ -56,7 +56,7 @@ pandora::StatusCode TrackPreparationAlgorithm::Run()
         if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList<pandora::TrackList>(*this, *iter, pTrackList))
             continue;
 
-		int nCandiTrack(0);
+		//int nCandiTrack(0);
 
         for (pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackIterEnd = pTrackList->end(); trackIter != trackIterEnd; ++trackIter)
         {
