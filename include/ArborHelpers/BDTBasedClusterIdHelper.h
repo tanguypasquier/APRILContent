@@ -47,6 +47,8 @@ namespace arbor_content
 	        static float m_hitOutsideRatio;
 	        static float m_axisLengthRatio;
 	        static float m_shortAxisLengthRatio;
+			
+			static bool  m_isMethodBooked;
 	}; 
 }
 

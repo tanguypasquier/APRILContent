@@ -14,6 +14,8 @@ float arbor_content::BDTBasedClusterIdHelper::m_hitOutsideRatio      = 0.;
 float arbor_content::BDTBasedClusterIdHelper::m_axisLengthRatio      = 0.;
 float arbor_content::BDTBasedClusterIdHelper::m_shortAxisLengthRatio = 0.;
 
+bool  arbor_content::BDTBasedClusterIdHelper::m_isMethodBooked       = false;
+
 
 arbor_content::BDTBasedClusterIdHelper::~BDTBasedClusterIdHelper() 
 {
@@ -39,16 +41,27 @@ arbor_content::BDTBasedClusterIdHelper::BDTBasedClusterIdHelper()
    // --- Book the MVA methods
    TString methodName = TString("BDTD method");
    TString weightfile = TString("weights/TMVAClassification_BDTD.weights.xml");
-   m_reader->BookMVA( methodName, weightfile ); 
+
+   IMethod* mva = NULL;
+
+   try 
+   {
+	   mva = m_reader->BookMVA( methodName, weightfile ); 
+	   m_isMethodBooked = true;
+   }
+   catch (...)
+   {
+	   m_isMethodBooked = false;
+   }
 } 
 
 pandora::StatusCode arbor_content::BDTBasedClusterIdHelper::BDTEvaluate(const pandora::Cluster* cluster, float& bdtEvaluation)
 { 
-	//
+	if(m_isMethodBooked==false) return pandora::STATUS_CODE_FAILURE;
+
 #if 1
 	static BDTBasedClusterIdHelper clusterId;
 #endif
-
 
 	ClusterPropertiesHelper::GetClusterProperties(cluster, m_minHitLayer, m_clusterVol, m_energyRatio, 
 		                 m_hitOutsideRatio, m_axisLengthRatio, m_shortAxisLengthRatio);

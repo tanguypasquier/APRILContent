@@ -431,14 +431,21 @@ namespace arbor_content
 
 		//std::cout << "test cluster energy : " << pOtherCluster->GetElectromagneticEnergy() << std::endl;
 
-#if 1
+		// FIXME:: this could be an option in Marlin steering file
+#if 0
 		float bdtVal(1000.);
-		BDTBasedClusterIdHelper::BDTEvaluate(pOtherCluster, bdtVal);
-		//std::cout << "BDT: " << bdtVal << std::endl;
+
+		if(BDTBasedClusterIdHelper::BDTEvaluate(pOtherCluster, bdtVal)==pandora::STATUS_CODE_FAILURE)
+		{
+			std::cout << "BDT is not available" << std::endl;
+		}
+		else
+		{
+			std::cout << "BDT: " << bdtVal << std::endl;
+		}
 
 		// if it is photon cluster which is identified by BDT
 		//FIXME: cut for BDT
-		if(bdtVal>0.3) continue;
 #endif
 
 		// only neutral cluster ???
