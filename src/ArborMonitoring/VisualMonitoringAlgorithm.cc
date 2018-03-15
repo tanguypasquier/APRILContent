@@ -146,16 +146,21 @@ namespace arbor_content
     // Set the background color. The one set in Pandora is white.
     if(m_darkBackground)
     {
-        TEveManager* pEveManager = TEveManager::Create();
-        if(NULL != pEveManager)
-        {
-            TGLViewer *pTGLViewer = pEveManager->GetDefaultGLViewer();
-            if(NULL != pTGLViewer) 
+#ifdef MONITORING
+        if(this->GetPandora().GetSettings()->IsMonitoringEnabled())
+	    {
+            TEveManager* pEveManager = TEveManager::Create();
+            if(NULL != pEveManager)
             {
-                pTGLViewer->ColorSet().Background().SetColor(kBlack);
-                pTGLViewer->UpdateScene();
+                TGLViewer *pTGLViewer = pEveManager->GetDefaultGLViewer();
+                if(NULL != pTGLViewer) 
+                {
+                    pTGLViewer->ColorSet().Background().SetColor(kBlack);
+                    pTGLViewer->UpdateScene();
+                }
             }
-        }
+	    }
+#endif
     }
 
     // Finally, display the event and pause application
