@@ -234,6 +234,36 @@ namespace arbor_content
     float                       m_endcapP12;
   };
 
+    /**
+     *   @brief  CleanCluster class. Correct cluster energy by searching for constituent calo hits with anomalously high energy.
+     *           Corrections are made by examining the energy in adjacent layers of the cluster.
+     */
+    class CleanCluster : public pandora::EnergyCorrectionPlugin
+    {
+    public:
+        /**
+         *  @brief  Default constructor
+         */
+        CleanCluster();
+
+        pandora::StatusCode MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const;
+
+    private:
+        /**
+         *  @brief  Get the sum of the hadronic energies of all calo hits in a specified layer of an ordered calo hit list
+         * 
+         *  @param  orderedCaloHitList the ordered calo hit list
+         *  @param  pseudoLayer the specified pseudolayer
+         */
+        float GetHadronicEnergyInLayer(const pandora::OrderedCaloHitList &orderedCaloHitList, const unsigned int pseudoLayer) const;
+
+        pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+        float           m_minCleanHitEnergy;                ///< Min calo hit hadronic energy to consider cleaning hit/cluster
+        float           m_minCleanHitEnergyFraction;        ///< Min fraction of cluster energy represented by hit to consider cleaning
+        float           m_minCleanCorrectedHitEnergy;       ///< Min value of new hit hadronic energy estimate after cleaning
+    };
+
 } 
 
 #endif  //  ENERGYCORRECTIONPLUGIN_H

@@ -531,5 +531,113 @@ namespace arbor_content
     return pandora::STATUS_CODE_SUCCESS;
   }
 
+CleanCluster::CleanCluster() :
+    m_minCleanHitEnergy(0.5f),
+    m_minCleanHitEnergyFraction(0.01f),
+    m_minCleanCorrectedHitEnergy(0.1f)
+{
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode CleanCluster::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedHadronicEnergy) const
+{
+    const unsigned int firstPseudoLayer(this->GetPandora().GetPlugins()->GetPseudoLayerPlugin()->GetPseudoLayerAtIp());
+
+    const float clusterHadronicEnergy(pCluster->GetHadronicEnergy());
+
+    if (std::fabs(clusterHadronicEnergy) < std::numeric_limits<float>::epsilon())
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+
+    bool isFineGranularity(true);
+    const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+
+    // Loop over all constituent inner layer fine granularity hits, looking for anomalies
+    for (pandora::OrderedCaloHitList::const_iterator layerIter = orderedCaloHitList.begin(), layerIterEnd = orderedCaloHitList.end();
+        (layerIter != layerIterEnd) && isFineGranularity; ++layerIter)
+    {
+        const unsigned int pseudoLayer(layerIter->first);
+
+        for (pandora::CaloHitList::const_iterator hitIter = layerIter->second->begin(), hitIterEnd = layerIter->second->end();
+            hitIter != hitIterEnd; ++hitIter)
+        {
+            const pandora::CaloHit *const pCaloHit = *hitIter;
+
+            if (this->GetPandora().GetGeometry()->GetHitTypeGranularity((*hitIter)->GetHitType()) > pandora::FINE)
+            {
+                isFineGranularity = false;
+                break;
+            }
+
+            const float hitHadronicEnergy(pCaloHit->GetHadronicEnergy());
+
+            if ((hitHadronicEnergy > m_minCleanHitEnergy) && (hitHadronicEnergy / clusterHadronicEnergy > m_minCleanHitEnergyFraction))
+            {
+                // Calculate new energy from surrounding layers
+                float energyInPreviousLayer(0.);
+
+                if (pseudoLayer > firstPseudoLayer)
+                    energyInPreviousLayer = this->GetHadronicEnergyInLayer(orderedCaloHitList, pseudoLayer - 1);
+
+                float energyInNextLayer(0.);
+
+                if (pseudoLayer < std::numeric_limits<unsigned int>::max())
+                    energyInNextLayer = this->GetHadronicEnergyInLayer(orderedCaloHitList, pseudoLayer + 1);
+
+                const float energyInCurrentLayer = this->GetHadronicEnergyInLayer(orderedCaloHitList, pseudoLayer);
+
+                // Calculate new energy estimate for hit and update cluster best energy estimate
+                float energyInAdjacentLayers(energyInPreviousLayer + energyInNextLayer);
+
+                if (pseudoLayer > firstPseudoLayer)
+                    energyInAdjacentLayers /= 2.f;
+
+                float newHitHadronicEnergy(energyInAdjacentLayers - energyInCurrentLayer + hitHadronicEnergy);
+                newHitHadronicEnergy = std::max(newHitHadronicEnergy, m_minCleanCorrectedHitEnergy);
+
+                if (newHitHadronicEnergy < hitHadronicEnergy)
+                    correctedHadronicEnergy += newHitHadronicEnergy - hitHadronicEnergy;
+            }
+        }
+    }
+
+    return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+float CleanCluster::GetHadronicEnergyInLayer(const pandora::OrderedCaloHitList &orderedCaloHitList, const unsigned int pseudoLayer) const
+{
+	pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.find(pseudoLayer);
+
+    float hadronicEnergy(0.f);
+
+    if (iter != orderedCaloHitList.end())
+    {
+        for (pandora::CaloHitList::const_iterator hitIter = iter->second->begin(), hitIterEnd = iter->second->end(); hitIter != hitIterEnd; ++hitIter)
+        {
+            hadronicEnergy += (*hitIter)->GetHadronicEnergy();
+        }
+    }
+
+    return hadronicEnergy;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode CleanCluster::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+{
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MinCleanHitEnergy", m_minCleanHitEnergy));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MinCleanHitEnergyFraction", m_minCleanHitEnergyFraction));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MinCleanCorrectedHitEnergy", m_minCleanCorrectedHitEnergy));
+
+    return pandora::STATUS_CODE_SUCCESS;
+}
+
 }
 

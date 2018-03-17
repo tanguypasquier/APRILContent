@@ -271,6 +271,9 @@ inline pandora::StatusCode ArborContent::RegisterEnergyCorrections(const pandora
   PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
       "ThetaEnergyFunction", pandora::HADRONIC, new arbor_content::ThetaEnergyFunction()));
 
+  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
+      "CleanClusters", pandora::HADRONIC, new arbor_content::CleanCluster()));
+
   return pandora::STATUS_CODE_SUCCESS;
 }
 
