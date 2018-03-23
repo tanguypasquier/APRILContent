@@ -12,6 +12,9 @@
 
 using namespace pandora;
 
+namespace arbor_content
+{
+
 CheatingParticleIDAlgorithm::CheatingParticleIDAlgorithm() : 
     m_useClusterOverTrackID(true)
 {
@@ -106,3 +109,5 @@ StatusCode CheatingParticleIDAlgorithm::ReadSettings(const TiXmlHandle xmlHandle
 
     return STATUS_CODE_SUCCESS;
 }
+
+} // arbor_content

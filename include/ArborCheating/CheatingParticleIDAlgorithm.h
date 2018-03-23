@@ -39,7 +39,7 @@ private:
 
 inline pandora::Algorithm *CheatingParticleIDAlgorithm::Factory::CreateAlgorithm() const
 {
-    return new CheatingTrackToClusterMatching();
+    return new CheatingParticleIDAlgorithm();
 }
 
 } // namespace arbor_content
