@@ -44,6 +44,8 @@
 #include "ArborCheating/PerfectFragmentRemovalAlgorithm.h"
 #include "ArborCheating/PerfectIsoHitRemovalAlgorithm.h"
 #include "ArborCheating/PerfectNeutralHitRecoveryAlgorithm.h"
+#include "ArborCheating/CheatingClusterCleaningAlgorithm.h"
+#include "ArborCheating/CheatingParticleIDAlgorithm.h"
 
 #include "ArborClustering/ArborClusteringAlgorithm.h"
 #include "ArborClustering/ClusteringParentAlgorithm.h"
@@ -129,6 +131,8 @@ public:
     d("PerfectNeutralHitRecovery",           arbor_content::PerfectNeutralHitRecoveryAlgorithm::Factory) \
     d("CheatingTrackToClusterMatching",      arbor_content::CheatingTrackToClusterMatching::Factory) \
     d("ArborClustering",                     arbor_content::ArborClusteringAlgorithm::Factory) \
+    d("CheatingClusterCleaning",             arbor_content::CheatingClusterCleaningAlgorithm::Factory) \
+    d("CheatingParticleID",                  arbor_content::CheatingParticleIDAlgorithm::Factory) \
     d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory) \
     d("SimpleRegionClustering",              arbor_content::SimpleRegionClusteringAlgorithm::Factory) \
     d("VisualMonitoring",                    arbor_content::VisualMonitoringAlgorithm::Factory) \
