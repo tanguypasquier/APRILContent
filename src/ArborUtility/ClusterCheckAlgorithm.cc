@@ -40,6 +40,7 @@ namespace arbor_content
 
   pandora::StatusCode ClusterCheckAlgorithm::Run()
   {
+#if 0
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
@@ -74,6 +75,8 @@ namespace arbor_content
 		//if(trackList.size()>0)
 		//std::cout << "cluster E: " << cluster->GetHadronicEnergy() << ", track E: " << trackEnergy << std::endl;
 	}
+#endif
+
 
 #if 1
 	/////////////////////////
@@ -103,6 +106,30 @@ namespace arbor_content
 		{
 			const pandora::Cluster* cluster = *clusterIter;
 			float clusterEnergy = cluster->GetHadronicEnergy();
+
+			std::cout << "Cluster : " << cluster << std::endl;
+
+			const pandora::OrderedCaloHitList& orderedHits = cluster->GetOrderedCaloHitList();
+			const pandora::CaloHitList& isoHits = cluster->GetIsolatedCaloHitList();
+
+            pandora::CaloHitList hitList;
+			orderedHits.FillCaloHitList(hitList);
+
+			for(pandora::CaloHitList::const_iterator isoHitIter = isoHits.begin(); isoHitIter != isoHits.end(); ++isoHitIter)
+			{
+				const pandora::CaloHit* isoHit = *isoHitIter;
+
+				const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(isoHit));
+				std::cout << "hit MCP: " << pMCParticle << std::endl;
+			}
+
+			for(pandora::CaloHitList::const_iterator hitIter = hitList.begin(); hitIter != hitList.end(); ++hitIter)
+			{
+				const pandora::CaloHit* hit = *hitIter;
+
+				const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(hit));
+				std::cout << "hit MCP: " << pMCParticle << std::endl;
+			}
 
 			clustersEnergy += clusterEnergy;
 		}
