@@ -97,7 +97,8 @@ namespace arbor_content
                    const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCaloHit));
 
 				   int mcpPID = pMCParticle->GetParticleId();
-				   bool isNeutralHit = !(abs(mcpPID) == 211 || abs(mcpPID) == 321 || abs(mcpPID) == 2212);
+				   int mcpCharge = pandora::PdgTable::GetParticleCharge(mcpPID);
+				   bool isNeutralHit = mcpCharge==0;
 
 				   if(pClusterMCParticle != NULL)
 				   {

@@ -56,12 +56,14 @@ StatusCode CheatingParticleIDAlgorithm::Run()
                 const Track *const pTrack(trackList.front());
                 const MCParticle *const pMainMCParticle(MCParticleHelper::GetMainMCParticle(pTrack));
                 metadata.m_particleId = pMainMCParticle->GetParticleId();
+				metadata.m_charge = pandora::PdgTable::GetParticleCharge(pMainMCParticle->GetParticleId());
             }
             // Case 3) Clusters With No Tracks
             else if (nClusters > 0 && nTracks == 0)
             {
                 const MCParticle *const pMainMCParticle(MCParticleHelper::GetMainMCParticle(&clusterList));
                 metadata.m_particleId = pMainMCParticle->GetParticleId();
+				metadata.m_charge = pandora::PdgTable::GetParticleCharge(pMainMCParticle->GetParticleId());
             }
             // Case 4) Clusters and Tracks
             else if (nClusters > 0 && nTracks == 1)
@@ -76,6 +78,7 @@ StatusCode CheatingParticleIDAlgorithm::Run()
                 if (particleIDCluster == particleIDTrack)
                 {
                     metadata.m_particleId = particleIDCluster;
+				    metadata.m_charge = pandora::PdgTable::GetParticleCharge(particleIDCluster);
                 }
                 else if (m_useClusterOverTrackID)
                 {
