@@ -28,7 +28,7 @@ namespace arbor_content
     const ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-	//std::cout << "-----> list : " << pClusterList->size() << std::endl;
+	std::cout << "-----> list : " << pClusterList->size() << std::endl;
 
     ClusterList localClusterList(pClusterList->begin(), pClusterList->end());
     MCParticleToClusterListMap mcParticleToClusterListMap;
@@ -42,7 +42,7 @@ namespace arbor_content
 		}
 	}
 
-	//std::cout << "-----> mcParticleToClusterListMap size: " << mcParticleToClusterListMap.size() << std::endl;
+	std::cout << "-----> mcParticleToClusterListMap size: " << mcParticleToClusterListMap.size() << std::endl;
 
 	///////////////////////////////////
 
@@ -53,7 +53,7 @@ namespace arbor_content
 	// collection of calo hit and cluster to make new relationship 
 	CaloHitToClusterMap caloHitToClusterAddMap;
 
-	// collection to store the calo hit of neutral particle 
+	// collection to store the calo hit of charged particle 
     MCParticleToCaloHitListMap mcParticleToCaloHitListMap;
 
     for (ClusterList::const_iterator clusterIter = localClusterList.begin(), clusterIterEnd = localClusterList.end(); 
@@ -62,8 +62,10 @@ namespace arbor_content
       try
       {
         const Cluster *const pCluster = *clusterIter;
+		std::cout << "ChargedHitRecovery--> Cluster : " << pCluster << std::endl;
+
 		const TrackList& trackList = pCluster->GetAssociatedTrackList();
-		bool isChargedCluster = trackList.size() != 0;
+		bool isNeutralCluster = trackList.size() == 0;
 
 		const MCParticle *pClusterMCParticle = NULL;
 #if 1
@@ -73,6 +75,7 @@ namespace arbor_content
 	    }
         catch (StatusCodeException &)
         {
+			continue;
         }
 #endif
 
@@ -90,7 +93,6 @@ namespace arbor_content
 			{
 				//std::cout << " --------->>>>> try a calo hit: " << *hitIter << std::endl;
 				const CaloHit* pCaloHit = *hitIter;
-				//std::cout << " ==== calo hit: " << pCaloHit << std::endl;
 
 	            try
 	            {
@@ -98,20 +100,37 @@ namespace arbor_content
 
 				   int mcpPID = pMCParticle->GetParticleId();
 				   int mcpCharge = pandora::PdgTable::GetParticleCharge(mcpPID);
-				   bool isChargedHit = mcpCharge!=0;
+				   bool isChargedHit = (mcpCharge!=0);
+				
+				   int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId());
+				   isNeutralCluster = (clusterMCPCharge == 0);
 
-				   if(pClusterMCParticle != NULL)
+				   if(mcpCharge != clusterMCPCharge) 
 				   {
-					   if(pClusterMCParticle->GetParticleId() == pMCParticle->GetParticleId()) continue;
+					   std::cout << "---> charge of cluster and hit are not consistent..." << std::endl;
 				   }
 
-			       // if the calo hit is neutral but its associated cluster is charged,
-				   if(isChargedHit && isChargedCluster)
+				   std::cout << " ==== calo hit: " << pCaloHit << ", hitmcpCharge: " << mcpCharge 
+					         << ", isNeutralCluster: " << isNeutralCluster << ", MCP chg: "<< clusterMCPCharge << std::endl;
+
+				   if(pClusterMCParticle->GetParticleId() == pMCParticle->GetParticleId()) 
 				   {
-				       //std::cout << "MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId() << std::endl;
+					   if(isChargedHit && isNeutralCluster) 
+					   {
+						   std::cout << "---> PID: " << pClusterMCParticle->GetParticleId() << 
+							   ", mcpChargeHit: " << mcpCharge << ", clusterMCPCharge: " << clusterMCPCharge << std::endl;
+					   }
+
+					   continue;
+				   }
+
+			       // if the calo hit is charged but its associated cluster is neutral,
+				   if(isChargedHit && isNeutralCluster)
+				   {
+				       std::cout << "MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId() << std::endl;
 			           // remove the calo hit from cluster and add it to the correct cluster by MCP
-				       //std::cout << "cluster PDG: " << pClusterMCParticle->GetParticleId() << ", energy: " 
-					   // << pClusterMCParticle->GetEnergy() << " ///// calo hit PDG: " << pMCParticle->GetParticleId() << std::endl;
+				       std::cout << "cluster PDG: " << pClusterMCParticle->GetParticleId() << ", energy: " 
+					    << pClusterMCParticle->GetEnergy() << " ///// calo hit PDG: " << pMCParticle->GetParticleId() << std::endl;
 
 					   caloHitToClusterRemoveMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCluster));
 
@@ -150,7 +169,7 @@ namespace arbor_content
 		// Add calo hit and cluster relationship
 		AddClusterCaloHitAssociations(caloHitToClusterAddMap);
 
-		// Create neutral clusters from calo hit list
+		// Create charged clusters from calo hit list
 #if 1
 		const ClusterList *pNewClusterList = NULL; std::string newClusterListName;
         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pNewClusterList, newClusterListName));
@@ -162,6 +181,7 @@ namespace arbor_content
 	    std::string m_outputClusterListName("RecoveredChargedClusters");
         if (!pNewClusterList->empty())
         {
+		   std::cout << "Create new cluster: RecoveredChargedClusters" << std::endl;
            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
         }
 #endif
@@ -210,8 +230,8 @@ namespace arbor_content
 
 		//PandoraContentApi::AddIsolatedToCluster(*this, pCluster, pCaloHit);
 		PandoraContentApi::AddToCluster(*this, pCluster, pCaloHit);
-	    //std::cout << " ==========AddClusterCaloHitAssociation: cluster: " << pCluster << " E: " << pCluster->GetHadronicEnergy() 
-	   	//<< std::endl;
+	    std::cout << " ==========AddClusterCaloHitAssociation: cluster: " << pCluster << " E: " << pCluster->GetHadronicEnergy() 
+	   	<< std::endl;
 	}
 
 
@@ -232,7 +252,7 @@ namespace arbor_content
         parameters.m_caloHitList = *pCaloHitList;
 
         PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
-		//std::cout << " ========PerfectChargedHitRecoveryAlgorithm::CreateChargedCluster ..." << std::endl;
+		std::cout << " ========PerfectChargedHitRecoveryAlgorithm::CreateChargedCluster ..." << std::endl;
 	 }
   }
 

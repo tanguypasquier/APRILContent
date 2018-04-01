@@ -57,6 +57,7 @@ private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 	pandora::StatusCode	Initialize();
+	void                checkClusters(const pandora::ClusterList& clusterList);
 
     bool                            m_timing;
 

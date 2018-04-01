@@ -162,6 +162,7 @@ namespace arbor_content
 	    std::string m_outputClusterListName("RecoveredNeutralClusters");
         if (!pNewClusterList->empty())
         {
+		   std::cout << "Create new cluster: RecoveredNeutralClusters" << std::endl;
            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
         }
 #endif

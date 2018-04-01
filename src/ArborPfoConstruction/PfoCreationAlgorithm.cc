@@ -78,6 +78,8 @@ pandora::StatusCode PfoCreationAlgorithm::CreateTrackBasedPfos() const
     const pandora::TrackList *pTrackList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList<pandora::TrackList>(*this, pTrackList));
 
+	std::cout << "track size: " << pTrackList->size() << std::endl;
+
     for (pandora::TrackList::const_iterator iter = pTrackList->begin(), iterEnd = pTrackList->end(); iter != iterEnd; ++iter)
     {
         const pandora::Track *const pTrack = *iter;

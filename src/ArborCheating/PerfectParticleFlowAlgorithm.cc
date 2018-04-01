@@ -199,6 +199,7 @@ void PerfectParticleFlowAlgorithm::TrackCollection(const MCParticle *const pPfoT
 {
     const TrackList *pTrackList = NULL;
     PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
+	std::cout << "PerfectParticleFlowAlgorithm: track size: " << pTrackList->size() << std::endl;
 
     for (TrackList::const_iterator iter = pTrackList->begin(), iterEnd = pTrackList->end(); iter != iterEnd; ++iter)
     {

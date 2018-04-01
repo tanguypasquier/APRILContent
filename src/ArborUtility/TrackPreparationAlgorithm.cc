@@ -56,13 +56,16 @@ pandora::StatusCode TrackPreparationAlgorithm::Run()
         if (pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList<pandora::TrackList>(*this, *iter, pTrackList))
             continue;
 
+		std::cout << "TrackPreparationAlgorithm: Track size: " << pTrackList->size() << std::endl;
+
 		//int nCandiTrack(0);
 
         for (pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackIterEnd = pTrackList->end(); trackIter != trackIterEnd; ++trackIter)
         {
+			std::cout << "track: " << *trackIter << ", energy: " << (*trackIter)->GetEnergyAtDca() << std::endl;
+
             if ((*trackIter)->IsAvailable()) {
                 candidateTrackList.push_back(*trackIter);
-				//std::cout << "candi track: " << ++nCandiTrack << ", energy: " << (*trackIter)->GetEnergyAtDca() << std::endl;
 			}
         }
     }
@@ -89,12 +92,18 @@ pandora::StatusCode TrackPreparationAlgorithm::Run()
     	pandora::TrackList pfoTrackList;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreatePfoTrackList(candidateTrackList, pfoTrackList));
 
-		//std::cout << "candi Track: " << candidateTrackList.size() << "   Arbor: TrackList: " << pfoTrackList.size() << std::endl;
+	    std::cout << "total track: " << candidateTrackList.size() << ", track for PFO: " << pfoTrackList.size() << std::endl;
+
+        for (pandora::TrackList::const_iterator trackIter = pfoTrackList.begin(), trackIterEnd = pfoTrackList.end(); trackIter != trackIterEnd; ++trackIter)
+        {
+	    	std::cout << "track : " << *trackIter << ", energy: " <<  (*trackIter)->GetEnergyAtDca() << std::endl;
+	    }
 
         // Save the filtered list and set it to be the current list for future algorithms
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList(*this, pfoTrackList, m_pfoTrackListName));
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<pandora::Track>(*this, m_pfoTrackListName));
     }
+	
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -131,7 +140,7 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
 
         if (!pTrack->GetParentList().empty()) 
 		{
-			//std::cout << "parent track list is not empty, so ignore this track... " << std::endl;
+			std::cout << "parent track list is not empty, so ignore this track... " << std::endl;
 		
 			//std::cout << std::endl;
             continue;
@@ -145,7 +154,7 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
             //if (siblingTracks.end() != siblingTracks.find(pTrack))
             if (siblingTracks.end() != std::find(siblingTracks.begin(), siblingTracks.end(), pTrack))
 			{
-				//std::cout << "Sibling tracks is not empty, but it is strange that this track is not included..." << std::endl;
+				std::cout << "Sibling tracks is not empty, but it is strange that this track is not included..." << std::endl;
 				//std::cout << std::endl;
                 continue;
 			}
@@ -155,7 +164,7 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
                 pfoTrackList.push_back(pTrack);
                 siblingTracks.insert(siblingTracks.begin(), siblingTrackList.begin(), siblingTrackList.end());
 				++nTrackInsert;
-			    //std::cout << "TrackPreparationAlgorithm insert(has sibling track) : " << nTrackInsert  << ", with energy: " << pTrack->GetEnergyAtDca() << std::endl << std::endl;
+			    std::cout << "TrackPreparationAlgorithm insert(has sibling track) : " << nTrackInsert  << ", with energy: " << pTrack->GetEnergyAtDca() << std::endl << std::endl;
             }
         }
         // Single parent track as pfo target
@@ -167,12 +176,12 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
      //<< ", with energy: " << pTrack->GetEnergyAtDca() << ", cluster: "  << pTrack->GetAssociatedCluster()<< std::endl << std::endl;
 
 
-       //std::cout << "TrackPreparationAlgorithm insert(has cluster) : " << nTrackInsert 
-     //<< ", with energy: " << pTrack->GetEnergyAtDca() << std::endl << std::endl;
+       std::cout << "TrackPreparationAlgorithm insert(has cluster) : " << nTrackInsert 
+     << ", with energy: " << pTrack->GetEnergyAtDca() << std::endl << std::endl;
         }
 		else 
 		{
-			//std::cout << "ignore this track ... energy: " << pTrack->GetEnergyAtDca() << std::endl;
+			std::cout << "ignore this track ... energy: " << pTrack->GetEnergyAtDca() << std::endl;
             // FIXME we should be very careful here !!!!!!!!!!!!!
             // energy, reach ecal can form pfo ???????????
             
