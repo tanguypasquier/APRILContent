@@ -39,7 +39,8 @@ namespace arbor_content
 
   pandora::StatusCode ClusterCheckAlgorithm::Run()
   {
-#if 0
+#if 1
+	{
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
@@ -66,13 +67,14 @@ namespace arbor_content
 
         const float chi(ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(), cluster, trackList));
 
-		if(std::fabs(chi)>2) {
-			std::cout << "chi: " << chi << ", cluster energy: " << cluster->GetHadronicEnergy() 
+		if(std::fabs(chi)>0.) {
+			std::cout << "chi: " << chi << ", cluster: " << cluster << ", cluster energy: " << cluster->GetHadronicEnergy() 
 				      << ", track E: " << trackEnergySum << std::endl; 
 		}
 
 		//if(trackList.size()>0)
 		//std::cout << "cluster E: " << cluster->GetHadronicEnergy() << ", track E: " << trackEnergy << std::endl;
+	}
 	}
 #endif
 
@@ -142,6 +144,8 @@ namespace arbor_content
     
     		const pandora::OrderedCaloHitList& orderedHits = cluster->GetOrderedCaloHitList();
     		const pandora::CaloHitList& isoHits = cluster->GetIsolatedCaloHitList();
+
+			const pandora::MCParticle* firstMCP = NULL;
     
             pandora::CaloHitList hitList;
     		orderedHits.FillCaloHitList(hitList);
@@ -157,6 +161,16 @@ namespace arbor_content
     
     			       std::cout << "isohit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
     			   		", charge: " << mcpCharge << std::endl;
+
+				   if(firstMCP==NULL)
+				   {
+				   	 firstMCP = pMCParticle;
+				   }
+
+				   if(firstMCP!=NULL && firstMCP != pMCParticle)
+				   {
+					   std::cout << "firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
+				   }
     			}
     			catch (pandora::StatusCodeException &)
     			{
@@ -174,6 +188,16 @@ namespace arbor_content
     
     			    std::cout << "hit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
     					", charge: " << mcpCharge << std::endl;
+
+				   if(firstMCP==NULL)
+				   {
+				   	 firstMCP = pMCParticle;
+				   }
+
+				   if(firstMCP!=NULL && firstMCP != pMCParticle)
+				   {
+					   std::cout << "firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
+				   }
     			}
     			catch (pandora::StatusCodeException &)
     			{

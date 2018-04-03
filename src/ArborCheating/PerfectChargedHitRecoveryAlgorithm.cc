@@ -81,6 +81,7 @@ namespace arbor_content
 
 		const OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
 
+
 		//std::cout << "cluster energy: " << pCluster->GetHadronicEnergy() << ", orderedCaloHitList size: " << orderedCaloHitList.size() << std::endl;
 
 		for(OrderedCaloHitList::const_iterator hitListIter = orderedCaloHitList.begin(); hitListIter != orderedCaloHitList.end(); 

@@ -115,7 +115,7 @@ namespace arbor_content
 	  {
 		  const pandora::Cluster* cluster = *itCluster;
 		  PandoraContentApi::MergeAndDeleteClusters(*this, firstCluster, cluster);
-		  std::cout << "----> merged a cluster" << std::endl;
+		  std::cout << "----> merged two clusters: " << firstCluster << " <--- " << cluster << std::endl;
 	  }
 
 	  clusterList.clear();

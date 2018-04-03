@@ -181,6 +181,15 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
         }
 		else 
 		{
+			try 
+			{
+				const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pTrack));
+				std::cout << "track MCP: " << pMCParticle << std::endl;
+			}
+    		catch (pandora::StatusCodeException &)
+    		{
+    		}
+
 			std::cout << "ignore this track ... energy: " << pTrack->GetEnergyAtDca() << std::endl;
             // FIXME we should be very careful here !!!!!!!!!!!!!
             // energy, reach ecal can form pfo ???????????
