@@ -39,7 +39,7 @@ namespace arbor_content
 
   pandora::StatusCode ClusterCheckAlgorithm::Run()
   {
-#if 1
+#if 0
 	{
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
@@ -83,6 +83,10 @@ namespace arbor_content
     const pandora::PfoList *pPfoList = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
 
+    const pandora::ClusterList *pClusterList = NULL; 
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+
+	std::cout << "------- # Cluster : " << pClusterList->size() << std::endl;
 	std::cout << "------- # PFO : " << pPfoList->size() << std::endl;
 
     for(pandora::PfoList::const_iterator iter = pPfoList->begin(), endIter = pPfoList->end(); endIter != iter ; ++iter)
@@ -110,8 +114,6 @@ namespace arbor_content
      	checkClusters(pfoClusterList);
 	}
 
-    const pandora::ClusterList *pClusterList = NULL; 
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
 	if(pClusterList!=NULL)
 	{

@@ -48,8 +48,8 @@ pandora::StatusCode ClusterPreparationAlgorithm::Run()
         {
             if ((*clusterIter)->IsAvailable())
                 clustersToSave.push_back(*clusterIter);
-			//else
-				//std::cout << "a cluster is not available..." << std::endl;
+			else
+				std::cout << "cluster is not available..." << std::endl;
         }
 
         PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, PandoraContentApi::SaveList(*this,

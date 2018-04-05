@@ -159,7 +159,19 @@ namespace arbor_content
         parameters.m_caloHitList = pCaloHitList;
 
         PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
-		std::cout << " ========PerfectClusterSeparationAlgorithm: create a cluster ..." << std::endl;
+
+		const MCParticle *pClusterMCParticle = NULL;
+
+	    try
+	    {
+           pClusterMCParticle = MCParticleHelper::GetMainMCParticle(pCluster);
+	    }
+        catch (StatusCodeException &)
+        {
+        }
+
+		std::cout << "========PerfectClusterSeparationAlgorithm: create a cluster: " << pCluster 
+			      << ", MCP: " << pClusterMCParticle << std::endl;
 	 }
   }
 

@@ -81,16 +81,10 @@ namespace arbor_content
 
 		const OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
 
+        pandora::CaloHitList hitList;
+    	orderedCaloHitList.FillCaloHitList(hitList);
 
-		//std::cout << "cluster energy: " << pCluster->GetHadronicEnergy() << ", orderedCaloHitList size: " << orderedCaloHitList.size() << std::endl;
-
-		for(OrderedCaloHitList::const_iterator hitListIter = orderedCaloHitList.begin(); hitListIter != orderedCaloHitList.end(); 
-				++hitListIter)
-		{
-			const CaloHitList* hitListInLayer = hitListIter->second;
-			//std::cout << " === hit list size at layer " << hitListIter->first << ": " << hitListInLayer->size() << std::endl;
-
-			for(CaloHitList::const_iterator hitIter = hitListInLayer->begin(); hitIter != hitListInLayer->end(); ++hitIter)
+			for(CaloHitList::const_iterator hitIter = hitList.begin(); hitIter != hitList.end(); ++hitIter)
 			{
 				//std::cout << " --------->>>>> try a calo hit: " << *hitIter << std::endl;
 				const CaloHit* pCaloHit = *hitIter;
@@ -106,20 +100,22 @@ namespace arbor_content
 				   int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId());
 				   isNeutralCluster = (clusterMCPCharge == 0);
 
+#if 0
 				   if(mcpCharge != clusterMCPCharge) 
 				   {
 					   std::cout << "---> charge of cluster and hit are not consistent..." << std::endl;
 				   }
+#endif
 
-				   std::cout << " ==== calo hit: " << pCaloHit << ", hitmcpCharge: " << mcpCharge 
-					         << ", isNeutralCluster: " << isNeutralCluster << ", MCP chg: "<< clusterMCPCharge << std::endl;
+				   std::cout << " ==== calo hit: " << pCaloHit << ", hit MCP charge: " << mcpCharge 
+					         << ", cluster MCP charge: "<< clusterMCPCharge << std::endl;
 
 				   if(pClusterMCParticle->GetParticleId() == pMCParticle->GetParticleId()) 
 				   {
 					   if(isChargedHit && isNeutralCluster) 
 					   {
-						   std::cout << "---> PID: " << pClusterMCParticle->GetParticleId() << 
-							   ", mcpChargeHit: " << mcpCharge << ", clusterMCPCharge: " << clusterMCPCharge << std::endl;
+						   std::cout << "---> strange, mcpChargeHit: " << mcpCharge << ", clusterMCPCharge: " 
+							         << clusterMCPCharge << std::endl;
 					   }
 
 					   continue;
@@ -128,10 +124,9 @@ namespace arbor_content
 			       // if the calo hit is charged but its associated cluster is neutral,
 				   if(isChargedHit && isNeutralCluster)
 				   {
-				       std::cout << "MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId() << std::endl;
 			           // remove the calo hit from cluster and add it to the correct cluster by MCP
-				       std::cout << "cluster PDG: " << pClusterMCParticle->GetParticleId() << ", energy: " 
-					    << pClusterMCParticle->GetEnergy() << " ///// calo hit PDG: " << pMCParticle->GetParticleId() << std::endl;
+				       std::cout << " ====== cluster PDG: " << pClusterMCParticle->GetParticleId() << ", energy: " 
+					    << pClusterMCParticle->GetEnergy() << ", calo hit PDG: " << pMCParticle->GetParticleId() << std::endl;
 
 					   caloHitToClusterRemoveMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCluster));
 
@@ -162,7 +157,7 @@ namespace arbor_content
 			    	continue;
                 }
 			}
-		}
+		
 
 		// Remove calo hit and cluster relationship
 		RemoveClusterCaloHitAssociations(caloHitToClusterRemoveMap);
