@@ -43,8 +43,8 @@ private:
 
     //typedef std::map<const pandora::MCParticle*, pandora::CaloHitList*> MCParticleToCaloHitListMap;
     //typedef std::map<const pandora::MCParticle*, const pandora::Cluster*> MCParticleToClusterMap;
-    //typedef std::map<const pandora::MCParticle*, pandora::ClusterList*> MCParticleToClusterListMap;
     //typedef std::map<const pandora::CaloHit*, const pandora::Cluster*> CaloHitToClusterMap;
+    typedef std::map<const pandora::MCParticle*, pandora::ClusterList> MCParticleToClusterListMap;
     typedef std::map<const pandora::MCParticle*, pandora::CaloHitList> MCParticleToCaloHitListMap;
 
     //void AddToCaloHitListMap(const pandora::CaloHit* const pCaloHitToAdd, 
@@ -66,7 +66,7 @@ private:
     void AddToClusterMap(const pandora::CaloHit* pCaloHit,  const pandora::MCParticle* pMCParticle, 
 			            MCParticleToCaloHitListMap& mcParticleToCaloHitListMap);
   
-	void CreateClusters(MCParticleToCaloHitListMap& mcParticleToCaloHitListMap) const;
+	pandora::StatusCode CreateClusters(pandora::ClusterList& clusterList, MCParticleToCaloHitListMap& mcParticleToCaloHitListMap) const;
 
 };
 

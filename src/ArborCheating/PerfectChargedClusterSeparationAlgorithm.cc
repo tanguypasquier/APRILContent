@@ -30,28 +30,19 @@ namespace arbor_content
 
 	//std::cout << "-----> list : " << pClusterList->size() << std::endl;
 
-    ClusterList localClusterList(pClusterList->begin(), pClusterList->end());
+    ClusterList clusterList(pClusterList->begin(), pClusterList->end());
 	
 	// collection of calo hit and cluster to make new relationship 
     MCParticleToCaloHitListMap mcParticleToCaloHitListMap;
 
-	if(!localClusterList.empty())
+	if(!clusterList.empty())
 	{
-		ClusterSeparation(localClusterList, mcParticleToCaloHitListMap);
+		ClusterSeparation(clusterList, mcParticleToCaloHitListMap);
 	}
 
-	const ClusterList *pNewClusterList = NULL; std::string newClusterListName;
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pNewClusterList, newClusterListName));
 
-	CreateClusters(mcParticleToCaloHitListMap);
+	CreateClusters(clusterList, mcParticleToCaloHitListMap);
 
-	// FIXME
-    std::string m_outputClusterListName("SeparatedClusters");
-    if (!pNewClusterList->empty())
-    {
-	   std::cout << "Create new cluster: SeparatedClusters" << std::endl;
-       PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
-    }
 
     return STATUS_CODE_SUCCESS;
   }
@@ -68,6 +59,7 @@ namespace arbor_content
       try
       {
         const Cluster *const pCluster = *clusterIter;
+		//std::cout << "--> In cluster: " << pCluster << std::endl;
 
 #if 0
 		const MCParticle *pClusterMCParticle = NULL;
@@ -107,7 +99,7 @@ namespace arbor_content
 
 			   if(firstMCP!=NULL && firstMCP != pMCParticle)
 			   {
-				   std::cout << "firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
+				   //std::cout << "firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
 
 				   AddToClusterMap(pCaloHit, pMCParticle, mcParticleToCaloHitListMap);
 		           PandoraContentApi::RemoveFromCluster(*this, pCluster, pCaloHit);
@@ -147,8 +139,13 @@ namespace arbor_content
   
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  void PerfectChargedClusterSeparationAlgorithm::CreateClusters(MCParticleToCaloHitListMap& mcParticleToCaloHitListMap) const
+  StatusCode PerfectChargedClusterSeparationAlgorithm::CreateClusters(ClusterList& clusterList, MCParticleToCaloHitListMap& mcParticleToCaloHitListMap) const
   {
+	const ClusterList *pNewClusterList = NULL; std::string clusterListName;
+    PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pNewClusterList, clusterListName);
+
+	 //----> create separated clusters
+	 pandora::ClusterList newClusterList;
 	 for(MCParticleToCaloHitListMap::const_iterator iter = mcParticleToCaloHitListMap.begin(); 
 			 iter != mcParticleToCaloHitListMap.end(); ++iter)
 	 {
@@ -170,9 +167,103 @@ namespace arbor_content
         {
         }
 
-		std::cout << "========PerfectClusterSeparationAlgorithm: create a cluster: " << pCluster 
-			      << ", MCP: " << pClusterMCParticle << std::endl;
+		//std::cout << "========PerfectClusterSeparationAlgorithm: create a cluster: " << pCluster 
+		//	      << ", MCP: " << pClusterMCParticle << std::endl;
+
+		newClusterList.push_back(pCluster);
 	 }
+
+     std::string newClusterListName("NewSeparatedClusters");
+
+     if (!newClusterList.empty())
+     {
+	    //std::cout << "Create new cluster: NewSeparatedClusters: " << newClusterList.size() << std::endl;
+        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, newClusterListName));
+     }
+
+	 if(!clusterList.empty())
+	 {
+		 //std::cout << "original cluster size: " << clusterList.size() << std::endl;
+	 }
+
+     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
+				PandoraContentApi::SaveList(*this, newClusterListName, "prePfoCreation2", newClusterList));
+
+	 PandoraContentApi::ReplaceCurrentList<Cluster>(*this, "prePfoCreation2");
+
+     const ClusterList *pClusterList = NULL;
+     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+
+	  //----> create a map for all existing clusters
+	  ClusterList localClusterList(pClusterList->begin(), pClusterList->end());
+	  //std::cout << "localClusterList size: " << localClusterList.size() << std::endl;
+
+	  //std::cout << "newClusterList size: " << newClusterList.size() << std::endl;
+	  //localClusterList.merge(newClusterList);
+	  //std::cout << "after merging, localClusterList size: " << localClusterList.size() << std::endl;
+	
+	  /// collection of MCP and cluster list
+      MCParticleToClusterListMap mcParticleToClusterListMap;
+
+      for (ClusterList::const_iterator clusterIter = localClusterList.begin(), clusterIterEnd = localClusterList.end(); 
+	  		clusterIter != clusterIterEnd; ++clusterIter)
+      {
+          const Cluster *const pCluster = *clusterIter;
+	  	  //std::cout << "--> In cluster: " << pCluster << std::endl;
+
+		  const MCParticle *pClusterMCParticle = NULL;
+
+	      try
+	      {
+             pClusterMCParticle = MCParticleHelper::GetMainMCParticle(pCluster);
+	      }
+          catch (StatusCodeException &)
+          {
+          }
+	  
+		  MCParticleToClusterListMap::iterator clusterListIter = mcParticleToClusterListMap.find(pClusterMCParticle);
+
+		  if(clusterListIter == mcParticleToClusterListMap.end())
+		  {
+			  ClusterList clusters;
+			  clusters.push_back(pCluster);
+			  mcParticleToClusterListMap.insert(MCParticleToClusterListMap::value_type(pClusterMCParticle, clusters));
+		  }
+		  else
+		  {
+			  ClusterList& clusters = clusterListIter->second;
+			  clusters.push_back(pCluster);
+		  }
+	  }
+
+
+    // merge cluster with identical MCP
+    for (MCParticleToClusterListMap::iterator iter = mcParticleToClusterListMap.begin(), iterEnd = mcParticleToClusterListMap.end(); iter != iterEnd; ++iter)
+	{
+      ClusterList &clusters = iter->second;
+
+	  if(clusters.size()<=1) continue;
+
+	  const pandora::Cluster *const firstCluster = *(clusters.begin());
+
+	  ClusterList::const_iterator itCluster = clusters.begin();
+	  ++itCluster;
+
+      for (ClusterList::const_iterator itClusterEnd = clusters.end(); itCluster != itClusterEnd; ++itCluster)
+	  {
+		  const pandora::Cluster* cluster = *itCluster;
+		  PandoraContentApi::MergeAndDeleteClusters(*this, firstCluster, cluster);
+		  //std::cout << "----> merged two clusters: " << firstCluster << " <--- " << cluster << std::endl;
+	  }
+	}
+    
+	PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+	ClusterList finalClusterList(pClusterList->begin(), pClusterList->end());
+
+	//std::cout << "final cluster size: " << finalClusterList.size() << std::endl;
+
+    return STATUS_CODE_SUCCESS;
+
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

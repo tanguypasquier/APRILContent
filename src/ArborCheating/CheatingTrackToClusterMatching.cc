@@ -94,8 +94,8 @@ namespace arbor_content
       }
     }
 
-    std::cout << "N mc tracks   = " << tracksPerMCParticle.size() << std::endl;
-    std::cout << "N mc clusters = " << clustersPerMCParticle.size() << std::endl;
+    //std::cout << "N mc tracks   = " << tracksPerMCParticle.size() << std::endl;
+    //std::cout << "N mc clusters = " << clustersPerMCParticle.size() << std::endl;
 
 	// merge clusters for one MC particle
 #if 1
@@ -115,7 +115,7 @@ namespace arbor_content
 	  {
 		  const pandora::Cluster* cluster = *itCluster;
 		  PandoraContentApi::MergeAndDeleteClusters(*this, firstCluster, cluster);
-		  std::cout << "----> merged two clusters: " << firstCluster << " <--- " << cluster << std::endl;
+		  //std::cout << "----> merged two clusters: " << firstCluster << " <--- " << cluster << std::endl;
 	  }
 
 	  clusterList.clear();
@@ -146,13 +146,14 @@ namespace arbor_content
       for (TrackList::const_iterator itTrack = trackList.begin(), itTrackEnd = trackList.end(); itTrack != itTrackEnd; ++itTrack)
       {
         // If the mc particle is associated with multiple clusters, can only associate to highest energy cluster (clusters should be merged)
-		//std::cout << "track energy: " << (*itTrack)->GetEnergyAtDca() << std::endl;
+		//std::cout << " ----- track energy: " << (*itTrack)->GetEnergyAtDca() << std::endl;
         const Cluster *pHighestEnergyCluster = NULL;
         float highestEnergy(-std::numeric_limits<float>::max());
 
         for (ClusterList::const_iterator itCluster = clusterList.begin(), itClusterEnd = clusterList.end(); itCluster != itClusterEnd; ++itCluster)
         {
           const float clusterEnergy((*itCluster)->GetHadronicEnergy());
+		  //std::cout << " -------- cluster energy: " << clusterEnergy << std::endl;
 
           if (clusterEnergy > highestEnergy)
           {
@@ -164,8 +165,13 @@ namespace arbor_content
         if (NULL == pHighestEnergyCluster)
           throw StatusCodeException(STATUS_CODE_FAILURE);
 
-		if(matchedClusters.end() != matchedClusters.find(pHighestEnergyCluster)) continue;
+		if(matchedClusters.end() != matchedClusters.find(pHighestEnergyCluster)) 
+		{
+			//std::cout << " ------------- cluster : " << pHighestEnergyCluster << ", has used already." << std::endl; 
+			continue;
+		}
 
+		//std::cout << " --->>>> add association, track: " << *itTrack << " -> cluster: " << pHighestEnergyCluster << std::endl;
         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, *itTrack, pHighestEnergyCluster));
 
 		matchedClusters.insert(pHighestEnergyCluster);
@@ -173,6 +179,17 @@ namespace arbor_content
 		//std::cout << "----> added relation: " << *itTrack << ", " << pHighestEnergyCluster << std::endl;
       }
     }
+
+	// check the association
+    for (TrackList::const_iterator iter = pCurrentTrackList->begin(), iterEnd = pCurrentTrackList->end(); iter != iterEnd; ++iter)
+	{
+        const Track *const pTrack = *iter;
+		bool hasCluster = pTrack->HasAssociatedCluster();
+
+		//std::cout << " ------ Track: " << pTrack << ", energy: " << pTrack->GetEnergyAtDca() 
+		//	      << ", has cluster: " << hasCluster << std::endl;
+	}
+	
 
     return STATUS_CODE_SUCCESS;
   }

@@ -28,7 +28,7 @@ namespace arbor_content
     const ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-	std::cout << "-----> list : " << pClusterList->size() << std::endl;
+	//std::cout << "-----> list : " << pClusterList->size() << std::endl;
 
     ClusterList localClusterList(pClusterList->begin(), pClusterList->end());
     MCParticleToClusterListMap mcParticleToClusterListMap;
@@ -42,7 +42,7 @@ namespace arbor_content
 		}
 	}
 
-	std::cout << "-----> mcParticleToClusterListMap size: " << mcParticleToClusterListMap.size() << std::endl;
+	//std::cout << "-----> mcParticleToClusterListMap size: " << mcParticleToClusterListMap.size() << std::endl;
 
 	///////////////////////////////////
 
@@ -62,8 +62,9 @@ namespace arbor_content
       try
       {
         const Cluster *const pCluster = *clusterIter;
-		std::cout << "ChargedHitRecovery--> Cluster : " << pCluster << std::endl;
+		//std::cout << "ChargedHitRecovery--> Cluster : " << pCluster << std::endl;
 
+		// This is not always true
 		const TrackList& trackList = pCluster->GetAssociatedTrackList();
 		bool isNeutralCluster = trackList.size() == 0;
 
@@ -84,79 +85,79 @@ namespace arbor_content
         pandora::CaloHitList hitList;
     	orderedCaloHitList.FillCaloHitList(hitList);
 
-			for(CaloHitList::const_iterator hitIter = hitList.begin(); hitIter != hitList.end(); ++hitIter)
-			{
-				//std::cout << " --------->>>>> try a calo hit: " << *hitIter << std::endl;
-				const CaloHit* pCaloHit = *hitIter;
+		for(CaloHitList::const_iterator hitIter = hitList.begin(); hitIter != hitList.end(); ++hitIter)
+		{
+			//std::cout << " --------->>>>> try a calo hit: " << *hitIter << std::endl;
+			const CaloHit* pCaloHit = *hitIter;
 
-	            try
-	            {
-                   const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCaloHit));
+	        try
+	        {
+               const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCaloHit));
 
-				   int mcpPID = pMCParticle->GetParticleId();
-				   int mcpCharge = pandora::PdgTable::GetParticleCharge(mcpPID);
-				   bool isChargedHit = (mcpCharge!=0);
-				
-				   int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId());
-				   isNeutralCluster = (clusterMCPCharge == 0);
+			   int mcpPID = pMCParticle->GetParticleId();
+			   int mcpCharge = pandora::PdgTable::GetParticleCharge(mcpPID);
+			   bool isChargedHit = (mcpCharge!=0);
+			
+			   int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId());
+			   isNeutralCluster = (clusterMCPCharge == 0);
 
 #if 0
-				   if(mcpCharge != clusterMCPCharge) 
-				   {
-					   std::cout << "---> charge of cluster and hit are not consistent..." << std::endl;
-				   }
+			   if(mcpCharge != clusterMCPCharge) 
+			   {
+				   std::cout << "---> charge of cluster and hit are not consistent..." << std::endl;
+			   }
 #endif
 
-				   std::cout << " ==== calo hit: " << pCaloHit << ", hit MCP charge: " << mcpCharge 
-					         << ", cluster MCP charge: "<< clusterMCPCharge << std::endl;
+			   //std::cout << " ==== calo hit: " << pCaloHit << ", hit MCP charge: " << mcpCharge 
+			   //         << ", cluster MCP charge: "<< clusterMCPCharge << std::endl;
 
-				   if(pClusterMCParticle->GetParticleId() == pMCParticle->GetParticleId()) 
+			   if(pClusterMCParticle->GetParticleId() == pMCParticle->GetParticleId()) 
+			   {
+				   if(isChargedHit && isNeutralCluster) 
 				   {
-					   if(isChargedHit && isNeutralCluster) 
-					   {
-						   std::cout << "---> strange, mcpChargeHit: " << mcpCharge << ", clusterMCPCharge: " 
-							         << clusterMCPCharge << std::endl;
-					   }
-
-					   continue;
+					   //std::cout << "---> strange, mcpChargeHit: " << mcpCharge << ", clusterMCPCharge: " 
+					   //	         << clusterMCPCharge << std::endl;
 				   }
 
-			       // if the calo hit is charged but its associated cluster is neutral,
-				   if(isChargedHit && isNeutralCluster)
+				   continue;
+			   }
+
+		       // if the calo hit is charged but its associated cluster is neutral,
+			   if(isChargedHit && isNeutralCluster)
+			   {
+		           // remove the calo hit from cluster and add it to the correct cluster by MCP
+			       //std::cout << " ====== cluster PDG: " << pClusterMCParticle->GetParticleId() << ", energy: " 
+				   //          << pClusterMCParticle->GetEnergy() << ", calo hit PDG: " << pMCParticle->GetParticleId() << std::endl;
+
+				   caloHitToClusterRemoveMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCluster));
+
+				   const MCParticleToClusterListMap::const_iterator clusterListIter = mcParticleToClusterListMap.find(pMCParticle);
+
+				   if(clusterListIter != mcParticleToClusterListMap.end())
 				   {
-			           // remove the calo hit from cluster and add it to the correct cluster by MCP
-				       std::cout << " ====== cluster PDG: " << pClusterMCParticle->GetParticleId() << ", energy: " 
-					    << pClusterMCParticle->GetEnergy() << ", calo hit PDG: " << pMCParticle->GetParticleId() << std::endl;
+				       // if there is a correct cluster to add the hit
+					   const ClusterList* cluList = clusterListIter->second;
 
-					   caloHitToClusterRemoveMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCluster));
-
-					   const MCParticleToClusterListMap::const_iterator clusterListIter = mcParticleToClusterListMap.find(pMCParticle);
-
-					   if(clusterListIter != mcParticleToClusterListMap.end())
+					   if(!cluList->empty()) 
 					   {
-					       // if there is a correct cluster to add the hit
-						   const ClusterList* cluList = clusterListIter->second;
-
-						   if(!cluList->empty()) 
-						   {
-						      const Cluster* pCorrectCluster = *(cluList->begin());
-					          caloHitToClusterAddMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCorrectCluster));
-						   }
-					   }
-					   else
-					   {
-						   // if no correct cluster
-						   //std::cout << " === AddToHitListMap " << std::endl;
-                           AddToCaloHitListMap(pCaloHit, pMCParticle, mcParticleToCaloHitListMap);
-						   //std::cout << " ======= AddToHitListMap " << std::endl;
+					      const Cluster* pCorrectCluster = *(cluList->begin());
+				          caloHitToClusterAddMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCorrectCluster));
 					   }
 				   }
-	            }
-                catch (StatusCodeException &)
-                {
-			    	continue;
-                }
-			}
+				   else
+				   {
+					   // if no correct cluster
+					   //std::cout << " === AddToHitListMap " << std::endl;
+                       AddToCaloHitListMap(pCaloHit, pMCParticle, mcParticleToCaloHitListMap);
+					   //std::cout << " ======= AddToHitListMap " << std::endl;
+				   }
+			   }
+	        }
+            catch (StatusCodeException &)
+            {
+		    	continue;
+            }
+		}
 		
 
 		// Remove calo hit and cluster relationship
@@ -177,7 +178,7 @@ namespace arbor_content
 	    std::string m_outputClusterListName("RecoveredChargedClusters");
         if (!pNewClusterList->empty())
         {
-		   std::cout << "Create new cluster: RecoveredChargedClusters" << std::endl;
+		   //std::cout << "Create new cluster: RecoveredChargedClusters" << std::endl;
            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
         }
 #endif
@@ -226,8 +227,8 @@ namespace arbor_content
 
 		//PandoraContentApi::AddIsolatedToCluster(*this, pCluster, pCaloHit);
 		PandoraContentApi::AddToCluster(*this, pCluster, pCaloHit);
-	    std::cout << " ==========AddClusterCaloHitAssociation: cluster: " << pCluster << " E: " << pCluster->GetHadronicEnergy() 
-	   	<< std::endl;
+	    //std::cout << " ==========AddClusterCaloHitAssociation: cluster: " << pCluster << " E: " << pCluster->GetHadronicEnergy() 
+	   	//<< std::endl;
 	}
 
 
@@ -248,7 +249,7 @@ namespace arbor_content
         parameters.m_caloHitList = *pCaloHitList;
 
         PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
-		std::cout << " ========PerfectChargedHitRecoveryAlgorithm::CreateChargedCluster ..." << std::endl;
+		//std::cout << " ========PerfectChargedHitRecoveryAlgorithm::CreateChargedCluster ..." << std::endl;
 	 }
   }
 
