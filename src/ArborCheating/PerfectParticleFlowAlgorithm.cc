@@ -18,6 +18,37 @@ using namespace pandora;
 namespace arbor_content // changed namespace
 {
 
+const MCParticle* GetCaloHitMainMCParticle(const CaloHit *const pCaloHit)
+{
+    float bestWeight(0.f);
+    const MCParticle *pBestMCParticle(nullptr);
+    const MCParticleWeightMap &hitMCParticleWeightMap(pCaloHit->GetMCParticleWeightMap());
+
+    MCParticleVector mcParticleVector;
+    for (const MCParticleWeightMap::value_type &mapEntry : hitMCParticleWeightMap) mcParticleVector.push_back(mapEntry.first);
+    std::sort(mcParticleVector.begin(), mcParticleVector.end(), PointerLessThan<MCParticle>());
+
+    for (const MCParticle *const pMCParticle : mcParticleVector)
+    {
+        const float weight(hitMCParticleWeightMap.at(pMCParticle));
+
+        if (weight > bestWeight)
+        {
+            bestWeight = weight;
+            pBestMCParticle = pMCParticle;
+        }
+    }
+
+    if (!pBestMCParticle)
+	{
+		//std::cout << "hitMCParticleWeightMap size: " <<  hitMCParticleWeightMap.size() << std::endl;
+        throw StatusCodeException(STATUS_CODE_NOT_INITIALIZED);
+	}
+
+    return pBestMCParticle;
+}
+
+
 PerfectParticleFlowAlgorithm::PerfectParticleFlowAlgorithm() :
     m_simpleCaloHitCollection(true),
     m_minWeightFraction(0.01f)
@@ -123,8 +154,9 @@ void PerfectParticleFlowAlgorithm::CaloHitCollection(const MCParticle *const pPf
                     PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pCluster, *hitIter));
             }
         }
-        catch (StatusCodeException &)
+        catch (StatusCodeException &e)
         {
+			//std::cout << e.ToString() << std::endl;
         }
     }
 }
@@ -133,7 +165,7 @@ void PerfectParticleFlowAlgorithm::CaloHitCollection(const MCParticle *const pPf
 
 void PerfectParticleFlowAlgorithm::SimpleCaloHitCollection(const MCParticle *const pPfoTarget, const CaloHit *const pCaloHit, CaloHitList &caloHitList) const
 {
-    const MCParticle *const pHitMCParticle(MCParticleHelper::GetMainMCParticle(pCaloHit));
+    const MCParticle *const pHitMCParticle(GetCaloHitMainMCParticle(pCaloHit));
     const MCParticle *const pHitPfoTarget(pHitMCParticle->GetPfoTarget());
 
     if (pHitPfoTarget != pPfoTarget)
@@ -214,8 +246,9 @@ void PerfectParticleFlowAlgorithm::TrackCollection(const MCParticle *const pPfoT
 
             pfoParameters.m_trackList.push_back(pTrack);
         }
-        catch (StatusCodeException &)
+        catch (StatusCodeException &e)
         {
+			std::cout << e.ToString() << std::endl;
         }
     }
 }

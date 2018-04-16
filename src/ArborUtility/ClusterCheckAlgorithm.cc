@@ -95,7 +95,7 @@ namespace arbor_content
 		int pfoPID = pfo->GetParticleId();
 		int pfoCharge = pfo->GetCharge();
 
-		std::cout << "PFO : " << pfo << ", PID: " << pfoPID << ", charge: " << pfoCharge << std::endl;
+		//std::cout << "PFO : " << pfo << ", PID: " << pfoPID << ", charge: " << pfoCharge << std::endl;
 
 		const pandora::TrackList& pfoTrackList = pfo->GetTrackList();
 		const pandora::ClusterList& pfoClusterList = pfo->GetClusterList();
@@ -121,6 +121,68 @@ namespace arbor_content
 		checkClusters(*pClusterList);
 	}
 
+	{
+	    ///// check hit
+	    double totHitEnergy = 0.;
+	    double totAvailableHitEnergy = 0.;
+
+        const pandora::CaloHitList *pCaloHitList = NULL;
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+
+        const pandora::CaloHitList localCaloHitList(pCaloHitList->begin(), pCaloHitList->end());
+
+        for (pandora::CaloHitList::const_iterator iter = localCaloHitList.begin(), iterEnd = localCaloHitList.end(); iter != iterEnd; ++iter)
+        {
+            try
+            {
+                const pandora::CaloHit *const pCaloHit = *iter;
+	    		double hitEnergy = pCaloHit->GetHadronicEnergy();
+
+                if (PandoraContentApi::IsAvailable(*this, pCaloHit))
+	    		{
+	    			totAvailableHitEnergy += hitEnergy;
+	    			//std::cout << "a available hit energy: " << hitEnergy << ", total: " << totAvailableHitEnergy << std::endl;
+
+					//
+    			    try
+    			    {
+    			       const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCaloHit));
+	    		    }
+                    catch (pandora::StatusCodeException &)
+                    {
+						//std::cout << "no MCP" << std::endl;
+                    }
+				}
+
+	    		totHitEnergy += pCaloHit->GetHadronicEnergy();
+	    	}
+            catch (pandora::StatusCodeException &)
+            {
+            }
+	    }
+
+	    std::cout << "total hit energy available: " << totAvailableHitEnergy << ", total hit energy: " << totHitEnergy << std::endl;
+	}
+
+#if 0
+	{
+        const MCParticleList *pMCParticleList = NULL;
+        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pMCParticleList));
+
+        for (MCParticleList::const_iterator iterMC = pMCParticleList->begin(), iterMCEnd = pMCParticleList->end(); iterMC != iterMCEnd; ++iterMC)
+        {
+            try
+            {
+                const MCParticle *const pPfoTarget = *iterMC;
+                PfoParameters pfoParameters;
+			}
+            catch (StatusCodeException &)
+            {
+            }
+		}
+	}
+#endif
+	
     return pandora::STATUS_CODE_SUCCESS;
   }
 
@@ -128,7 +190,7 @@ namespace arbor_content
   void ClusterCheckAlgorithm::checkClusters(const pandora::ClusterList& pfoClusterList)
   {
 
-	 std::cout << "cluster size: " << pfoClusterList.size() << std::endl;
+	 //std::cout << "cluster size: " << pfoClusterList.size() << std::endl;
 
      for(pandora::ClusterList::const_iterator clusterIter = pfoClusterList.begin(); clusterIter != pfoClusterList.end(); ++clusterIter)
      {
@@ -137,7 +199,7 @@ namespace arbor_content
     		try
     		{
     			const pandora::MCParticle *const pMCClusterParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
-    		    std::cout << "Cluster : " << cluster << ", MCPID: " << pMCClusterParticle->GetParticleId() << std::endl;
+    		    //std::cout << "Cluster : " << cluster << ", MCPID: " << pMCClusterParticle->GetParticleId() << std::endl;
     		}
     		catch (pandora::StatusCodeException &)
     		{
@@ -161,8 +223,8 @@ namespace arbor_content
     			   const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(isoHit));
     			   int mcpCharge = pandora::PdgTable::GetParticleCharge(pMCParticle->GetParticleId());
     
-    			       std::cout << "isohit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
-    			   		", charge: " << mcpCharge << std::endl;
+    			   //    std::cout << "isohit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
+    			   //		", charge: " << mcpCharge << std::endl;
 
 				   if(firstMCP==NULL)
 				   {
@@ -171,7 +233,7 @@ namespace arbor_content
 
 				   if(firstMCP!=NULL && firstMCP != pMCParticle)
 				   {
-					   std::cout << "firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
+					   //std::cout << "firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
 				   }
     			}
     			catch (pandora::StatusCodeException &)
@@ -188,8 +250,8 @@ namespace arbor_content
     				const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(hit));
     				int mcpCharge = pandora::PdgTable::GetParticleCharge(pMCParticle->GetParticleId());
     
-    			    std::cout << "hit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
-    					", charge: " << mcpCharge << std::endl;
+    			    //std::cout << "hit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
+    				//	", charge: " << mcpCharge << std::endl;
 
 				   if(firstMCP==NULL)
 				   {
