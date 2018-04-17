@@ -27,6 +27,7 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborPfoConstruction/PfoCreationAlgorithm.h"
+#include "ArborHelpers/ReclusterHelper.h"
 
 namespace arbor_content
 {
@@ -313,7 +314,40 @@ pandora::StatusCode PfoCreationAlgorithm::SetSimpleTrackBasedPfoParameters(const
     pfoParameters.m_charge = pTrack->GetCharge();
     pfoParameters.m_particleId = (pTrack->GetCharge() > 0) ? pandora::PI_PLUS : pandora::PI_MINUS;
 
-	//std::cout << "PfoCreationAlgorithm::SetSimpleTrackBasedPfoParameters: " << pTrack->GetEnergyAtDca() << std::endl;
+	float chi = 0.;
+
+	try
+	{
+    const pandora::Cluster *const pAssociatedCluster(pTrack->GetAssociatedCluster());
+
+	if(pAssociatedCluster==NULL) return pandora::STATUS_CODE_SUCCESS;
+
+
+        chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(),  
+			                                                  pAssociatedCluster->GetHadronicEnergy(), pTrack->GetEnergyAtDca());
+	
+		//std::cout << "SetSimpleTrackBasedPfoParameters: chi: " << chi << ", E_track: " << pTrack->GetEnergyAtDca()
+		//<< ", E_cluster: " << pAssociatedCluster->GetHadronicEnergy() << std::endl;
+
+	    if(chi>5.)
+	    {
+	    	//pfoParameters.m_energy = pAssociatedCluster->GetCorrectedHadronicEnergy(this->GetPandora());
+	    	pfoParameters.m_energy = pAssociatedCluster->GetHadronicEnergy();
+	    	pfoParameters.m_particleId = pandora::NEUTRON;
+	    	pfoParameters.m_mass = pandora::PdgTable::GetParticleMass(pandora::NEUTRON);
+	    	pfoParameters.m_charge = 0;
+
+	    	// FIXME momentum
+            //const pandora::CartesianVector momentum(positionVector.GetUnitVector() * clusterEnergy);
+            //pfoParameters.m_momentum = momentum;
+	    }
+	}
+    catch (pandora::StatusCodeException &)
+	{
+		std::cout << "chi is not available" << std::endl;
+	}
+
+
     return pandora::STATUS_CODE_SUCCESS;
 }
 

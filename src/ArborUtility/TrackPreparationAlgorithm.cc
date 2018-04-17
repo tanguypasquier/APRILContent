@@ -235,7 +235,8 @@ bool TrackPreparationAlgorithm::HasAssociatedClusters(const pandora::Track *cons
 	//if(pTrack->HasAssociatedCluster()) std::cout << "track->Clu: " << pTrack->GetAssociatedCluster() << " e: " << 
 	//	pTrack->GetAssociatedCluster()->GetElectromagneticEnergy() + pTrack->GetAssociatedCluster()->GetHadronicEnergy() << std::endl;
 
-    if ((pTrack->CanFormPfo() && pTrack->HasAssociatedCluster()) || (pTrack->CanFormClusterlessPfo()))
+    //if ((pTrack->CanFormPfo() && pTrack->HasAssociatedCluster()) || (pTrack->CanFormClusterlessPfo()))
+    if (pTrack->CanFormPfo() || pTrack->HasAssociatedCluster() || pTrack->CanFormClusterlessPfo())
         return true;
 
     if (!pTrack->IsAvailable())
