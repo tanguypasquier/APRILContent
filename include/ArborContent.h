@@ -47,6 +47,7 @@
 #include "ArborCheating/PerfectChargedHitRecoveryAlgorithm.h"
 #include "ArborCheating/PerfectChargedClusterSeparationAlgorithm.h"
 #include "ArborCheating/PerfectPfoCreationAlgorithm.h"
+#include "ArborCheating/SemiPerfectPfoCreationAlgorithm.h"
 #include "ArborCheating/CheatingClusterCleaningAlgorithm.h"
 #include "ArborCheating/CheatingParticleIDAlgorithm.h"
 
@@ -135,6 +136,7 @@ public:
     d("PerfectChargedHitRecovery",           arbor_content::PerfectChargedHitRecoveryAlgorithm::Factory) \
     d("PerfectChargedClusterSeparation",     arbor_content::PerfectChargedClusterSeparationAlgorithm::Factory) \
     d("PerfectPfoCreation",                  arbor_content::PerfectPfoCreationAlgorithm::Factory) \
+    d("SemiPerfectPfoCreation",              arbor_content::SemiPerfectPfoCreationAlgorithm::Factory) \
     d("CheatingTrackToClusterMatching",      arbor_content::CheatingTrackToClusterMatching::Factory) \
     d("ArborClustering",                     arbor_content::ArborClusteringAlgorithm::Factory) \
     d("CheatingClusterCleaning",             arbor_content::CheatingClusterCleaningAlgorithm::Factory) \
