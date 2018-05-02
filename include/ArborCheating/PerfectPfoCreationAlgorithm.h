@@ -25,8 +25,8 @@
  */
 
 
-#ifndef ARBOR_PFO_CREATION_ALGORITHM_H
-#define ARBOR_PFO_CREATION_ALGORITHM_H
+#ifndef ARBOR_PERFECT_PFO_CREATION_ALGORITHM_H
+#define ARBOR_PERFECT_PFO_CREATION_ALGORITHM_H
 
 #include "Pandora/Algorithm.h"
 
@@ -151,4 +151,4 @@ inline pandora::Algorithm *PerfectPfoCreationAlgorithm::Factory::CreateAlgorithm
 
 }
 
-#endif // #ifndef ARBOR_PFO_CREATION_ALGORITHM_H
+#endif // #ifndef ARBOR_PERFECT_PFO_CREATION_ALGORITHM_H
