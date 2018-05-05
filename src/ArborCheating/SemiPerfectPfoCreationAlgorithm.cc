@@ -101,7 +101,7 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::TrackClusterAssociation(con
 pandora::StatusCode SemiPerfectPfoCreationAlgorithm::Run()
 {
 	PandoraContentApi::RemoveAllTrackClusterAssociations(*this);
-    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_associationAlgorithmName));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RunDaughterAlgorithm(*this, m_associationAlgorithmName));
 	
 
     const pandora::PfoList *pPfoList = NULL; std::string pfoListName;
@@ -417,7 +417,7 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() cons
 			//std::cout << "pfoTarget: " << pPfoTarget << std::endl;
             PfoParameters pfoParameters;
 
-	        this->TrackClusterAssociation(pPfoTarget, pfoParameters);
+	        //this->TrackClusterAssociation(pPfoTarget, pfoParameters);
 
             this->TrackCollection(pPfoTarget, pfoParameters);
             //this->CaloHitCollection(pPfoTarget, pfoParameters);
