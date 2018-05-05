@@ -17,6 +17,8 @@ namespace arbor_content
 
   StatusCode CheatingTrackToClusterMatching::Run()
   {
+
+	std::cout << "CheatingTrackToCluster......" << std::endl;
     // Read current lists
     const TrackList *pCurrentTrackList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCurrentTrackList));
@@ -61,6 +63,32 @@ namespace arbor_content
       }
     }
 
+    for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
+    {
+      try
+      {
+        const Cluster *const pCluster = *iter;
+        const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
+
+		auto foundMCPTracks = tracksPerMCParticle.find(pMCParticle);
+
+		if(foundMCPTracks != tracksPerMCParticle.end())
+		{
+			const TrackList& tracks = foundMCPTracks->second;
+
+			for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
+			{
+				auto track = *trackIter;
+				PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
+			}
+		}
+	  }
+      catch (StatusCodeException &)
+	  {
+	  }
+	}
+
+#if 0
     // Construct a map from mc particle to clusters
     typedef std::map<const MCParticle*, ClusterList> ClustersPerMCParticle;
     ClustersPerMCParticle clustersPerMCParticle;
@@ -186,9 +214,24 @@ namespace arbor_content
         const Track *const pTrack = *iter;
 		bool hasCluster = pTrack->HasAssociatedCluster();
 
-		//std::cout << " ------ Track: " << pTrack << ", energy: " << pTrack->GetEnergyAtDca() 
-		//	      << ", has cluster: " << hasCluster << std::endl;
+		if(hasCluster) 
+		{
+		    std::cout << " ------ Track: " << pTrack << ", energy: " << pTrack->GetEnergyAtDca() 
+			          << ", has cluster: " << pTrack->GetAssociatedCluster() << std::endl;
+		}
+		else
+		{
+			std::cout << " ------ Track: " << pTrack << " has no cluster" << std::endl;
+		}
 	}
+
+    for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
+	{
+		const Cluster* const pCluster = *iter;
+
+		std::cout << " ------ Cluster's tracks: " << pCluster->GetAssociatedTrackList().size() << std::endl;
+	}
+#endif
 	
 
     return STATUS_CODE_SUCCESS;
