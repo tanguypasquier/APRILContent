@@ -55,26 +55,6 @@ public:
 private:
 	pandora::StatusCode Run();
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
-  
-	pandora::StatusCode PrepareClusters(pandora::ClusterVector& clusterVector, 
-                                        pandora::ClusterList&   photonList);
-	
-	pandora::StatusCode ReclusterCluster(pandora::ClusterVector& clusterVector,
-			                             pandora::ClusterList&   photonList);
-  
-	bool ShouldReclusterCluster(const pandora::Cluster *const pCluster, float& trackEnergy);
-	bool IsBestReclustering(const std::string reclusterClusterListName);
-
-    pandora::StatusCode SearchNearbyClusters(pandora::ClusterVector& clusterVector, 
-			 const pandora::Cluster *const pCluster, pandora::ClusterList& reclusterClusterList);
-	pandora::StatusCode ExecuteReclustering(const pandora::Cluster *const pCluster, pandora::ClusterList& reclusterClusterList);
-  
-	pandora::StatusCode ReAssociateTrackCluster();
-	pandora::StatusCode TidyClusters(pandora::ClusterVector& clusterVector,
-			                         pandora::ClusterList&   photonList);
-
-	pandora::StatusCode CheckClusters();
-  
 
 private:
 	unsigned int                        m_minTrackAssociations;
@@ -87,26 +67,10 @@ private:
 	float                               m_minTrackMomentum;
 
 	pandora::StringVector	            m_clusteringAlgorithmList;
+
 	std::string                         m_associationAlgorithmName;
 	std::string                         m_trackClusterAssociationAlgName;
 	std::string                         m_monitoringAlgorithmName;
-
-	float                               m_bestChi;
-
-	static std::string                  m_clusterName;
-	static std::string                  m_photonClusterName;
-    static std::string                  m_bestReclusterClusterListName;
-	static std::string                  m_originalClusterListName;
-
-    static UIntVector                   m_originalClusterIndices;
-
-    //pandora::ClusterVector              m_clusterVector;
-
-    //const pandora::ClusterList*         m_pClusterList;
-    //const pandora::ClusterList*         m_pPhotonClusterList;
-
-	// FIXME:: maybe we can just use m_pPhotonClusterList ...
-    //pandora::ClusterList                m_photonList;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

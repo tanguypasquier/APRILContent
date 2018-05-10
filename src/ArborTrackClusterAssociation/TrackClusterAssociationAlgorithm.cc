@@ -85,6 +85,11 @@ namespace arbor_content
 
       const unsigned int innerPseudoLayer(pCluster->GetInnerPseudoLayer());
 
+      const bool isPhoton(pandora::PHOTON == pCluster->GetParticleId());
+      const bool isNeutron(pandora::NEUTRON == pCluster->GetParticleId());
+
+	  if(isPhoton || isNeutron) continue;
+
       if( innerPseudoLayer > m_maxClusterInnerPseudoLayer )
         continue;
 
@@ -142,7 +147,7 @@ namespace arbor_content
 
         if( ! this->PassesInitialCuts(pCluster, pTrack) )
 		{
-		  //if(canPrint) std::cout << "track: " << trackEnergy << ", cluster: " << clusterEnergy << ", not pass init" << std::endl;
+		  //std::cout << "track: " << trackEnergy << ", cluster: " << clusterEnergy << ", not pass init" << std::endl;
           continue;
 		}
 
@@ -151,7 +156,7 @@ namespace arbor_content
 
         if( ! this->FitConstraints(constraints) )
 		{
-		  //if(canPrint) std::cout << "track: " << trackEnergy << ", cluster: " << clusterEnergy << ", not pass Fit" << std::endl;
+		  //std::cout << "track: " << trackEnergy << ", cluster: " << clusterEnergy << ", not pass Fit" << std::endl;
           continue;
 		}
 
@@ -165,6 +170,7 @@ namespace arbor_content
 
       if(NULL != pBestCluster)
       {
+		// not allowed ?
         if(m_allowMultiAssociations)
         {
           associationMap[pTrack] = pBestCluster;
@@ -231,8 +237,8 @@ namespace arbor_content
 
   pandora::StatusCode TrackClusterAssociationAlgorithm::PerformAssociations(const AssociationMap &associationMap)
   {
-#if 1	  
-    //std::cout << "TrackClusterAssociationAlgorithm::PerformAssociations" << std::endl;
+    std::cout << "TrackClusterAssociationAlgorithm::PerformAssociations map: " << associationMap.size() << std::endl;
+#if 0	  
 
 	pandora::TrackVector trackVector;
 
@@ -245,7 +251,7 @@ namespace arbor_content
 
 	std::sort(trackVector.begin(), trackVector.end(), SortTracksByEnergy);
 
-	//std::cout << "# of pfo track: " << trackVector.size() << std::endl;
+	std::cout << "# of pfo track: " << trackVector.size() << std::endl;
 
     for (pandora::TrackVector::const_iterator trackIter = trackVector.begin(), trackIterEnd = trackVector.end(); trackIter != trackIterEnd; ++trackIter)
     {
@@ -335,10 +341,15 @@ namespace arbor_content
     const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
     const pandora::Helix helix(trackProjection, trackMomentum, pTrack->GetCharge(), bField);
 
+	//std::cout << "e: " << pTrack->GetCharge() << ", b: " << bField << std::endl;
+	//std::cout << "TP: " << trackProjection.GetX() << ", " << trackProjection.GetY() << ", " << trackProjection.GetZ() << std::endl;
+	//std::cout << "P: " << trackMomentum.GetX() << ", " << trackMomentum.GetY() << ", " << trackMomentum.GetZ() << std::endl;
+
     //	pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
     //
     //	if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, innerCentroid, projectionOnHelix))
     //		return false;
+	//std::cout << "innerCentroid: " << innerCentroid.GetX() << ", " << innerCentroid.GetY() << ", " << innerCentroid.GetZ() << std::endl;
 
     pandora::CartesianVector distanceToHelix(0.f, 0.f, 0.f);
     helix.GetDistanceToPoint(innerCentroid, distanceToHelix);
@@ -422,11 +433,11 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxClusterInnerPseudoLayer", m_maxClusterInnerPseudoLayer));
 
-    m_nFirstClusterPseudoLayer = 4;
+    m_nFirstClusterPseudoLayer = 2;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "NFirstClusterPseudoLayer", m_nFirstClusterPseudoLayer));
 
-    m_maxDistanceToHelix = 25.f;
+    m_maxDistanceToHelix = 70.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxDistanceToHelix", m_maxDistanceToHelix));
 
