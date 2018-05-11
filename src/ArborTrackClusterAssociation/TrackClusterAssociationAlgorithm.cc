@@ -88,7 +88,11 @@ namespace arbor_content
       const bool isPhoton(pandora::PHOTON == pCluster->GetParticleId());
       const bool isNeutron(pandora::NEUTRON == pCluster->GetParticleId());
 
-	  if(isPhoton || isNeutron) continue;
+	  if(isPhoton || isNeutron) 
+	  {
+		  std::cout << "isPhoton: " << isPhoton << ", isNeutron: " << isNeutron << std::endl;
+		  continue;
+	  }
 
       if( innerPseudoLayer > m_maxClusterInnerPseudoLayer )
         continue;
@@ -437,11 +441,11 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "NFirstClusterPseudoLayer", m_nFirstClusterPseudoLayer));
 
-    m_maxDistanceToHelix = 70.f;
+    m_maxDistanceToHelix = 150.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxDistanceToHelix", m_maxDistanceToHelix));
 
-    m_maxTrackClusterAngle = 0.6f;
+    m_maxTrackClusterAngle = 1.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxTrackClusterAngle", m_maxTrackClusterAngle));
 
@@ -449,7 +453,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "AllowMultiAssociations", m_allowMultiAssociations));
 
-    m_useEnergyCompatibility = false;
+    m_useEnergyCompatibility = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "UseEnergyCompatibility", m_useEnergyCompatibility));
 
