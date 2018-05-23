@@ -31,6 +31,9 @@
 
 #include "Pandora/Algorithm.h"
 
+#include "TMVA/Reader.h"
+#include "TMVA/MethodCuts.h"
+
 namespace arbor_content
 {
 
@@ -108,6 +111,8 @@ private:
 	 */
 	bool PassesInitialCuts(const pandora::Cluster *const pCluster, const pandora::Track *const pTrack) const;
 
+	float MVADeteriminAssociation(const pandora::Cluster* const pCluster, const pandora::Track* const pTrack) const;
+
 	/**
 	 *  @brief  Calculate the track-cluster association constraints for a possible association
 	 *
@@ -140,6 +145,8 @@ private:
 	bool                           m_useEnergyCompatibility;       ///< Whether to use energy information for association
 
 	bool                           m_usePhotonClusters;
+
+	static TMVA::Reader*           m_reader;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

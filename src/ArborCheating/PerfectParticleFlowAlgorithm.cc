@@ -10,6 +10,7 @@
  */
 
 #include "Pandora/AlgorithmHeaders.h"
+#include "Api/PandoraContentApi.h"
 
 #include "ArborCheating/PerfectParticleFlowAlgorithm.h" // changed path
 

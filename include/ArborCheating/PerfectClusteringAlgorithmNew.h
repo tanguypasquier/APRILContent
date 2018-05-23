@@ -14,6 +14,8 @@
 
 #include "Pandora/Algorithm.h"
 
+#include "ArborHelpers/HistogramHelper.h"
+
 namespace arbor_content // changed namespace
 {
 

@@ -232,8 +232,15 @@ void SemiPerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(const pandora::
 			if(pTrack->HasAssociatedCluster())
 			{
 				const pandora::Cluster* pCluster = pTrack->GetAssociatedCluster();
-				clusters.push_back(pCluster);
+
+                if (PandoraContentApi::IsAvailable(*this, pCluster))
+				{
+					clusters.push_back(pCluster);
+				}
+
 				std::cout << "track: " << pTrack << " --- cluster: " << pCluster << std::endl;
+				std::cout << "track energy: " << pTrack->GetEnergyAtDca() << ", cluster energy: " << pCluster->GetHadronicEnergy() 
+					<< std::endl;
 			}
         }
 
@@ -355,7 +362,14 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::SetPfoParametersFromCluster
         pfoParameters.m_momentum = momentum.GetUnitVector() * clusterEnergy;
 
         const pandora::ParticleFlowObject *pPfo(NULL);
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
+		try 
+		{
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
+		}
+        catch (pandora::StatusCodeException &)
+		{
+			std::cout << "Create cluster failed..." << std::endl;
+		}
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -436,11 +450,20 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() cons
             }
 #endif
 
-            const pandora::ParticleFlowObject *pPfo(NULL);
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
+			const pandora::ParticleFlowObject *pPfo(NULL);
+            //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
+			//PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
+
+            auto createStatus = PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo);
+
+			if(createStatus != pandora::STATUS_CODE_SUCCESS)
+			{
+				std::cout << "PFO creation error: " << createStatus << std::endl;
+			}
 		}
         catch (pandora::StatusCodeException &)
 		{
+			continue;
 		}
 	}
 
