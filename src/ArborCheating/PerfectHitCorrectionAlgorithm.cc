@@ -28,6 +28,7 @@ PerfectHitCorrectionAlgorithm::PerfectHitCorrectionAlgorithm() :
 
 StatusCode PerfectHitCorrectionAlgorithm::Run()
 {
+#if 0
     const MCParticleList *pMCParticleList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pMCParticleList));
 
@@ -66,6 +67,29 @@ StatusCode PerfectHitCorrectionAlgorithm::Run()
     }
 
     return STATUS_CODE_SUCCESS;
+#endif
+
+
+    const ClusterList *pClusterList = NULL;
+    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+
+	std::cout << "Hit Correction -----> list : " << pClusterList->size() << std::endl;
+
+#if 0
+    ClusterList localClusterList(pClusterList->begin(), pClusterList->end());
+    MCParticleToClusterListMap mcParticleToClusterListMap;
+	
+	if(!localClusterList.empty())
+	{
+		for(ClusterList::const_iterator iter = localClusterList.begin(); iter != localClusterList.end(); ++iter)
+		{
+			const Cluster* const pCluster = *iter;
+			SimpleMCParticleClusterListCollection(pCluster, mcParticleToClusterListMap);
+		}
+	}
+#endif
+    return STATUS_CODE_SUCCESS;
+
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
