@@ -42,6 +42,7 @@
 #include "ArborCheating/PerfectParticleFlowAlgorithm.h"
 #include "ArborCheating/PerfectClusteringAlgorithm.h"
 #include "ArborCheating/PerfectClusteringAlgorithmNew.h"
+#include "ArborCheating/PerfectHitCorrectionAlgorithm.h"
 #include "ArborCheating/PerfectFragmentRemovalAlgorithm.h"
 #include "ArborCheating/PerfectIsoHitRemovalAlgorithm.h"
 #include "ArborCheating/PerfectNeutralHitRecoveryAlgorithm.h"
@@ -129,6 +130,7 @@ public:
     d("PerfectParticleFlow",                 arbor_content::PerfectParticleFlowAlgorithm::Factory) \
     d("PerfectClustering",                   arbor_content::PerfectClusteringAlgorithm::Factory) \
     d("PerfectClusteringNew",                arbor_content::PerfectClusteringAlgorithmNew::Factory) \
+    d("PerfectHitCorrection",                arbor_content::PerfectClusteringAlgorithmNew::Factory) \
     d("PerfectFragmentRemoval",              arbor_content::PerfectFragmentRemovalAlgorithm::Factory) \
     d("PerfectIsoHitRemoval",                arbor_content::PerfectIsoHitRemovalAlgorithm::Factory) \
     d("IsoHitRemoval",                       arbor_content::IsoHitRemovalAlgorithm::Factory) \

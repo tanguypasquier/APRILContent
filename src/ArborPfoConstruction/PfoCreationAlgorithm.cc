@@ -93,6 +93,8 @@ pandora::StatusCode PfoCreationAlgorithm::CreateTrackBasedPfos() const
 
         // Specify the pfo parameters
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SetTrackBasedPfoParameters(pTrack, pfoParameters));
+	
+		std::cout << "------------------" << std::endl;
 
 		//std::cout << "pfoParameters.energy: " << pfoParameters.m_energy.Get() << std::endl;
 
@@ -114,6 +116,9 @@ pandora::StatusCode PfoCreationAlgorithm::CreateTrackBasedPfos() const
 
         // Create the pfo
         const pandora::ParticleFlowObject *pPfo(NULL);
+
+		// FIXME
+		// The code will crash here, possibly due to the usage of the same object in two PFOs
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
 #if 0
 		//std::cout << "track based pfo, energy: " << pPfo->GetEnergy() << ", pfoParameters.energy: " 
@@ -136,6 +141,7 @@ pandora::StatusCode PfoCreationAlgorithm::CreateTrackBasedPfos() const
 #endif
     }
 
+
     return pandora::STATUS_CODE_SUCCESS;
 }
 
@@ -145,6 +151,7 @@ pandora::StatusCode PfoCreationAlgorithm::PopulateTrackBasedPfo(const pandora::T
 {
     // Add track to the pfo
     pfoParameters.m_trackList.push_back(pTrack);
+		std::cout << "track: " << pTrack << std::endl;
 	//std::cout << std::endl;
 
     // Add any cluster associated with this track to the pfo
@@ -152,7 +159,10 @@ pandora::StatusCode PfoCreationAlgorithm::PopulateTrackBasedPfo(const pandora::T
     {
         const pandora::Cluster *const pAssociatedCluster(pTrack->GetAssociatedCluster());
         pfoParameters.m_clusterList.push_back(pAssociatedCluster);
-		//std::cout << "track, with energy: " << pTrack->GetEnergyAtDca() << ", added cluster" << std::endl;
+		std::cout << "cluster: " << pAssociatedCluster << std::endl;
+
+		std::cout << "track, with energy: " << pTrack->GetEnergyAtDca() << ", added cluster energy: " 
+			      << pAssociatedCluster->GetHadronicEnergy() << std::endl;
     }
     catch (pandora::StatusCodeException &)
     {
@@ -177,6 +187,7 @@ pandora::StatusCode PfoCreationAlgorithm::PopulateTrackBasedPfo(const pandora::T
     {
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->PopulateTrackBasedPfo(*iter, pfoParameters));
     }
+
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -316,26 +327,38 @@ pandora::StatusCode PfoCreationAlgorithm::SetSimpleTrackBasedPfoParameters(const
 
 	float chi = 0.;
 
+	// this code should be only for check the energy compatibility between track and cluster
+	// the association algorithm is done in algorithm called before
 	try
 	{
-    const pandora::Cluster *const pAssociatedCluster(pTrack->GetAssociatedCluster());
+		if(!pTrack->HasAssociatedCluster()) 
+		{
+			std::cout << "no associated cluster, track energy:  " << pTrack->GetEnergyAtDca() << std::endl;
+			return pandora::STATUS_CODE_SUCCESS;
+		}
 
-	if(pAssociatedCluster==NULL) return pandora::STATUS_CODE_SUCCESS;
+        const pandora::Cluster *const pAssociatedCluster(pTrack->GetAssociatedCluster());
+
+	    if(pAssociatedCluster==NULL) return pandora::STATUS_CODE_SUCCESS;
 
 
         chi = ReclusterHelper::GetTrackClusterCompatibility(this->GetPandora(),  
 			                                                  pAssociatedCluster->GetHadronicEnergy(), pTrack->GetEnergyAtDca());
 	
-		//std::cout << "SetSimpleTrackBasedPfoParameters: chi: " << chi << ", E_track: " << pTrack->GetEnergyAtDca()
-		//<< ", E_cluster: " << pAssociatedCluster->GetHadronicEnergy() << std::endl;
+		std::cout << "SetSimpleTrackBasedPfoParameters: chi: " << chi << ", E_track: " << pTrack->GetEnergyAtDca()
+		<< ", E_cluster: " << pAssociatedCluster->GetHadronicEnergy() << std::endl;
 
-	    if(chi>5.)
+		// not quite sure about this
+	    if(fabs(chi)>5.)
 	    {
 	    	//pfoParameters.m_energy = pAssociatedCluster->GetCorrectedHadronicEnergy(this->GetPandora());
 	    	pfoParameters.m_energy = pAssociatedCluster->GetHadronicEnergy();
 	    	pfoParameters.m_particleId = pandora::NEUTRON;
 	    	pfoParameters.m_mass = pandora::PdgTable::GetParticleMass(pandora::NEUTRON);
 	    	pfoParameters.m_charge = 0;
+
+			// OK for warning
+			std::cout << "-------->>>>> warning!!!: track-cluster association Chi: " << chi << std::endl;
 
 	    	// FIXME momentum
             //const pandora::CartesianVector momentum(positionVector.GetUnitVector() * clusterEnergy);

@@ -233,7 +233,7 @@ namespace arbor_content
 
 				   if(firstMCP!=NULL && firstMCP != pMCParticle)
 				   {
-					   //std::cout << "firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
+					   std::cout << "----------  firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
 				   }
     			}
     			catch (pandora::StatusCodeException &)
@@ -260,7 +260,9 @@ namespace arbor_content
 
 				   if(firstMCP!=NULL && firstMCP != pMCParticle)
 				   {
-					   std::cout << "firstMCP: " << firstMCP << ", thisMCP: " << pMCParticle << std::endl;
+					   int firstMCPChg = pandora::PdgTable::GetParticleCharge(firstMCP->GetParticleId());
+					   std::cout << "firstMCP: " << firstMCP << ", chg: " << firstMCPChg << ", thisMCP: " 
+						         << pMCParticle << ", chg: " << mcpCharge << std::endl;
 				   }
     			}
     			catch (pandora::StatusCodeException &)

@@ -68,7 +68,14 @@ namespace arbor_content
       const unsigned int nTracks(trackList.size());
 
       if(nTracks < m_minNTrackAssociation)
+	  {
         continue;
+	  }
+	  else
+	  {
+		  std::cout << "Warning: A cluster with energy " << pOriginalCluster->GetHadronicEnergy() << " has " 
+			        << nTracks << " tracks associated!!! " << std::endl; 
+	  }
 
       pandora::OrderedCaloHitList orderedCaloHitList(pOriginalCluster->GetOrderedCaloHitList());
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, orderedCaloHitList.Add(pOriginalCluster->GetIsolatedCaloHitList()));
@@ -111,6 +118,7 @@ namespace arbor_content
       }
 
       // Assign the calo hits in the original cluster to the most appropriate track
+	  std::cout << "Assign the calo hits in the original cluster to the most appropriate track"  << std::endl;
       for (pandora::OrderedCaloHitList::const_iterator listIter = orderedCaloHitList.begin(), listIterEnd = orderedCaloHitList.end();
           listIter != listIterEnd; ++listIter)
       {

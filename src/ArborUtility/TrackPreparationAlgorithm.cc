@@ -37,7 +37,7 @@ bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *
 }
 
 TrackPreparationAlgorithm::TrackPreparationAlgorithm() :
-    m_shouldMakeAssociations(true),
+    m_shouldMakeAssociations(false),
     m_shouldMakePfoTrackList(true)
 {
 }

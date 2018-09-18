@@ -59,14 +59,13 @@ namespace arbor_content
     for (ClusterList::const_iterator clusterIter = localClusterList.begin(), clusterIterEnd = localClusterList.end(); 
 			clusterIter != clusterIterEnd; ++clusterIter)
     {
-      try
-      {
         const Cluster *const pCluster = *clusterIter;
 		const TrackList& trackList = pCluster->GetAssociatedTrackList();
 		bool isChargedCluster = trackList.size() != 0;
 
-		const MCParticle *pClusterMCParticle = NULL;
 #if 1
+		const MCParticle *pClusterMCParticle = NULL;
+
 	    try
 	    {
            pClusterMCParticle = MCParticleHelper::GetMainMCParticle(pCluster);
@@ -78,71 +77,68 @@ namespace arbor_content
 
 		const OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
 
-		//std::cout << "cluster energy: " << pCluster->GetHadronicEnergy() << ", orderedCaloHitList size: " << orderedCaloHitList.size() << std::endl;
+        pandora::CaloHitList hitList;
+    	orderedCaloHitList.FillCaloHitList(hitList);
 
-		for(OrderedCaloHitList::const_iterator hitListIter = orderedCaloHitList.begin(); hitListIter != orderedCaloHitList.end(); 
-				++hitListIter)
+		for(CaloHitList::const_iterator hitIter = hitList.begin(); hitIter != hitList.end(); ++hitIter)
 		{
-			const CaloHitList* hitListInLayer = hitListIter->second;
-			//std::cout << " === hit list size at layer " << hitListIter->first << ": " << hitListInLayer->size() << std::endl;
+			//std::cout << " --------->>>>> try a calo hit: " << *hitIter << std::endl;
+			const CaloHit* pCaloHit = *hitIter;
 
-			for(CaloHitList::const_iterator hitIter = hitListInLayer->begin(); hitIter != hitListInLayer->end(); ++hitIter)
-			{
-				//std::cout << " --------->>>>> try a calo hit: " << *hitIter << std::endl;
-				const CaloHit* pCaloHit = *hitIter;
-				//std::cout << " ==== calo hit: " << pCaloHit << std::endl;
+	        try
+	        {
+               const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCaloHit));
 
-	            try
-	            {
-                   const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCaloHit));
+			   int mcpPID = pMCParticle->GetParticleId();
+			   int mcpCharge = pandora::PdgTable::GetParticleCharge(mcpPID);
+			   bool isNeutralHit = (mcpCharge==0);
 
-				   int mcpPID = pMCParticle->GetParticleId();
-				   int mcpCharge = pandora::PdgTable::GetParticleCharge(mcpPID);
-				   bool isNeutralHit = mcpCharge==0;
+#if 0
+			   if(pClusterMCParticle != NULL)
+			   {
+				   if(pClusterMCParticle->GetParticleId() == pMCParticle->GetParticleId()) continue;
+			   }
+#endif
 
-				   if(pClusterMCParticle != NULL)
+			   // if the calo hit is neutral but its associated cluster is charged,
+			   if(isNeutralHit && isChargedCluster)
+			   {
+			       //std::cout << "MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId() << std::endl;
+			       // remove the calo hit from cluster and add it to the correct cluster by MCP
+			       //std::cout << "cluster PDG: " << pClusterMCParticle->GetParticleId() << ", energy: " 
+				   // << pClusterMCParticle->GetEnergy() << " ///// calo hit PDG: " << pMCParticle->GetParticleId() << std::endl;
+
+				   caloHitToClusterRemoveMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCluster));
+
+				   const MCParticleToClusterListMap::const_iterator clusterListIter = mcParticleToClusterListMap.find(pMCParticle);
+
+				   if(clusterListIter != mcParticleToClusterListMap.end())
 				   {
-					   if(pClusterMCParticle->GetParticleId() == pMCParticle->GetParticleId()) continue;
-				   }
+				       // if there is a correct cluster to add the hit
+					   const ClusterList* cluList = clusterListIter->second;
 
-			       // if the calo hit is neutral but its associated cluster is charged,
-				   if(isNeutralHit && isChargedCluster)
-				   {
-				       //std::cout << "MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId() << std::endl;
-			           // remove the calo hit from cluster and add it to the correct cluster by MCP
-				       //std::cout << "cluster PDG: " << pClusterMCParticle->GetParticleId() << ", energy: " 
-					   // << pClusterMCParticle->GetEnergy() << " ///// calo hit PDG: " << pMCParticle->GetParticleId() << std::endl;
-
-					   caloHitToClusterRemoveMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCluster));
-
-					   const MCParticleToClusterListMap::const_iterator clusterListIter = mcParticleToClusterListMap.find(pMCParticle);
-
-					   if(clusterListIter != mcParticleToClusterListMap.end())
+					   if(!cluList->empty()) 
 					   {
-					       // if there is a correct cluster to add the hit
-						   const ClusterList* cluList = clusterListIter->second;
-
-						   if(!cluList->empty()) 
-						   {
-						      const Cluster* pCorrectCluster = *(cluList->begin());
-					          caloHitToClusterAddMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCorrectCluster));
-						   }
-					   }
-					   else
-					   {
-						   // if no correct cluster
-						   //std::cout << " === AddToHitListMap " << std::endl;
-                           AddToCaloHitListMap(pCaloHit, pMCParticle, mcParticleToCaloHitListMap);
-						   //std::cout << " ======= AddToHitListMap " << std::endl;
+					      const Cluster* pCorrectCluster = *(cluList->begin());
+				          caloHitToClusterAddMap.insert(CaloHitToClusterMap::value_type(pCaloHit, pCorrectCluster));
 					   }
 				   }
-	            }
-                catch (StatusCodeException &)
-                {
-			    	continue;
-                }
-			}
+				   else
+				   {
+					   // if no correct cluster
+					   //std::cout << " === AddToHitListMap " << std::endl;
+                       AddToCaloHitListMap(pCaloHit, pMCParticle, mcParticleToCaloHitListMap);
+					   //std::cout << " ======= AddToHitListMap " << std::endl;
+				   }
+			   }
+	        }
+            catch (StatusCodeException &)
+            {
+				continue;
+            }
 		}
+
+	}
 
 		// Remove calo hit and cluster relationship
 		RemoveClusterCaloHitAssociations(caloHitToClusterRemoveMap);
@@ -172,12 +168,6 @@ namespace arbor_content
 
 		// IsoHit ...
 		//const CaloHitList& isolatedCaloHitList = pCluster->GetIsolatedCaloHitList();
-      }
-      catch (StatusCodeException &)
-      {
-		  continue;
-      }
-    }
 
     return STATUS_CODE_SUCCESS;
   }
@@ -187,6 +177,7 @@ namespace arbor_content
   void PerfectNeutralHitRecoveryAlgorithm::RemoveClusterCaloHitAssociations(CaloHitToClusterMap& caloHitToClusterRemoveMap) const
   {
 	//std::cout << "Remove: " << caloHitToClusterRemoveMap.size() << std::endl;
+	
 	for(CaloHitToClusterMap::const_iterator iter = caloHitToClusterRemoveMap.begin(); iter != caloHitToClusterRemoveMap.end();
 			++iter)
 	{
@@ -203,18 +194,30 @@ namespace arbor_content
 
   void PerfectNeutralHitRecoveryAlgorithm::AddClusterCaloHitAssociations(CaloHitToClusterMap& caloHitToClusterAddMap) const
   {
+	std::cout << "AddClusterCaloHitAssociations" << std::endl;
+    std::vector<const pandora::Cluster*> clusterVec;
+
 	for(CaloHitToClusterMap::const_iterator iter = caloHitToClusterAddMap.begin(); iter != caloHitToClusterAddMap.end();
 			++iter)
 	{
 		const CaloHit* pCaloHit = iter->first;
 		const Cluster* pCluster = iter->second;
 
+		if(std::find(clusterVec.begin(), clusterVec.end(), pCluster) == clusterVec.end())
+		{
+			clusterVec.push_back(pCluster);
+			std::cout << "Cluster " << pCluster << " init energy: " << pCluster->GetHadronicEnergy() << std::endl;
+		}
+
 		//PandoraContentApi::AddIsolatedToCluster(*this, pCluster, pCaloHit);
 		PandoraContentApi::AddToCluster(*this, pCluster, pCaloHit);
-	    //std::cout << " ==========AddClusterCaloHitAssociation: cluster: " << pCluster << " E: " << pCluster->GetHadronicEnergy() 
-	   	//<< std::endl;
 	}
 
+	for(int i=0; i<clusterVec.size(); ++i)
+	{
+		const Cluster* pCluster = clusterVec.at(i);
+		std::cout << "Cluster " << pCluster << " final energy: " << pCluster->GetHadronicEnergy() << std::endl;
+	}
 
 	caloHitToClusterAddMap.clear();
   }

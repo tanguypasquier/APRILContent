@@ -64,12 +64,15 @@ namespace arbor_content
         const Cluster *const pCluster = *clusterIter;
 		//std::cout << "ChargedHitRecovery--> Cluster : " << pCluster << std::endl;
 
+#if 1
 		// This is not always true
 		const TrackList& trackList = pCluster->GetAssociatedTrackList();
 		bool isNeutralCluster = trackList.size() == 0;
+#endif
 
+#if 0
 		const MCParticle *pClusterMCParticle = NULL;
-#if 1
+
 	    try
 	    {
            pClusterMCParticle = MCParticleHelper::GetMainMCParticle(pCluster);
@@ -98,8 +101,9 @@ namespace arbor_content
 			   int mcpCharge = pandora::PdgTable::GetParticleCharge(mcpPID);
 			   bool isChargedHit = (mcpCharge!=0);
 			
-			   int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId());
-			   isNeutralCluster = (clusterMCPCharge == 0);
+			   // FIXME: ???
+			   // int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId());
+			   // bool isNeutralCluster = (clusterMCPCharge == 0);
 
 #if 0
 			   if(mcpCharge != clusterMCPCharge) 
@@ -111,6 +115,7 @@ namespace arbor_content
 			   //std::cout << " ==== calo hit: " << pCaloHit << ", hit MCP charge: " << mcpCharge 
 			   //         << ", cluster MCP charge: "<< clusterMCPCharge << std::endl;
 
+#if 0
 			   if(pClusterMCParticle->GetParticleId() == pMCParticle->GetParticleId()) 
 			   {
 				   if(isChargedHit && isNeutralCluster) 
@@ -121,6 +126,7 @@ namespace arbor_content
 
 				   continue;
 			   }
+#endif
 
 		       // if the calo hit is charged but its associated cluster is neutral,
 			   if(isChargedHit && isNeutralCluster)
@@ -167,18 +173,18 @@ namespace arbor_content
 		AddClusterCaloHitAssociations(caloHitToClusterAddMap);
 
 		// Create charged clusters from calo hit list
-#if 1
+#if 0
 		const ClusterList *pNewClusterList = NULL; std::string newClusterListName;
         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pNewClusterList, newClusterListName));
 #endif
 
-		CreateChargedClusters(mcParticleToCaloHitListMap);
+		//CreateChargedClusters(mcParticleToCaloHitListMap);
 
-#if 1
+#if 0
 	    std::string m_outputClusterListName("RecoveredChargedClusters");
         if (!pNewClusterList->empty())
         {
-		   //std::cout << "Create new cluster: RecoveredChargedClusters" << std::endl;
+		   std::cout << "Create new cluster: RecoveredChargedClusters" << std::endl;
            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
         }
 #endif
@@ -193,7 +199,8 @@ namespace arbor_content
       {
 		  continue;
       }
-    }
+	}
+    
 
     return STATUS_CODE_SUCCESS;
   }

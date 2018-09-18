@@ -68,6 +68,28 @@ pandora::StatusCode ClusterPreparationAlgorithm::Run()
 	std::cout << "check the pClusterList: " << pClusterList->size() << std::endl;
 #endif
 
+#if 0
+	// this is for checking the associated cluster of track object
+    const pandora::TrackList *pTrackList = NULL;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList<pandora::TrackList>(*this, pTrackList));
+
+	std::cout << "track size: " << pTrackList->size() << std::endl;
+
+    for (pandora::TrackList::const_iterator iter = pTrackList->begin(), iterEnd = pTrackList->end(); iter != iterEnd; ++iter)
+    {
+        const pandora::Track *const pTrack = *iter;
+		if(!pTrack->HasAssociatedCluster()) 
+		{
+			std::cout << "no associated cluster, track energy:  " << pTrack->GetEnergyAtDca() << std::endl;
+		}
+		else
+		{
+            const pandora::Cluster *const pAssociatedCluster(pTrack->GetAssociatedCluster());
+			std::cout << "track energy: " << pTrack->GetEnergyAtDca() << ", associated cluster energy: " << pAssociatedCluster->GetHadronicEnergy() << std::endl;
+		}
+	}
+#endif
+
     return pandora::STATUS_CODE_SUCCESS;
 }
 
