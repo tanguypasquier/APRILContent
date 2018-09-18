@@ -18,39 +18,6 @@ using namespace pandora;
 namespace arbor_content // changed namespace
 {
 
-HistogramManager AHM;
-
-const MCParticle* GetCaloHitMainMCParticle(const CaloHit *const pCaloHit)
-{
-    float bestWeight(0.f);
-    const MCParticle *pBestMCParticle(nullptr);
-    const MCParticleWeightMap &hitMCParticleWeightMap(pCaloHit->GetMCParticleWeightMap());
-
-    MCParticleVector mcParticleVector;
-    for (const MCParticleWeightMap::value_type &mapEntry : hitMCParticleWeightMap) mcParticleVector.push_back(mapEntry.first);
-    std::sort(mcParticleVector.begin(), mcParticleVector.end(), PointerLessThan<MCParticle>());
-
-    for (const MCParticle *const pMCParticle : mcParticleVector)
-    {
-        const float weight(hitMCParticleWeightMap.at(pMCParticle));
-
-        if (weight > bestWeight)
-        {
-            bestWeight = weight;
-            pBestMCParticle = pMCParticle;
-        }
-    }
-
-    if (!pBestMCParticle)
-	{
-		//std::cout << "hitMCParticleWeightMap size: " <<  hitMCParticleWeightMap.size() << std::endl;
-        throw StatusCodeException(STATUS_CODE_NOT_INITIALIZED);
-	}
-
-    return pBestMCParticle;
-}
-
-
 PerfectHitCorrectionAlgorithm::PerfectHitCorrectionAlgorithm() :
     m_simpleCaloHitCollection(true),
     m_minWeightFraction(0.01f)
@@ -86,13 +53,13 @@ StatusCode PerfectHitCorrectionAlgorithm::Run()
 
     if (!pClusterList->empty())
     {
-		std::string tupleName = "PerfectHitCorrectionAlgorithm-" + string(__func__);
-		std::string varListName = "clusterSize";
-		std::vector<float> vars;
+		//std::string tupleName = "PerfectHitCorrectionAlgorithm-" + string(__func__);
+		//std::string varListName = "clusterSize";
+		//std::vector<float> vars;
 
-		vars.push_back(pClusterList->size());
+		//vars.push_back(pClusterList->size());
 
-	    AHM.CreateFill(tupleName, varListName, vars);
+	    //AHM.CreateFill(tupleName, varListName, vars);
 
         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<Cluster>(*this, m_outputClusterListName));
@@ -157,7 +124,33 @@ void PerfectHitCorrectionAlgorithm::CaloHitCollection(const MCParticle *const pP
 
 void PerfectHitCorrectionAlgorithm::SimpleCaloHitCollection(const MCParticle *const pPfoTarget, const CaloHit *const pCaloHit, CaloHitList &caloHitList) const
 {
-    const MCParticle *const pHitMCParticle(GetCaloHitMainMCParticle(pCaloHit));
+    float bestWeight(0.f);
+    const MCParticle *pBestMCParticle(nullptr);
+    const MCParticleWeightMap &hitMCParticleWeightMap(pCaloHit->GetMCParticleWeightMap());
+
+    MCParticleVector mcParticleVector;
+    for (const MCParticleWeightMap::value_type &mapEntry : hitMCParticleWeightMap) mcParticleVector.push_back(mapEntry.first);
+    std::sort(mcParticleVector.begin(), mcParticleVector.end(), PointerLessThan<MCParticle>());
+
+    for (const MCParticle *const pMCParticle : mcParticleVector)
+    {
+        const float weight(hitMCParticleWeightMap.at(pMCParticle));
+
+        if (weight > bestWeight)
+        {
+            bestWeight = weight;
+            pBestMCParticle = pMCParticle;
+        }
+    }
+
+    if (!pBestMCParticle)
+	{
+		//std::cout << "hitMCParticleWeightMap size: " <<  hitMCParticleWeightMap.size() << std::endl;
+        throw StatusCodeException(STATUS_CODE_NOT_INITIALIZED);
+	}
+
+
+    const MCParticle *const pHitMCParticle(pBestMCParticle);
     const MCParticle *const pHitPfoTarget(pHitMCParticle->GetPfoTarget());
 
     if (pHitPfoTarget != pPfoTarget)
