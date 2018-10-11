@@ -28,52 +28,145 @@ PerfectHitCorrectionAlgorithm::PerfectHitCorrectionAlgorithm() :
 
 StatusCode PerfectHitCorrectionAlgorithm::Run()
 {
-#if 0
     const MCParticleList *pMCParticleList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pMCParticleList));
 
     if (pMCParticleList->empty())
         return STATUS_CODE_SUCCESS;
 
-    const ClusterList *pClusterList = NULL; std::string clusterListName;
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pClusterList, clusterListName));
+	std::map<const MCParticle*, const Cluster*> mcpClusterMap;
 
     for (MCParticleList::const_iterator iterMC = pMCParticleList->begin(), iterMCEnd = pMCParticleList->end(); iterMC != iterMCEnd; ++iterMC)
     {
         try
         {
             const MCParticle *const pPfoTarget = *iterMC;
-            PfoParameters pfoParameters;
+            //PfoParameters pfoParameters;
 
-            this->CaloHitCollection(pPfoTarget, pfoParameters);
+			if(mcpClusterMap.find(pPfoTarget) == mcpClusterMap.end())
+			{
+				mcpClusterMap.insert(std::map<const MCParticle*, const Cluster*>::value_type(pPfoTarget, 0));
+			}
+
+            //this->CaloHitCollection(pPfoTarget, pfoParameters);
         }
         catch (StatusCodeException &)
         {
         }
     }
 
-    if (!pClusterList->empty())
-    {
-		//std::string tupleName = "PerfectHitCorrectionAlgorithm-" + string(__func__);
-		//std::string varListName = "clusterSize";
-		//std::vector<float> vars;
 
-		//vars.push_back(pClusterList->size());
-
-	    //AHM.CreateFill(tupleName, varListName, vars);
-
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<Cluster>(*this, m_outputClusterListName));
-    }
-
-    return STATUS_CODE_SUCCESS;
-#endif
-
-
+	////////////////////////////////////////
     const ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
 	std::cout << "Hit Correction -----> list : " << pClusterList->size() << std::endl;
+    ClusterList localClusterList(pClusterList->begin(), pClusterList->end());
+
+    for (ClusterList::const_iterator clusterIter = localClusterList.begin(), clusterIterEnd = localClusterList.end(); 
+			clusterIter != clusterIterEnd; ++clusterIter)
+    {
+      try
+      {
+        const Cluster *const pCluster = *clusterIter;
+
+		const MCParticle *pClusterMCParticle = MCParticleHelper::GetMainMCParticle(pCluster);
+		std::cout << "cluster: " << pCluster << ", MCP : " << pClusterMCParticle 
+			      << ", size: " << ", energy: " << pCluster->GetHadronicEnergy() << std::endl;
+
+		auto mcpClusterIter = mcpClusterMap.find(pClusterMCParticle);
+
+		if(mcpClusterIter != mcpClusterMap.end())
+		{
+			mcpClusterIter->second = pCluster;
+		}
+
+
+		// clear hit which has wrong relationship
+		const OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+
+        pandora::CaloHitList hitList;
+    	orderedCaloHitList.FillCaloHitList(hitList);
+
+		for(CaloHitList::const_iterator hitIter = hitList.begin(); hitIter != hitList.end(); ++hitIter)
+		{
+			//std::cout << " --------->>>>> try a calo hit: " << *hitIter << std::endl;
+			const CaloHit* pCaloHit = *hitIter;
+
+	        try
+	        {
+               const MCParticle *const pHitMCParticle(MCParticleHelper::GetMainMCParticle(pCaloHit));
+			   const MCParticle *const pHitPfoTarget(pHitMCParticle->GetPfoTarget());
+
+
+			   if(pHitPfoTarget != pClusterMCParticle)
+			   {
+				   // FIXME
+			       std::cout << "  *** remove hit " << pCaloHit << " from cluster " << pCluster << std::endl;
+				   PandoraContentApi::RemoveFromCluster(*this, pCluster, pCaloHit);
+			   }
+			}
+            catch (StatusCodeException &)
+            {
+		    	continue;
+            }
+		}
+	  }
+      catch (StatusCodeException &)
+      {
+		  continue;
+      }
+	}
+
+
+	///////////// Isolated hits and unlinked hits
+	//
+    const CaloHitList *pCaloHitList = NULL;
+    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+
+    CaloHitList localCaloHitList(pCaloHitList->begin(), pCaloHitList->end());
+
+	double isoHitEnergy = 0.;
+
+    for (CaloHitList::const_iterator caloHitIter = localCaloHitList.begin(), caloHitIterEnd = localCaloHitList.end(); 
+			caloHitIter != caloHitIterEnd; ++caloHitIter)
+    {
+      try
+      {
+        const CaloHit *const pCaloHit = *caloHitIter;
+
+        if (!PandoraContentApi::IsAvailable(*this, pCaloHit))
+          continue;
+
+        const MCParticle *const pHitMCParticle(MCParticleHelper::GetMainMCParticle(pCaloHit));
+		//const MCParticle *const pHitPfoTarget(pHitMCParticle->GetPfoTarget());
+
+		auto mcpClusterIter = mcpClusterMap.find(pHitMCParticle);
+
+		if(mcpClusterIter != mcpClusterMap.end())
+		{
+			auto pCluster = mcpClusterIter->second;
+
+			// FIXME
+			if(pCluster!=NULL) 
+			{
+			    std::cout << "  *** add hit " << pCaloHit << " to cluster " << pCluster << std::endl;
+				PandoraContentApi::AddToCluster(*this, pCluster, pCaloHit);
+			}
+			else
+			{
+				isoHitEnergy += pCaloHit->GetHadronicEnergy();
+			}
+		}
+
+        //this->SimpleMCParticleCaloHitListCollection(pCaloHit, mcParticleToCaloHitListMap);
+      }
+      catch (StatusCodeException &)
+      {
+      }
+    }
+
+	std::cout << "energy of iso hits: " << isoHitEnergy << std::endl;
 
 #if 0
     ClusterList localClusterList(pClusterList->begin(), pClusterList->end());
@@ -237,8 +330,8 @@ void PerfectHitCorrectionAlgorithm::FullCaloHitCollection(const MCParticle *cons
 //------------------------------------------------------------------------------------------------------------------------------------------
 StatusCode PerfectHitCorrectionAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
 {
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle,
-        "OutputClusterListName", m_outputClusterListName));
+    //PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle,
+    //    "OutputClusterListName", m_outputClusterListName));
 
     return STATUS_CODE_SUCCESS;
 }

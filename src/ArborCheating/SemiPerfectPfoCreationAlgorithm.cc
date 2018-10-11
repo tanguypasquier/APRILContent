@@ -139,6 +139,35 @@ void SemiPerfectPfoCreationAlgorithm::TrackCollection(const pandora::MCParticle 
 
             pfoParameters.m_trackList.push_back(pTrack);
 
+			std::cout << "found a track: " << pTrack << " for MCP: " << pTrkPfoTarget << std::endl;
+        }
+        catch (pandora::StatusCodeException &e)
+        {
+			//std::cout << e.ToString() << std::endl;
+        }
+    }
+}
+
+#if 0
+void SemiPerfectPfoCreationAlgorithm::RealTrackCollection(const pandora::MCParticle *const pPfoTarget, PfoParameters &pfoParameters) const
+{
+    const pandora::TrackList *pTrackList = NULL;
+    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
+	//std::cout << "---track size: " << pTrackList->size() << std::endl;
+
+    for (pandora::TrackList::const_iterator iter = pTrackList->begin(), iterEnd = pTrackList->end(); iter != iterEnd; ++iter)
+    {
+        try
+        {
+            const pandora::Track *const pTrack = *iter;
+            const pandora::MCParticle *const pTrkMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pTrack));
+            const pandora::MCParticle *const pTrkPfoTarget(pTrkMCParticle->GetPfoTarget());
+
+            if (pTrkPfoTarget != pPfoTarget)
+                continue;
+
+            pfoParameters.m_trackList.push_back(pTrack);
+
 			//std::cout << "found a track: " << pTrack << " for MCP: " << pTrkPfoTarget << std::endl;
         }
         catch (pandora::StatusCodeException &e)
@@ -147,6 +176,7 @@ void SemiPerfectPfoCreationAlgorithm::TrackCollection(const pandora::MCParticle 
         }
     }
 }
+#endif
 
 void SemiPerfectPfoCreationAlgorithm::CaloHitCollection(const pandora::MCParticle *const pPfoTarget, PfoParameters &pfoParameters) const
 {
@@ -193,7 +223,7 @@ void SemiPerfectPfoCreationAlgorithm::CaloHitCollection(const pandora::MCParticl
 #endif
 }
 
-void SemiPerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(const pandora::MCParticle *const pPfoTarget, int &nTracksUsed, PfoParameters &pfoParameters) const
+void SemiPerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(int &nTracksUsed, PfoParameters &pfoParameters) const
 {
     if (!pfoParameters.m_trackList.empty())
     {
@@ -208,13 +238,13 @@ void SemiPerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(const pandora::
 
             if (!pTrack->CanFormPfo() && !pTrack->CanFormClusterlessPfo())
             {
-                std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " cfp: " << pTrack->CanFormPfo() << " cfcp: " << pTrack->CanFormClusterlessPfo() << std::endl;
+                //std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " cfp: " << pTrack->CanFormPfo() << " cfcp: " << pTrack->CanFormClusterlessPfo() << std::endl;
                 continue;
             }
 
             if (!pTrack->GetParentList().empty())
             {
-                std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " nParents: " << pTrack->GetParentList().size() << std::endl;
+                //std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " nParents: " << pTrack->GetParentList().size() << std::endl;
                 continue;
             }
 
@@ -423,6 +453,9 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() cons
     if (pMCParticleList->empty())
         return pandora::STATUS_CODE_SUCCESS;
 
+	int nPFO = 0;
+	int nTrack = 0;
+
     for (pandora::MCParticleList::const_iterator iterMC = pMCParticleList->begin(), iterMCEnd = pMCParticleList->end(); iterMC != iterMCEnd; ++iterMC)
     {
         try
@@ -438,7 +471,7 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() cons
 
 			/////
             int nTracksUsed(0);
-            this->SetPfoParametersFromTracks(pPfoTarget, nTracksUsed, pfoParameters);
+            this->SetPfoParametersFromTracks(nTracksUsed, pfoParameters);
             //this->SetPfoParametersFromClusters(pPfoTarget, nTracksUsed, pfoParameters);
 
 #if 1
@@ -446,7 +479,9 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() cons
             {
                 std::cout << pPfoTarget << " No energy deposits for pfo target " << pPfoTarget->GetParticleId() 
 					      << ", E: " << pPfoTarget->GetEnergy() << std::endl;
-                throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+
+				continue;
+                //throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
             }
 #endif
 
@@ -455,6 +490,9 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() cons
 			//PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
 
             auto createStatus = PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo);
+			nTrack += nTracksUsed;
+
+			std::cout << "up to here, pfo: " << ++nPFO << ", track: " << nTrack << std::endl;
 
 			if(createStatus != pandora::STATUS_CODE_SUCCESS)
 			{
@@ -467,12 +505,29 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() cons
 		}
 	}
 
+
 #if 1
     const pandora::PfoList *pPfoList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
 
 	std::cout << "--- PFO size: " << pPfoList->size() << std::endl;
+
+	// check track in pfo list
+    for(pandora::PfoList::const_iterator iter = pPfoList->begin(), endIter = pPfoList->end(); endIter != iter ; ++iter)
+    {
+		const pandora::ParticleFlowObject* pfo = *iter;
+
+		const pandora::TrackList& trackList = pfo->GetTrackList();
+
+		std::cout << "pfo " << pfo << " has " << trackList.size() << " tracks" << std::endl;
+		for(auto trackIter = trackList.begin(); trackIter != trackList.end(); ++trackIter)
+		{
+			std::cout << "  track " << *trackIter << " energy " << (*trackIter)->GetEnergyAtDca() << std::endl;
+		}
+	}
     
+
+	// for the neutral cluster 
     try
     {
 		this->SetPfoParametersFromClusters();

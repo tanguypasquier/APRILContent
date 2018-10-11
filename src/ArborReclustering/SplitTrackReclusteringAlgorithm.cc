@@ -39,18 +39,23 @@ namespace arbor_content
 
   pandora::StatusCode SplitTrackReclusteringAlgorithm::Run()
   {
-	   const pandora::ClusterList* photonList = NULL;
-	   const std::string photonListName("PhotonClusters");
-	   PandoraContentApi::GetList(*this, photonListName, photonList);
+	 const pandora::ClusterList* photonList = NULL;
+	 const std::string photonListName("PhotonClusters");
+	 PandoraContentApi::GetList(*this, photonListName, photonList);
+
+	 if(photonList != NULL)
+	 {
 	   std::cout << "photonList: " << photonList->size() << std::endl;
+	 }
 
     // Get current cluster list
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-	std::cout << "pClusterList: " << pClusterList->size() << std::endl;
-    if( pClusterList->empty() )
+    if( pClusterList == NULL || pClusterList->empty() )
       return pandora::STATUS_CODE_SUCCESS;
+
+	std::cout << "pClusterList: " << pClusterList->size() << std::endl;
 
     const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
 

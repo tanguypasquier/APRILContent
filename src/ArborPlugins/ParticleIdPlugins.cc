@@ -98,7 +98,14 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, centroid));
 
     pandora::ClusterFitResult fitResult;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitPoints(clusterFitPointList, fitResult));
+
+	try
+	{
+		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitPoints(clusterFitPointList, fitResult));
+	}
+    catch(const pandora::StatusCodeException &exception)
+	{
+	}
 
     if(!fitResult.IsFitSuccessful())
     {
