@@ -118,6 +118,7 @@
 #include "ArborUtility/CaloHitTimingAlgorithm.h"
 #include "ArborUtility/ClusterCheckAlgorithm.h"
 #include "ArborUtility/IsolatedHitClusteringAlgorithm.h"
+#include "ArborUtility/LoadEMClusterAlgorithm.h"
 
 /** 
  * @brief  ArborContent class used to register arbor algorithms and plugins
@@ -182,7 +183,8 @@ public:
     d("CaloHitPreparation",                  arbor_content::CaloHitPreparationAlgorithm::Factory) \
     d("CaloHitTiming",                       arbor_content::CaloHitTimingAlgorithm::Factory) \
     d("ClusterCheck",                        arbor_content::ClusterCheckAlgorithm::Factory) \
-    d("IsolatedHitClustering",               arbor_content::IsolatedHitClusteringAlgorithm::Factory)
+    d("IsolatedHitClustering",               arbor_content::IsolatedHitClusteringAlgorithm::Factory) \
+    d("LoadEMCluster",                       arbor_content::LoadEMClusterAlgorithm::Factory)
 
 
 #define ARBOR_ALGORITHM_TOOL_LIST(d) \
