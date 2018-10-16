@@ -122,6 +122,7 @@ private:
     std::string     m_outputClusterListName;                ///< The output cluster list name
     bool            m_simpleCaloHitCollection;              ///< Whether to use simple calo hit collection mechanism, or full mechanism
     float           m_minWeightFraction;                    ///< The minimum mc particle calo hit weight for hit fragmentation
+	bool            m_replaceCurrentList;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

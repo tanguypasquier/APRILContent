@@ -95,6 +95,8 @@ StatusCode PerfectClusteringAlgorithmNew::Run()
 	    AHM.CreateFill(tupleName, varListName, vars);
 
         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
+
+		if( m_replaceCurrentList )
         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::ReplaceCurrentList<Cluster>(*this, m_outputClusterListName));
     }
 
@@ -222,6 +224,9 @@ StatusCode PerfectClusteringAlgorithmNew::ReadSettings(const TiXmlHandle xmlHand
 {
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle,
         "OutputClusterListName", m_outputClusterListName));
+
+	m_replaceCurrentList = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle, "ReplaceList", m_replaceCurrentList));
 
     return STATUS_CODE_SUCCESS;
 }
