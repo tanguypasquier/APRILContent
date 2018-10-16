@@ -118,6 +118,7 @@
 #include "ArborUtility/CaloHitTimingAlgorithm.h"
 #include "ArborUtility/ClusterCheckAlgorithm.h"
 #include "ArborUtility/ClusterPurityAlgorithm.h"
+#include "ArborUtility/ClusterEfficiencyAlgorithm.h"
 #include "ArborUtility/IsolatedHitClusteringAlgorithm.h"
 #include "ArborUtility/LoadEMClusterAlgorithm.h"
 
@@ -185,6 +186,7 @@ public:
     d("CaloHitTiming",                       arbor_content::CaloHitTimingAlgorithm::Factory) \
     d("ClusterCheck",                        arbor_content::ClusterCheckAlgorithm::Factory) \
     d("ClusterPurity",                       arbor_content::ClusterPurityAlgorithm::Factory) \
+    d("ClusterEfficiency",                       arbor_content::ClusterEfficiencyAlgorithm::Factory) \
     d("IsolatedHitClustering",               arbor_content::IsolatedHitClusteringAlgorithm::Factory) \
     d("LoadEMCluster",                       arbor_content::LoadEMClusterAlgorithm::Factory)
 
