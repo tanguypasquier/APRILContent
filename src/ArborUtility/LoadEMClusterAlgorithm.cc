@@ -35,29 +35,26 @@ namespace arbor_content
 
 pandora::StatusCode LoadEMClusterAlgorithm::Run()
 {
-	const pandora::CaloHitList *pCaloHitList = NULL;
-	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+	const pandora::ClusterList *pClusterList = NULL;
 
-	if(pCaloHitList->empty())
+	const std::string clusterListName("PandoraClusters");
+    const pandora::StatusCode statusCode(PandoraContentApi::GetList(*this, clusterListName, pClusterList));
+
+	if(pandora::STATUS_CODE_SUCCESS != statusCode) 
+	{
+		return statusCode;
+	}
+
+	if(pClusterList->empty())
 		return pandora::STATUS_CODE_SUCCESS;
 
-	pandora::CaloHitList isolatedCaloHitList;
-
-	for(pandora::CaloHitList::const_iterator hitIter = pCaloHitList->begin(), hitEndIter = pCaloHitList->end() ;
-			hitEndIter != hitIter ; ++hitIter)
+	for(pandora::ClusterList::const_iterator clusterIter = pClusterList->begin(); clusterIter != pClusterList->end() ; ++clusterIter)
 	{
-		if((*hitIter)->IsIsolated())
-			isolatedCaloHitList.push_back(*hitIter);
+		std::cout << "cluster: " << (*clusterIter)->GetHadronicEnergy() << std::endl;
 	}
 
-	if(!isolatedCaloHitList.empty())
-	{
-		const pandora::Cluster *pCluster = NULL;
-		object_creation::ClusterParameters clusterParameters;
-		clusterParameters.m_caloHitList = isolatedCaloHitList;
-
-		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, clusterParameters, pCluster));
-	}
+#if 0
+#endif
 
 	return pandora::STATUS_CODE_SUCCESS;
 }
