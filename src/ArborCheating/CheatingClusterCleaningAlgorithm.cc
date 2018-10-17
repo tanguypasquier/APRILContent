@@ -63,6 +63,7 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
 
                     if (pMainMCParticle != pMCParticle)
                     {
+				        std::cout << "------ cleaning isohits: " << std::endl;
                         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveIsolatedFromCluster(*this, pCluster, pCaloHit));
                     }
                 }

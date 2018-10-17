@@ -75,7 +75,7 @@ namespace arbor_content
 			}
 
 			// make MCP and cluster relationship
-			if(pMCClusterParticle != NULL && mcpCaloHitListMap.find(pMCClusterParticle) == mcpCaloHitListMap.end())
+			if(pMCClusterParticle != NULL && mcpClusterListMap.find(pMCClusterParticle) == mcpClusterListMap.end())
 			{
 				pandora::ClusterList cluList;
 				cluList.push_back( pfoCluster );
@@ -118,6 +118,44 @@ namespace arbor_content
 	        }
 		} // for each cluster
 	} // for each pfo
+
+	// consider hit not usd in clusters
+#if 1
+    const pandora::CaloHitList *pCaloHitList = NULL; 
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+	std::cout << "------- # CaloHit : " << pCaloHitList->size() << std::endl;
+
+    for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
+	{
+		const pandora::CaloHit* const pCaloHit = *iter;
+
+        if (PandoraContentApi::IsAvailable(*this, pCaloHit))
+		{
+		   const pandora::MCParticle* pMCHitParticle  = NULL;
+
+           try
+           {
+           	 pMCHitParticle = pandora::MCParticleHelper::GetMainMCParticle(pCaloHit);
+           	//std::cout << "calo hit: " << caloHit << ", mcp: " << pMCHitParticle << std::endl;
+           }
+           catch (pandora::StatusCodeException &)
+           {
+		       continue;
+           }
+
+		   if(pMCHitParticle != NULL && mcpCaloHitListMap.find( pMCHitParticle ) == mcpCaloHitListMap.end())
+		   {
+		       pandora::CaloHitList hitList;
+		       hitList.push_back( pCaloHit );
+		       mcpCaloHitListMap[pMCHitParticle] = hitList;
+		   }
+		   else
+		   {
+		       mcpCaloHitListMap[pMCHitParticle].push_back( pCaloHit );
+		   }
+		}
+	}
+#endif
 
 	/////////////
 

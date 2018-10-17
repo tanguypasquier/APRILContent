@@ -107,7 +107,6 @@ namespace arbor_content
 		 const pandora::MCParticle* caloHitMCP = NULL;
 
 		 float hitEnergy = caloHit->GetHadronicEnergy();
-		 clusterHitEnergy += hitEnergy;
     
          try
          {
@@ -120,9 +119,17 @@ namespace arbor_content
          {
          }
 
+		 if(caloHitMCP ==NULL) continue;
+
+		 clusterHitEnergy += hitEnergy;
+
 		 if( caloHitMCP == pMCClusterParticle )
 		 {
 			 pureClusterEnergy += hitEnergy;
+		 }
+		 else
+		 {
+			 std::cout << "purity degrading..." << std::endl;
 		 }
 	  }
 
