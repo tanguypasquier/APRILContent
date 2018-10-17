@@ -44,25 +44,13 @@ namespace arbor_content
   {
     extern HistogramManager AHM;
 
-	/////////////////////////
-    const MCParticleList *pMCParticleList = NULL;
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pMCParticleList));
-
-    for (MCParticleList::const_iterator iterMC = pMCParticleList->begin(), iterMCEnd = pMCParticleList->end(); iterMC != iterMCEnd; ++iterMC)
-    {
-        try
-        {
-            const MCParticle *const pPfoTarget = *iterMC;
-		}
-        catch (StatusCodeException &)
-		{
-		}
-	}
-
 	////////
     const pandora::PfoList *pPfoList = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
 	std::cout << "------- # PFO : " << pPfoList->size() << std::endl;
+
+	std::map<const pandora::MCParticle* const, pandora::CaloHitList> mcpCaloHitListMap;
+	std::map<const pandora::MCParticle* const, pandora::ClusterList> mcpClusterListMap;
 
     for(pandora::PfoList::const_iterator iter = pPfoList->begin(), endIter = pPfoList->end(); endIter != iter ; ++iter)
     {
@@ -73,77 +61,122 @@ namespace arbor_content
     
 		for(pandora::ClusterList::const_iterator cluIter = pfoClusterList.begin(); cluIter != pfoClusterList.end(); ++cluIter)
 		{
-			//std::cout << "cluster: " << *cluIter << std::endl;
-			const pandora::Cluster* cluster = *cluIter;
+			const pandora::Cluster* pfoCluster = *cluIter;
 
-    		try
-    		{
-				float clusterPurity = getPurity(cluster);
-				float clusterSize = cluster->GetNCaloHits();
-				float clusterEnergy = cluster->GetHadronicEnergy();
-	
-				std::vector<float> vars;
-				vars.push_back( clusterSize );
-				vars.push_back( clusterEnergy );
-				vars.push_back( clusterPurity );
-
-	
-				AHM.CreateFill("ClusterPurity", "clusterSize:clusterEnergy:clusterPurity", vars);
-
-				//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
-				//	      << std::endl;
-
-				//histogram.Fill(clusterSize, clusterEnergy, clusterPurity);
-    		}
+			const pandora::MCParticle* pMCClusterParticle = NULL;
+	  
+			try 
+			{
+				pMCClusterParticle = pandora::MCParticleHelper::GetMainMCParticle(pfoCluster);
+			}
     		catch (pandora::StatusCodeException &)
-    		{
-    		}
+			{
+				continue;
+			}
+
+			// make MCP and cluster relationship
+			if(pMCClusterParticle != NULL && mcpCaloHitListMap.find(pMCClusterParticle) == mcpCaloHitListMap.end())
+			{
+				pandora::ClusterList cluList;
+				cluList.push_back( pfoCluster );
+				mcpClusterListMap[pMCClusterParticle] = cluList;
+			}
+			else
+			{
+				mcpClusterListMap[pMCClusterParticle].push_back( pfoCluster );
+			}
+
+			// make MCP and hit relationship
+	        pandora::CaloHitList caloHitList;
+	        pfoCluster->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
+
+            for(pandora::CaloHitList::const_iterator caloHitIter = caloHitList.begin(); caloHitIter != caloHitList.end(); ++caloHitIter)
+            {
+               const pandora::CaloHit* caloHit = *caloHitIter;
+			   const pandora::MCParticle* pMCHitParticle  = NULL;
+
+               try
+               {
+               	 pMCHitParticle = pandora::MCParticleHelper::GetMainMCParticle(caloHit);
+               	//std::cout << "calo hit: " << caloHit << ", mcp: " << pMCHitParticle << std::endl;
+               }
+               catch (pandora::StatusCodeException &)
+               {
+				   continue;
+               }
+
+			   if(pMCHitParticle != NULL && mcpCaloHitListMap.find( pMCHitParticle ) == mcpCaloHitListMap.end())
+			   {
+				   pandora::CaloHitList hitList;
+				   hitList.push_back( caloHit );
+				   mcpCaloHitListMap[pMCHitParticle] = hitList;
+			   }
+			   else
+			   {
+				   mcpCaloHitListMap[pMCHitParticle].push_back( caloHit );
+			   }
+	        }
+		} // for each cluster
+	} // for each pfo
+
+	/////////////
+
+	for(auto it = mcpCaloHitListMap.begin(); it != mcpCaloHitListMap.end(); ++it)
+	{
+		auto mcp = it->first;
+
+	    // all the hits belong to the mcp based on the MC information
+		auto mcpHitList = it->second;
+
+		// all the clusters which has the main mcp 
+		auto clusterList = mcpClusterListMap[mcp];
+		// the hits from the clusters above
+		pandora::CaloHitList clusterHitList;
+
+		for(auto cluListIt = clusterList.begin(); cluListIt != clusterList.end(); ++cluListIt)
+		{
+			auto pCluster = *cluListIt;
+
+			pandora::CaloHitList caloHitList;
+			pCluster->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
+
+            for(pandora::CaloHitList::const_iterator caloHitIter = caloHitList.begin();
+				caloHitIter != caloHitList.end(); ++caloHitIter)
+            {
+               const pandora::CaloHit* caloHit = *caloHitIter;
+
+			   clusterHitList.push_back( caloHit );
+	        }
 		}
+
+		float mcpHitEnergy = 0.;
+		float collectedEnergy = 0.;
+		float clusterSize = 0.;
+
+		for(auto hitIt = mcpHitList.begin(); hitIt != mcpHitList.end(); ++hitIt)
+		{
+			auto hit = *hitIt;
+
+			float hitEnergy = hit->GetHadronicEnergy();
+			mcpHitEnergy += hitEnergy;
+
+			clusterSize += 1;
+
+			if( std::find( clusterHitList.begin(), clusterHitList.end(), *hitIt ) != clusterHitList.end() )
+			{
+				collectedEnergy += hitEnergy;
+			}
+		}
+
+	     std::vector<float> vars;
+	     vars.push_back( clusterSize );
+	     vars.push_back( mcpHitEnergy );
+	     vars.push_back( collectedEnergy/mcpHitEnergy );
+	
+	     AHM.CreateFill("ClusterEfficiency", "clusterSize:clusterEnergy:clusterEfficiency", vars);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
-  }
-
-
-  float ClusterEfficiencyAlgorithm::getPurity(const pandora::Cluster* cluster) const
-  {
-	  const pandora::MCParticle *const pMCClusterParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
-	  //std::cout << "Cluster : " << cluster << ", mcp: " << pMCClusterParticle << std::endl;
-
-	  pandora::CaloHitList caloHitList;
-	  cluster->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
-
-	  float clusterHitEnergy = 0.;
-	  float pureClusterEnergy = 0.;
-
-      for(pandora::CaloHitList::const_iterator caloHitIter = caloHitList.begin(); caloHitIter != caloHitList.end(); ++caloHitIter)
-      {
-         const pandora::CaloHit* caloHit = *caloHitIter;
-		 const pandora::MCParticle* caloHitMCP = NULL;
-
-		 float hitEnergy = caloHit->GetHadronicEnergy();
-		 clusterHitEnergy += hitEnergy;
-    
-         try
-         {
-         	const pandora::MCParticle *const pMCHitParticle(pandora::MCParticleHelper::GetMainMCParticle(caloHit));
-         	//std::cout << "calo hit: " << caloHit << ", mcp: " << pMCHitParticle << std::endl;
-
-			caloHitMCP = pMCHitParticle;
-         }
-         catch (pandora::StatusCodeException &)
-         {
-         }
-
-		 if( caloHitMCP == pMCClusterParticle )
-		 {
-			 pureClusterEnergy += hitEnergy;
-		 }
-	  }
-
-	  float cluPurity = pureClusterEnergy/clusterHitEnergy;
-
-	  return cluPurity;
   }
 
   pandora::StatusCode ClusterEfficiencyAlgorithm::Initialize()
@@ -155,14 +188,6 @@ namespace arbor_content
 
   pandora::StatusCode ClusterEfficiencyAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
-	m_timing = false;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "ApplyTiming", m_timing));
-
-    m_timeCut = 100.f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "TimeCut", m_timeCut));
-
     return pandora::STATUS_CODE_SUCCESS;
   }
 

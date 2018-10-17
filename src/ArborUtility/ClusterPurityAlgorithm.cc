@@ -44,21 +44,6 @@ namespace arbor_content
   {
     extern HistogramManager AHM;
 
-	/////////////////////////
-    const MCParticleList *pMCParticleList = NULL;
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pMCParticleList));
-
-    for (MCParticleList::const_iterator iterMC = pMCParticleList->begin(), iterMCEnd = pMCParticleList->end(); iterMC != iterMCEnd; ++iterMC)
-    {
-        try
-        {
-            const MCParticle *const pPfoTarget = *iterMC;
-		}
-        catch (StatusCodeException &)
-		{
-		}
-	}
-
 	////////
     const pandora::PfoList *pPfoList = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));

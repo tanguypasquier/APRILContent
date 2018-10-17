@@ -57,13 +57,6 @@ private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 	pandora::StatusCode	Initialize();
-	float               getPurity(const pandora::Cluster* cluster) const;
-
-    bool                            m_timing;
-
-    float                           m_timeCut;
-
-	//TNtupleD*                       caloHitsMonitor;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
