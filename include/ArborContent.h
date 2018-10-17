@@ -51,6 +51,7 @@
 #include "ArborCheating/PerfectPfoCreationAlgorithm.h"
 #include "ArborCheating/SemiPerfectPfoCreationAlgorithm.h"
 #include "ArborCheating/CheatingClusterCleaningAlgorithm.h"
+#include "ArborCheating/CheatingHitRecoveryAlgorithm.h"
 #include "ArborCheating/CheatingParticleIDAlgorithm.h"
 
 #include "ArborClustering/ArborClusteringAlgorithm.h"
@@ -147,6 +148,7 @@ public:
     d("CheatingTrackToClusterMatching",      arbor_content::CheatingTrackToClusterMatching::Factory) \
     d("ArborClustering",                     arbor_content::ArborClusteringAlgorithm::Factory) \
     d("CheatingClusterCleaning",             arbor_content::CheatingClusterCleaningAlgorithm::Factory) \
+    d("CheatingHitRecovery",                 arbor_content::CheatingHitRecoveryAlgorithm::Factory) \
     d("CheatingParticleID",                  arbor_content::CheatingParticleIDAlgorithm::Factory) \
     d("ClusteringParent",                    arbor_content::ClusteringParentAlgorithm::Factory) \
     d("SimpleRegionClustering",              arbor_content::SimpleRegionClusteringAlgorithm::Factory) \
