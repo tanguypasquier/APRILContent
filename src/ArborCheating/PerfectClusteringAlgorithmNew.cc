@@ -140,6 +140,13 @@ void PerfectClusteringAlgorithmNew::CaloHitCollection(const MCParticle *const pP
             {
                 PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
                 pfoParameters.m_clusterList.push_back(pCluster);
+
+				// FIXME
+				// it seems we need to add this hit, but it throw the result when running ?
+#if 0
+                for (CaloHitList::const_iterator hitIter = caloHitList.begin(), hitIterEnd = caloHitList.end(); hitIter != hitIterEnd; ++hitIter)
+                    PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pCluster, *hitIter));
+#endif
             }
             else
             {
