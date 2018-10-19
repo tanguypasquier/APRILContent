@@ -64,6 +64,8 @@ StatusCode PerfectClusteringAlgorithmNew::Run()
     const MCParticleList *pMCParticleList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pMCParticleList));
 
+	std::cout << "PerfectClusteringAlgorithmNew, # MCP: " << pMCParticleList->size() << std::endl;
+
     if (pMCParticleList->empty())
         return STATUS_CODE_SUCCESS;
 

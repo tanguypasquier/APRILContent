@@ -90,6 +90,8 @@ StatusCode CheatingHitRecoveryAlgorithm::Run()
 		}
 	}
 
+	std::cout << "CheatingHitRecovery, mcpClusterListMap size: " << mcpClusterListMap.size() << std::endl;
+
 	// add the unused hit to exsiting clusters
 	for(auto mcpIt = mcpClusterListMap.begin(); mcpIt != mcpClusterListMap.end(); ++mcpIt)
 	{
@@ -100,6 +102,9 @@ StatusCode CheatingHitRecoveryAlgorithm::Run()
 
 		if(hitList.empty()) continue;
 		if(clusterList.empty()) continue;
+
+		// just a check
+		if(!mcp->IsPfoTarget()) continue;
 
         // simply add the hits to the first cluster of the mcp
 		auto pCluster = *(clusterList.begin());
@@ -154,7 +159,9 @@ StatusCode CheatingHitRecoveryAlgorithm::Run()
         {
         	auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle( clu );
 
-			if( pClusterMCParticle->GetCharge() != 0 ) continue;
+			//if( pClusterMCParticle->GetCharge() != 0 ) continue;
+		    // just a check
+			if( pClusterMCParticle->IsPfoTarget() == false) continue;
         }
         catch (pandora::StatusCodeException &)
         {
@@ -176,6 +183,148 @@ StatusCode CheatingHitRecoveryAlgorithm::Run()
     //const pandora::ClusterList* pClusterList = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 	std::cout << "cluster after saving: " << pClusterList->size() << std::endl;
+
+
+	////////////////////////////////////////////////////////////////////////////////
+	// check the cluster and its mcp in this temparory domain
+	// if one mcp has several clusters, then they should be merged into one cluster
+	// especially for charged clusters
+	////////////////////////////////////////////////////////////////////////////////
+#if 1
+	{
+    // begin domain
+    const pandora::ClusterList* pClusterList = NULL; 
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+
+	//std::cout << "orginal cluster: " << pClusterList->size() << std::endl;
+
+	std::map<const pandora::MCParticle* const, pandora::ClusterList> mcpClusterListMap;
+	
+	for(auto it = pClusterList->begin(); it != pClusterList->end(); ++it)
+	{
+		const pandora::Cluster* const clu = *it;
+
+		const pandora::MCParticle* pClusterMCParticle  = NULL;
+
+        try
+        {
+        	 pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle( clu );
+        }
+        catch (pandora::StatusCodeException &)
+        {
+		    continue;
+		}
+
+		if(pClusterMCParticle != NULL && mcpClusterListMap.find( pClusterMCParticle ) == mcpClusterListMap.end())
+		{
+		    pandora::ClusterList clusterList;
+		    clusterList.push_back( clu );
+		    mcpClusterListMap[pClusterMCParticle] = clusterList;
+		}
+		else
+		{
+		    mcpClusterListMap[pClusterMCParticle].push_back( clu );
+		}
+	}
+
+	for(auto it = mcpClusterListMap.begin(); it != mcpClusterListMap.end(); ++it)
+	{
+		auto mcp = it->first;
+		auto clusterList = it->second;
+
+	    if(clusterList.size()>1) 
+		{
+			std::cout << "------>>> particle cluster # greater than 1: " << clusterList.size() << ", PDG: "
+				      << mcp->GetParticleId() << std::endl;
+
+			// merge clusters
+			auto firstCluster = *( clusterList.begin() );
+
+			for(auto cluIt = clusterList.begin(); cluIt != clusterList.end(); ++cluIt)
+			{
+				if(cluIt == clusterList.begin()) continue;
+
+		        const pandora::Cluster* cluToMerge = *cluIt;
+				PandoraContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
+			}
+
+		}// end if
+	} // end for
+
+
+	// end domain
+	}
+#endif
+
+
+	// check the cluster again after merge them
+#if 1
+	{
+		std::cout << "Check clusters again..." << std::endl;
+    // begin domain
+    const pandora::ClusterList* pClusterList = NULL; 
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+
+	//std::cout << "orginal cluster: " << pClusterList->size() << std::endl;
+
+	std::map<const pandora::MCParticle* const, pandora::ClusterList> mcpClusterListMap;
+	
+	for(auto it = pClusterList->begin(); it != pClusterList->end(); ++it)
+	{
+		const pandora::Cluster* const clu = *it;
+
+		const pandora::MCParticle* pClusterMCParticle  = NULL;
+
+        try
+        {
+        	 pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle( clu );
+        }
+        catch (pandora::StatusCodeException &)
+        {
+		    continue;
+		}
+
+		if(pClusterMCParticle != NULL && mcpClusterListMap.find( pClusterMCParticle ) == mcpClusterListMap.end())
+		{
+		    pandora::ClusterList clusterList;
+		    clusterList.push_back( clu );
+		    mcpClusterListMap[pClusterMCParticle] = clusterList;
+		}
+		else
+		{
+		    mcpClusterListMap[pClusterMCParticle].push_back( clu );
+		}
+	}
+
+	for(auto it = mcpClusterListMap.begin(); it != mcpClusterListMap.end(); ++it)
+	{
+		auto mcp = it->first;
+		auto clusterList = it->second;
+
+	    if(clusterList.size()>1) 
+		{
+			std::cout << "------>>> particle cluster # greater than 1: " << clusterList.size() << ", PDG: "
+				      << mcp->GetParticleId() << std::endl;
+
+#if 0
+			// merge clusters
+			auto fistCluster = *( clusterList.begin() );
+
+			for(auto cluIt = clusterList.begin(); cluIt != clusterList.end(); ++cluIt)
+			{
+				if(cluIt == clusterList.begin()) continue;
+
+		        const pandora::Cluster* cluToMerge = *cluIt;
+		        PandoraContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
+			}
+#endif
+		}// end if
+	} // end for
+
+
+	// end domain
+	}
+#endif
 
     return STATUS_CODE_SUCCESS;
 }
