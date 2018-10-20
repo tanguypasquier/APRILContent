@@ -30,6 +30,7 @@ public:
 
 private:
     pandora::StatusCode Run();
+	pandora::StatusCode MergeClusters();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 };
 

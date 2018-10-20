@@ -187,31 +187,34 @@ namespace arbor_content
 	        }
 		}
 
-		float mcpHitEnergy = 0.;
+		float clusterEnergy = 0.;
 		float collectedEnergy = 0.;
 		float clusterSize = 0.;
+		float collectedHitSize = 0.;
 
 		for(auto hitIt = mcpHitList.begin(); hitIt != mcpHitList.end(); ++hitIt)
 		{
 			auto hit = *hitIt;
 
 			float hitEnergy = hit->GetHadronicEnergy();
-			mcpHitEnergy += hitEnergy;
+			clusterEnergy += hitEnergy;
 
-			clusterSize += 1;
+			++clusterSize;
 
 			if( std::find( clusterHitList.begin(), clusterHitList.end(), *hitIt ) != clusterHitList.end() )
 			{
 				collectedEnergy += hitEnergy;
+				++collectedHitSize;
 			}
 		}
 
-	     std::vector<float> vars;
-	     vars.push_back( clusterSize );
-	     vars.push_back( mcpHitEnergy );
-	     vars.push_back( collectedEnergy/mcpHitEnergy );
+	    std::vector<float> vars;
+	    vars.push_back( clusterEnergy );
+	    vars.push_back( clusterSize );
+	    vars.push_back( collectedEnergy/clusterEnergy );
+	    vars.push_back( collectedHitSize/clusterSize );
 	
-	     AHM.CreateFill("ClusterEfficiency", "clusterSize:clusterEnergy:clusterEfficiency", vars);
+	    AHM.CreateFill("ClusterEfficiency", "clusterSize:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency", vars);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;

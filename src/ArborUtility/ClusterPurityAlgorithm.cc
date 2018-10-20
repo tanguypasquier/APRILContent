@@ -63,17 +63,23 @@ namespace arbor_content
 
     		try
     		{
-				float clusterPurity = getPurity(cluster);
+				float hitPurity;
+				float energyPurity;
+				float ordClusterHit;
+
+				getPurity(cluster, hitPurity, energyPurity, ordClusterHit);
+
 				float clusterSize = cluster->GetNCaloHits();
 				float clusterEnergy = cluster->GetHadronicEnergy();
 	
 				std::vector<float> vars;
 				vars.push_back( clusterSize );
+				vars.push_back( ordClusterHit );
 				vars.push_back( clusterEnergy );
-				vars.push_back( clusterPurity );
+				vars.push_back( hitPurity );
+				vars.push_back( energyPurity );
 
-	
-				AHM.CreateFill("ClusterPurity", "clusterSize:clusterEnergy:clusterPurity", vars);
+				AHM.CreateFill("ClusterPurity", "clusterSize:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
 
 				//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
 				//	      << std::endl;
@@ -89,8 +95,8 @@ namespace arbor_content
     return pandora::STATUS_CODE_SUCCESS;
   }
 
-
-  float ClusterPurityAlgorithm::getPurity(const pandora::Cluster* cluster) const
+  pandora::StatusCode ClusterPurityAlgorithm::getPurity(const pandora::Cluster* cluster, float& hitPurity, float& energyPurity, 
+		   float& ordClusterHit) const
   {
 	  const pandora::MCParticle *const pMCClusterParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
 	  //std::cout << "Cluster : " << cluster << ", mcp: " << pMCClusterParticle << std::endl;
@@ -99,7 +105,14 @@ namespace arbor_content
 	  cluster->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
 
 	  float clusterHitEnergy = 0.;
+
+	  // FIXME
+	  // this is not equal to caloHitList.size() 
+	  // since some hits may be lost due to the exception to get main mcp of calo hit below
+	  ordClusterHit = 0.;
+
 	  float pureClusterEnergy = 0.;
+	  float pureClusterHit = 0.;
 
       for(pandora::CaloHitList::const_iterator caloHitIter = caloHitList.begin(); caloHitIter != caloHitList.end(); ++caloHitIter)
       {
@@ -126,6 +139,8 @@ namespace arbor_content
 		 if( caloHitMCP == pMCClusterParticle )
 		 {
 			 pureClusterEnergy += hitEnergy;
+			 ++pureClusterHit;
+			 ++ordClusterHit;
 		 }
 		 else
 		 {
@@ -133,9 +148,10 @@ namespace arbor_content
 		 }
 	  }
 
-	  float cluPurity = pureClusterEnergy/clusterHitEnergy;
-
-	  return cluPurity;
+	  hitPurity = pureClusterHit/ordClusterHit;
+	  energyPurity = pureClusterEnergy/clusterHitEnergy;
+    
+	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   pandora::StatusCode ClusterPurityAlgorithm::Initialize()
