@@ -135,12 +135,12 @@ namespace arbor_content
 		 if(caloHitMCP ==NULL) continue;
 
 		 clusterHitEnergy += hitEnergy;
+		 ++ordClusterHit;
 
 		 if( caloHitMCP == pMCClusterParticle )
 		 {
 			 pureClusterEnergy += hitEnergy;
 			 ++pureClusterHit;
-			 ++ordClusterHit;
 		 }
 		 else
 		 {

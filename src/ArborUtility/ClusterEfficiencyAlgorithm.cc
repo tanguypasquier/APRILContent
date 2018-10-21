@@ -171,12 +171,16 @@ namespace arbor_content
 		// the hits from the clusters above
 		pandora::CaloHitList clusterHitList;
 
+		float siblingClusterNumber = 0;
+
 		for(auto cluListIt = clusterList.begin(); cluListIt != clusterList.end(); ++cluListIt)
 		{
 			auto pCluster = *cluListIt;
 
 			pandora::CaloHitList caloHitList;
 			pCluster->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
+
+			if(caloHitList.size()>0) ++siblingClusterNumber;
 
             for(pandora::CaloHitList::const_iterator caloHitIter = caloHitList.begin();
 				caloHitIter != caloHitList.end(); ++caloHitIter)
@@ -187,11 +191,13 @@ namespace arbor_content
 	        }
 		}
 
+		--siblingClusterNumber;
+
 		float clusterEnergy = 0.;
 		float collectedEnergy = 0.;
 		float clusterSize = 0.;
 		float collectedHitSize = 0.;
-
+		
 		for(auto hitIt = mcpHitList.begin(); hitIt != mcpHitList.end(); ++hitIt)
 		{
 			auto hit = *hitIt;
@@ -213,8 +219,9 @@ namespace arbor_content
 	    vars.push_back( clusterSize );
 	    vars.push_back( collectedEnergy/clusterEnergy );
 	    vars.push_back( collectedHitSize/clusterSize );
+	    vars.push_back( siblingClusterNumber );
 	
-	    AHM.CreateFill("ClusterEfficiency", "clusterSize:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency", vars);
+	    AHM.CreateFill("ClusterEfficiency", "clusterSize:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency:siblingClusterNumber", vars);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
