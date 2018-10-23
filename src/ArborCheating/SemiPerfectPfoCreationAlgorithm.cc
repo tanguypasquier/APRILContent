@@ -40,63 +40,6 @@ SemiPerfectPfoCreationAlgorithm::SemiPerfectPfoCreationAlgorithm()
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
-pandora::StatusCode SemiPerfectPfoCreationAlgorithm::TrackClusterAssociation(const pandora::MCParticle *const pPfoTarget, PfoParameters &pfoParameters) const
-{
-    const pandora::TrackList *pTrackList = NULL;
-    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
-	//std::cout << "---track size: " << pTrackList->size() << std::endl;
-
-    for (pandora::TrackList::const_iterator iter = pTrackList->begin(), iterEnd = pTrackList->end(); iter != iterEnd; ++iter)
-    {
-        try
-        {
-            const pandora::Track *const pTrack = *iter;
-            const pandora::MCParticle *const pTrkMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pTrack));
-            const pandora::MCParticle *const pTrkPfoTarget(pTrkMCParticle->GetPfoTarget());
-
-            if (pTrkPfoTarget != pPfoTarget)
-                continue;
-
-			////////
-            const pandora::ClusterList *pClusterList = NULL;
-            PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
-
-            for (pandora::ClusterList::const_iterator cluIter = pClusterList->begin(); cluIter != pClusterList->end(); ++cluIter)
-            {
-                try
-                {
-                    const pandora::Cluster *const pCluster = *cluIter;
-                    const pandora::MCParticle *const pClusterMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
-                    const pandora::MCParticle *const pClusterPfoTarget(pClusterMCParticle->GetPfoTarget());
-
-                    if (pClusterPfoTarget != pPfoTarget)
-                        continue;
-
-					if(pTrkPfoTarget == pClusterPfoTarget) 
-					{
-                        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
-						PandoraContentApi::AddTrackClusterAssociation(*this, pTrack, pCluster));
-					}
-	        		//std::cout << "found a cluster: " << pCluster << " for MCP: " << pClusterPfoTarget << std::endl;
-                }
-                catch (pandora::StatusCodeException &e)
-                {
-	        		std::cout << e.ToString() << std::endl;
-                }
-            }
-			////////
-
-
-			//std::cout << "found a track: " << pTrack << " for MCP: " << pTrkPfoTarget << std::endl;
-        }
-        catch (pandora::StatusCodeException &e)
-        {
-			//std::cout << e.ToString() << std::endl;
-        }
-    }
-
-    return pandora::STATUS_CODE_SUCCESS;
-}
 
 pandora::StatusCode SemiPerfectPfoCreationAlgorithm::Run()
 {
@@ -407,44 +350,6 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::SetPfoParametersFromCluster
 
 /////////
 
-void SemiPerfectPfoCreationAlgorithm::SetPfoParametersFromClusters(const pandora::MCParticle *const pPfoTarget, const int nTracksUsed, PfoParameters &pfoParameters) const
-{
-    const pandora::Cluster *pCluster = NULL;
-
-    if (!pfoParameters.m_clusterList.empty())
-    {
-        if (1 != pfoParameters.m_clusterList.size())
-            throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
-
-        pCluster = *(pfoParameters.m_clusterList.begin());
-    }
-
-    if ((0 == nTracksUsed) && !pfoParameters.m_clusterList.empty())
-    {
-        const bool isPhoton(pandora::PHOTON == pPfoTarget->GetParticleId());
-
-        const float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) :
-            pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
-        const pandora::CartesianVector positionVector(!isPhoton ? pCluster->GetCentroid(pCluster->GetInnerPseudoLayer()) :
-            this->GetEnergyWeightedCentroid(pCluster, pCluster->GetInnerPseudoLayer(), pCluster->GetOuterPseudoLayer()));
-
-        pfoParameters.m_particleId = (isPhoton ? pandora::PHOTON : pandora::NEUTRON);
-        pfoParameters.m_charge = 0;
-        pfoParameters.m_mass = (isPhoton ? pandora::PdgTable::GetParticleMass(pandora::PHOTON) : pandora::PdgTable::GetParticleMass(pandora::NEUTRON));
-        pfoParameters.m_energy = clusterEnergy;
-        pfoParameters.m_momentum = positionVector.GetUnitVector() * clusterEnergy;
-    }
-
-#if 0
-    // Track-cluster associations hack
-    if (NULL != pCluster)
-    {
-        for (pandora::TrackList::const_iterator iterTrk = pfoParameters.m_trackList.begin(), iterTrkEnd = pfoParameters.m_trackList.end(); iterTrk != iterTrkEnd; ++iterTrk)
-            PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, *iterTrk, pCluster));
-    }
-#endif
-}
-
 pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
 {
     const pandora::MCParticleList *pMCParticleList = NULL;
@@ -464,15 +369,11 @@ pandora::StatusCode SemiPerfectPfoCreationAlgorithm::CreateTrackBasedPfos() cons
 			//std::cout << "pfoTarget: " << pPfoTarget << std::endl;
             PfoParameters pfoParameters;
 
-	        //this->TrackClusterAssociation(pPfoTarget, pfoParameters);
-
             this->TrackCollection(pPfoTarget, pfoParameters);
-            //this->CaloHitCollection(pPfoTarget, pfoParameters);
 
 			/////
             int nTracksUsed(0);
             this->SetPfoParametersFromTracks(nTracksUsed, pfoParameters);
-            //this->SetPfoParametersFromClusters(pPfoTarget, nTracksUsed, pfoParameters);
 
 #if 1
             if ((0 == nTracksUsed) && pfoParameters.m_clusterList.empty())
