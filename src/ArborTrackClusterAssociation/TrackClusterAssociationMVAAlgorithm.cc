@@ -27,7 +27,7 @@
 
 #include "Pandora/AlgorithmHeaders.h"
 
-#include "ArborTrackClusterAssociationMVA/TrackClusterAssociationMVAAlgorithm.h"
+#include "ArborTrackClusterAssociation/TrackClusterAssociationMVAAlgorithm.h"
 #include "ArborHelpers/ReclusterHelper.h"
 
 #include "ArborHelpers/HistogramHelper.h"
