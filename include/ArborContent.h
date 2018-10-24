@@ -171,6 +171,7 @@ public:
     d("MipFragmentMerging",                  arbor_content::MipFragmentMergingAlg::Factory) \
     d("FragmentRemoval",                     arbor_content::FragmentRemovalAlgorithm::Factory) \
     d("TrackClusterAssociation",             arbor_content::TrackClusterAssociationAlgorithm::Factory) \
+    d("TrackClusterAssociationMVA",          arbor_content::TrackClusterAssociationMVAAlgorithm::Factory) \
     d("UnassociatedTrackRecovery",           arbor_content::UnassociatedTrackRecoveryAlg::Factory) \
     d("LoopingTrackAssociation",             arbor_content::LoopingTrackAssociationAlgorithm::Factory) \
     d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
