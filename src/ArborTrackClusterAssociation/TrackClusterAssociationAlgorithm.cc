@@ -30,39 +30,6 @@
 #include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborHelpers/ReclusterHelper.h"
 
-#include "ArborHelpers/HistogramHelper.h"
-
-bool shouldMatch(const pandora::Track* const pTrack, const pandora::Cluster* const pCluster)
-{
-	bool shouldMatch = false;
-
-	const pandora::MCParticle* pTrkMCParticle = NULL;
-	const pandora::MCParticle* pClusterMCParticle = NULL;
-
-	try
-	{
-		pTrkMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pTrack);
-	}
-    catch (pandora::StatusCodeException &e)
-	{
-		//std::cout << "Track GetMainMCParticle Exception: " << e.ToString() << std::endl;
-		return false;
-	}
-
-	try
-	{
-		pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pCluster);
-	}
-    catch (pandora::StatusCodeException &e)
-	{
-		//std::cout << "Cluster GetMainMCParticle Exception: " << e.ToString() << std::endl;
-		return false;
-	}
-	
-	shouldMatch = pTrkMCParticle == pClusterMCParticle ? true : false;
-
-	return shouldMatch;
-}
 
 bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs)
 {
@@ -71,59 +38,9 @@ bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *
 
 namespace arbor_content
 {
-  extern HistogramManager AHM;
-
-  float MaxTrackClusterAngle = 0.6;
-  
-  float m_trkR, m_trkZ, m_trkPhi, m_trkTanL, m_trkEnergy;
-  float m_cluR, m_cluZ, m_cluPhi, m_cluSize, m_cluEnergy;
-  float RDiff, ZDiff, PhiDiff, EnergyDiff;
-  float m_trkCluDistance;
-
-  TMVA::Reader* TrackClusterAssociationAlgorithm::m_reader = NULL;
 
   pandora::StatusCode TrackClusterAssociationAlgorithm::Run()
   {
-	if(m_reader==NULL) 
-	{
-        m_reader = new TMVA::Reader( "!Color:!Silent" ); 
-	    
-#if 0
-	    m_reader->AddVariable( "trkR",                &m_trkR           );
-	    m_reader->AddVariable( "trkZ",                &m_trkZ           );
-	    m_reader->AddVariable( "trkPhi",              &m_trkPhi         );
-        m_reader->AddVariable( "trkTanL",             &m_trkTanL        );
-        m_reader->AddVariable( "trkEnergy",           &m_trkEnergy      );
-        m_reader->AddVariable( "cluR",                &m_cluR           );
-        m_reader->AddVariable( "cluZ",                &m_cluZ           );
-        m_reader->AddVariable( "cluPhi",              &m_cluPhi         );
-        m_reader->AddVariable( "cluSize",             &m_cluSize        );
-        m_reader->AddVariable( "cluEnergy",           &m_cluEnergy      );
-        m_reader->AddVariable( "trkCluDistance",      &m_trkCluDistance );
-#endif
-
-	    m_reader->AddVariable( "trkR-cluR",                &RDiff           );
-	    m_reader->AddVariable( "trkZ-cluZ",                &ZDiff           );
-	    m_reader->AddVariable( "trkPhi-cluPhi",            &PhiDiff         );
-        m_reader->AddVariable( "trkEnergy-cluEnergy",      &EnergyDiff      );
-        m_reader->AddVariable( "trkCluDistance",           &m_trkCluDistance  );
-
-        // --- Book the MVA methods
-        TString methodName = TString("BDT method");
-        TString weightfile = TString("/home/libo/workplace/tmva/pfa/dataset/weights/TMVAClassification_BDT.weights.xml");
-        //TString methodName = TString("BDT method");
-        //TString weightfile = TString("/home/libo/workplace/tmva/pfa/dataset/weights/TMVAClassification_BDT.weights.xml");
-
-        try 
-        {
-	    	m_reader->BookMVA( methodName, weightfile ); 
-        }
-        catch (...)
-        {
-	    	std::cout << "Error: MVA reader !!!" << std::endl;
-        }
-	}
-
     // extract tracks and clusters eligible for track-cluster associations
     pandora::TrackList trackList; pandora::ClusterList clusterList;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ExtractAssociationLists(clusterList, trackList));
@@ -131,7 +48,7 @@ namespace arbor_content
     if(trackList.empty() || clusterList.empty())
       return pandora::STATUS_CODE_SUCCESS;
 
-	//std::cout << "----> clusterList size: " << clusterList.size() << std::endl;
+	std::cout << "----> clusterList size: " << clusterList.size() << std::endl;
 	//std::cout << "trackList size: " << trackList.size() << std::endl;
     // reset the track-cluster associations
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
@@ -152,7 +69,7 @@ namespace arbor_content
 
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
-	//std::cout << "-------> the cluster size of list: " << pClusterList->size() << std::endl;
+	std::cout << "-------> the cluster size of list: " << pClusterList->size() << std::endl;
 
     if(pTrackList->empty() || pClusterList->empty())
       return pandora::STATUS_CODE_SUCCESS;
@@ -167,15 +84,6 @@ namespace arbor_content
         continue;
 
       const unsigned int innerPseudoLayer(pCluster->GetInnerPseudoLayer());
-
-      const bool isPhoton(pandora::PHOTON == pCluster->GetParticleId());
-      const bool isNeutron(pandora::NEUTRON == pCluster->GetParticleId());
-
-	  if(isPhoton || isNeutron) 
-	  {
-		  std::cout << "isPhoton: " << isPhoton << ", isNeutron: " << isNeutron << std::endl;
-		  continue;
-	  }
 
       if( innerPseudoLayer > m_maxClusterInnerPseudoLayer )
         continue;
@@ -206,93 +114,6 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  float TrackClusterAssociationAlgorithm::MVADeteriminAssociation(const pandora::Cluster *const pCluster, const pandora::Track *const pTrack) const
-  {
-    const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
-    const pandora::CartesianVector trackProjection(pTrack->GetTrackStateAtCalorimeter().GetPosition());
-
-    pandora::CartesianVector innerCentroid(0.f, 0.f, 0.f);
-
-	MaxTrackClusterAngle = 0.6;
-    bool canComputeInnerCentroid0 = pandora::STATUS_CODE_SUCCESS == this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid);
-	bool canComputeInnerCentroid1;
-
-	if(canComputeInnerCentroid0==false)
-	{
-		MaxTrackClusterAngle = 1.e6;
-        canComputeInnerCentroid1 = pandora::STATUS_CODE_SUCCESS == this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid);
-	}
-
-    // get b field and track helix
-    const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
-    const pandora::Helix helix(trackProjection, trackMomentum, pTrack->GetCharge(), bField);
-
-	float trkTanL = trackMomentum.GetZ() / sqrt(trackMomentum.GetX() * trackMomentum.GetX() + trackMomentum.GetY() * trackMomentum.GetY());
-
-    pandora::CartesianVector distanceToHelix(0.f, 0.f, 0.f);
-    helix.GetDistanceToPoint(innerCentroid, distanceToHelix);
-
-	std::string tupleName = "MVADeteriminAssociation";
-	std::string varListName = "trkR:trkZ:trkPhi:trkTanL:trkEnergy:cluR:cluZ:cluPhi:cluSize:cluEnergy:trkCluDistance:MCMatch:MVAMatch";
-	std::vector<float> vars;
-
-	float trkR, trkPhi, trkZ;
-	trackProjection.GetCylindricalCoordinates(trkR, trkPhi, trkZ);
-
-	float cluR, cluPhi, cluZ;
-	innerCentroid.GetCylindricalCoordinates(cluR, cluPhi, cluZ);
-	
-	bool isMatched = shouldMatch(pTrack, pCluster);
-
-	/////////////////////////////////////////////////////////////////
-	m_trkR = trkR;
-	m_trkZ = trkZ;
-	m_trkPhi = trkPhi;
-	m_trkTanL = trkTanL;
-	m_trkEnergy = pTrack->GetEnergyAtDca();
-
-	m_cluR = cluR;
-	m_cluZ = cluZ;
-	m_cluPhi = cluPhi;
-	m_cluSize = pCluster->GetNCaloHits();
-    m_cluEnergy = pCluster->GetHadronicEnergy();
-	m_trkCluDistance = distanceToHelix.GetZ();
-
-	RDiff = m_trkR - m_cluR;
-	ZDiff = m_trkZ - m_cluZ;
-	PhiDiff = m_trkPhi - m_cluPhi;
-	EnergyDiff = m_trkEnergy - m_cluEnergy;
-
-	// -------------------- MVA ------------------
-	float matchProb = m_reader->EvaluateMVA( "BDT method" );
-	//float matchProb = m_reader->EvaluateMVA( "BDT method" );
-	//std::cout << " matchProb: " << matchProb << std::endl;
-	// -------------------- MVA ------------------
-	
-	vars.push_back( m_trkR );
-	vars.push_back( m_trkZ );
-	vars.push_back( m_trkPhi );
-	vars.push_back( m_trkTanL );
-	vars.push_back( m_trkEnergy );
-
-	vars.push_back( m_cluR );
-	vars.push_back( m_cluZ );
-	vars.push_back( m_cluPhi );
-	vars.push_back( m_cluSize );
-	vars.push_back( m_cluEnergy );
-	vars.push_back( m_trkCluDistance );
-	vars.push_back( float(isMatched) );
-	vars.push_back( matchProb );
-	
-	AHM.CreateFill(tupleName, varListName, vars);
-	/////////////////////////////////////////////////////////////////
-
-    //return true;
-	return -matchProb;
-  }
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-  
   pandora::StatusCode TrackClusterAssociationAlgorithm::BuildPossibleAssociations(const pandora::ClusterList &clusterList, const pandora::TrackList &trackList,
       AssociationMap &associationMap)
   {
@@ -307,58 +128,43 @@ namespace arbor_content
 
       const pandora::Cluster *pBestCluster = NULL;
       float bestCompatibility(std::numeric_limits<float>::max());
+      AssociationConstraints bestConstraints;
 
       for(pandora::ClusterList::const_iterator iter = clusterList.begin() , endIter = clusterList.end() ;
           endIter != iter ; ++iter)
       {
         const pandora::Cluster *const pCluster = *iter;
 
-#if 0
-        bool passedInitCut = this->PassesInitialCuts(pCluster, pTrack);
+		//double trackEnergy = pTrack->GetEnergyAtDca();
+		//double clusterEnergy = pCluster->GetElectromagneticEnergy();
+		//bool canPrint = fabs(trackEnergy - 3.2) < 0.1 && fabs(clusterEnergy - 3.32) < 0.1;
+		//bool canPrint = fabs(trackEnergy - 3.2) < 0.1;
 
-		if(!passedInitCut) continue;
+        if( ! this->PassesInitialCuts(pCluster, pTrack) )
+		{
+		  //if(canPrint) std::cout << "track: " << trackEnergy << ", cluster: " << clusterEnergy << ", not pass init" << std::endl;
+          continue;
+		}
 
         AssociationConstraints constraints;
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CalculateAssociationConstraints(pCluster, pTrack, constraints));
 
-        if( ! this->FitConstraints(constraints) ) continue;
+        if( ! this->FitConstraints(constraints) )
+		{
+		  //if(canPrint) std::cout << "track: " << trackEnergy << ", cluster: " << clusterEnergy << ", not pass Fit" << std::endl;
+          continue;
+		}
 
         if(constraints.m_compatibility < bestCompatibility)
         {
           bestCompatibility = constraints.m_compatibility;
+          bestConstraints = constraints;
           pBestCluster = pCluster;
         }
-#endif
-
-#if 1
-	    bool isMatched = shouldMatch(pTrack, pCluster);
-		
-		//if(!isMatched) continue;
-
-		// small value has better compatibility
-		float compatibility = MVADeteriminAssociation(pCluster, pTrack);
-
-		// mc matching
-		//if(shouldMatch(pTrack, pCluster)) compatibility = -1.e6;
-
-        if(compatibility < bestCompatibility)
-        {
-#if 0
-		  if(!isMatched) 
-		  {
-			  if(compatibility>-0.3) continue;
-		  }
-#endif
-
-          bestCompatibility = compatibility;
-		  pBestCluster = pCluster;
-        }
-#endif
       }
 
       if(NULL != pBestCluster)
       {
-		// not allowed ?
         if(m_allowMultiAssociations)
         {
           associationMap[pTrack] = pBestCluster;
@@ -398,11 +204,9 @@ namespace arbor_content
           multiAssociationMap[pBestCluster] = pTrack;
         }
       }
-
-#if 0
 	  else
 	  {
-		//std::cout << "-------> track energy: " << pTrack->GetEnergyAtDca() << ", no cluster" << std::endl;
+		std::cout << "-------> track energy: " << pTrack->GetEnergyAtDca() << ", no cluster" << std::endl;
 
 		// if the track energy is greater than a prescribed value but has no associated cluster, then
 		// try to check nearby photon candidates ???
@@ -418,7 +222,6 @@ namespace arbor_content
 
 		//if(pPhotonList!=NULL) std::cout << "=============> photon cluster number: " << pPhotonList->size() << std::endl;
 	  }
-#endif
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -428,8 +231,8 @@ namespace arbor_content
 
   pandora::StatusCode TrackClusterAssociationAlgorithm::PerformAssociations(const AssociationMap &associationMap)
   {
-    std::cout << "TrackClusterAssociationAlgorithm::PerformAssociations map: " << associationMap.size() << std::endl;
-#if 0	  
+#if 1	  
+    //std::cout << "TrackClusterAssociationAlgorithm::PerformAssociations" << std::endl;
 
 	pandora::TrackVector trackVector;
 
@@ -442,7 +245,7 @@ namespace arbor_content
 
 	std::sort(trackVector.begin(), trackVector.end(), SortTracksByEnergy);
 
-	std::cout << "# of pfo track: " << trackVector.size() << std::endl;
+	//std::cout << "# of pfo track: " << trackVector.size() << std::endl;
 
     for (pandora::TrackVector::const_iterator trackIter = trackVector.begin(), trackIterEnd = trackVector.end(); trackIter != trackIterEnd; ++trackIter)
     {
@@ -491,8 +294,7 @@ namespace arbor_content
 
         const float openingAngle(trackMomentum.GetOpeningAngle(pCaloHit->GetPositionVector() - trackProjection));
 
-        //if(openingAngle > m_maxTrackClusterAngle)
-        if(openingAngle > MaxTrackClusterAngle)
+        if(openingAngle > m_maxTrackClusterAngle)
           continue;
 
         ++nDof;
@@ -522,87 +324,24 @@ namespace arbor_content
 
     pandora::CartesianVector innerCentroid(0.f, 0.f, 0.f);
 
-	MaxTrackClusterAngle = 0.6;
-    bool canComputeInnerCentroid0 = pandora::STATUS_CODE_SUCCESS == this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid);
-	bool canComputeInnerCentroid1 = true;
-
-	if(canComputeInnerCentroid0==false)
+    if(pandora::STATUS_CODE_SUCCESS != this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid))
 	{
-		MaxTrackClusterAngle = 1.e6;
-        canComputeInnerCentroid1 = pandora::STATUS_CODE_SUCCESS == this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid);
+		//std::cout << "ComputeInnerCentroid failed" << std::endl;
+		//std::cout << "pCluster: " << pCluster->GetElectromagneticEnergy() << " track: " << pTrack->GetEnergyAtDca() << " ComputeInnerCentroid failed" << std::endl;
+      return false;
 	}
-
-#if 0
-	bool trkCluMatched = shouldMatch(pTrack, pCluster);
-	std::string tupleName0 = "TrackClusterAssociation_COG" + string(__func__);
-	std::string varListName0 = "canComputeInnerCentroid:shouldMatch";
-	std::vector<float> vars0;
-	vars0.push_back( float(canComputeInnerCentroid0) );
-	vars0.push_back( float(trkCluMatched) );
-	AHM.CreateFill(tupleName0, varListName0, vars0);
-#endif
 
     // get b field and track helix
     const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
     const pandora::Helix helix(trackProjection, trackMomentum, pTrack->GetCharge(), bField);
 
-	float trkTanL = trackMomentum.GetZ() / sqrt(trackMomentum.GetX() * trackMomentum.GetX() + trackMomentum.GetY() * trackMomentum.GetY());
-
-	//std::cout << "e: " << pTrack->GetCharge() << ", b: " << bField << std::endl;
-	//std::cout << "TP: " << trackProjection.GetX() << ", " << trackProjection.GetY() << ", " << trackProjection.GetZ() << std::endl;
-	//std::cout << "P: " << trackMomentum.GetX() << ", " << trackMomentum.GetY() << ", " << trackMomentum.GetZ() << std::endl;
-
     //	pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
     //
     //	if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, innerCentroid, projectionOnHelix))
     //		return false;
-	//std::cout << "innerCentroid: " << innerCentroid.GetX() << ", " << innerCentroid.GetY() << ", " << innerCentroid.GetZ() << std::endl;
 
     pandora::CartesianVector distanceToHelix(0.f, 0.f, 0.f);
     helix.GetDistanceToPoint(innerCentroid, distanceToHelix);
-
-	std::string tupleNameMatched = "TrackClusterAssociationM";
-	std::string tupleNameUnmatched = "TrackClusterAssociationU";
-	std::string varListName = "trkR:trkZ:trkPhi:trkTanL:trkEnergy:cluR:cluZ:cluPhi:cluSize:cluEnergy:trkCluDistance:shouldMatch:canComputeInnerCentroid0:canComputeInnerCentroid1";
-	std::vector<float> vars;
-
-	float trkR, trkPhi, trkZ;
-	trackProjection.GetCylindricalCoordinates(trkR, trkPhi, trkZ);
-
-	float cluR, cluPhi, cluZ;
-	innerCentroid.GetCylindricalCoordinates(cluR, cluPhi, cluZ);
-	
-	bool isMatched = shouldMatch(pTrack, pCluster);
-
-	/////////////////////////////////////////////////////////////////
-	vars.push_back(trkR);
-	vars.push_back(trkZ);
-	vars.push_back(trkPhi);
-	vars.push_back(trkTanL);
-	vars.push_back(pTrack->GetEnergyAtDca());
-
-	vars.push_back(cluR);
-	vars.push_back(cluZ);
-	vars.push_back(cluPhi);
-	vars.push_back(pCluster->GetNCaloHits());
-    vars.push_back(pCluster->GetHadronicEnergy());
-	
-	vars.push_back(distanceToHelix.GetZ());
-	vars.push_back( float(isMatched) );
-	vars.push_back( float(canComputeInnerCentroid0) );
-	vars.push_back( float(canComputeInnerCentroid1) );
-	/////////////////////////////////////////////////////////////////
-
-	if(isMatched)
-	{
-		AHM.CreateFill(tupleNameMatched, varListName, vars);
-	}
-	else
-	{
-		AHM.CreateFill(tupleNameUnmatched, varListName, vars);
-	}
-
-	if(!canComputeInnerCentroid0) return false;
 
     if( distanceToHelix.GetZ() > m_maxDistanceToHelix )
 	{
@@ -651,16 +390,6 @@ namespace arbor_content
     constraints.m_trackClusterAngle = openingAngle;
     constraints.m_distanceToHelix = distanceToHelix.GetZ();
     constraints.m_compatibility = compatibility;
-
-#if 0
-	std::string tupleName = "TrackClusterAssociation" + string(__func__);
-	std::string varListName = "trackR:trackZ";
-
-	std::vector<float> vars;
-	//vars.push_back();
-
-	//AHM.CreateFill(tupleName, varListName, vars);
-#endif
 
     return pandora::STATUS_CODE_SUCCESS;
   }
