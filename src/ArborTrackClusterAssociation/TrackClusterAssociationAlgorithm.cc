@@ -31,11 +31,6 @@
 #include "ArborHelpers/ReclusterHelper.h"
 
 
-bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs)
-{
-   	return (pLhs->GetEnergyAtDca() > pRhs->GetEnergyAtDca());
-}
-
 namespace arbor_content
 {
 
