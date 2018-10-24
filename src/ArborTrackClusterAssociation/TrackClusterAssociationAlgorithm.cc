@@ -30,9 +30,10 @@
 #include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborHelpers/ReclusterHelper.h"
 
-
 namespace arbor_content
 {
+
+  bool extern SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs);
 
   pandora::StatusCode TrackClusterAssociationAlgorithm::Run()
   {
