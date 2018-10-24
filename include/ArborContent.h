@@ -106,6 +106,7 @@
 #include "ArborTopologicalAssociation/FragmentRemovalAlgorithm.h"
 
 #include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
+#include "ArborTrackClusterAssociation/TrackClusterAssociationMVAAlgorithm.h"
 #include "ArborTrackClusterAssociation/UnassociatedTrackRecoveryAlg.h"
 #include "ArborTrackClusterAssociation/LoopingTrackAssociationAlgorithm.h"
 
