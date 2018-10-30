@@ -24,6 +24,12 @@ public:
      */
     ForceSplitTrackAssociationsAlg();
 
+	class Factory : public pandora::AlgorithmFactory
+	{
+	public:
+		pandora::Algorithm *CreateAlgorithm() const;
+	};
+
 private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
@@ -32,7 +38,13 @@ private:
     typedef std::map<const pandora::Track *, const pandora::Helix> TrackToHelixMap;
 
     unsigned int    m_minTrackAssociations;         ///< The minimum number of track associations to forcibly resolve
+
 };
+
+inline pandora::Algorithm *ForceSplitTrackAssociationsAlg::Factory::CreateAlgorithm() const
+{
+    return new ForceSplitTrackAssociationsAlg();
+}
 
 } // namespace lc_content
 
