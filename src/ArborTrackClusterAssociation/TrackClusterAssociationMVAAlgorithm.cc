@@ -170,6 +170,16 @@ namespace arbor_content
 
       const bool isPhoton(pandora::PHOTON == pCluster->GetParticleId());
       const bool isNeutron(pandora::NEUTRON == pCluster->GetParticleId());
+	
+	  std::vector<float> vars;
+
+	  vars.push_back( float(isPhoton) );
+	  vars.push_back( float(isNeutron) );
+	  vars.push_back( float(innerPseudoLayer) );
+	  vars.push_back( float(m_maxClusterInnerPseudoLayer) );
+	  vars.push_back( float(pCluster->GetNCaloHits()) );
+
+	  AHM.CreateFill("ClusterProperty", "isPhoton:isNeutron:innerPseudoLayer:maxClusterInnerPseudoLayer:nCaloHits", vars);
 
 	  if(isPhoton || isNeutron) 
 	  {
@@ -177,8 +187,10 @@ namespace arbor_content
 		  continue;
 	  }
 
+#if 0
       if( innerPseudoLayer > m_maxClusterInnerPseudoLayer )
         continue;
+#endif
 
       clusterList.push_back(pCluster);
     }
@@ -195,8 +207,10 @@ namespace arbor_content
       if(!pTrack->ReachesCalorimeter())
         continue;
 
+#if 0
       if(!pTrack->CanFormPfo())
         continue;
+#endif
 
       trackList.push_back(pTrack);
     }
@@ -265,7 +279,6 @@ namespace arbor_content
 
 	// -------------------- MVA ------------------
 	float matchProb = m_reader->EvaluateMVA( "BDT method" );
-	//float matchProb = m_reader->EvaluateMVA( "BDT method" );
 	//std::cout << " matchProb: " << matchProb << std::endl;
 	// -------------------- MVA ------------------
 	
@@ -289,6 +302,8 @@ namespace arbor_content
 
     //return true;
 	return -matchProb;
+
+	//return matchingProbability;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -593,6 +608,7 @@ namespace arbor_content
 	vars.push_back( float(canComputeInnerCentroid1) );
 	/////////////////////////////////////////////////////////////////
 
+	// generate sigal and background for MVA trainning
 	if(isMatched)
 	{
 		AHM.CreateFill(tupleNameMatched, varListName, vars);

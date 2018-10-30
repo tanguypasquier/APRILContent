@@ -33,9 +33,11 @@
 #include "ArborObjects/CaloHit.h"
 #include "ArborHelpers/GeometryHelper.h"
 #include "ArborHelpers/ReclusterHelper.h"
+#include "ArborHelpers/HistogramHelper.h"
 
 namespace arbor_content
 {
+  extern HistogramManager AHM;
 
   pandora::StatusCode ClusterCheckAlgorithm::Run()
   {
@@ -109,6 +111,29 @@ namespace arbor_content
 			float trackEnergy = track->GetEnergyAtDca();
 
 			tracksEnergy += trackEnergy;
+
+	    std::vector<float> vars;
+
+		float energy = track->GetEnergyAtDca();
+		float charge = track->GetCharge();
+		float reachesCalorimeter = track->ReachesCalorimeter();
+		float isProjectedToEndCap = track->IsProjectedToEndCap();
+		float canFormPfo = track->CanFormPfo();
+		float canFormClusterlessPfo = track->CanFormClusterlessPfo();
+		float hasAssociatedCluster = track->HasAssociatedCluster();
+		float siblingTrack = pfoTrackList.size() - 1;
+
+	    vars.push_back( energy );
+	    vars.push_back( charge );
+	    vars.push_back( reachesCalorimeter );
+	    vars.push_back( isProjectedToEndCap );
+	    vars.push_back( canFormPfo );
+	    vars.push_back( canFormClusterlessPfo );
+	    vars.push_back( hasAssociatedCluster );
+	    vars.push_back( siblingTrack );
+	
+	    AHM.CreateFill("PFOTrack", "energy:charge:reachesCalorimeter:isProjectedToEndCap:canFormPfo:canFormClusterlessPfo:hasAssociatedCluster:siblingTrack", vars);
+
 		}
 
      	checkClusters(pfoClusterList);

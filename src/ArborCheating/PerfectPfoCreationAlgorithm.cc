@@ -35,14 +35,7 @@
 namespace arbor_content
 {
 
-PerfectPfoCreationAlgorithm::PerfectPfoCreationAlgorithm() :
-    m_shouldCreateTrackBasedPfos(true),
-    m_shouldCreateNeutralPfos(true),
-    m_minClusterHadronicEnergy(0.1f),
-    m_minClusterElectromagneticEnergy(0.1f),
-    m_minHitsInCluster(5),
-    m_allowSingleLayerClusters(false),
-    m_photonPositionAlgorithm(2)
+PerfectPfoCreationAlgorithm::PerfectPfoCreationAlgorithm()
 {
 }
 
@@ -50,13 +43,10 @@ PerfectPfoCreationAlgorithm::PerfectPfoCreationAlgorithm() :
 
 pandora::StatusCode PerfectPfoCreationAlgorithm::Run()
 {
-	PandoraContentApi::RemoveAllTrackClusterAssociations(*this);
-
     const pandora::PfoList *pPfoList = NULL; std::string pfoListName;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pPfoList, pfoListName));
 
-    if (m_shouldCreateTrackBasedPfos)
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreateTrackBasedPfos());
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreateTrackBasedPfos());
 
     if (!pPfoList->empty())
     {
@@ -88,7 +78,7 @@ void PerfectPfoCreationAlgorithm::TrackCollection(const pandora::MCParticle *con
 
             pfoParameters.m_trackList.push_back(pTrack);
 
-			//std::cout << "found a track: " << pTrack << " for MCP: " << pTrkPfoTarget << std::endl;
+			std::cout << "found a track: " << pTrack << " for MCP: " << pTrkPfoTarget << std::endl;
         }
         catch (pandora::StatusCodeException &e)
         {
@@ -124,13 +114,14 @@ void PerfectPfoCreationAlgorithm::CaloHitCollection(const pandora::MCParticle *c
     }
 }
 
-void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(const pandora::MCParticle *const pPfoTarget, int &nTracksUsed, PfoParameters &pfoParameters) const
+void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(int &nTracksUsed, PfoParameters &pfoParameters) const
 {
     if (!pfoParameters.m_trackList.empty())
     {
         int charge(0);
         float energyWithPionMass(0.f), energyWithElectronMass(0.f);
 		pandora::CartesianVector momentum(0.f, 0.f, 0.f);
+		pandora::ClusterList clusters;
 
         for (pandora::TrackList::const_iterator iter = pfoParameters.m_trackList.begin(), iterEnd = pfoParameters.m_trackList.end(); iter != iterEnd; ++iter)
         {
@@ -138,13 +129,13 @@ void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(const pandora::MCPa
 
             if (!pTrack->CanFormPfo() && !pTrack->CanFormClusterlessPfo())
             {
-                std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " cfp: " << pTrack->CanFormPfo() << " cfcp: " << pTrack->CanFormClusterlessPfo() << std::endl;
+                //std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " cfp: " << pTrack->CanFormPfo() << " cfcp: " << pTrack->CanFormClusterlessPfo() << std::endl;
                 continue;
             }
 
             if (!pTrack->GetParentList().empty())
             {
-                std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " nParents: " << pTrack->GetParentList().size() << std::endl;
+                //std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " nParents: " << pTrack->GetParentList().size() << std::endl;
                 continue;
             }
 
@@ -157,11 +148,27 @@ void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(const pandora::MCPa
             momentum += pTrack->GetMomentumAtDca();
             energyWithPionMass += pTrack->GetEnergyAtDca();
             energyWithElectronMass += std::sqrt(electronMass * electronMass + pTrack->GetMomentumAtDca().GetMagnitudeSquared());
+
+			// track-cluster
+			if(pTrack->HasAssociatedCluster())
+			{
+				const pandora::Cluster* pCluster = pTrack->GetAssociatedCluster();
+
+                if (PandoraContentApi::IsAvailable(*this, pCluster))
+				{
+					clusters.push_back(pCluster);
+				}
+
+				std::cout << "track: " << pTrack << " --- cluster: " << pCluster << std::endl;
+				std::cout << "track energy: " << pTrack->GetEnergyAtDca() << ", cluster energy: " << pCluster->GetHadronicEnergy() 
+					<< std::endl;
+			}
         }
 
         if (0 == nTracksUsed)
             return;
 
+		pfoParameters.m_clusterList = clusters;
         pfoParameters.m_charge = charge;
         pfoParameters.m_momentum = momentum;
         pfoParameters.m_particleId = (pfoParameters.m_charge.Get() == 0) ? pandora::PHOTON : (pfoParameters.m_charge.Get() < 0) ? pandora::PI_MINUS : pandora::PI_PLUS;
@@ -171,42 +178,125 @@ void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(const pandora::MCPa
 }
 
 /////////
-
-void PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters(const pandora::MCParticle *const pPfoTarget, const int nTracksUsed, PfoParameters &pfoParameters) const
+pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() const
 {
-    const pandora::Cluster *pCluster = NULL;
+    const pandora::ClusterList *pClusterList = NULL;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+	std::cout << "check the cluster again: " << pClusterList->size() << std::endl;
 
-    if (!pfoParameters.m_clusterList.empty())
+    // Examine clusters with no associated tracks to form neutral pfos
+    for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
     {
-        if (1 != pfoParameters.m_clusterList.size())
-            throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+        const pandora::Cluster *const pCluster = *iter;
 
-        pCluster = *(pfoParameters.m_clusterList.begin());
-    }
+		//std::cout << "cluster: " << pCluster->GetAssociatedTrackList().size() << std::endl;
 
-    if ((0 == nTracksUsed) && !pfoParameters.m_clusterList.empty())
-    {
-        const bool isPhoton(pandora::PHOTON == pPfoTarget->GetParticleId());
+        //if (!pCluster->GetAssociatedTrackList().empty())
+        if (pCluster->GetAssociatedTrackList().size()!=0)
+		{
+			auto tracks = pCluster->GetAssociatedTrackList();
 
-        const float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) :
-            pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
-        const pandora::CartesianVector positionVector(!isPhoton ? pCluster->GetCentroid(pCluster->GetInnerPseudoLayer()) :
-            this->GetEnergyWeightedCentroid(pCluster, pCluster->GetInnerPseudoLayer(), pCluster->GetOuterPseudoLayer()));
+			bool canFormPfo = false;
+			bool noParentTrack = false;
 
+#if 1
+			for(auto trackIter=tracks.begin(); trackIter!=tracks.end(); ++trackIter)
+			{
+				auto pTrack = *trackIter;
+				canFormPfo = pTrack->CanFormPfo() || pTrack->CanFormClusterlessPfo();
+				noParentTrack = pTrack->GetParentList().empty();
+				if(canFormPfo && noParentTrack) break;
+			}
+#endif
+
+			if(canFormPfo && noParentTrack) continue;
+		}
+		else
+		{
+			//std::cout << " ---- this is a neutral cluster..." << std::endl;
+		}
+
+#if 0
+        if (pCluster->GetNCaloHits() < m_minHitsInCluster)
+            continue;
+#endif
+
+        //const bool isPhoton(pCluster->PassPhotonId(this->GetPandora()));
+        const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
+        const bool isPhoton(pandora::PHOTON == pMCParticle->GetParticleId());
+        float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+
+		//std::cout << "----cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
+		//std::cout << "----- h_energy: " << pCluster->GetCorrectedHadronicEnergy(this->GetPandora()) << std::endl;
+
+        // Veto non-photon clusters below hadronic energy threshold and those occupying a single layer
+#if 0
+        if (!isPhoton)
+        {
+            if (clusterEnergy < m_minClusterHadronicEnergy)
+                continue;
+
+            if (!m_allowSingleLayerClusters && (pCluster->GetInnerPseudoLayer() == pCluster->GetOuterPseudoLayer()))
+                continue;
+        }
+        else
+        {
+            if (clusterEnergy < m_minClusterElectromagneticEnergy)
+                continue;
+        }
+#endif
+
+        // Specify the pfo parameters
+        PandoraContentApi::ParticleFlowObject::Parameters pfoParameters;
         pfoParameters.m_particleId = (isPhoton ? pandora::PHOTON : pandora::NEUTRON);
         pfoParameters.m_charge = 0;
         pfoParameters.m_mass = (isPhoton ? pandora::PdgTable::GetParticleMass(pandora::PHOTON) : pandora::PdgTable::GetParticleMass(pandora::NEUTRON));
         pfoParameters.m_energy = clusterEnergy;
-        pfoParameters.m_momentum = positionVector.GetUnitVector() * clusterEnergy;
+
+		//std::cout << "----- energy: " << clusterEnergy << std::endl;
+        pfoParameters.m_clusterList.push_back(pCluster);
+
+
+        // Photon position: 0) unweighted inner centroid, 1) energy-weighted inner centroid, 2+) energy-weighted centroid for all layers
+        pandora::CartesianVector positionVector(0.f, 0.f, 0.f);
+
+#if 0
+        const unsigned int clusterInnerLayer(pCluster->GetInnerPseudoLayer());
+
+
+        if (!isPhoton)
+        {
+            positionVector = pCluster->GetCentroid(clusterInnerLayer);
+        }
+        else if (1 == m_photonPositionAlgorithm)
+        {
+            positionVector = this->GetEnergyWeightedCentroid(pCluster, clusterInnerLayer, clusterInnerLayer);
+        }
+        else
+        {
+            positionVector = this->GetEnergyWeightedCentroid(pCluster, clusterInnerLayer, pCluster->GetOuterPseudoLayer());
+        }
+
+        const pandora::CartesianVector momentum(positionVector.GetUnitVector() * clusterEnergy);
+#endif
+        const pandora::CartesianVector momentum(1., 1., 1.);
+        pfoParameters.m_momentum = momentum.GetUnitVector() * clusterEnergy;
+
+        const pandora::ParticleFlowObject *pPfo(NULL);
+		try 
+		{
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
+		}
+        catch (pandora::StatusCodeException &)
+		{
+			std::cout << "Create cluster failed..." << std::endl;
+		}
     }
 
-    // Track-cluster associations hack
-    if (NULL != pCluster)
-    {
-        for (pandora::TrackList::const_iterator iterTrk = pfoParameters.m_trackList.begin(), iterTrkEnd = pfoParameters.m_trackList.end(); iterTrk != iterTrkEnd; ++iterTrk)
-            PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, *iterTrk, pCluster));
-    }
+    return pandora::STATUS_CODE_SUCCESS;
 }
+
+/////////
 
 pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
 {
@@ -215,6 +305,9 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
 
     if (pMCParticleList->empty())
         return pandora::STATUS_CODE_SUCCESS;
+
+	int nPFO = 0;
+	int nTrack = 0;
 
     for (pandora::MCParticleList::const_iterator iterMC = pMCParticleList->begin(), iterMCEnd = pMCParticleList->end(); iterMC != iterMCEnd; ++iterMC)
     {
@@ -225,27 +318,77 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
             PfoParameters pfoParameters;
 
             this->TrackCollection(pPfoTarget, pfoParameters);
-            this->CaloHitCollection(pPfoTarget, pfoParameters);
 
 			/////
             int nTracksUsed(0);
-            this->SetPfoParametersFromTracks(pPfoTarget, nTracksUsed, pfoParameters);
-            this->SetPfoParametersFromClusters(pPfoTarget, nTracksUsed, pfoParameters);
+            this->SetPfoParametersFromTracks(nTracksUsed, pfoParameters);
 
+#if 1
             if ((0 == nTracksUsed) && pfoParameters.m_clusterList.empty())
             {
                 std::cout << pPfoTarget << " No energy deposits for pfo target " << pPfoTarget->GetParticleId() 
 					      << ", E: " << pPfoTarget->GetEnergy() << std::endl;
-                throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
-            }
 
-            const pandora::ParticleFlowObject *pPfo(NULL);
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
+				continue;
+                //throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+            }
+#endif
+
+			const pandora::ParticleFlowObject *pPfo(NULL);
+            //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
+			//PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
+
+            auto createStatus = PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo);
+			nTrack += nTracksUsed;
+
+			std::cout << "up to here, pfo: " << ++nPFO << ", track: " << nTrack << std::endl;
+
+			if(createStatus != pandora::STATUS_CODE_SUCCESS)
+			{
+				std::cout << "PFO creation error: " << createStatus << std::endl;
+			}
 		}
         catch (pandora::StatusCodeException &)
 		{
+			continue;
 		}
 	}
+
+
+#if 1
+    const pandora::PfoList *pPfoList = NULL;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
+
+	std::cout << "--- PFO size: " << pPfoList->size() << std::endl;
+
+	// check track in pfo list
+    for(pandora::PfoList::const_iterator iter = pPfoList->begin(), endIter = pPfoList->end(); endIter != iter ; ++iter)
+    {
+		const pandora::ParticleFlowObject* pfo = *iter;
+
+		const pandora::TrackList& trackList = pfo->GetTrackList();
+
+		std::cout << "pfo " << pfo << " has " << trackList.size() << " tracks" << std::endl;
+		for(auto trackIter = trackList.begin(); trackIter != trackList.end(); ++trackIter)
+		{
+			std::cout << "  track " << *trackIter << " energy " << (*trackIter)->GetEnergyAtDca() << std::endl;
+		}
+	}
+    
+
+	// for the neutral cluster 
+    try
+    {
+		this->SetPfoParametersFromClusters();
+	}
+    catch (pandora::StatusCodeException &)
+	{
+		std::cout << "StatusCodeException" << std::endl;
+	}
+
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
+	std::cout << "--- PFO size after making neutral PFO: " << pPfoList->size() << std::endl;
+#endif
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -288,26 +431,8 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::ReadSettings(const pandora::TiX
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "OutputPfoListName", m_outputPfoListName));
 
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "ShouldCreateTrackBasedPfos", m_shouldCreateTrackBasedPfos));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "ShouldCreateNeutralPfos", m_shouldCreateNeutralPfos));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MinClusterHadronicEnergy", m_minClusterHadronicEnergy));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MinClusterElectromagneticEnergy", m_minClusterElectromagneticEnergy));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MinHitsInCluster", m_minHitsInCluster));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "AllowSingleLayerClusters", m_allowSingleLayerClusters));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "PhotonPositionAlgorithm", m_photonPositionAlgorithm));
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
+        "ClusterAssociation", m_associationAlgorithmName));
 
     return pandora::STATUS_CODE_SUCCESS;
 }

@@ -215,10 +215,10 @@ namespace arbor_content
 		}
 
 	    std::vector<float> vars;
-	    vars.push_back( clusterEnergy );
 	    vars.push_back( clusterSize );
-	    vars.push_back( collectedEnergy/clusterEnergy );
+	    vars.push_back( clusterEnergy );
 	    vars.push_back( collectedHitSize/clusterSize );
+	    vars.push_back( collectedEnergy/clusterEnergy );
 	    vars.push_back( siblingClusterNumber );
 	
 	    AHM.CreateFill("ClusterEfficiency", "clusterSize:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency:siblingClusterNumber", vars);
