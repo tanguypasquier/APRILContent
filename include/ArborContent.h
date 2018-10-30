@@ -89,6 +89,7 @@
 #include "ArborReclustering/EnergyExcessReclusteringAlgorithm.h"
 #include "ArborReclustering/MissingEnergyReclusteringAlgorithm.h"
 #include "ArborReclustering/SplitTrackReclusteringAlgorithm.h"
+#include "ArborReclustering/ForceSplitTrackAssociationsAlg.h"
 
 #include "ArborTools/ConnectorCleaningTool.h"
 #include "ArborTools/ConnectorSeedingTool.h"
@@ -163,6 +164,7 @@ public:
     d("EnergyExcessReclustering",            arbor_content::EnergyExcessReclusteringAlgorithm::Factory) \
     d("MissingEnergyReclustering",           arbor_content::MissingEnergyReclusteringAlgorithm::Factory) \
     d("SplitTrackReclustering",              arbor_content::SplitTrackReclusteringAlgorithm::Factory) \
+    d("ForceSplitTrackAssociations",         arbor_content::ForceSplitTrackAssociationsAlg::Factory) \
     d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
     d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory) \
     d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \
