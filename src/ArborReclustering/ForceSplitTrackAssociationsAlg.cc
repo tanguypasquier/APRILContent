@@ -8,7 +8,7 @@
 
 #include "Pandora/AlgorithmHeaders.h"
 
-#include "LCReclustering/ForceSplitTrackAssociationsAlg.h"
+#include "ArborReclustering/ForceSplitTrackAssociationsAlg.h"
 
 using namespace pandora;
 
