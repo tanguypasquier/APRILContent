@@ -103,6 +103,9 @@ INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
 LINK_LIBRARIES( ${ROOT_LIBRARIES} ${ROOT_COMPONENT_LIBRARIES} )
 ADD_DEFINITIONS ( ${ROOT_DEFINITIONS} )
 
+LINK_LIBRARIES( "/usr/lib/libarmadillo.so" )
+LINK_LIBRARIES( "/usr/lib/x86_64-linux-gnu/libmlpack.so" )
+LINK_LIBRARIES( "/usr/lib/x86_64-linux-gnu/libboost_serialization.so" )
 
 IF( PANDORA_MONITORING )
   FIND_PACKAGE( PandoraMonitoring REQUIRED )
