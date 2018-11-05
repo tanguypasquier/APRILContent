@@ -103,10 +103,6 @@ INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
 LINK_LIBRARIES( ${ROOT_LIBRARIES} ${ROOT_COMPONENT_LIBRARIES} )
 ADD_DEFINITIONS ( ${ROOT_DEFINITIONS} )
 
-LINK_LIBRARIES( "/usr/lib/libarmadillo.so" )
-LINK_LIBRARIES( "/usr/lib/x86_64-linux-gnu/libmlpack.so" )
-LINK_LIBRARIES( "/usr/lib/x86_64-linux-gnu/libboost_serialization.so" )
-
 IF( PANDORA_MONITORING )
   FIND_PACKAGE( PandoraMonitoring REQUIRED )
   INCLUDE_DIRECTORIES( ${PandoraMonitoring_INCLUDE_DIRS} )
@@ -121,6 +117,9 @@ IF( ARBOR_PARALLEL )
     ADD_DEFINITIONS( ${OpenMP_CXX_FLAGS} )
     ADD_DEFINITIONS( "-DARBOR_PARALLEL=1" )
 ENDIF()
+
+INCLUDE_DIRECTORIES( "/projects/soft/mlpack-3.0.3/include" )
+LINK_LIBRARIES( "/projects/soft/mlpack-3.0.3/lib/libmlpack.so" )
 
 
 IF( INSTALL_DOC AND EXISTS "${PROJECT_SOURCE_DIR}/doc/CMakeLists.txt" )
