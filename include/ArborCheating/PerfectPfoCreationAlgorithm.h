@@ -127,7 +127,6 @@ private:
         const unsigned int outerPseudoLayer) const;
 
 	void TrackCollection(const pandora::MCParticle *const pPfoTarget, PfoParameters &pfoParameters) const;
-    void CaloHitCollection(const pandora::MCParticle *const pPfoTarget, PfoParameters &pfoParameters) const;
 
 	void SetPfoParametersFromTracks(int &nTracksUsed, PfoParameters &pfoParameters) const;
     void SetPfoParametersFromClusters(const pandora::MCParticle *const pPfoTarget, const int nTracksUsed, PfoParameters &pfoParameters) const;

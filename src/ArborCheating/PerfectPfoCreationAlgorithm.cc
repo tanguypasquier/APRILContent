@@ -32,6 +32,9 @@
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/ReclusterHelper.h"
 
+#include "ArborHelpers/HistogramHelper.h"
+
+
 namespace arbor_content
 {
 
@@ -87,33 +90,6 @@ void PerfectPfoCreationAlgorithm::TrackCollection(const pandora::MCParticle *con
     }
 }
 
-void PerfectPfoCreationAlgorithm::CaloHitCollection(const pandora::MCParticle *const pPfoTarget, PfoParameters &pfoParameters) const
-{
-    const pandora::ClusterList *pClusterList = NULL;
-    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
-
-    for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
-    {
-        try
-        {
-            const pandora::Cluster *const pCluster = *iter;
-            const pandora::MCParticle *const pClusterMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
-            const pandora::MCParticle *const pClusterPfoTarget(pClusterMCParticle->GetPfoTarget());
-
-            if (pClusterPfoTarget != pPfoTarget)
-                continue;
-
-            pfoParameters.m_clusterList.push_back(pCluster);
-
-			//std::cout << "found a cluster: " << pCluster << " for MCP: " << pClusterPfoTarget << std::endl;
-        }
-        catch (pandora::StatusCodeException &e)
-        {
-			std::cout << e.ToString() << std::endl;
-        }
-    }
-}
-
 void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(int &nTracksUsed, PfoParameters &pfoParameters) const
 {
     if (!pfoParameters.m_trackList.empty())
@@ -129,13 +105,13 @@ void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(int &nTracksUsed, P
 
             if (!pTrack->CanFormPfo() && !pTrack->CanFormClusterlessPfo())
             {
-                //std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " cfp: " << pTrack->CanFormPfo() << " cfcp: " << pTrack->CanFormClusterlessPfo() << std::endl;
+                std::cout << " Drop track, E: " << pTrack->GetEnergyAtDca() << " cfp: " << pTrack->CanFormPfo() << " cfcp: " << pTrack->CanFormClusterlessPfo() << std::endl;
                 continue;
             }
 
             if (!pTrack->GetParentList().empty())
             {
-                //std::cout << pPfoTarget << " Drop track, E: " << pTrack->GetEnergyAtDca() << " nParents: " << pTrack->GetParentList().size() << std::endl;
+                std::cout << " Drop track, E: " << pTrack->GetEnergyAtDca() << " nParents: " << pTrack->GetParentList().size() << std::endl;
                 continue;
             }
 
@@ -184,20 +160,46 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 	std::cout << "check the cluster again: " << pClusterList->size() << std::endl;
 
+    extern HistogramManager AHM;
+
     // Examine clusters with no associated tracks to form neutral pfos
     for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
     {
         const pandora::Cluster *const pCluster = *iter;
+        if (!PandoraContentApi::IsAvailable(*this, pCluster)) continue;
 
 		//std::cout << "cluster: " << pCluster->GetAssociatedTrackList().size() << std::endl;
 
-        //if (!pCluster->GetAssociatedTrackList().empty())
+#if 0
+        if (!pCluster->GetAssociatedTrackList().empty())
+		{
+			continue;
+
+#if 0
+			auto tracks = pCluster->GetAssociatedTrackList();
+			bool canFormPFO = true;
+
+			for(auto trackIter=tracks.begin(); trackIter!=tracks.end(); ++trackIter)
+			{
+				auto pTrack = *trackIter;
+                if (!PandoraContentApi::IsAvailable(*this, pTrack)) canFormPFO = false;
+			}
+
+			if (canFormPFO==false) continue;
+#endif
+		}
+#endif
+
+		bool clusterHasAssociatedTrack = !( pCluster->GetAssociatedTrackList().empty() );
+		bool canFormPfo = false;
+		bool noParentTrack = false;
+
+		float clusterHadEnergy = pCluster->GetHadronicEnergy();
+
+#if 1
         if (pCluster->GetAssociatedTrackList().size()!=0)
 		{
 			auto tracks = pCluster->GetAssociatedTrackList();
-
-			bool canFormPfo = false;
-			bool noParentTrack = false;
 
 #if 1
 			for(auto trackIter=tracks.begin(); trackIter!=tracks.end(); ++trackIter)
@@ -209,12 +211,28 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 			}
 #endif
 
-			if(canFormPfo && noParentTrack) continue;
+			//if(canFormPfo && noParentTrack) continue;
 		}
 		else
 		{
 			//std::cout << " ---- this is a neutral cluster..." << std::endl;
 		}
+#endif
+
+		// the meaning should be clarified
+		bool usedInPFO = !(canFormPfo && noParentTrack);
+
+		std::vector<float> vars;
+		vars.push_back( clusterHasAssociatedTrack );
+		vars.push_back( canFormPfo );
+		vars.push_back( noParentTrack );
+		vars.push_back( usedInPFO );
+		vars.push_back( clusterHadEnergy );
+
+		AHM.CreateFill("NeutralClusters", "clusterHasAssociatedTrack:canFormPfo:noParentTrack:usedInPFO:clusterHadEnergy", vars);
+
+		if(canFormPfo && noParentTrack) continue;
+
 
 #if 0
         if (pCluster->GetNCaloHits() < m_minHitsInCluster)
