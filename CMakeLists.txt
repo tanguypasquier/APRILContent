@@ -118,8 +118,13 @@ IF( ARBOR_PARALLEL )
     ADD_DEFINITIONS( "-DARBOR_PARALLEL=1" )
 ENDIF()
 
+# mlpack
 INCLUDE_DIRECTORIES( "/projects/soft/mlpack-3.0.3/include" )
 LINK_LIBRARIES( "/projects/soft/mlpack-3.0.3/lib/libmlpack.so" )
+
+# dlib
+INCLUDE_DIRECTORIES( "/projects/soft/dlib-19.16/include" )
+LINK_LIBRARIES( "/projects/soft/dlib-19.16/lib/libdlib.so" )
 
 
 IF( INSTALL_DOC AND EXISTS "${PROJECT_SOURCE_DIR}/doc/CMakeLists.txt" )
