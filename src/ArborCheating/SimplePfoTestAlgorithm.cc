@@ -165,6 +165,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 
 	if(!mcpList.empty())
 	{
+		float pfoTargetChargedWithoutClusterEnergy = 0.;
 		float pfoTargetChargedEnergy = 0.;
 		float pfoTargetNeutralEnergy = 0.;
 		float pfoTargets = 0.;
@@ -177,9 +178,10 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 			pandora::TrackList& trackList = mcpTrackMap[pMCParticle];
 			pandora::ClusterList& clusterList = mcpClusterMap[pMCParticle];
 
+			// only track list has object
 		    if(!trackList.empty() && clusterList.empty())
 			{
-				pfoTargetChargedEnergy += pMCParticle->GetEnergy();
+				pfoTargetChargedWithoutClusterEnergy += pMCParticle->GetEnergy();
 #if 0
 			    for(auto trackIter = trackList.begin(); trackIter != trackList.end(); ++trackIter)
 			    {
@@ -193,6 +195,64 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 #endif
 			}
 
+
+			////////////////////////////////////////////////////
+			//  both lists have object
+			if( (!trackList.empty()) && (!clusterList.empty()) )
+			{
+				// MC energy
+				// pfoTargetChargedEnergy += pMCParticle->GetEnergy();
+
+				// track energy + cluster energy
+#if 1
+				std::cout << "both has object" << std::endl;
+
+				pandora::ClusterList cluList;
+			
+			    for(auto trackIter = trackList.begin(); trackIter != trackList.end(); ++trackIter)
+			    {
+					auto pTrk = *trackIter;
+
+					if( (pTrk->CanFormPfo() || pTrk->CanFormClusterlessPfo()) && pTrk->GetParentList().empty() )
+					{
+						pfoTargetChargedEnergy += pTrk->GetEnergyAtDca();
+
+			            // check track cluster association
+					    if(pTrk->HasAssociatedCluster())
+					    {
+				            const pandora::Cluster* pClu = pTrk->GetAssociatedCluster();
+
+					    	if( std::find(cluList.begin(), cluList.end(), pClu) == cluList.end() )
+					    	{
+					    		cluList.push_back( pClu );
+					    	}
+					    }
+					}
+			    }
+
+				// if cluster has no associated track, add its energy to pfo
+#if 1
+			    for(auto clusterIter = clusterList.begin(); clusterIter != clusterList.end(); ++clusterIter)
+				{
+					auto pClu = *clusterIter;
+
+					if( std::find(cluList.begin(), cluList.end(), pClu) == cluList.end() )
+					{
+                        const pandora::MCParticle *const pCluMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pClu));
+                        const bool isPhoton(pandora::PHOTON == pCluMCParticle->GetParticleId());
+                        float clusterEnergy(isPhoton ? pClu->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pClu->GetCorrectedHadronicEnergy(this->GetPandora()));
+
+					    std::cout << "Add cluster energy" << std::endl;
+					    pfoTargetNeutralEnergy += clusterEnergy;
+					}
+				}
+#endif
+
+#endif
+
+			}
+
+			// only cluster list has object
 			if(trackList.empty() && (!clusterList.empty()) )
 			{
 				//pfoTargetNeutralEnergy += pMCParticle->GetEnergy();
@@ -254,59 +314,6 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 #endif
 			}
 
-			if( (!trackList.empty()) && (!clusterList.empty()) )
-			{
-				// MC energy
-				pfoTargetChargedEnergy += pMCParticle->GetEnergy();
-
-				// track energy + cluster energy
-#if 0
-				std::cout << "both has object" << std::endl;
-
-				pandora::ClusterList cluList;
-			
-			    for(auto trackIter = trackList.begin(); trackIter != trackList.end(); ++trackIter)
-			    {
-					auto pTrk = *trackIter;
-
-					if( (pTrk->CanFormPfo() || pTrk->CanFormClusterlessPfo()) && pTrk->GetParentList().empty() )
-					{
-						pfoTargetChargedEnergy += pTrk->GetEnergyAtDca();
-
-			            // check track cluster association
-					    if(pTrk->HasAssociatedCluster())
-					    {
-				            const pandora::Cluster* pClu = pTrk->GetAssociatedCluster();
-
-					    	if( std::find(cluList.begin(), cluList.end(), pClu) == cluList.end() )
-					    	{
-					    		cluList.push_back( pClu );
-					    	}
-					    }
-					}
-			    }
-
-				// if cluster not in cluList, add its energy
-#if 1
-			    for(auto clusterIter = clusterList.begin(); clusterIter != clusterList.end(); ++clusterIter)
-				{
-					auto pClu = *clusterIter;
-
-					if( std::find(cluList.begin(), cluList.end(), pClu) == cluList.end() )
-					{
-                        const pandora::MCParticle *const pCluMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pClu));
-                        const bool isPhoton(pandora::PHOTON == pCluMCParticle->GetParticleId());
-                        float clusterEnergy(isPhoton ? pClu->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pClu->GetCorrectedHadronicEnergy(this->GetPandora()));
-
-					    std::cout << "Add cluster energy" << std::endl;
-					    pfoTargetNeutralEnergy += clusterEnergy;
-					}
-				}
-#endif
-
-#endif
-
-			}
 
 			// this seems alwags false 
 #if 0
@@ -365,6 +372,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 		
 		////////////////////////////////
 		std::vector<float> vars;
+		vars.push_back( pfoTargetChargedWithoutClusterEnergy );
 		vars.push_back( pfoTargetChargedEnergy );
 		vars.push_back( pfoTargetNeutralEnergy );
 		vars.push_back( missingPfoEnergy );
@@ -373,9 +381,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 
 		///////////////////////////////
         extern HistogramManager AHM;
-
-		AHM.CreateFill("SimplePfoEnergy", "pfoTargetChargedEnergy:pfoTargetNeutralEnergy:missingPfoEnergy:extraPfoEnergy:pfoTargets", vars);
-		//AHM.CreateFill("MissingPfoEnergy", "missPfoEnergy", missingVars);
+		AHM.CreateFill("SimplePfoEnergy", "pfoTargetChargedWithoutClusterEnergy:pfoTargetChargedEnergy:pfoTargetNeutralEnergy:missingPfoEnergy:extraPfoEnergy:pfoTargets", vars);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -383,7 +389,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode SimplePfoTestAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+pandora::StatusCode SimplePfoTestAlgorithm::ReadSettings(const pandora::TiXmlHandle /* xmlHandle */)
 {
 #if 0
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
