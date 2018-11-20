@@ -126,7 +126,7 @@ private:
     const pandora::CartesianVector GetEnergyWeightedCentroid(const pandora::Cluster *const pCluster, const unsigned int innerPseudoLayer,
         const unsigned int outerPseudoLayer) const;
 
-	void TrackCollection(const pandora::MCParticle *const pPfoTarget, PfoParameters &pfoParameters) const;
+    pandora::StatusCode TrackCollection(const pandora::MCParticle *const pPfoTarget, PfoParameters &pfoParameters) const;
 
 	void SetPfoParametersFromTracks(int &nTracksUsed, PfoParameters &pfoParameters) const;
     void SetPfoParametersFromClusters(const pandora::MCParticle *const pPfoTarget, const int nTracksUsed, PfoParameters &pfoParameters) const;
