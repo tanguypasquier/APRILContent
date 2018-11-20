@@ -242,7 +242,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 		vars.push_back( clusterHadEnergy );
 
         extern HistogramManager AHM;
-		AHM.CreateFill("PerfectPfoCreation-NeutralClusters", "clusterHasAssociatedTrack:canFormPfo:noParentTrack:usedInPFO:clusterHadEnergy", vars);
+		AHM.CreateFill("PerfectPfoCreation_NeutralClusters", "clusterHasAssociatedTrack:canFormPfo:noParentTrack:usedInPFO:clusterHadEnergy", vars);
 
 		if(canFormPfo && noParentTrack) continue;
 
@@ -429,7 +429,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
 	vars.push_back( neutralPfoEnergy );
 
     extern HistogramManager AHM;
-	AHM.CreateFill("PerfectPfoCreation-PfoEnergy", "chargedPfoEnergy:neutralPfoEnergy", vars);
+	AHM.CreateFill("PerfectPfoCreation_PfoEnergy", "chargedPfoEnergy:neutralPfoEnergy", vars);
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
 	std::cout << "--- PFO size after making neutral PFO: " << pPfoList->size() << std::endl;

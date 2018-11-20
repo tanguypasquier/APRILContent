@@ -198,7 +198,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 				//pfoTargetNeutralEnergy += pMCParticle->GetEnergy();
 				float mcpEnergy = pMCParticle->GetEnergy();
 #if 1
-			    pandora::ClusterList& clusterList = mcpClusterMap[pMCParticle];
+			    pandora::ClusterList& mcpClusterList = mcpClusterMap[pMCParticle];
 
 				float mcpClusterEnergy = 0.;
 				float mcpClusterSize = 0.;
@@ -206,7 +206,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 				float falseHitSize = 0.;
 				float falseHitEnergy = 0.;
 
-			    for(auto clusterIter = clusterList.begin(); clusterIter != clusterList.end(); ++clusterIter)
+			    for(auto clusterIter = mcpClusterList.begin(); clusterIter != mcpClusterList.end(); ++clusterIter)
 				{
 					auto pCluster = *clusterIter;
 
@@ -385,11 +385,13 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 
 pandora::StatusCode SimplePfoTestAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
+#if 0
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "OutputPfoListName", m_outputPfoListName));
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
         "ClusterAssociation", m_associationAlgorithmName));
+#endif
 
     return pandora::STATUS_CODE_SUCCESS;
 }

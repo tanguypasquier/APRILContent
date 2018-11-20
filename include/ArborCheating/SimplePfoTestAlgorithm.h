@@ -65,8 +65,8 @@ private:
 
     pandora::StatusCode SimplePfo() const;
 
-    std::string     m_outputPfoListName;                    ///< The output pfo list name
-    std::string     m_associationAlgorithmName;             ///< The name of track-cluster alg
+    //std::string     m_outputPfoListName;                    ///< The output pfo list name
+    //std::string     m_associationAlgorithmName;             ///< The name of track-cluster alg
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
