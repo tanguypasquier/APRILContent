@@ -11,6 +11,7 @@ public:
 	ArborDBSCAN();
 
 	void DoClustering();
+	void DoGraph();
 
 private:
 
