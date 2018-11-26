@@ -181,8 +181,8 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 			// only track list has object
 		    if(!trackList.empty() && clusterList.empty())
 			{
-				pfoTargetChargedWithoutClusterEnergy += pMCParticle->GetEnergy();
-#if 0
+				//pfoTargetChargedWithoutClusterEnergy += pMCParticle->GetEnergy();
+#if 1
 			    for(auto trackIter = trackList.begin(); trackIter != trackList.end(); ++trackIter)
 			    {
 					auto pTrk = *trackIter;
@@ -249,15 +249,15 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 #endif
 
 #endif
-
 			}
 
 			// only cluster list has object
 			if(trackList.empty() && (!clusterList.empty()) )
 			{
 				//pfoTargetNeutralEnergy += pMCParticle->GetEnergy();
-				float mcpEnergy = pMCParticle->GetEnergy();
+
 #if 1
+				float mcpEnergy = pMCParticle->GetEnergy();
 			    pandora::ClusterList& mcpClusterList = mcpClusterMap[pMCParticle];
 
 				float mcpClusterEnergy = 0.;
