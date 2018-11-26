@@ -72,10 +72,14 @@ StatusCode PerfectClusteringAlgorithmNew::Run()
     const ClusterList *pClusterList = NULL; std::string clusterListName;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pClusterList, clusterListName));
 
+	int pfoTargetNum = 0;
+
     for (MCParticleList::const_iterator iterMC = pMCParticleList->begin(), iterMCEnd = pMCParticleList->end(); iterMC != iterMCEnd; ++iterMC)
     {
         try
         {
+			if((*iterMC)->IsPfoTarget()) ++pfoTargetNum;
+
             const MCParticle *const pPfoTarget = *iterMC;
             PfoParameters pfoParameters;
 
@@ -85,6 +89,9 @@ StatusCode PerfectClusteringAlgorithmNew::Run()
         {
         }
     }
+
+	std::cout << "mcp #: " << pMCParticleList->size() << std::endl;
+	std::cout << "pfo target #: " << pfoTargetNum << std::endl;
 
     if (!pClusterList->empty())
     {
@@ -168,7 +175,18 @@ void PerfectClusteringAlgorithmNew::CaloHitCollection(const MCParticle *const pP
 void PerfectClusteringAlgorithmNew::SimpleCaloHitCollection(const MCParticle *const pPfoTarget, const CaloHit *const pCaloHit, CaloHitList &caloHitList) const
 {
     const MCParticle *const pHitMCParticle(GetCaloHitMainMCParticle(pCaloHit));
-    const MCParticle *const pHitPfoTarget(pHitMCParticle->GetPfoTarget());
+    const MCParticle *pHitPfoTarget(pHitMCParticle->GetPfoTarget());
+
+    //////////////////////////////////
+    // use the direct MCP of calo hit
+    //////////////////////////////////
+    pHitPfoTarget = pHitMCParticle;
+
+
+    if(pHitMCParticle != pHitPfoTarget ) 
+    {
+        std::cout << "hit mcp: " << pHitMCParticle << ", pfo: " << pHitPfoTarget << std::endl;
+    }
 
     if (pHitPfoTarget != pPfoTarget)
         return;
