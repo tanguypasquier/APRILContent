@@ -42,6 +42,46 @@ PerfectPfoCreationAlgorithm::PerfectPfoCreationAlgorithm()
 {
 }
 
+const pandora::MCParticle* GetMCParticle(const pandora::Track *const pTrack)
+{
+    float bestWeight(0.f);
+    const pandora::MCParticle *pBestMCParticle(nullptr);
+    const pandora::MCParticleWeightMap &hitMCParticleWeightMap(pTrack->GetMCParticleWeightMap());
+
+	if( hitMCParticleWeightMap.empty() )
+	{
+		//std::cout << "track mcp error: hitMCParticleWeightMap is empty " << std::endl;
+	}
+
+	pandora::MCParticleVector mcParticleVector;
+    for (const pandora::MCParticleWeightMap::value_type &mapEntry : hitMCParticleWeightMap) mcParticleVector.push_back(mapEntry.first);
+    //std::sort(mcParticleVector.begin(), mcParticleVector.end(), PointerLessThan<MCParticle>());
+
+    for (const pandora::MCParticle *const pMCParticle : mcParticleVector)
+    {
+        const float weight(hitMCParticleWeightMap.at(pMCParticle));
+
+        if (weight > bestWeight)
+        {
+            bestWeight = weight;
+            pBestMCParticle = pMCParticle;
+        }
+    }
+
+    if (!pBestMCParticle)
+    {
+		//std::cout << "track mcp error " << std::endl;
+
+        //throw StatusCodeException(STATUS_CODE_NOT_INITIALIZED);
+    }
+	else
+	{
+		//std::cout << pBestMCParticle << std::endl;
+	}
+
+    return pBestMCParticle;
+}
+
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode PerfectPfoCreationAlgorithm::Run()
@@ -70,9 +110,12 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::TrackCollection(const pandora::
 
     for (pandora::TrackList::const_iterator iter = pTrackList->begin(), iterEnd = pTrackList->end(); iter != iterEnd; ++iter)
     {
+        const pandora::Track *const pTrack = *iter;
+
         try
         {
-            const pandora::Track *const pTrack = *iter;
+			//GetMCParticle( pTrack );
+
             const pandora::MCParticle *const pTrkMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pTrack));
             const pandora::MCParticle *const pTrkPfoTarget(pTrkMCParticle->GetPfoTarget());
 
@@ -81,13 +124,15 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::TrackCollection(const pandora::
 
             pfoParameters.m_trackList.push_back(pTrack);
 
-			std::cout << "found a track: " << pTrack << " for MCP: " << pTrkPfoTarget << std::endl;
+			//std::cout << "found a track: " << pTrack << " for MCP: " << pTrkPfoTarget << std::endl;
         }
         catch (pandora::StatusCodeException &e)
         {
-			//std::cout << e.ToString() << std::endl;
-			// skip this event
-			return pandora::STATUS_CODE_FAILURE;
+			///// std::cout << e.ToString() << std::endl;
+			///// skip this event
+			std::cout << " track " << pTrack << " mcp is not found " << std::endl;
+			///// return pandora::STATUS_CODE_FAILURE;
+			///// continue;
         }
     }
 
@@ -106,6 +151,21 @@ void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(int &nTracksUsed, P
         for (pandora::TrackList::const_iterator iter = pfoParameters.m_trackList.begin(), iterEnd = pfoParameters.m_trackList.end(); iter != iterEnd; ++iter)
         {
             const pandora::Track *const pTrack = *iter;
+
+			// track-cluster
+			if(pTrack->HasAssociatedCluster())
+			{
+				const pandora::Cluster* pCluster = pTrack->GetAssociatedCluster();
+
+                if (PandoraContentApi::IsAvailable(*this, pCluster))
+				{
+					clusters.push_back(pCluster);
+				}
+
+				//std::cout << "track: " << pTrack << " --- cluster: " << pCluster << std::endl;
+				//std::cout << "track energy: " << pTrack->GetEnergyAtDca() << ", cluster energy: " << pCluster->GetHadronicEnergy() 
+				//	<< std::endl;
+			}
 
             if (!pTrack->CanFormPfo() && !pTrack->CanFormClusterlessPfo())
             {
@@ -129,21 +189,6 @@ void PerfectPfoCreationAlgorithm::SetPfoParametersFromTracks(int &nTracksUsed, P
             momentum += pTrack->GetMomentumAtDca();
             energyWithPionMass += pTrack->GetEnergyAtDca();
             energyWithElectronMass += std::sqrt(electronMass * electronMass + pTrack->GetMomentumAtDca().GetMagnitudeSquared());
-
-			// track-cluster
-			if(pTrack->HasAssociatedCluster())
-			{
-				const pandora::Cluster* pCluster = pTrack->GetAssociatedCluster();
-
-                if (PandoraContentApi::IsAvailable(*this, pCluster))
-				{
-					clusters.push_back(pCluster);
-				}
-
-				std::cout << "track: " << pTrack << " --- cluster: " << pCluster << std::endl;
-				std::cout << "track energy: " << pTrack->GetEnergyAtDca() << ", cluster energy: " << pCluster->GetHadronicEnergy() 
-					<< std::endl;
-			}
         }
 
         if (0 == nTracksUsed)
@@ -202,7 +247,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 
 		bool clusterHasAssociatedTrack = !( pCluster->GetAssociatedTrackList().empty() );
 
-		// associated track can form Pfo ?
+		// the properties of associated track 
 		bool canFormPfo = false;
 		bool noParentTrack = false;
 
@@ -231,7 +276,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 		}
 #endif
 
-		// the meaning should be clarified
+		// the usage of cluster here is determined by its associated tracks
 		bool usedInPFO = !(canFormPfo && noParentTrack);
 
 		std::vector<float> vars;
@@ -245,6 +290,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 		AHM.CreateFill("PerfectPfoCreation_NeutralClusters", "clusterHasAssociatedTrack:canFormPfo:noParentTrack:usedInPFO:clusterHadEnergy", vars);
 
 		if(canFormPfo && noParentTrack) continue;
+		//if( !usedInPFO ) continue;
 
 
 #if 0
@@ -254,8 +300,82 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 
         //const bool isPhoton(pCluster->PassPhotonId(this->GetPandora()));
         const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
-        const bool isPhoton(pandora::PHOTON == pMCParticle->GetParticleId());
+        //const bool isPhoton(pandora::PHOTON == pMCParticle->GetParticleId());
+        const bool isPhoton(pandora::PHOTON == pMCParticle->GetPfoTarget()->GetParticleId());
         float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+
+#if 0
+		// if cluster has associated tracks
+		const pandora::TrackList& clusterTrackList = pCluster->GetAssociatedTrackList();
+
+		if(!clusterTrackList.empty())
+		{
+			float orignalClusterEnergy = clusterEnergy;
+			clusterEnergy = 0.;
+
+			float trackNum = 0.;
+			float trackParentSize = 0.;
+
+			for(auto trk : clusterTrackList)
+		    {
+				//if( ! ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) && trk->GetParentList().empty() ) )
+				//if( ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) && trk->GetParentList().empty() ) )
+				//if( ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) ) )
+				//if( trk->GetParentList().empty() )
+                //if ( PandoraContentApi::IsAvailable(*this, trk) )
+				{
+					clusterEnergy += trk->GetEnergyAtDca();
+					++trackNum;
+				}
+			    
+				trackParentSize += trk->GetParentList().size();
+		    }
+
+			float mcpEnergy = pMCParticle->GetEnergy();
+
+			//cheating
+#if 0
+			if(fabs(clusterEnergy-mcpEnergy)/mcpEnergy >0.5 ) 
+			{
+				std::cout << "track4Cluter..." << std::endl;
+			
+				for(auto trk : clusterTrackList)
+				{
+					std::cout << "track energy: " << trk->GetEnergyAtDca() << std::endl;
+                    const pandora::MCParticle *const pTrkMCParticle( pandora::MCParticleHelper::GetMainMCParticle(trk) );
+                    const pandora::MCParticle *const pTrkPfoTarget( pTrkMCParticle->GetPfoTarget() );
+
+                    const pandora::MCParticle *const pCluMCParticle( pandora::MCParticleHelper::GetMainMCParticle(pCluster) );
+                    const pandora::MCParticle *const pCluPfoTarget( pTrkMCParticle->GetPfoTarget() );
+
+					std::cout << "track mcp : " << pTrkMCParticle << ", pfo target: " << pTrkPfoTarget << std::endl;
+					std::cout << "cluster mcp : " << pCluMCParticle << ", pfo target: " << pCluPfoTarget << std::endl;
+					std::cout << "track parent size: " << trk->GetParentList().size() << ", canformpfo: " << trk->CanFormPfo() 
+						      << ", canformclusterlesspfo: " << trk->CanFormClusterlessPfo() << std::endl;
+
+					auto weightMap = trk->GetMCParticleWeightMap();
+
+					for(auto& iterMap : weightMap )
+					{
+						std::cout << iterMap.first << " : " << iterMap.second << std::endl;
+					}
+				}
+
+				clusterEnergy = mcpEnergy;
+			}
+#endif
+
+		    std::vector<float> trkVars;
+		    trkVars.push_back( mcpEnergy );
+		    trkVars.push_back( orignalClusterEnergy );
+		    trkVars.push_back( clusterEnergy );
+		    trkVars.push_back( trackNum );
+		    trkVars.push_back( trackParentSize );
+		
+			AHM.CreateFill("PerfectPfoCreation_Track4Neutral", "mcpEnergy:orignalClusterEnergy:clusterEnergy:trackNum:trackParentSize", trkVars);
+		}
+#endif
+
 
 		//std::cout << "----cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
 		//std::cout << "----- h_energy: " << pCluster->GetCorrectedHadronicEnergy(this->GetPandora()) << std::endl;
@@ -319,6 +439,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
 
 			neutralPfoEnergy += pfoParameters.m_energy.Get();
+			std::cout << "neutral pfo energy: " << pfoParameters.m_energy.Get() << std::endl;
 		}
         catch (pandora::StatusCodeException &)
 		{
@@ -348,12 +469,17 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
     {
         try
         {
+			if( !(*iterMC)->IsPfoTarget() ) continue;
+
             const pandora::MCParticle *const pPfoTarget = *iterMC;
 			//std::cout << "pfoTarget: " << pPfoTarget << std::endl;
             PfoParameters pfoParameters;
 
+            //TrackCollection(pPfoTarget, pfoParameters);
             if( TrackCollection(pPfoTarget, pfoParameters) != pandora::STATUS_CODE_SUCCESS )
-				return pandora::STATUS_CODE_FAILURE;
+			{
+			//	return pandora::STATUS_CODE_FAILURE;
+			}
 
 			/////
             int nTracksUsed(0);
@@ -361,7 +487,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
 
 #if 1
             if ((0 == nTracksUsed) && pfoParameters.m_clusterList.empty())
-            {
+            		{
                 std::cout << pPfoTarget << " No energy deposits for pfo target " << pPfoTarget->GetParticleId() 
 					      << ", E: " << pPfoTarget->GetEnergy() << std::endl;
 
@@ -427,6 +553,8 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
 	std::vector<float> vars;
 	vars.push_back( chargedPfoEnergy );
 	vars.push_back( neutralPfoEnergy );
+
+	std::cout << "chargedPfoEnergy: " << chargedPfoEnergy << ", neutralPfoEnergy: " << neutralPfoEnergy << std::endl;
 
     extern HistogramManager AHM;
 	AHM.CreateFill("PerfectPfoCreation_PfoEnergy", "chargedPfoEnergy:neutralPfoEnergy", vars);
