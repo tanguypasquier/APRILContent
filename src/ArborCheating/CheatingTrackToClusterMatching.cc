@@ -32,6 +32,7 @@ namespace arbor_content
     // Construct a map from mc particle to tracks
     typedef std::map<const MCParticle*, TrackList> TracksPerMCParticle;
     TracksPerMCParticle tracksPerMCParticle;
+    TracksPerMCParticle tracksPfoTarget;
 
     for (TrackList::const_iterator iter = pCurrentTrackList->begin(), iterEnd = pCurrentTrackList->end(); iter != iterEnd; ++iter)
     {
@@ -40,6 +41,7 @@ namespace arbor_content
         const Track *const pTrack = *iter;
         //const MCParticle *const pMCParticle(pTrack->GetMainMCParticle());
 		const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pTrack));
+		const MCParticle *const pPfoTarget(pMCParticle->GetPfoTarget());
 
         TracksPerMCParticle::iterator itTracksPerMCParticle(tracksPerMCParticle.find(pMCParticle));
 
@@ -57,6 +59,24 @@ namespace arbor_content
         {
           itTracksPerMCParticle->second.push_back(pTrack);
         }
+
+		//////////////////
+        TracksPerMCParticle::iterator itTrackPfoParget(tracksPfoTarget.find(pPfoTarget));
+
+        if (tracksPfoTarget.end() == itTrackPfoParget)
+        {
+          TrackList trackList;
+          trackList.push_back(pTrack);
+
+		  if(!tracksPfoTarget.insert(TracksPerMCParticle::value_type(pPfoTarget, TrackList(1, pTrack))).second)
+            throw StatusCodeException(STATUS_CODE_FAILURE);
+          //if (!tracksPerMCParticle.push_back(TracksPerMCParticle::value_type(pMCParticle, trackList)).second)
+        }
+        else
+        {
+          itTrackPfoParget->second.push_back(pTrack);
+        }
+
       }
       catch (StatusCodeException &)
       {
@@ -69,17 +89,35 @@ namespace arbor_content
       {
         const Cluster *const pCluster = *iter;
         const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
+        const MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
 
 		auto foundMCPTracks = tracksPerMCParticle.find(pMCParticle);
 
-		if(foundMCPTracks != tracksPerMCParticle.end())
+		if(foundMCPTracks != tracksPerMCParticle.end() && PandoraContentApi::IsAvailable(*this, pCluster))
 		{
 			const TrackList& tracks = foundMCPTracks->second;
 
 			for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
 			{
 				auto track = *trackIter;
+				if( !PandoraContentApi::IsAvailable(*this, track) ) continue;
 				PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
+			}
+		}
+		else
+		{
+			// if find no matching track-cluster by direct MCP, then use pfo target
+			auto foundMCPTracksByPfo = tracksPfoTarget.find( pClusterPfoTarget );
+
+			if( foundMCPTracksByPfo != tracksPfoTarget.end() && PandoraContentApi::IsAvailable(*this, pCluster) )
+			{
+				const TrackList& tracks = foundMCPTracksByPfo->second;
+				for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
+				{
+					auto track = *trackIter;
+					if( !PandoraContentApi::IsAvailable(*this, track) ) continue;
+					PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
+				}
 			}
 		}
 	  }
