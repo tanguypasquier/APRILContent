@@ -135,6 +135,7 @@ private:
 
     std::string     m_outputPfoListName;                    ///< The output pfo list name
     std::string     m_associationAlgorithmName;             ///< The name of track-cluster alg
+	bool            m_collapsedMCParticlesToPfoTarget;
 
     //pandora::StringVector   m_associationAlgorithms;        ///< The ordered list of track-cluster associations algorithm to run
 };

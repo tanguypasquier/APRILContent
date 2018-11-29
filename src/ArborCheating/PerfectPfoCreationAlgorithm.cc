@@ -308,61 +308,62 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
         const bool isPhoton(pandora::PHOTON == pMCParticle->GetPfoTarget()->GetParticleId());
         float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
 
-#if 1
-		// if cluster has associated tracks
-		// N.B. the varible 'ShouldCollapseMCParticlesToPfoTarget' in the steering file should be set to false now
-		const pandora::TrackList& clusterTrackList = pCluster->GetAssociatedTrackList();
-
-		if(!clusterTrackList.empty())
+		// if cluster has associated tracks, use the energy from tracks
+		// N.B. if the varible 'ShouldCollapseMCParticlesToPfoTarget' in the steering file is false, should be set to false now
+		if( !m_collapsedMCParticlesToPfoTarget )
 		{
-			float orignalClusterEnergy = clusterEnergy;
-			clusterEnergy = 0.;
+			const pandora::TrackList& clusterTrackList = pCluster->GetAssociatedTrackList();
 
-			float trackNum = 0.;
-			float trackParentSize = 0.;
-
-			for(auto trk : clusterTrackList)
+		    if(!clusterTrackList.empty())
 		    {
-				//auto startPos = trk->GetTrackStateAtStart().GetPosition();
-				//auto endPos = trk->GetTrackStateAtEnd().GetPosition();
-				//auto posDiff = (endPos - startPos).GetMagnitude();
+		    	float orignalClusterEnergy = clusterEnergy;
+		    	clusterEnergy = 0.;
 
-				//if( ! ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) && trk->GetParentList().empty() ) )
-				//if( ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) && trk->GetParentList().empty() ) )
-				//if( ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) ) )
-				//if( trk->GetParentList().empty() )
-                //if ( PandoraContentApi::IsAvailable(*this, trk) )
-				//if( posDiff > 400 )
-				{
-					clusterEnergy += trk->GetEnergyAtDca();
-					//std::cout << "track energy: " << trk->GetEnergyAtDca() << ", track length: " << posDiff << std::endl;
-					++trackNum;
-				}
-			    
-				trackParentSize += trk->GetParentList().size();
+		    	float trackNum = 0.;
+		    	float trackParentSize = 0.;
+
+		    	for(auto trk : clusterTrackList)
+		        {
+		    		//auto startPos = trk->GetTrackStateAtStart().GetPosition();
+		    		//auto endPos = trk->GetTrackStateAtEnd().GetPosition();
+		    		//auto posDiff = (endPos - startPos).GetMagnitude();
+
+		    		//if( ! ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) && trk->GetParentList().empty() ) )
+		    		//if( ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) && trk->GetParentList().empty() ) )
+		    		//if( ( (trk->CanFormPfo() || trk->CanFormClusterlessPfo() ) ) )
+		    		//if( trk->GetParentList().empty() )
+                    //if ( PandoraContentApi::IsAvailable(*this, trk) )
+		    		//if( posDiff > 400 )
+		    		{
+		    			clusterEnergy += trk->GetEnergyAtDca();
+		    			//std::cout << "track energy: " << trk->GetEnergyAtDca() << ", track length: " << posDiff << std::endl;
+		    			++trackNum;
+		    		}
+		    	    
+		    		trackParentSize += trk->GetParentList().size();
+		        }
+
+		    	///////////////////////////////////////
+		    	// cluster - track energy comparison
+		    	///////////////////////////////////////
+		    	if( fabs(clusterEnergy-orignalClusterEnergy)/orignalClusterEnergy > 1.5)
+		    	{
+		    		clusterEnergy = orignalClusterEnergy;
+		    		trackNum = 0.;
+		    	}
+
+		    	float mcpEnergy = pMCParticle->GetEnergy();
+
+		        std::vector<float> trkVars;
+		        trkVars.push_back( mcpEnergy );
+		        trkVars.push_back( orignalClusterEnergy );
+		        trkVars.push_back( clusterEnergy );
+		        trkVars.push_back( trackNum );
+		        trkVars.push_back( trackParentSize );
+		    
+		    	AHM.CreateFill("PerfectPfoCreation_Track4Neutral", "mcpEnergy:orignalClusterEnergy:clusterEnergy:trackNum:trackParentSize", trkVars);
 		    }
-
-			///////////////////////////////////////
-			// cluster - track energy comparison
-			///////////////////////////////////////
-			if( fabs(clusterEnergy-orignalClusterEnergy)/orignalClusterEnergy > 1.5)
-			{
-				clusterEnergy = orignalClusterEnergy;
-				trackNum = 0.;
-			}
-
-			float mcpEnergy = pMCParticle->GetEnergy();
-
-		    std::vector<float> trkVars;
-		    trkVars.push_back( mcpEnergy );
-		    trkVars.push_back( orignalClusterEnergy );
-		    trkVars.push_back( clusterEnergy );
-		    trkVars.push_back( trackNum );
-		    trkVars.push_back( trackParentSize );
-		
-			AHM.CreateFill("PerfectPfoCreation_Track4Neutral", "mcpEnergy:orignalClusterEnergy:clusterEnergy:trackNum:trackParentSize", trkVars);
-		}
-#endif
+	    }
 
 
 		//std::cout << "----cluster energy: " << pCluster->GetElectromagneticEnergy() << std::endl;
@@ -594,6 +595,10 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::ReadSettings(const pandora::TiX
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithm(*this, xmlHandle,
         "ClusterAssociation", m_associationAlgorithmName));
+
+    m_collapsedMCParticlesToPfoTarget = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "CollapsedMCParticlesToPfoTarget", m_collapsedMCParticlesToPfoTarget));
 
     return pandora::STATUS_CODE_SUCCESS;
 }
