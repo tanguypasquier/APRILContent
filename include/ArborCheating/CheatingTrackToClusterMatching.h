@@ -28,6 +28,8 @@ public:
         pandora::Algorithm *CreateAlgorithm() const;
     };
 
+	bool IsParent(const pandora::MCParticle* parent, const pandora::MCParticle* daughter);
+
 private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
