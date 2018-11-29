@@ -15,10 +15,39 @@ using namespace pandora;
 namespace arbor_content
 {
 
+  bool CheatingTrackToClusterMatching::IsParent(const pandora::MCParticle* parent, const pandora::MCParticle* daughter)
+  {
+	  if(daughter == parent) return true;
+
+	  if(daughter->IsPfoTarget()) return false;
+
+	  auto parentList = daughter->GetParentList();
+
+	  bool foundParentMCP = false;
+
+	  if( std::find(parentList.begin(), parentList.end(), parent) != parentList.end() )
+	  {
+		  foundParentMCP = true;
+	  }
+	  else
+	  {
+		  for(auto mcp : parentList)
+		  {
+			  if (IsParent(parent, mcp) == true)
+			  {
+				  foundParentMCP = true;
+				  break;
+			  }
+		  }
+
+	  }
+	
+	  return foundParentMCP;
+  }
+
   StatusCode CheatingTrackToClusterMatching::Run()
   {
-
-	std::cout << "CheatingTrackToCluster......" << std::endl;
+	//std::cout << "CheatingTrackToCluster......" << std::endl;
     // Read current lists
     const TrackList *pCurrentTrackList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCurrentTrackList));
@@ -83,13 +112,14 @@ namespace arbor_content
       }
     }
 
+	////////////////////////////////////////// matching track-cluster by direct MCP
     for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
     {
       try
       {
         const Cluster *const pCluster = *iter;
         const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
-        const MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
+        //const MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
 
 		auto foundMCPTracks = tracksPerMCParticle.find(pMCParticle);
 
@@ -100,24 +130,18 @@ namespace arbor_content
 			for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
 			{
 				auto track = *trackIter;
-				if( !PandoraContentApi::IsAvailable(*this, track) ) continue;
-				PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
-			}
-		}
-		else
-		{
-			// if find no matching track-cluster by direct MCP, then use pfo target
-			auto foundMCPTracksByPfo = tracksPfoTarget.find( pClusterPfoTarget );
 
-			if( foundMCPTracksByPfo != tracksPfoTarget.end() && PandoraContentApi::IsAvailable(*this, pCluster) )
-			{
-				const TrackList& tracks = foundMCPTracksByPfo->second;
-				for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
+				if(track->HasAssociatedCluster())
 				{
-					auto track = *trackIter;
-					if( !PandoraContentApi::IsAvailable(*this, track) ) continue;
-					PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
+					//std::cout << __LINE__ << ": the track has AssociatedCluster !!! Track energy: " << track->GetEnergyAtDca() 
+					//	      << ", cluster energy to match: " << pCluster->GetHadronicEnergy() <<  ", AssociatedCluster energy: " <<
+					//track->GetAssociatedCluster()->GetHadronicEnergy() << std::endl;
+
+					continue;
 				}
+
+				if( !PandoraContentApi::IsAvailable(*this, track) || !PandoraContentApi::IsAvailable(*this, pCluster) ) continue;
+				PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
 			}
 		}
 	  }
@@ -126,151 +150,172 @@ namespace arbor_content
 	  }
 	}
 
-#if 0
-    // Construct a map from mc particle to clusters
-    typedef std::map<const MCParticle*, ClusterList> ClustersPerMCParticle;
-    ClustersPerMCParticle clustersPerMCParticle;
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// If find no matching track-cluster by direct MCP, use pfo target: if the track is parent of
+	// the cluster, it means they can be matched
+	// 1) if track has no associated cluster, just macth the track and cluster
+	// 2) otherwise record the cluster to merge
+	// 3) finally merge all clusters in the record
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+    for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
+    {
+      try
+      {
+		//std::cout << "haha" << std::endl;
+        const Cluster *const pCluster = *iter;
+	    //std::cout << pCluster << std::endl;
+        const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
+        const MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
 
+		auto foundMCPTracksByPfo = tracksPfoTarget.find( pClusterPfoTarget );
+
+		if( foundMCPTracksByPfo != tracksPfoTarget.end() && PandoraContentApi::IsAvailable(*this, pCluster) )
+		{
+			const TrackList& tracks = foundMCPTracksByPfo->second;
+			for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
+			{
+				auto track = *trackIter;
+				if( !PandoraContentApi::IsAvailable(*this, track) || !PandoraContentApi::IsAvailable(*this, pCluster) ) continue;
+
+				// if track is parent of cluster, add the cluster
+				bool isParent = false;
+
+				try
+				{
+                    const MCParticle *const trackMCP(MCParticleHelper::GetMainMCParticle(track));
+                    const MCParticle *const cluMCP(MCParticleHelper::GetMainMCParticle(pCluster));
+				    isParent = IsParent(trackMCP, cluMCP); // recursive function
+				}
+                catch (StatusCodeException &)
+				{
+					//std::cout << "============= mcp problem ...." << std::endl;
+					continue;
+				}
+
+				if(isParent)
+				{
+				    // if track has associated cluster, merge the clusters
+				    if(! track->HasAssociatedCluster() ) 
+					{
+				        // add association for the track and cluster
+						//std::cout << "match t-c : " << track << " --- " << pCluster << std::endl;
+						//std::cout << "track energy: " << track->GetMomentumAtDca().GetMagnitude() << ", cluster energy: "
+						//	      << pCluster->GetHadronicEnergy() << std::endl;
+						// make a map
+				        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
+					}
+
+				    // if the cluster is associated to track, stop the loop
+				    break;
+				}
+			} // for each track
+		}
+	  }
+      catch (StatusCodeException &)
+	  {
+	  }
+	}
+
+
+	//std::cout << "------------------" << std::endl;
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	std::map<const pandora::Cluster*, pandora::ClusterList> clustersToMerge;
+	
     for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
     {
       try
       {
         const Cluster *const pCluster = *iter;
         const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
+        const MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
 
-        ClustersPerMCParticle::iterator itClustersPerMCParticle(clustersPerMCParticle.find(pMCParticle));
+		auto foundMCPTracksByPfo = tracksPfoTarget.find( pClusterPfoTarget );
 
-        if (clustersPerMCParticle.end() == itClustersPerMCParticle)
-        {
-          ClusterList clusterList;
-          clusterList.push_back(pCluster);
+		if( foundMCPTracksByPfo != tracksPfoTarget.end() && PandoraContentApi::IsAvailable(*this, pCluster) )
+		{
+			const TrackList& tracks = foundMCPTracksByPfo->second;
+			for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
+			{
+				auto track = *trackIter;
+				if( !PandoraContentApi::IsAvailable(*this, track) || !PandoraContentApi::IsAvailable(*this, pCluster) ) continue;
 
-		  //FIXME
-		  if(!clustersPerMCParticle.insert(ClustersPerMCParticle::value_type(pMCParticle, ClusterList(1, pCluster))).second)
-            throw StatusCodeException(STATUS_CODE_FAILURE);
-          //if (!clustersPerMCParticle.push_back(ClustersPerMCParticle::value_type(pMCParticle, clusterList)).second)
-        }
-        else
-        {
-          itClustersPerMCParticle->second.push_back(pCluster);
-        }
-      }
-      catch (StatusCodeException &)
-      {
-      }
-    }
+				// if track is parent of cluster, add the cluster
+				bool isParent = false;
 
-    //std::cout << "N mc tracks   = " << tracksPerMCParticle.size() << std::endl;
-    //std::cout << "N mc clusters = " << clustersPerMCParticle.size() << std::endl;
+				try
+				{
+                    const MCParticle *const trackMCP(MCParticleHelper::GetMainMCParticle(track));
+                    const MCParticle *const cluMCP(MCParticleHelper::GetMainMCParticle(pCluster));
+				    isParent = IsParent(trackMCP, cluMCP); // recursive function
+				}
+                catch (StatusCodeException &)
+				{
+					//std::cout << "============= mcp problem ...." << std::endl;
+					continue;
+				}
 
-	// merge clusters for one MC particle
-#if 1
-    for (ClustersPerMCParticle::iterator iter = clustersPerMCParticle.begin(), iterEnd = clustersPerMCParticle.end(); iter != iterEnd; ++iter)
-	{
-      //const MCParticle *const pMCParticle = iter->first;
-      ClusterList &clusterList = iter->second;
+				if(isParent)
+				{
+				    // if track has associated cluster, merge the clusters
+				    if(track->HasAssociatedCluster() ) 
+				    {
+				        //std::cout << __LINE__ << ": the track has AssociatedCluster !!! Track energy: " << track->GetEnergyAtDca() 
+				        //	      << ", cluster energy to match: " << pCluster->GetHadronicEnergy() <<  ", AssociatedCluster energy: " << 
+				        //track->GetAssociatedCluster()->GetHadronicEnergy() << std::endl;
+						if(track->GetAssociatedCluster() != pCluster)
+						{
+							//std::cout << " merge clusters: " << track->GetAssociatedCluster() << " --- " << pCluster << std::endl;
+							//std::cout << " clusters energy: " << track->GetAssociatedCluster()->GetHadronicEnergy() << " --- " 
+							//	      << pCluster->GetHadronicEnergy() << std::endl;
 
-	  if(clusterList.size()<=1) continue;
+							const pandora::Cluster* mainCluster = track->GetAssociatedCluster();
+							auto clusterToMerge = pCluster;
 
-	  const pandora::Cluster *const firstCluster = *(clusterList.begin());
+							if(clustersToMerge.find(mainCluster) == clustersToMerge.end())
+							{
+								pandora::ClusterList clusterList;
+								clusterList.push_back( clusterToMerge );
+								clustersToMerge[mainCluster] = clusterList;
+							}
+							else
+							{
+								clustersToMerge[mainCluster].push_back(clusterToMerge);
+							}
 
-	  ClusterList::const_iterator itCluster = clusterList.begin();
-	  ++ itCluster;
+						    // make a map
+		                    //PandoraContentApi::MergeAndDeleteClusters(*this, track->GetAssociatedCluster(), pCluster);
+						}
+				    }
 
-      for (ClusterList::const_iterator itClusterEnd = clusterList.end(); itCluster != itClusterEnd; ++itCluster)
-	  {
-		  const pandora::Cluster* cluster = *itCluster;
-		  PandoraContentApi::MergeAndDeleteClusters(*this, firstCluster, cluster);
-		  //std::cout << "----> merged two clusters: " << firstCluster << " <--- " << cluster << std::endl;
+				    // if the cluster is associated to track, stop the loop
+				    break;
+				}
+			} // for each track
+		}
 	  }
-
-	  clusterList.clear();
-	  clusterList.push_back(firstCluster);
+      catch (StatusCodeException &)
+	  {
+	  }
 	}
-#endif
 
-	std::set<const Cluster*> matchedClusters;
-
-    // Make the track to cluster associations
-    for (TracksPerMCParticle::const_iterator iter = tracksPerMCParticle.begin(), iterEnd = tracksPerMCParticle.end(); iter != iterEnd; ++iter)
-    {
-      const MCParticle *const pMCParticle = iter->first;
-      const TrackList &trackList = iter->second;
-
-      ClustersPerMCParticle::const_iterator itClustersPerMCParticle(clustersPerMCParticle.find(pMCParticle));
-
-      if (clustersPerMCParticle.end() == itClustersPerMCParticle)
-        continue;
-
-      const ClusterList &clusterList = itClustersPerMCParticle->second;
-
-      if (trackList.empty() || clusterList.empty())
-        continue;
-
-	  //std::cout << "---- MCP energy: " << pMCParticle->GetEnergy() << ", track list size: " << trackList.size() << std::endl;
-
-      for (TrackList::const_iterator itTrack = trackList.begin(), itTrackEnd = trackList.end(); itTrack != itTrackEnd; ++itTrack)
-      {
-        // If the mc particle is associated with multiple clusters, can only associate to highest energy cluster (clusters should be merged)
-		//std::cout << " ----- track energy: " << (*itTrack)->GetEnergyAtDca() << std::endl;
-        const Cluster *pHighestEnergyCluster = NULL;
-        float highestEnergy(-std::numeric_limits<float>::max());
-
-        for (ClusterList::const_iterator itCluster = clusterList.begin(), itClusterEnd = clusterList.end(); itCluster != itClusterEnd; ++itCluster)
-        {
-          const float clusterEnergy((*itCluster)->GetHadronicEnergy());
-		  //std::cout << " -------- cluster energy: " << clusterEnergy << std::endl;
-
-          if (clusterEnergy > highestEnergy)
-          {
-            highestEnergy = clusterEnergy;
-            pHighestEnergyCluster = *itCluster;
-          }
-        }
-
-        if (NULL == pHighestEnergyCluster)
-          throw StatusCodeException(STATUS_CODE_FAILURE);
-
-		if(matchedClusters.end() != matchedClusters.find(pHighestEnergyCluster)) 
-		{
-			//std::cout << " ------------- cluster : " << pHighestEnergyCluster << ", has used already." << std::endl; 
-			continue;
-		}
-
-		//std::cout << " --->>>> add association, track: " << *itTrack << " -> cluster: " << pHighestEnergyCluster << std::endl;
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, *itTrack, pHighestEnergyCluster));
-
-		matchedClusters.insert(pHighestEnergyCluster);
-
-		//std::cout << "----> added relation: " << *itTrack << ", " << pHighestEnergyCluster << std::endl;
-      }
-    }
-
-	// check the association
-    for (TrackList::const_iterator iter = pCurrentTrackList->begin(), iterEnd = pCurrentTrackList->end(); iter != iterEnd; ++iter)
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	for(auto cluIter : clustersToMerge)
 	{
-        const Track *const pTrack = *iter;
-		bool hasCluster = pTrack->HasAssociatedCluster();
+		auto mainCluster = cluIter.first;
+		auto clusters = cluIter.second;
 
-		if(hasCluster) 
+		if(clusters.empty()) continue;
+
+		for( auto iter : clusters)
 		{
-		    std::cout << " ------ Track: " << pTrack << ", energy: " << pTrack->GetEnergyAtDca() 
-			          << ", has cluster: " << pTrack->GetAssociatedCluster() << std::endl;
-		}
-		else
-		{
-			std::cout << " ------ Track: " << pTrack << " has no cluster" << std::endl;
+			auto clu = iter;
+			//std::cout << "merge clusters: " << mainCluster << " --- " << clu << std::endl;
+			//std::cout << "cluster energy: " << mainCluster->GetHadronicEnergy() << " --- " << clu->GetHadronicEnergy() << std::endl;
+		    PandoraContentApi::MergeAndDeleteClusters(*this, mainCluster, clu);
 		}
 	}
-
-    for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
-	{
-		const Cluster* const pCluster = *iter;
-
-		std::cout << " ------ Cluster's tracks: " << pCluster->GetAssociatedTrackList().size() << std::endl;
-	}
-#endif
-	
 
     return STATUS_CODE_SUCCESS;
   }
