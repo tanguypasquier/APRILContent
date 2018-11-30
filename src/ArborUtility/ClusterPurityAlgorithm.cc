@@ -71,15 +71,21 @@ namespace arbor_content
 
 				float clusterSize = cluster->GetNCaloHits();
 				float clusterEnergy = cluster->GetHadronicEnergy();
+		
+                const pandora::MCParticle *const pCluMCParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
+				float pid = pCluMCParticle->GetParticleId();
+				float clusterCharge = pandora::PdgTable::GetParticleCharge(pCluMCParticle->GetParticleId());
 	
 				std::vector<float> vars;
 				vars.push_back( clusterSize );
+				vars.push_back( pid );
+				vars.push_back( clusterCharge );
 				vars.push_back( ordClusterHit );
 				vars.push_back( clusterEnergy );
 				vars.push_back( hitPurity );
 				vars.push_back( energyPurity );
 
-				AHM.CreateFill("ClusterPurity", "clusterSize:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
+				AHM.CreateFill("ClusterPurity", "clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
 
 				//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
 				//	      << std::endl;

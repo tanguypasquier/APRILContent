@@ -214,14 +214,19 @@ namespace arbor_content
 			}
 		}
 
+		float pid = mcp->GetParticleId();
+		float clusterCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
+
 	    std::vector<float> vars;
 	    vars.push_back( clusterSize );
+	    vars.push_back( pid );
+		vars.push_back( clusterCharge );
 	    vars.push_back( clusterEnergy );
 	    vars.push_back( collectedHitSize/clusterSize );
 	    vars.push_back( collectedEnergy/clusterEnergy );
 	    vars.push_back( siblingClusterNumber );
 	
-	    AHM.CreateFill("ClusterEfficiency", "clusterSize:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency:siblingClusterNumber", vars);
+	    AHM.CreateFill("ClusterEfficiency", "clusterSize:pid:clusterCharge:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency:siblingClusterNumber", vars);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -234,7 +239,7 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode ClusterEfficiencyAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+  pandora::StatusCode ClusterEfficiencyAlgorithm::ReadSettings(const pandora::TiXmlHandle /* xmlHandle */)
   {
     return pandora::STATUS_CODE_SUCCESS;
   }
