@@ -197,7 +197,42 @@ namespace arbor_content
       }
     }
 
-    PANDORA_MONITORING_API(VisualizeMCParticles(this->GetPandora(), pMCParticleList, listName.empty() ? "CurrentMCParticles" : listName.c_str(),
+	pandora::MCParticleList photonList;
+	pandora::MCParticleList chargedList;
+	pandora::MCParticleList neutralList;
+
+	for( auto cluIter = pMCParticleList->begin(); cluIter != pMCParticleList->end(); ++cluIter )
+	{
+		int mcpPDG = (*cluIter)->GetParticleId();
+
+		if(mcpPDG == 22) 
+		{
+			photonList.push_back( *cluIter );
+		}
+		else
+		{
+			int mcpCharge = pandora::PdgTable::GetParticleCharge( (*cluIter)->GetParticleId() );
+			bool isCharged = mcpCharge != 0;
+
+			if(isCharged)
+			{
+				chargedList.push_back( *cluIter );
+			}
+			else
+			{
+				neutralList.push_back( *cluIter );
+			}
+		}
+	}
+
+    //PANDORA_MONITORING_API(VisualizeMCParticles(this->GetPandora(), pMCParticleList, listName.empty() ? "CurrentMCParticles" : listName.c_str(),
+    PANDORA_MONITORING_API(VisualizeMCParticles(this->GetPandora(), &photonList, listName.empty() ? "CurrentPhotonMCParticles" : listName.c_str(),
+        ::AUTO, &m_particleSuppressionMap));
+
+    PANDORA_MONITORING_API(VisualizeMCParticles(this->GetPandora(), &chargedList, listName.empty() ? "CurrentChargedMCParticles" : listName.c_str(),
+        ::AUTO, &m_particleSuppressionMap));
+
+    PANDORA_MONITORING_API(VisualizeMCParticles(this->GetPandora(), &neutralList, listName.empty() ? "CurrentNeutralMCParticles" : listName.c_str(),
         ::AUTO, &m_particleSuppressionMap));
   }
 
