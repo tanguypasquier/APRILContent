@@ -263,6 +263,7 @@ namespace arbor_content
 
     // Filter calo hit list
     pandora::CaloHitList caloHitList;
+    pandora::CaloHitList isoCaloHitList;
 
     for (pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), iterEnd = pCaloHitList->end(); iter != iterEnd; ++iter)
     {
@@ -271,7 +272,14 @@ namespace arbor_content
       if ((pCaloHit->GetElectromagneticEnergy() > m_thresholdEnergy) &&
           (!m_showOnlyAvailable || PandoraContentApi::IsAvailable(*this, pCaloHit)))
       {
-        caloHitList.push_back(pCaloHit);
+		if(pCaloHit->IsIsolated())
+		{
+			isoCaloHitList.push_back(pCaloHit);
+		}
+		else
+		{
+			caloHitList.push_back(pCaloHit);
+		}
       }
     }
 
@@ -281,15 +289,24 @@ namespace arbor_content
       if(m_showCurrentConnectors && m_connectorLevel == "calohits")
       {
         TEveElement *pParentElement = pandora_monitoring::PandoraMonitoring::GetInstance(this->GetPandora())->VisualizeCaloHits(&caloHitList, listName.empty() ? "CurrentCaloHits" : listName.c_str(),
-            0, (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY : ::GRAY));
+            0, (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY : ::RED));
+
+        TEveElement *pIsoParentElement = pandora_monitoring::PandoraMonitoring::GetInstance(this->GetPandora())->VisualizeCaloHits(&isoCaloHitList, listName.empty() ? "CurrentCaloHits" : listName.c_str(),
+            0, (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY : ::YELLOW));
 
         this->VisualizeConnectors(&caloHitList, listName.empty() ? "CurrentCaloHitsConnectors" : (listName+"Connectors").c_str(), pParentElement,
+            (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY : ::GRAY));
+
+        this->VisualizeConnectors(&isoCaloHitList, listName.empty() ? "CurrentIsoCaloHitsConnectors" : (listName+"Connectors").c_str(), pIsoParentElement,
             (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY : ::GRAY));
       }
       else
       {
         PANDORA_MONITORING_API(VisualizeCaloHits(this->GetPandora(), &caloHitList, listName.empty() ? "CurrentCaloHits" : listName.c_str(),
-            (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY : ::GRAY)));
+            (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY : ::RED)));
+
+        PANDORA_MONITORING_API(VisualizeCaloHits(this->GetPandora(), &isoCaloHitList, listName.empty() ? "CurrentIsoCaloHits" : listName.c_str(),
+            (m_hitColors.find("energy") != std::string::npos ? ::AUTOENERGY : ::YELLOW)));
       }
     }
 #endif
