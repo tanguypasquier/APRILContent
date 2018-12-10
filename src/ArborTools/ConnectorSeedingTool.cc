@@ -69,6 +69,9 @@ namespace arbor_content
         const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
         const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
 
+	// TODO
+	// k-d tree
+
         for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
         {
           pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pl);
@@ -92,6 +95,9 @@ namespace arbor_content
             const pandora::HitType hitTypeJ(pCaloHitJ->GetHitType());
             const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
             const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
+
+	    // FIXME
+	    // is this transverse ? 
             const float transverseDistance = std::sin( angle ) * difference;
             const pandora::Granularity &granularity(PandoraContentApi::GetGeometry(algorithm)->GetHitTypeGranularity(hitTypeJ));
 

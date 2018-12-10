@@ -150,6 +150,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_FAILURE;
 
     pandora::CaloHitList clusterCaloHitList;
+    // FIXME::IsoHit ...
     pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;

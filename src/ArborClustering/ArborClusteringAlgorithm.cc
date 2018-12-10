@@ -47,10 +47,6 @@ namespace arbor_content
     pandora::CaloHitList ecalCaloHitList, hcalCaloHitList, muonCaloHitList;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SplitCaloHitList(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
 
-	std::cout << "*********** ecalCaloHitList: " << ecalCaloHitList.size() << std::endl;
-	std::cout << "*********** hcalCaloHitList: " << hcalCaloHitList.size() << std::endl;
-	std::cout << "*********** muonCaloHitList: " << muonCaloHitList.size() << std::endl;
-
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreateClusters());
 
@@ -82,6 +78,11 @@ namespace arbor_content
       else if(pCaloHit->GetHitType() == pandora::MUON)
         muonCaloHitList.push_back(pCaloHit);
     }
+
+	std::cout << "spliting calo hits: " << std::endl;
+	std::cout << "  ---> ecalCaloHitList: " << ecalCaloHitList.size() << std::endl;
+	std::cout << "  ---> hcalCaloHitList: " << hcalCaloHitList.size() << std::endl;
+	std::cout << "  ---> muonCaloHitList: " << muonCaloHitList.size() << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
   }

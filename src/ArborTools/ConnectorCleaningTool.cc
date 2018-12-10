@@ -116,6 +116,7 @@ namespace arbor_content
 
       const ConnectorList &backwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, BACKWARD_DIRECTION));
 
+      // should be 1 ???
       if(backwardConnectorList.size() < 2)
         continue;
 
