@@ -32,6 +32,9 @@
 #include "Pandora/Algorithm.h"
 #include "Pandora/PandoraInternal.h"
 
+#include "TMVA/Reader.h"
+#include "TMVA/MethodCuts.h"
+
 namespace arbor_content
 {
   /**
@@ -65,12 +68,13 @@ namespace arbor_content
 
   private:
     std::string     m_clusteringAlgorithmName;      ///< The name of the clustering algorithm to run
-    std::string     m_associationAlgorithmName;     ///< The name of the topological association algorithm to run
     std::string     m_inputCaloHitListName;         ///< The name of the input calo hit list, containing the hits to be clustered
     bool            m_restoreOriginalCaloHitList;   ///< Whether to restore the original calo hit list as the "current" list upon completion
-    std::string     m_clusterListName;              ///< The name under which to save the new photon cluster list
+    std::string     m_photonClusterListName;        ///< The name under which to save the new photon cluster list
+    std::string     m_nonPhotonClusterListName;     ///< The name under which to save the new non-photon cluster list
     bool            m_replaceCurrentClusterList;    ///< Whether to subsequently use the new photon cluster list as the "current" list
 
+	static TMVA::Reader*           m_reader;
   };
 
   //------------------------------------------------------------------------------------------------------------------------------------------
