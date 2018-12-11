@@ -52,7 +52,8 @@ namespace arbor_content
      *  @param  pRhs the right handed cluster to compare
      */
     static bool SortClustersByInnerLayer(const pandora::Cluster *const pLhs, const pandora::Cluster *const pRhs);
-
+  
+	static bool SortCaloHitsByLayer(const pandora::CaloHit *const pLhs, const pandora::CaloHit *const pRhs);
     /**
      *  @brief  Sort branches by size
      *

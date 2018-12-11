@@ -54,6 +54,15 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  bool SortingHelper::SortCaloHitsByLayer(const pandora::CaloHit *const pLhs, const pandora::CaloHit *const pRhs)
+  {
+    const unsigned int layerLhs(pLhs->GetPseudoLayer()), layerRhs(pRhs->GetPseudoLayer());
+
+    return (layerLhs < layerRhs);
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   bool SortingHelper::SortBranchesBySize(const Branch &lhs, const Branch &rhs)
   {
     return lhs.size() < rhs.size();
