@@ -69,8 +69,8 @@ namespace arbor_content
         const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
         const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
 
-	// TODO
-	// k-d tree
+        // TODO
+        // k-d tree
 
         for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
         {
@@ -87,8 +87,15 @@ namespace arbor_content
             if(NULL == pCaloHitJ)
               continue;
 
+            // check if already connected
+            if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION))
+              continue;
+
             // check for availability
             if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(algorithm, pCaloHitJ))
+              continue;
+
+            if(m_shouldDiscriminateConnectedHits && !ArborContentApi::GetConnectorList(pCaloHitJ, BACKWARD_DIRECTION).empty())
               continue;
 
             const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
@@ -96,8 +103,6 @@ namespace arbor_content
             const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
             const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
 
-	    // FIXME
-	    // is this transverse ? 
             const float transverseDistance = std::sin( angle ) * difference;
             const pandora::Granularity &granularity(PandoraContentApi::GetGeometry(algorithm)->GetHitTypeGranularity(hitTypeJ));
 
@@ -113,10 +118,6 @@ namespace arbor_content
 
             // check angle
             if(angle > maxConnectionAngle)
-              continue;
-
-            // check if already connected
-            if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION))
               continue;
 
             // connect !
