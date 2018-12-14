@@ -29,6 +29,7 @@
 #include "ArborTools/TrackDrivenSeedingTool.h"
 
 #include "ArborHelpers/GeometryHelper.h"
+#include "ArborHelpers/SortingHelper.h"
 
 #include "Pandora/AlgorithmHeaders.h"
 #include "Pandora/Algorithm.h"
@@ -61,13 +62,41 @@ namespace arbor_content
       if(!pTrack->ReachesCalorimeter() || !pTrack->CanFormPfo())
         continue;
 
+	  //if(fabs(pTrack->GetMomentumAtDca().GetMagnitude() - 5.15) > 0.01) continue;
+
       pandora::CaloHitVector caloHitVector;
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, pCaloHitList, caloHitVector));
+
+	  // sort by layer
+      std::sort(caloHitVector.begin(), caloHitVector.end(), SortingHelper::SortCaloHitsByLayer);
+
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(algorithm, pTrack, pCaloHitList, caloHitVector));
     }
 
     return pandora::STATUS_CODE_SUCCESS;
   }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+	const pandora::CartesianVector TrackDrivenSeedingTool::GetFromHitDirection(const arbor_content::CaloHit *const pCaloHit)
+	{
+        pandora::CartesianVector meanBackwardDirection(0, 0, 0);
+		const int backwardReferenceDirectionDepth = 2;
+
+		const ConnectorList &backwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, BACKWARD_DIRECTION));
+
+		if(backwardConnectorList.size() > 0)
+		{
+			CaloHitHelper::GetMeanDirection(pCaloHit, BACKWARD_DIRECTION, meanBackwardDirection, backwardReferenceDirectionDepth);
+		    return meanBackwardDirection;
+		}
+		else
+		{
+			//std::cout << " no connector, the hit position: " << pCaloHit->GetPositionVector() << std::endl;
+			return pCaloHit->GetPositionVector();
+		}
+
+		//std::cout << " -------------------- " << std::endl;
+	}
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -77,6 +106,8 @@ namespace arbor_content
     const float bField(PandoraContentApi::GetPlugins(algorithm)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
     const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
         pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
+
+	//std::cout << "track p = " << pTrack->GetMomentumAtDca() << std::endl;
 
     for(pandora::CaloHitList::const_iterator iter = pInputCaloHitList->begin(), endIter = pInputCaloHitList->end() ;
         endIter != iter ; ++iter)
@@ -114,7 +145,7 @@ namespace arbor_content
     if(caloHitVector.empty())
       return pandora::STATUS_CODE_SUCCESS;
 
-    // buidl ordered calo hit list
+    // build ordered calo hit list
     pandora::OrderedCaloHitList orderedCaloHitList;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, orderedCaloHitList.Add(*pInputCaloHitList));
 
@@ -123,6 +154,15 @@ namespace arbor_content
     const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
         pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
 
+	int nInitHits = caloHitVector.size();
+
+	int firstLayer = -1;
+
+	//std::cout << "Track seeding hits: " << nInitHits << std::endl;
+
+	// loop for the starting hits, and make connector between starting hit and end hit, then the end
+	// hit will be taken as starting hit, and added to the starting hits vector
+	// i.e., caloHitVector is the the vector of starting hit, it is will be updated during the clustering
     for(size_t i=0 ; i<caloHitVector.size() ; i++)
     {
       const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHitVector.at(i));
@@ -133,14 +173,24 @@ namespace arbor_content
       const pandora::CartesianVector &position(pCaloHit->GetPositionVector());
       const unsigned int pseudoLayer = pCaloHit->GetPseudoLayer();
 
+	  if(i==0) firstLayer = pseudoLayer;
+
+#if 0
+	  if(i<=nInitHits)
+	  {
+		  std::cout << "seeding hit layer: " << pseudoLayer << ", current connector hit size: " << caloHitVector.size() << std::endl;
+	  }
+#endif
+
       pandora::CartesianVector helixProjection(0.f, 0.f, 0.f);
 
       if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, position, helixProjection))
         continue;
 
       const pandora::CartesianVector extrapolatedMomentum(helix.GetExtrapolatedMomentum(helixProjection));
-      const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
+      //const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
 
+	  // the layer of the starting hit
       pandora::OrderedCaloHitList::const_iterator plIter = orderedCaloHitList.find(pseudoLayer);
 
       // unexpected ???
@@ -171,8 +221,14 @@ namespace arbor_content
             if( ! PandoraContentApi::IsAvailable<pandora::CaloHit>( algorithm, pTestCaloHit ) )
               continue;
 
+            // check for existing connection
+            if(ArborContentApi::IsConnected(pCaloHit, pTestCaloHit, arbor_content::FORWARD_DIRECTION))
+              continue;
+
             const pandora::Granularity &granularity(algorithm.GetPandora().GetGeometry()->GetHitTypeGranularity(pTestCaloHit->GetHitType()));
             const float maxTransverseDistance = (granularity >= pandora::COARSE) ? m_maxTransverseDistanceCoarse : m_maxTransverseDistanceFine;
+
+			// only set for ECAL
             const float maxDistanceToTrack = (granularity >= pandora::COARSE) ? m_maxDistanceToTrackCoarse : m_maxDistanceToTrackFine;
 
             const pandora::CartesianVector caloHitsVector(pTestCaloHit->GetPositionVector() - pCaloHit->GetPositionVector());
@@ -183,22 +239,51 @@ namespace arbor_content
             pandora::CartesianVector distanceToHelix(0.f, 0.f, 0.f);
             helix.GetDistanceToPoint(pTestCaloHit->GetPositionVector(), distanceToHelix);
 
+			//std::cout << "firstLayer: " << firstLayer << ", pTestCaloHit layer: " << pTestCaloHit->GetPseudoLayer() << std::endl;
+
+			// FIXME
+			//if(caloHitsAngle > 0.5) continue;
+
+			// FIXME
+			// this never happens since the range of angle is [0, pi]
             if(longitudinalDistance < 0.f)
               continue;
 
             if(transverseDistance > maxTransverseDistance)
-              continue;
+			{
+			    // check transverse distance between two hits for layers after the fifth one
+				// check last connector (or last average connector): angle with next connetor and get local transverse distance
+#if 0
+				if(pTestCaloHit->GetPseudoLayer() - firstLayer > 5)
+				{
+					const float maxLocalTransversDistance = 30.;
 
+					const pandora::CartesianVector fromHitDirection = GetFromHitDirection(pCaloHit);
+					const float localCaloHitsAngle = caloHitsVector.GetOpeningAngle(fromHitDirection);
+                    const float localTransversDistance = caloHitsVector.GetMagnitude()*sin(localCaloHitsAngle);
+
+				    if (localTransversDistance > maxLocalTransversDistance)
+				    {
+						continue;
+				    }
+				}
+				else
+				{ 
+					continue;
+				}
+#endif
+
+				continue;
+			}
+
+			// TODO
+			// only check for first 5 layers after starting layer (ECAL)
             if(distanceToHelix.GetZ() > maxDistanceToTrack)
-              continue;
-
-            // check for existing connection
-            if(ArborContentApi::IsConnected(pCaloHit, pTestCaloHit, arbor_content::FORWARD_DIRECTION))
               continue;
 
             PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHit, pTestCaloHit, arbor_content::FORWARD_DIRECTION));
 
-            // add it if not done
+            // add it if not done, this will update the starting hit vector
             if(std::find(caloHitVector.begin(), caloHitVector.end(), pTestCaloHit) == caloHitVector.end())
               caloHitVector.push_back(pTestCaloHit);
           }
@@ -223,6 +308,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxInitialTrackDistance", m_maxInitialTrackDistance));
 
+	// unused
     m_maxInitialTrackAngle = 0.9f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxInitialTrackAngle", m_maxInitialTrackAngle));
@@ -239,11 +325,11 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxTransverseDistanceCoarse", m_maxTransverseDistanceCoarse));
 
-    m_maxDistanceToTrackFine = std::numeric_limits<float>::max();
+    m_maxDistanceToTrackFine = std::numeric_limits<float>::max(); // it means this is unused if not set in steering file
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxDistanceToTrackFine", m_maxDistanceToTrackFine));
 
-    m_maxDistanceToTrackCoarse = std::numeric_limits<float>::max();
+    m_maxDistanceToTrackCoarse = std::numeric_limits<float>::max(); // it means this is unused if not set in steering file
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxDistanceToTrackCoarse", m_maxDistanceToTrackCoarse));
 

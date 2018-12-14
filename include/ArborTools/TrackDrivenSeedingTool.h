@@ -84,6 +84,8 @@ private:
 	pandora::StatusCode FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
 			pandora::CaloHitVector &caloHitVector);
 
+	const pandora::CartesianVector GetFromHitDirection(const arbor_content::CaloHit *const pCaloHit);
+
 	/**
 	 *  @brief  Find and connect calo hits from the ones found close to the track extrapolation
 	 *
