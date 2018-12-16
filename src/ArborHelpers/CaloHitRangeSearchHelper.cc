@@ -70,12 +70,15 @@ namespace arbor_content
   //--------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode CaloHitRangeSearchHelper::GetNeighbourHitsInRange(const pandora::CaloHitList *const pCaloHitList, 
-		  const pandora::CaloHit *const pCaloHit, float distance, pandora::CaloHitVector& hitsInRange)
+		  pandora::CartesianVector testPosition, float distance, pandora::CaloHitList& hitsInRange)
   {
 	  hitsInRange.clear();
 
+	  //std::cout << "  CaloHitRangeSearchHelper::GetNeighbourHitsInRange " << std::endl;
+
 	  if(pCaloHitList != m_pCaloHitList)
 	  {
+		  std::cout << "build new matrix..." << std::endl;
 		  m_caloHitVector.clear();
 	      m_caloHitVector.insert(m_caloHitVector.begin(), pCaloHitList->begin(), pCaloHitList->end());
 		  FillMatixFromCaloHits(m_caloHitVector, m_caloHitsMatrix);
@@ -90,10 +93,9 @@ namespace arbor_content
 	  /////
       arma::mat testPoint(3, 1);
 
-	  pandora::CartesianVector caloHitPosVec = pCaloHit->GetPositionVector();
-	  testPoint.col(0)[0] = caloHitPosVec.GetX();
-	  testPoint.col(0)[1] = caloHitPosVec.GetY();
-	  testPoint.col(0)[2] = caloHitPosVec.GetZ();
+	  testPoint.col(0)[0] = testPosition.GetX();
+	  testPoint.col(0)[1] = testPosition.GetY();
+	  testPoint.col(0)[2] = testPosition.GetZ();
 
 	  //std::cout << "point: " << testPoint.col(0)[0] << ", " << testPoint.col(0)[1] << ", " << testPoint.col(0)[2] << std::endl;
 
@@ -112,6 +114,9 @@ namespace arbor_content
 
       std::vector<size_t>& neighbors = resultingNeighbors.at(0);
       std::vector<double>& distances = resultingDistances.at(0);
+
+	  // TODO
+	  // may be sorted by distance
    
       for(size_t j=0; j < neighbors.size(); ++j)
       {

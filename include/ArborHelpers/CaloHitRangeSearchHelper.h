@@ -26,8 +26,8 @@
  */
 
 
-#ifndef CALOHITHELPER_H
-#define CALOHITHELPER_H
+#ifndef CALOHITRANGESEARCHHELPER_H
+#define CALOHITRANGESEARCHHELPER_H
 
 #include "Pandora/PandoraInternal.h"
 #include "Pandora/StatusCodes.h"
@@ -51,7 +51,7 @@ class CaloHitRangeSearchHelper
 {
 public:
     static pandora::StatusCode GetNeighbourHitsInRange(const pandora::CaloHitList *const pCaloHitList, 
-		  const pandora::CaloHit *const pCaloHit, float distance, pandora::CaloHitVector& hitsInRange);
+		  pandora::CartesianVector testPosition, float distance, pandora::CaloHitList& hitsInRange);
 
 private:
 
@@ -60,7 +60,6 @@ private:
 	static const pandora::CaloHitList* m_pCaloHitList;
 	static pandora::CaloHitVector m_caloHitVector;
 	static arma::mat m_caloHitsMatrix;
-
 };
 
 } 

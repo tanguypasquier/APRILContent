@@ -138,10 +138,10 @@ namespace arbor_content
        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
 
 	   float range = 200.;
-	   pandora::CaloHitVector hitsInRange;
+	   pandora::CaloHitList hitsInRange;
 	   const pandora::CaloHit* pCaloHit = *(pCaloHitList->begin());
 
-	   CaloHitRangeSearchHelper::GetNeighbourHitsInRange(pCaloHitList, pCaloHit, range, hitsInRange);
+	   CaloHitRangeSearchHelper::GetNeighbourHitsInRange(pCaloHitList, pCaloHit->GetPositionVector(), range, hitsInRange);
 
 	   std::cout << "hits in range: " << hitsInRange.size() << std::endl;
 	}
