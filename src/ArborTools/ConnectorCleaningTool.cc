@@ -65,6 +65,9 @@ namespace arbor_content
     const float angle = referenceDirection.GetOpeningAngle(connectorVector)/M_PI;
     const float distance = pConnector->GetNormalizedLength();
 
+    //const unsigned int layerDiff = abs( pConnector->GetTo()->GetPseudoLayer() - pConnector->GetFrom()->GetPseudoLayer() );
+
+    //return (std::pow(layerDiff, 5) * std::pow(angle, m_orderParameterAnglePower) * std::pow(distance, m_orderParameterDistancePower));
     return (std::pow(angle, m_orderParameterAnglePower) * std::pow(distance, m_orderParameterDistancePower));
   }
 
