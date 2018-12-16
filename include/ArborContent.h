@@ -64,6 +64,7 @@
 #include "ArborClustering/FragmentsFromIsoHitsMergingAlgorithm.h"
 
 #include "ArborHelpers/CaloHitHelper.h"
+#include "ArborHelpers/CaloHitRangeSearchHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/ClusterPropertiesHelper.h"
 #include "ArborHelpers/GeometryHelper.h"
