@@ -37,6 +37,7 @@
 #include "ArborObjects/CaloHit.h"
 #include "ArborObjects/Connector.h"
 #include "ArborHelpers/CaloHitHelper.h"
+#include "ArborHelpers/CaloHitRangeSearchHelper.h"
 
 namespace arbor_content
 {
@@ -54,6 +55,12 @@ namespace arbor_content
     if(pTrackList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
+	CaloHitRangeSearchHelper::m_fFillingTime = 0.;
+	CaloHitRangeSearchHelper::m_fGetttingTime = 0.;
+
+    //clock_t t0, t1;
+
+	//t0 = clock();
     for(pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackEndIter = pTrackList->end() ;
         trackEndIter != trackIter ; ++trackIter)
     {
@@ -72,7 +79,9 @@ namespace arbor_content
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(algorithm, pTrack, pCaloHitList, caloHitVector));
     }
+	//t1 = clock();
 
+	//std::cout << " time : " << t1 - t0 << std::endl;
     return pandora::STATUS_CODE_SUCCESS;
   }
 
@@ -145,14 +154,21 @@ namespace arbor_content
     if(caloHitVector.empty())
       return pandora::STATUS_CODE_SUCCESS;
 
-    // build ordered calo hit list
-    pandora::OrderedCaloHitList orderedCaloHitList;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, orderedCaloHitList.Add(*pInputCaloHitList));
 
     // get b field and track helix
     const float bField(PandoraContentApi::GetPlugins(algorithm)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
     const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
         pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
+
+
+    // ordered calo hit list
+    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
+
+	// build ordered calo hit list and search range for each layer
+	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(pInputCaloHitList, pOrderedCaloHitList);
+
+	//std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
+	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
 
 	int nInitHits = caloHitVector.size();
 
@@ -213,7 +229,19 @@ namespace arbor_content
 
         if(!plIter->second->empty())
         {
-          for(pandora::CaloHitList::const_iterator iter = plIter->second->begin(), endIter = plIter->second->end() ;
+	  // TODO
+          // create search range for each layer 
+
+          const float range = 200.; // OK ???
+
+          int layer = plIter->first;
+          pandora::CaloHitList hitsInRange;
+
+          CaloHitRangeSearchHelper::SearchHitsInRangeOnLayer(position, range, layer, hitsInRange);
+	
+
+
+          for(pandora::CaloHitList::const_iterator iter = hitsInRange.begin(), endIter = hitsInRange.end() ;
               endIter != iter ; ++iter)
           {
             const arbor_content::CaloHit *const pTestCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
