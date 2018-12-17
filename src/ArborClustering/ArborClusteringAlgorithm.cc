@@ -47,8 +47,16 @@ namespace arbor_content
     pandora::CaloHitList ecalCaloHitList, hcalCaloHitList, muonCaloHitList;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SplitCaloHitList(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
 
+    clock_t t0, t1;
+
+    t0 = clock();
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
+
+    t1 = clock();
+
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreateClusters());
+
+    std::cout << "connnecting time (ms): " << 1000*(t1 - t0)/CLOCKS_PER_SEC << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
   }

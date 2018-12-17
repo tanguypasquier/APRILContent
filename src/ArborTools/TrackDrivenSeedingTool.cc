@@ -44,6 +44,8 @@ namespace arbor_content
 
   pandora::StatusCode TrackDrivenSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
+	//std::cout << "TrackDrivenSeedingTool : pCaloHitList: " << pCaloHitList << std::endl;
+
     if(pCaloHitList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
@@ -234,6 +236,7 @@ namespace arbor_content
 
           const float range = 200.; // OK ???
 
+		  // use pseudo layer
           int layer = plIter->first;
           pandora::CaloHitList hitsInRange;
 

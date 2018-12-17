@@ -33,17 +33,27 @@
 #include "ArborObjects/CaloHit.h"
 #include "ArborObjects/Connector.h"
 #include "ArborHelpers/CaloHitHelper.h"
+#include "ArborHelpers/CaloHitRangeSearchHelper.h"
 
 namespace arbor_content
 {
 
   pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
+	//std::cout << " ConnectorSeedingTool : pCaloHitList " << pCaloHitList << std::endl;
+	
     if(pCaloHitList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
-    pandora::OrderedCaloHitList orderedCaloHitList;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, orderedCaloHitList.Add(*pCaloHitList));
+    // ordered calo hit list
+    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
+
+	// build ordered calo hit list and search range for each layer
+	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(pCaloHitList, pOrderedCaloHitList);
+
+	//std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
+	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
+
 
     for(pandora::OrderedCaloHitList::const_iterator layerIter = orderedCaloHitList.begin(), layerEndIter = orderedCaloHitList.end() ;
         layerEndIter != layerIter ; ++layerIter)
@@ -69,9 +79,6 @@ namespace arbor_content
         const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
         const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
 
-        // TODO
-        // k-d tree
-
         for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
         {
           pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pl);
@@ -79,7 +86,18 @@ namespace arbor_content
           if(orderedCaloHitList.end() == findIter)
             continue;
 
-          for(pandora::CaloHitList::const_iterator iterJ = findIter->second->begin(), endIterJ = findIter->second->end() ;
+		  const pandora::CartesianVector &position(pCaloHitI->GetPositionVector());
+
+		  // TODO
+		  // range parametrized layer difference
+          const float range = 80.; // OK ???
+
+          int layer = pl;
+          pandora::CaloHitList hitsInRange;
+
+          CaloHitRangeSearchHelper::SearchHitsInRangeOnLayer(position, range, layer, hitsInRange);
+
+          for(pandora::CaloHitList::const_iterator iterJ = hitsInRange.begin(), endIterJ = hitsInRange.end() ;
               endIterJ != iterJ ; ++iterJ)
           {
             const arbor_content::CaloHit *const pCaloHitJ = dynamic_cast<const arbor_content::CaloHit *const>(*iterJ);
