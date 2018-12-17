@@ -52,14 +52,32 @@ class CaloHitRangeSearchHelper
 public:
     static pandora::StatusCode GetNeighbourHitsInRange(const pandora::CaloHitList *const pCaloHitList, 
 		  pandora::CartesianVector testPosition, float distance, pandora::CaloHitList& hitsInRange);
+  
+	static pandora::StatusCode BuildSearchRangeOfLayers(const pandora::CaloHitList *const pCaloHitList, 
+			pandora::OrderedCaloHitList*& orderedCaloHitList);
+
+	static pandora::StatusCode SearchHitsInRangeOnLayer(pandora::CartesianVector testPosition, 
+			float distance, int layer, pandora::CaloHitList& hitsInRange);
+
+	static double m_fFillingTime;
+	static double m_fGetttingTime;
+
+	static pandora::OrderedCaloHitList m_orderedCaloHitList;
 
 private:
 
     static pandora::StatusCode FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix);
 
 	static const pandora::CaloHitList* m_pCaloHitList;
+	static const pandora::CaloHitList* m_pCaloHitListOfLayers;
+
 	static pandora::CaloHitVector m_caloHitVector;
+	static std::vector<pandora::CaloHitVector> m_caloHitVectorOfLayers;
+
 	static arma::mat m_caloHitsMatrix;
+
+	static mlpack::range::RangeSearch<> m_rangeSearch;
+	static std::vector< mlpack::range::RangeSearch<> > m_rangeSearchOfLayers;
 };
 
 } 

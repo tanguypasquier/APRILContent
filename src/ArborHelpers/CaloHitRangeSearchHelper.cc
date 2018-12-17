@@ -20,14 +20,15 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with ArborContent.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ &* 
  * @author Remi Ete
  * @copyright CNRS , IPNL
  */
 
 
-#include "ArborHelpers/CaloHitRangeSearchHelper.h"
 #include "Api/PandoraContentApi.h"
+#include "Objects/OrderedCaloHitList.h"
+#include "ArborHelpers/CaloHitRangeSearchHelper.h"
 #include "ArborApi/ArborContentApi.h"
 #include "ArborObjects/CaloHit.h"
 
@@ -38,9 +39,21 @@ using namespace mlpack::math;
 
 namespace arbor_content
 {
-	const pandora::CaloHitList* CaloHitRangeSearchHelper::m_pCaloHitList = nullptr;
+	const pandora::CaloHitList* CaloHitRangeSearchHelper::m_pCaloHitList(nullptr);
+	const pandora::CaloHitList* CaloHitRangeSearchHelper::m_pCaloHitListOfLayers(nullptr);
+
 	pandora::CaloHitVector CaloHitRangeSearchHelper::m_caloHitVector;
-	arma::mat CaloHitRangeSearchHelper::m_caloHitsMatrix = arma::mat(3,1);
+	std::vector<pandora::CaloHitVector> CaloHitRangeSearchHelper::m_caloHitVectorOfLayers;
+
+	arma::mat CaloHitRangeSearchHelper::m_caloHitsMatrix(3,1);
+	mlpack::range::RangeSearch<> CaloHitRangeSearchHelper::m_rangeSearch(m_caloHitsMatrix);
+
+	std::vector< mlpack::range::RangeSearch<> > CaloHitRangeSearchHelper::m_rangeSearchOfLayers;
+	
+	pandora::OrderedCaloHitList CaloHitRangeSearchHelper::m_orderedCaloHitList;
+
+	double CaloHitRangeSearchHelper::m_fFillingTime = 0.;
+	double CaloHitRangeSearchHelper::m_fGetttingTime = 0.;
 
   //--------------------------------------------------------------------------------------------------------------------
 
@@ -68,7 +81,105 @@ namespace arbor_content
   }
 
   //--------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(const pandora::CaloHitList *const pCaloHitList,
+		  pandora::OrderedCaloHitList*& orderedCaloHitList)
+  {
+	  if(m_pCaloHitListOfLayers == pCaloHitList) 
+	  {
+	      orderedCaloHitList = &m_orderedCaloHitList;
+		  return pandora::STATUS_CODE_SUCCESS;
+	  }
 
+	  m_orderedCaloHitList.Reset();
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, m_orderedCaloHitList.Add(*pCaloHitList));
+
+	  //std::cout << "layer number: " << m_orderedCaloHitList.size() << std::endl;
+
+	  const int nMaxLayer = 100;
+	  m_rangeSearchOfLayers.clear();
+	  m_rangeSearchOfLayers.resize( nMaxLayer );
+
+	  m_caloHitVectorOfLayers.clear();
+	  m_caloHitVectorOfLayers.resize( nMaxLayer );
+
+	  //loop each layer
+	  for(auto listIter = m_orderedCaloHitList.begin(); listIter != m_orderedCaloHitList.end(); ++listIter)
+	  {
+		  auto hitsOfLayer = listIter->second;
+		  //std::cout << "layer: " << listIter->first << ", hit: " << hitsOfLayer->size() << std::endl;
+
+		  pandora::CaloHitVector& caloHitVectorOfLayer = m_caloHitVectorOfLayers.at(listIter->first - 1);
+
+	      caloHitVectorOfLayer.insert(caloHitVectorOfLayer.begin(), hitsOfLayer->begin(), hitsOfLayer->end());
+
+		  if(caloHitVectorOfLayer.empty()) continue;
+
+		  FillMatixFromCaloHits(caloHitVectorOfLayer, m_caloHitsMatrix);
+
+	      m_rangeSearchOfLayers.at(listIter->first - 1).Train(m_caloHitsMatrix);
+	  }
+	    
+	  m_pCaloHitListOfLayers = pCaloHitList;
+	  orderedCaloHitList = &m_orderedCaloHitList;
+
+   	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode CaloHitRangeSearchHelper::SearchHitsInRangeOnLayer(pandora::CartesianVector testPosition, 
+			float distance, int layer, pandora::CaloHitList& hitsInRange) 
+  {
+      arma::mat testPoint(3, 1);
+
+	  testPoint.col(0)[0] = testPosition.GetX();
+	  testPoint.col(0)[1] = testPosition.GetY();
+	  testPoint.col(0)[2] = testPosition.GetZ();
+
+	  //std::cout << "point: " << testPoint.col(0)[0] << ", " << testPoint.col(0)[1] << ", " << testPoint.col(0)[2] << std::endl;
+	  const Range range(0., distance);
+
+      std::vector<std::vector<size_t> > resultingNeighbors;
+      std::vector<std::vector<double> > resultingDistances;
+
+	  int layerIndex = layer - 1;
+
+	  //clock_t t0, t1;
+
+	  //t0 = clock();
+      m_rangeSearchOfLayers.at(layer - 1).Search(testPoint, range, resultingNeighbors, resultingDistances);
+	  //t1 = clock();
+
+      if(resultingNeighbors.size() != 1 ) 
+	  {
+		  std::cout << "error " << std::endl;
+
+   	      return pandora::STATUS_CODE_SUCCESS;
+	  }
+
+      std::vector<size_t>& neighbors = resultingNeighbors.at(0);
+      std::vector<double>& distances = resultingDistances.at(0);
+
+	  // TODO
+	  // may be sorted by distance
+   
+	  hitsInRange.clear();
+
+      for(size_t j=0; j < neighbors.size(); ++j)
+      {
+      	size_t neighbor = neighbors.at(j);
+      	double hitsDist = distances.at(j);
+
+		pandora::CaloHitVector& caloHitVectorOfLayer = m_caloHitVectorOfLayers.at( layerIndex );
+
+		hitsInRange.push_back( caloHitVectorOfLayer.at(neighbor) );
+      }
+
+	
+	  //m_fGetttingTime += t1-t0;
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
   pandora::StatusCode CaloHitRangeSearchHelper::GetNeighbourHitsInRange(const pandora::CaloHitList *const pCaloHitList, 
 		  pandora::CartesianVector testPosition, float distance, pandora::CaloHitList& hitsInRange)
   {
@@ -78,17 +189,18 @@ namespace arbor_content
 
 	  if(pCaloHitList != m_pCaloHitList)
 	  {
-		  std::cout << "build new matrix..." << std::endl;
+		  //std::cout << "build new matrix..." << std::endl;
 		  m_caloHitVector.clear();
 	      m_caloHitVector.insert(m_caloHitVector.begin(), pCaloHitList->begin(), pCaloHitList->end());
 		  FillMatixFromCaloHits(m_caloHitVector, m_caloHitsMatrix);
 
+	      // the relatively time-comsuming part
+	      m_rangeSearch.Train(m_caloHitsMatrix);
+	  
 		  m_pCaloHitList = pCaloHitList;
 	  }
 
-	  RangeSearch<> rangeSearch(m_caloHitsMatrix);
-
-	  Range range(0., distance);
+	  const Range range(0., distance);
 
 	  /////
       arma::mat testPoint(3, 1);
@@ -101,7 +213,7 @@ namespace arbor_content
 
       std::vector<std::vector<size_t> > resultingNeighbors;
       std::vector<std::vector<double> > resultingDistances;
-      rangeSearch.Search(testPoint, range, resultingNeighbors, resultingDistances);
+      m_rangeSearch.Search(testPoint, range, resultingNeighbors, resultingDistances);
 
 	  //std::cout << "resultingNeighbors size: " <<  resultingNeighbors.size() << ", resultingDistances size: " << resultingDistances.size() << std::endl;
 
