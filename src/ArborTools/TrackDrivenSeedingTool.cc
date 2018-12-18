@@ -60,6 +60,31 @@ namespace arbor_content
 	CaloHitRangeSearchHelper::m_fFillingTime = 0.;
 	CaloHitRangeSearchHelper::m_fGetttingTime = 0.;
 
+    // ordered calo hit list
+    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
+
+	// build ordered calo hit list and search range for each layer
+	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(pCaloHitList, pOrderedCaloHitList);
+
+	//std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
+	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
+
+	pandora::CaloHitList hitsInSearchRange;
+
+	for(auto orderedCaloHitListIter = orderedCaloHitList.begin(); orderedCaloHitListIter != orderedCaloHitList.end(); ++orderedCaloHitListIter)
+	{
+		int pseudoLayer = orderedCaloHitListIter->first;
+        if(pseudoLayer > m_maxInitialPseudoLayer) break;
+
+		auto hitsOnLayer = orderedCaloHitListIter->second;
+
+		for(auto hitIter = hitsOnLayer->begin(); hitIter != hitsOnLayer->end(); ++hitIter)
+		{
+			hitsInSearchRange.push_back(*hitIter);
+			(*hitIter)->GetPseudoLayer();
+		}
+	}
+
     //clock_t t0, t1;
 
 	//t0 = clock();
@@ -74,7 +99,7 @@ namespace arbor_content
 	  //if(fabs(pTrack->GetMomentumAtDca().GetMagnitude() - 5.15) > 0.01) continue;
 
       pandora::CaloHitVector caloHitVector;
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, pCaloHitList, caloHitVector));
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, &hitsInSearchRange, caloHitVector));
 
 	  // sort by layer
       std::sort(caloHitVector.begin(), caloHitVector.end(), SortingHelper::SortCaloHitsByLayer);
@@ -118,7 +143,6 @@ namespace arbor_content
     const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
         pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
 
-	//std::cout << "track p = " << pTrack->GetMomentumAtDca() << std::endl;
 
     for(pandora::CaloHitList::const_iterator iter = pInputCaloHitList->begin(), endIter = pInputCaloHitList->end() ;
         endIter != iter ; ++iter)
@@ -242,8 +266,6 @@ namespace arbor_content
 
           CaloHitRangeSearchHelper::SearchHitsInRangeOnLayer(position, range, layer, hitsInRange);
 	
-
-
           for(pandora::CaloHitList::const_iterator iter = hitsInRange.begin(), endIter = hitsInRange.end() ;
               endIter != iter ; ++iter)
           {
