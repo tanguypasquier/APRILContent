@@ -101,6 +101,12 @@ namespace arbor_content
       pandora::CaloHitVector caloHitVector;
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, &hitsInSearchRange, caloHitVector));
 
+	  // TODO
+	  // make relationship between track and calohitvector
+	  // it can be used for further track cluster association 
+	  // however it should be careful that the same calo hit may enter into different caloHitVector 
+	  // due to nearby tracks
+
 	  // sort by layer
       std::sort(caloHitVector.begin(), caloHitVector.end(), SortingHelper::SortCaloHitsByLayer);
 

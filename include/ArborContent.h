@@ -96,6 +96,7 @@
 
 #include "ArborTools/ConnectorCleaningTool.h"
 #include "ArborTools/ConnectorSeedingTool.h"
+#include "ArborTools/ConnectorPlusTool.h"
 #include "ArborTools/ConnectorAlignmentTool.h"
 #include "ArborTools/TrackDrivenSeedingTool.h"
 #include "ArborTools/CaloHitMergingTool.h"
@@ -205,6 +206,7 @@ public:
 #define ARBOR_ALGORITHM_TOOL_LIST(d) \
     d("ConnectorCleaning",                   arbor_content::ConnectorCleaningTool::Factory) \
     d("ConnectorSeeding",                    arbor_content::ConnectorSeedingTool::Factory) \
+    d("ConnectorPlus",                       arbor_content::ConnectorPlusTool::Factory) \
     d("TrackDrivenSeeding",                  arbor_content::TrackDrivenSeedingTool::Factory) \
     d("ConnectorAlignment",                  arbor_content::ConnectorAlignmentTool::Factory) \
     d("CaloHitMerging",                      arbor_content::CaloHitMergingTool::Factory)
