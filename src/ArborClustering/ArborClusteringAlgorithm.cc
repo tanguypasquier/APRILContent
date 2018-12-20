@@ -102,58 +102,9 @@ namespace arbor_content
   {
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_additionalToolList));
 
-    if(m_useMultithread)
-    {
-#ifdef ARBOR_PARALLEL
-      // run in parallel the three detector region in different OpenMP sections
-      // returns in case one the thread returned a bad status code
-      pandora::StatusCode globalStatusCode = pandora::STATUS_CODE_SUCCESS;
-
-#pragma omp parallel sections
-      {
-#pragma omp section
-        {
-          const pandora::StatusCode statusCode = this->ConnectCaloHits(ecalCaloHitList, m_ecalToolList);
-
-#pragma omp critical
-          {
-            if(globalStatusCode == pandora::STATUS_CODE_SUCCESS)
-              globalStatusCode = statusCode;
-          }
-        }
-#pragma omp section
-        {
-          const pandora::StatusCode statusCode = this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList);
-
-#pragma omp critical
-          {
-            if(globalStatusCode == pandora::STATUS_CODE_SUCCESS)
-              globalStatusCode = statusCode;
-          }
-        }
-#pragma omp section
-        {
-          const pandora::StatusCode statusCode = this->ConnectCaloHits(muonCaloHitList, m_muonToolList);
-
-#pragma omp critical
-          {
-            if(globalStatusCode == pandora::STATUS_CODE_SUCCESS)
-              globalStatusCode = statusCode;
-          }
-        }
-      }
-
-      if(globalStatusCode != pandora::STATUS_CODE_SUCCESS)
-        return globalStatusCode;
-#endif
-    }
-    else
-    {
-      // single core algorithm
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(ecalCaloHitList, m_ecalToolList));
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList));
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(muonCaloHitList, m_muonToolList));
-    }
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(ecalCaloHitList, m_ecalToolList));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(muonCaloHitList, m_muonToolList));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
