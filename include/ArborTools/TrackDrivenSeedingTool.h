@@ -94,7 +94,7 @@ private:
 	 *  @param  pInputCaloHitList the input calo hit list to go all over
 	 *  @param  caloHitVector the calo hits close to track extrapolation / all connected calo hits to receive
 	 */
-	pandora::StatusCode ConnectCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
+	pandora::StatusCode ConnectCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack,
 			pandora::CaloHitVector &caloHitVector);
 
 private:

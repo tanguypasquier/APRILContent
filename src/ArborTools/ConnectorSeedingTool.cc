@@ -45,13 +45,9 @@ namespace arbor_content
     if(pCaloHitList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
-    // ordered calo hit list
-    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
+    // ordered calo hit list of ECAL
+    pandora::OrderedCaloHitList* pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList();
 
-	// build ordered calo hit list and search range for each layer
-	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(pCaloHitList, pOrderedCaloHitList);
-
-	//std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
 	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
 
 
@@ -92,10 +88,10 @@ namespace arbor_content
 		  // range parametrized layer difference
           const float range = 80.; // OK ???
 
-          int layer = pl;
+          int pseudoLayer = pl;
           pandora::CaloHitList hitsInRange;
 
-          CaloHitRangeSearchHelper::SearchHitsInRangeOnLayer(position, range, layer, hitsInRange);
+          CaloHitRangeSearchHelper::SearchHitsInLayer(position, pseudoLayer, range, hitsInRange);
 
           for(pandora::CaloHitList::const_iterator iterJ = hitsInRange.begin(), endIterJ = hitsInRange.end() ;
               endIterJ != iterJ ; ++iterJ)

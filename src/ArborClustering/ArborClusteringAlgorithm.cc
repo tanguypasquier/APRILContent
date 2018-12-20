@@ -32,6 +32,7 @@
 
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborTools/ConnectorAlgorithmTool.h"
+#include "ArborHelpers/CaloHitRangeSearchHelper.h"
 
 namespace arbor_content
 {
@@ -54,6 +55,7 @@ namespace arbor_content
 
     t1 = clock();
 
+
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->CreateClusters());
 
     std::cout << "connnecting time (ms): " << 1000*(t1 - t0)/CLOCKS_PER_SEC << std::endl;
@@ -66,9 +68,6 @@ namespace arbor_content
   pandora::StatusCode ArborClusteringAlgorithm::SplitCaloHitList(const pandora::CaloHitList *const pCaloHitList, pandora::CaloHitList &ecalCaloHitList,
       pandora::CaloHitList &hcalCaloHitList, pandora::CaloHitList &muonCaloHitList) const
   {
-    if( m_ecalToolList.empty() && m_hcalToolList.empty() && m_muonToolList.empty() )
-      return pandora::STATUS_CODE_SUCCESS;
-
 	std::cout << "Calo hits: " << pCaloHitList->size() << std::endl;
 
     for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
@@ -92,6 +91,18 @@ namespace arbor_content
 	std::cout << "  ---> hcalCaloHitList: " << hcalCaloHitList.size() << std::endl;
 	std::cout << "  ---> muonCaloHitList: " << muonCaloHitList.size() << std::endl;
 
+	CaloHitRangeSearchHelper::BuildRangeSearch(pCaloHitList);
+	CaloHitRangeSearchHelper::BuildHitCollectionOfLayers(pCaloHitList);
+	CaloHitRangeSearchHelper::BuildHitCollectionOfEcalLayers(&ecalCaloHitList);
+	CaloHitRangeSearchHelper::BuildHitCollectionOfHcalLayers(&hcalCaloHitList);
+	CaloHitRangeSearchHelper::BuildHitCollectionOfMuonLayers(&muonCaloHitList);
+
+	std::cout << "ordered hit layer size: " << std::endl;
+	std::cout << " total: " << CaloHitRangeSearchHelper::GetOrderedCaloHitList()->size() << std::endl;
+	std::cout << " ecal: " << CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList()->size() << std::endl;
+	std::cout << " hcal: " << CaloHitRangeSearchHelper::GetOrderedHcalCaloHitList()->size() << std::endl;
+	std::cout << " muon: " << CaloHitRangeSearchHelper::GetOrderedMuonCaloHitList()->size() << std::endl;
+
     return pandora::STATUS_CODE_SUCCESS;
   }
 
@@ -101,10 +112,11 @@ namespace arbor_content
       const pandora::CaloHitList &hcalCaloHitList, const pandora::CaloHitList &muonCaloHitList) const
   {
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_additionalToolList));
-
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(ecalCaloHitList, m_ecalToolList));
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList));
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(muonCaloHitList, m_muonToolList));
+
+    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_additionalToolList));
+    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList));
+    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(muonCaloHitList, m_muonToolList));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

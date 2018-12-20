@@ -40,7 +40,24 @@ namespace arbor_content
 
   pandora::StatusCode ConnectorPlusTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
-	//std::cout << " ConnectorPlusTool : pCaloHitList " << pCaloHitList << std::endl;
+	//std::cout << " ConnectorPlusTool : pCaloHitList " << pCaloHitList << ", size: " << pCaloHitList->size() << std::endl;
+
+#if 0
+    // ordered calo hit list
+    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
+
+	// build ordered calo hit list and search range for each layer
+	// since the input calo hit list in null, it will retrive the ordered hit list built before
+	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(nullptr, pOrderedCaloHitList);
+
+	std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
+
+	if(pOrderedCaloHitList == nullptr)
+	{
+		return pandora::STATUS_CODE_SUCCESS;
+	}
+
+	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
 	
     if(pCaloHitList->empty())
       return pandora::STATUS_CODE_SUCCESS;
@@ -144,6 +161,8 @@ namespace arbor_content
         }
       }
     }
+
+#endif
 
     return pandora::STATUS_CODE_SUCCESS;
   }

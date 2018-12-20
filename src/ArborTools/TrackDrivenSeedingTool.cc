@@ -44,7 +44,7 @@ namespace arbor_content
 
   pandora::StatusCode TrackDrivenSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
-	//std::cout << "TrackDrivenSeedingTool : pCaloHitList: " << pCaloHitList << std::endl;
+	//std::cout << "TrackDrivenSeedingTool pCaloHitList size: " << pCaloHitList->size() << std::endl;
 
     if(pCaloHitList->empty())
       return pandora::STATUS_CODE_SUCCESS;
@@ -61,12 +61,9 @@ namespace arbor_content
 	CaloHitRangeSearchHelper::m_fGetttingTime = 0.;
 
     // ordered calo hit list
-    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
+    pandora::OrderedCaloHitList* pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList();
 
-	// build ordered calo hit list and search range for each layer
-	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(pCaloHitList, pOrderedCaloHitList);
-
-	//std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
+	//std::cout << "ptr: " << pOrderedCaloHitList << ", size: " << pOrderedCaloHitList->size() << std::endl;
 	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
 
 	pandora::CaloHitList hitsInSearchRange;
@@ -110,7 +107,7 @@ namespace arbor_content
 	  // sort by layer
       std::sort(caloHitVector.begin(), caloHitVector.end(), SortingHelper::SortCaloHitsByLayer);
 
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(algorithm, pTrack, pCaloHitList, caloHitVector));
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(algorithm, pTrack, caloHitVector));
     }
 	//t1 = clock();
 
@@ -180,7 +177,7 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode TrackDrivenSeedingTool::ConnectCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
+  pandora::StatusCode TrackDrivenSeedingTool::ConnectCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack,
       pandora::CaloHitVector &caloHitVector)
   {
     if(caloHitVector.empty())
@@ -194,10 +191,7 @@ namespace arbor_content
 
 
     // ordered calo hit list
-    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
-
-	// build ordered calo hit list and search range for each layer
-	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(pInputCaloHitList, pOrderedCaloHitList);
+    pandora::OrderedCaloHitList* pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedCaloHitList();
 
 	//std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
 	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
@@ -267,10 +261,10 @@ namespace arbor_content
           const float range = 200.; // OK ???
 
 		  // use pseudo layer
-          int layer = plIter->first;
+          int pseudoLayer = plIter->first;
           pandora::CaloHitList hitsInRange;
 
-          CaloHitRangeSearchHelper::SearchHitsInRangeOnLayer(position, range, layer, hitsInRange);
+          CaloHitRangeSearchHelper::SearchHitsInLayer(position, pseudoLayer, range, hitsInRange);
 	
           for(pandora::CaloHitList::const_iterator iter = hitsInRange.begin(), endIter = hitsInRange.end() ;
               endIter != iter ; ++iter)

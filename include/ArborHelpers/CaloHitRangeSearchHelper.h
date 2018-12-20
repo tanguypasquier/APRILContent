@@ -50,34 +50,97 @@ namespace arbor_content
 class CaloHitRangeSearchHelper 
 {
 public:
-    static pandora::StatusCode GetNeighbourHitsInRange(const pandora::CaloHitList *const pCaloHitList, 
-		  pandora::CartesianVector testPosition, float distance, pandora::CaloHitList& hitsInRange);
-  
-	static pandora::StatusCode BuildSearchRangeOfLayers(const pandora::CaloHitList *const pCaloHitList, 
-			pandora::OrderedCaloHitList*& orderedCaloHitList);
+	// build 
+    static pandora::StatusCode BuildRangeSearch(const pandora::CaloHitList *const pCaloHitList);
+	
+    static pandora::StatusCode BuildHitCollectionOfLayers(const pandora::CaloHitList *const pCaloHitList);
 
-	static pandora::StatusCode SearchHitsInRangeOnLayer(pandora::CartesianVector testPosition, 
-			float distance, int layer, pandora::CaloHitList& hitsInRange);
+    static pandora::StatusCode BuildHitCollectionOfEcalLayers(const pandora::CaloHitList *const pEcalCaloHitList);
+
+    static pandora::StatusCode BuildHitCollectionOfHcalLayers(const pandora::CaloHitList *const pHcalCaloHitList);
+  
+	static pandora::StatusCode BuildHitCollectionOfMuonLayers(const pandora::CaloHitList *const pMuonCaloHitList);
+
+    // search 
+
+    static pandora::StatusCode SearchNeighbourHitsInRange(pandora::CartesianVector testPosition, float distance, pandora::CaloHitList& hitsInRange);
+
+    static pandora::StatusCode SearchHitsInLayer(pandora::CartesianVector testPosition, int pseudoLayer,
+		  float distance, pandora::CaloHitList& hitsInRange);
+  
+	static pandora::StatusCode SearchEcalHitsInLayer(pandora::CartesianVector testPosition, int pseudoLayer,
+		  float distance, pandora::CaloHitList& hitsInRange);
+
+	static pandora::StatusCode SearchHcalHitsInLayer(pandora::CartesianVector testPosition, int pseudoLayer,
+		  float distance, pandora::CaloHitList& hitsInRange);
+
+	static pandora::StatusCode SearchMuonHitsInLayer(pandora::CartesianVector testPosition, int pseudoLayer,
+		  float distance, pandora::CaloHitList& hitsInRange);
+
+	static pandora::OrderedCaloHitList* GetOrderedCaloHitList()     { return &m_orderedCaloHitList;     }
+	static pandora::OrderedCaloHitList* GetOrderedEcalCaloHitList() { return &m_orderedEcalCaloHitList; }
+	static pandora::OrderedCaloHitList* GetOrderedHcalCaloHitList() { return &m_orderedHcalCaloHitList; }
+	static pandora::OrderedCaloHitList* GetOrderedMuonCaloHitList() { return &m_orderedMuonCaloHitList; }
+
+	///////
 
 	static double m_fFillingTime;
 	static double m_fGetttingTime;
 
 	static pandora::OrderedCaloHitList m_orderedCaloHitList;
+	static pandora::OrderedCaloHitList m_orderedEcalCaloHitList;
+	static pandora::OrderedCaloHitList m_orderedHcalCaloHitList;
+	static pandora::OrderedCaloHitList m_orderedMuonCaloHitList;
 
 private:
+	static arma::mat m_caloHitsMatrix;
 
     static pandora::StatusCode FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix);
 
+	// all hits
 	static const pandora::CaloHitList* m_pCaloHitList;
+
+	// all hits on each layer
 	static const pandora::CaloHitList* m_pCaloHitListOfLayers;
 
-	static pandora::CaloHitVector m_caloHitVector;
-	static std::vector<pandora::CaloHitVector> m_caloHitVectorOfLayers;
+	// all ecal hits on each layer
+	static const pandora::CaloHitList* m_pEcalCaloHitListOfLayers;
 
-	static arma::mat m_caloHitsMatrix;
+	// all hcal hits on each layer
+	static const pandora::CaloHitList* m_pHcalCaloHitListOfLayers;
+
+	// all muon hits on each layer
+	static const pandora::CaloHitList* m_pMuonCaloHitListOfLayers;
+
+	//-----------------
+	static pandora::CaloHitVector m_caloHitVector;
+
+	static std::vector<pandora::CaloHitVector> m_caloHitVectorOfLayers;
+	static std::vector<pandora::CaloHitVector> m_ecalCaloHitVectorOfLayers;
+	static std::vector<pandora::CaloHitVector> m_hcalCaloHitVectorOfLayers;
+	static std::vector<pandora::CaloHitVector> m_muonCaloHitVectorOfLayers;
 
 	static mlpack::range::RangeSearch<> m_rangeSearch;
+
 	static std::vector< mlpack::range::RangeSearch<> > m_rangeSearchOfLayers;
+	static std::vector< mlpack::range::RangeSearch<> > m_ecalRangeSearchOfLayers;
+	static std::vector< mlpack::range::RangeSearch<> > m_hcalRangeSearchOfLayers;
+	static std::vector< mlpack::range::RangeSearch<> > m_muonRangeSearchOfLayers;
+
+	//----------------
+    static pandora::StatusCode BuildOrderedHitsAndSearchRange(const pandora::CaloHitList *const pCaloHitList,
+		  pandora::OrderedCaloHitList& orderedCaloHitList, std::vector<pandora::CaloHitVector>& caloHitVectorOfLayers,
+		  std::vector< mlpack::range::RangeSearch<> >& rangeSearchOfLayers);
+
+    static pandora::StatusCode BuildHitCollectionForSearching(
+		  const pandora::CaloHitList *const               pCaloHitList,
+		  const pandora::CaloHitList*&                    pCaloHitListOfLayers,
+		  pandora::OrderedCaloHitList&                    orderedCaloHitList, 
+		  std::vector<pandora::CaloHitVector>&            caloHitVectorOfLayers, 
+		  std::vector< mlpack::range::RangeSearch<> >&    rangeSearchOfLayers);
+
+    static pandora::StatusCode SearchHitsInRange(mlpack::range::RangeSearch<>& rangeSearch, pandora::CaloHitVector& caloHitVector, 
+		  pandora::CartesianVector testPosition, float distance, pandora::CaloHitList& hitsInRange);
 };
 
 } 
