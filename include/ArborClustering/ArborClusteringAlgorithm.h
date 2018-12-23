@@ -91,11 +91,23 @@ private:
 	 */
 	pandora::StatusCode CreateClusters() const;
 
+    static const pandora::CaloHitList* GetCaloHitList() { return m_pCaloHitList; }
+    static const pandora::CaloHitList* GetEcalHitList() { return &m_hcalCaloHitList; }
+    static const pandora::CaloHitList* GetHcalHitList() { return &m_hcalCaloHitList; }
+    static const pandora::CaloHitList* GetMuonHitList() { return &m_muonCaloHitList; }
+
 private:
 	ConnectorAlgorithmToolVector      m_ecalToolList;              ///< The ecal algorithm tool list
 	ConnectorAlgorithmToolVector      m_hcalToolList;              ///< The hcal algorithm tool list
+	ConnectorAlgorithmToolVector      m_hcalToolList2;             ///< The hcal algorithm tool list 2
 	ConnectorAlgorithmToolVector      m_muonToolList;              ///< The muon algorithm tool list
 	ConnectorAlgorithmToolVector      m_additionalToolList;        ///< The addtional algorithm tool list
+
+    static const pandora::CaloHitList*             m_pCaloHitList; 
+    static pandora::CaloHitList              m_ecalCaloHitList; 
+	static pandora::CaloHitList              m_hcalCaloHitList; 
+	static pandora::CaloHitList              m_muonCaloHitList;
+
 	bool                              m_allowSingleHitClusters;    ///< Whether to allow single calo hit clusters
 	bool                              m_useMultithread;            ///< Whether to use multithreading with ecal-hcal-muon tools
     bool                              m_useAsIndependent;          ///< Whether to use this algorithm as a mother algorithm

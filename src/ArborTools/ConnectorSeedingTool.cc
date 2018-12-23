@@ -38,6 +38,8 @@
 namespace arbor_content
 {
 
+  int ConnectorSeedingTool::hitCollectionToUse = 0; // ECAL 0, HCAL, 1
+
   pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
 	//std::cout << " ConnectorSeedingTool : pCaloHitList " << pCaloHitList << std::endl;
@@ -46,7 +48,14 @@ namespace arbor_content
       return pandora::STATUS_CODE_SUCCESS;
 
     // ordered calo hit list of ECAL
-    pandora::OrderedCaloHitList* pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList();
+	pandora::OrderedCaloHitList* pOrderedCaloHitList;
+
+	// ad hoc ...
+	if(hitCollectionToUse==0)
+		pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList();
+	else
+		pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedHcalCaloHitList();
+
 
 	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
 

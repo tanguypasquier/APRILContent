@@ -38,42 +38,24 @@
 namespace arbor_content
 {
 
+  // this tool is applied after photon clusters are created
   pandora::StatusCode ConnectorPlusTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
 	//std::cout << " ConnectorPlusTool : pCaloHitList " << pCaloHitList << ", size: " << pCaloHitList->size() << std::endl;
-
-#if 0
-    // ordered calo hit list
-    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
-
-	// build ordered calo hit list and search range for each layer
-	// since the input calo hit list in null, it will retrive the ordered hit list built before
-	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(nullptr, pOrderedCaloHitList);
-
-	std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
-
-	if(pOrderedCaloHitList == nullptr)
-	{
-		return pandora::STATUS_CODE_SUCCESS;
-	}
-
-	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
 	
-    if(pCaloHitList->empty())
-      return pandora::STATUS_CODE_SUCCESS;
+    // ordered calo hit list of ECAL
+    pandora::OrderedCaloHitList& orderedEcalCaloHitList = *( CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList() );
+    pandora::OrderedCaloHitList& orderedCaloHitList = *( CaloHitRangeSearchHelper::GetOrderedCaloHitList() );
 
-    // ordered calo hit list
-    pandora::OrderedCaloHitList* pOrderedCaloHitList = nullptr;
+	// seed hits
+	pandora::CaloHitVector seedHits;
 
-	// build ordered calo hit list and search range for each layer
-	CaloHitRangeSearchHelper::BuildSearchRangeOfLayers(pCaloHitList, pOrderedCaloHitList);
+	pandora::OrderedCaloHitList::const_reverse_iterator layerEndIter = orderedEcalCaloHitList.rbegin();
+	std::advance(layerEndIter, 3);
 
-	//std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
-	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
-
-
-    for(pandora::OrderedCaloHitList::const_iterator layerIter = orderedCaloHitList.begin(), layerEndIter = orderedCaloHitList.end() ;
-        layerEndIter != layerIter ; ++layerIter)
+	// search seed hits in ECAL
+    for(pandora::OrderedCaloHitList::const_reverse_iterator layerIter = orderedEcalCaloHitList.rbegin();
+			layerEndIter != layerIter ; ++layerIter)
     {
       for(pandora::CaloHitList::const_iterator iterI = layerIter->second->begin(), endIterI = layerIter->second->end() ;
           endIterI != iterI ; ++iterI)
@@ -90,29 +72,43 @@ namespace arbor_content
         if(!m_shouldUseIsolatedHits && pCaloHitI->IsIsolated())
           continue;
 
-        if(m_shouldDiscriminateConnectedHits && !ArborContentApi::GetConnectorList(pCaloHitI, FORWARD_DIRECTION).empty())
-          continue;
+        if( !ArborContentApi::GetConnectorList(pCaloHitI, BACKWARD_DIRECTION).empty() && 
+			ArborContentApi::GetConnectorList(pCaloHitI, FORWARD_DIRECTION).empty() )
+		{
+			seedHits.push_back( pCaloHitI );
+			std::cout << "seed hit in ecal: " << pCaloHitI->GetPseudoLayer() << std::endl;
+		}
+	  }
+	}
 
-        const unsigned int pseudoLayerI = pCaloHitI->GetPseudoLayer();
-        const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
+	/////////////////////////////////////////////////////////
+	
+	for(int iHit = 0; iHit < seedHits.size(); ++iHit)
+	{
+		//std::cout << "seedHits.size: " << seedHits.size() << ", iHit: " << iHit << std::endl;
+        const arbor_content::CaloHit *const pCaloHitI = dynamic_cast<const arbor_content::CaloHit *const>( seedHits.at(iHit) );
+		int pseudoLayerI = pCaloHitI->GetPseudoLayer();
+
+		//std::cout << "hit: " << pCaloHitI << ", layer: " << pseudoLayerI << std::endl;
 
         for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
         {
           pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pl);
 
-          if(orderedCaloHitList.end() == findIter)
-            continue;
+          if(orderedCaloHitList.end() == findIter) continue;
 
 		  const pandora::CartesianVector &position(pCaloHitI->GetPositionVector());
 
 		  // TODO
 		  // range parametrized layer difference
-          const float range = 80.; // OK ???
+          const float range = 200.; // OK ???
 
           int layer = pl;
           pandora::CaloHitList hitsInRange;
 
-          CaloHitRangeSearchHelper::SearchHitsInRangeOnLayer(position, range, layer, hitsInRange);
+          CaloHitRangeSearchHelper::SearchHitsInLayer(position, layer, range, hitsInRange);
+
+		  //std::cout << "hits in layer " << layer << ": " << hitsInRange.size() << std::endl;
 
           for(pandora::CaloHitList::const_iterator iterJ = hitsInRange.begin(), endIterJ = hitsInRange.end() ;
               endIterJ != iterJ ; ++iterJ)
@@ -133,6 +129,7 @@ namespace arbor_content
             if(m_shouldDiscriminateConnectedHits && !ArborContentApi::GetConnectorList(pCaloHitJ, BACKWARD_DIRECTION).empty())
               continue;
 
+            const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
             const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
             const pandora::HitType hitTypeJ(pCaloHitJ->GetHitType());
             const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
@@ -157,12 +154,11 @@ namespace arbor_content
 
             // connect !
             PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION));
+		
+			seedHits.push_back(pCaloHitJ);
           }
-        }
-      }
-    }
-
-#endif
+		}
+	}
 
     return pandora::STATUS_CODE_SUCCESS;
   }

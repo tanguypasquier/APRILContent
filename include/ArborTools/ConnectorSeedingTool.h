@@ -67,6 +67,8 @@ public:
 	 */
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
+	static int hitCollectionToUse;
+
 private:
 	float                       m_maxConnectionAngleFine;
 	float                       m_maxConnectionAngleCoarse;

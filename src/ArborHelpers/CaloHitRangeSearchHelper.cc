@@ -105,7 +105,7 @@ namespace arbor_content
   {
 	  if(pCaloHitList != m_pCaloHitList)
 	  {
-		  std::cout << "build new matrix..." << std::endl;
+		  //std::cout << "build new matrix..." << std::endl;
 		  m_caloHitVector.clear();
 	      m_caloHitVector.insert(m_caloHitVector.begin(), pCaloHitList->begin(), pCaloHitList->end());
 		  FillMatixFromCaloHits(m_caloHitVector, m_caloHitsMatrix);

@@ -32,26 +32,31 @@
 
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborTools/ConnectorAlgorithmTool.h"
+#include "ArborTools/ConnectorSeedingTool.h"
 #include "ArborHelpers/CaloHitRangeSearchHelper.h"
 
 namespace arbor_content
 {
+    const pandora::CaloHitList*  ArborClusteringAlgorithm::m_pCaloHitList = nullptr; 
+    pandora::CaloHitList   ArborClusteringAlgorithm::m_ecalCaloHitList; 
+	pandora::CaloHitList   ArborClusteringAlgorithm::m_hcalCaloHitList; 
+	pandora::CaloHitList   ArborClusteringAlgorithm::m_muonCaloHitList;
 
   pandora::StatusCode ArborClusteringAlgorithm::Run()
   {
-    const pandora::CaloHitList *pCaloHitList = NULL;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+	m_pCaloHitList = nullptr;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, m_pCaloHitList));
 
-    if(pCaloHitList->empty())
+    if(m_pCaloHitList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
-    pandora::CaloHitList ecalCaloHitList, hcalCaloHitList, muonCaloHitList;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SplitCaloHitList(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->SplitCaloHitList(m_pCaloHitList, m_ecalCaloHitList, m_hcalCaloHitList, m_muonCaloHitList));
 
     clock_t t0, t1;
 
     t0 = clock();
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(pCaloHitList, ecalCaloHitList, hcalCaloHitList, muonCaloHitList));
+    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(m_pCaloHitList, m_ecalCaloHitList, m_hcalCaloHitList, m_muonCaloHitList));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(toolList));
 
     t1 = clock();
 
@@ -70,6 +75,10 @@ namespace arbor_content
   {
 	std::cout << "Calo hits: " << pCaloHitList->size() << std::endl;
 
+	ecalCaloHitList.clear();
+	hcalCaloHitList.clear();
+	muonCaloHitList.clear();
+
     for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
         endIter !=iter ; ++iter)
     {
@@ -79,23 +88,23 @@ namespace arbor_content
         continue;
 
       if(pCaloHit->GetHitType() == pandora::ECAL)
-        ecalCaloHitList.push_back(pCaloHit);
+        m_ecalCaloHitList.push_back(pCaloHit);
       else if(pCaloHit->GetHitType() == pandora::HCAL)
-        hcalCaloHitList.push_back(pCaloHit);
+        m_hcalCaloHitList.push_back(pCaloHit);
       else if(pCaloHit->GetHitType() == pandora::MUON)
-        muonCaloHitList.push_back(pCaloHit);
+        m_muonCaloHitList.push_back(pCaloHit);
     }
 
 	std::cout << "spliting calo hits: " << std::endl;
-	std::cout << "  ---> ecalCaloHitList: " << ecalCaloHitList.size() << std::endl;
-	std::cout << "  ---> hcalCaloHitList: " << hcalCaloHitList.size() << std::endl;
-	std::cout << "  ---> muonCaloHitList: " << muonCaloHitList.size() << std::endl;
+	std::cout << "  ---> ecalCaloHitList: " << m_ecalCaloHitList.size() << std::endl;
+	std::cout << "  ---> hcalCaloHitList: " << m_hcalCaloHitList.size() << std::endl;
+	std::cout << "  ---> muonCaloHitList: " << m_muonCaloHitList.size() << std::endl;
 
 	CaloHitRangeSearchHelper::BuildRangeSearch(pCaloHitList);
 	CaloHitRangeSearchHelper::BuildHitCollectionOfLayers(pCaloHitList);
-	CaloHitRangeSearchHelper::BuildHitCollectionOfEcalLayers(&ecalCaloHitList);
-	CaloHitRangeSearchHelper::BuildHitCollectionOfHcalLayers(&hcalCaloHitList);
-	CaloHitRangeSearchHelper::BuildHitCollectionOfMuonLayers(&muonCaloHitList);
+	CaloHitRangeSearchHelper::BuildHitCollectionOfEcalLayers(&m_ecalCaloHitList);
+	CaloHitRangeSearchHelper::BuildHitCollectionOfHcalLayers(&m_hcalCaloHitList);
+	CaloHitRangeSearchHelper::BuildHitCollectionOfMuonLayers(&m_muonCaloHitList);
 
 	std::cout << "ordered hit layer size: " << std::endl;
 	std::cout << " total: " << CaloHitRangeSearchHelper::GetOrderedCaloHitList()->size() << std::endl;
@@ -108,28 +117,40 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  // to remove
+#if 0
   pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::CaloHitList *const pCaloHitList, const pandora::CaloHitList &ecalCaloHitList,
       const pandora::CaloHitList &hcalCaloHitList, const pandora::CaloHitList &muonCaloHitList) const
   {
+	ConnectorSeedingTool::hitCollectionToUse = 0;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_additionalToolList));
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(ecalCaloHitList, m_ecalToolList));
 
-    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_additionalToolList));
-    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList));
-    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(muonCaloHitList, m_muonToolList));
+	// testing ...
+	// connector from ECAL to HCAL
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_hcalToolList));
+
+	// HCAL
+	std::cout << "HCAL hit connecting..." << std::endl;
+	ConnectorSeedingTool::hitCollectionToUse = 1;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList2));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
+#endif
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::CaloHitList &caloHitList, const ConnectorAlgorithmToolVector &toolVector) const
+  // keep this
+  //pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::CaloHitList &caloHitList, const ConnectorAlgorithmToolVector &toolVector) const
+  pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const ConnectorAlgorithmToolVector &toolVector) const
   {
     for(ConnectorAlgorithmToolVector::const_iterator iter = toolVector.begin(), endIter = toolVector.end() ;
         endIter != iter ; ++iter)
     {
       ConnectorAlgorithmTool *pTool = *iter;
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pTool->Process(*this, &caloHitList));
+      //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pTool->Process(*this, &caloHitList));
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pTool->Process(*this));
     }
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -243,6 +264,22 @@ namespace arbor_content
     algorithmToolList.clear();
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
+        "HCalConnectionTools2", algorithmToolList));
+
+    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
+        endIter != iter ; ++iter)
+    {
+      ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);
+
+      if(NULL == pTool)
+        return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+      m_hcalToolList2.push_back(pTool);
+    }
+
+    algorithmToolList.clear();
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
         "MuonConnectionTools", algorithmToolList));
 
     for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
@@ -256,6 +293,7 @@ namespace arbor_content
       m_muonToolList.push_back(pTool);
     }
 
+	// just use this to load all tools ----
     algorithmToolList.clear();
 
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
@@ -271,6 +309,7 @@ namespace arbor_content
 
       m_additionalToolList.push_back(pTool);
     }
+	// to here ----
 
     algorithmToolList.clear();
 
