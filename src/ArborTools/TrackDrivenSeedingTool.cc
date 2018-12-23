@@ -44,11 +44,6 @@ namespace arbor_content
 
   pandora::StatusCode TrackDrivenSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
-	//std::cout << "TrackDrivenSeedingTool pCaloHitList size: " << pCaloHitList->size() << std::endl;
-
-    if(pCaloHitList->empty())
-      return pandora::STATUS_CODE_SUCCESS;
-
     // get current track list
     const pandora::TrackList *pTrackList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(algorithm, pTrackList));      

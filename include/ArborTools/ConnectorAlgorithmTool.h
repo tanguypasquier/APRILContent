@@ -52,7 +52,7 @@ public:
 	 *
 	 *  @param  pCaloHitList the calo hit list to process
 	 */
-	virtual pandora::StatusCode Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList) = 0;
+	virtual pandora::StatusCode Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList = nullptr) = 0;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

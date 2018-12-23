@@ -33,14 +33,14 @@
 #include "ArborObjects/CaloHit.h"
 #include "ArborObjects/Connector.h"
 #include "ArborHelpers/CaloHitHelper.h"
+#include "ArborClustering/ArborClusteringAlgorithm.h"
 
 namespace arbor_content
 {
 
-  pandora::StatusCode ConnectorCleaningTool::Process(const pandora::Algorithm &/*algorithm*/, const pandora::CaloHitList *const pCaloHitList)
+  pandora::StatusCode ConnectorCleaningTool::Process(const pandora::Algorithm &/*algorithm*/, const pandora::CaloHitList *const caloHitList)
   {
-    if(pCaloHitList->empty())
-      return pandora::STATUS_CODE_SUCCESS;
+    const pandora::CaloHitList* pCaloHitList = ArborClusteringAlgorithm::GetCaloHitList();
 
     if(0 == m_strategy)
     {

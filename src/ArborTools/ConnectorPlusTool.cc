@@ -76,7 +76,7 @@ namespace arbor_content
 			ArborContentApi::GetConnectorList(pCaloHitI, FORWARD_DIRECTION).empty() )
 		{
 			seedHits.push_back( pCaloHitI );
-			std::cout << "seed hit in ecal: " << pCaloHitI->GetPseudoLayer() << std::endl;
+			//std::cout << "seed hit in ecal: " << pCaloHitI->GetPseudoLayer() << std::endl;
 		}
 	  }
 	}

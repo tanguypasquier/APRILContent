@@ -58,7 +58,7 @@ public:
 	 *  @param  algorithm the parent algorithm to access pandora content
 	 *  @param  pCaloHitList the calo hit list to process
 	 */
-	pandora::StatusCode Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList);
+	pandora::StatusCode Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList = nullptr);
 
 	/**
 	 *  @brief  Read settings from the xml handle
@@ -67,9 +67,8 @@ public:
 	 */
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
-	static int hitCollectionToUse;
-
 private:
+	unsigned int                m_hitCollectionToUse;
 	float                       m_maxConnectionAngleFine;
 	float                       m_maxConnectionAngleCoarse;
 	float                       m_maxTransverseDistanceFine;

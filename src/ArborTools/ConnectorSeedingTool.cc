@@ -37,28 +37,32 @@
 
 namespace arbor_content
 {
-
-  int ConnectorSeedingTool::hitCollectionToUse = 0; // ECAL 0, HCAL, 1
-
   pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
-	//std::cout << " ConnectorSeedingTool : pCaloHitList " << pCaloHitList << std::endl;
-	
-    if(pCaloHitList->empty())
-      return pandora::STATUS_CODE_SUCCESS;
-
     // ordered calo hit list of ECAL
 	pandora::OrderedCaloHitList* pOrderedCaloHitList;
 
-	// ad hoc ...
-	if(hitCollectionToUse==0)
-		pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList();
-	else
-		pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedHcalCaloHitList();
+	switch(m_hitCollectionToUse)
+	{
+		case 1: 
+			pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList();
+			break;
 
+		case 2: 
+			pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedHcalCaloHitList();
+			break;
+
+		case 3: 
+			pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedMuonCaloHitList();
+			break;
+
+		default:
+			pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedCaloHitList();
+	}
 
 	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
 
+	//std::cout << "orderedCaloHitList size: " << orderedCaloHitList.size() << std::endl;
 
     for(pandora::OrderedCaloHitList::const_iterator layerIter = orderedCaloHitList.begin(), layerEndIter = orderedCaloHitList.end() ;
         layerEndIter != layerIter ; ++layerIter)
@@ -157,6 +161,10 @@ namespace arbor_content
 
   pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+    m_hitCollectionToUse = 0;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "CaloHitCollection", m_hitCollectionToUse));
+
     m_maxPseudoLayerConnection = 4;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxPseudoLayerConnection", m_maxPseudoLayerConnection));

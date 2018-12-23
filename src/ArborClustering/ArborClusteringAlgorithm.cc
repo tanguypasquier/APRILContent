@@ -55,8 +55,7 @@ namespace arbor_content
     clock_t t0, t1;
 
     t0 = clock();
-    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(m_pCaloHitList, m_ecalCaloHitList, m_hcalCaloHitList, m_muonCaloHitList));
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(toolList));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(m_toolList));
 
     t1 = clock();
 
@@ -117,41 +116,17 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  // to remove
-#if 0
-  pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::CaloHitList *const pCaloHitList, const pandora::CaloHitList &ecalCaloHitList,
-      const pandora::CaloHitList &hcalCaloHitList, const pandora::CaloHitList &muonCaloHitList) const
-  {
-	ConnectorSeedingTool::hitCollectionToUse = 0;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_additionalToolList));
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(ecalCaloHitList, m_ecalToolList));
-
-	// testing ...
-	// connector from ECAL to HCAL
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(*pCaloHitList, m_hcalToolList));
-
-	// HCAL
-	std::cout << "HCAL hit connecting..." << std::endl;
-	ConnectorSeedingTool::hitCollectionToUse = 1;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(hcalCaloHitList, m_hcalToolList2));
-
-    return pandora::STATUS_CODE_SUCCESS;
-  }
-#endif
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
-  // keep this
-  //pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const pandora::CaloHitList &caloHitList, const ConnectorAlgorithmToolVector &toolVector) const
   pandora::StatusCode ArborClusteringAlgorithm::ConnectCaloHits(const ConnectorAlgorithmToolVector &toolVector) const
   {
+	  std::cout << "Connect tools size: " << toolVector.size() << std::endl;
+#if 1
     for(ConnectorAlgorithmToolVector::const_iterator iter = toolVector.begin(), endIter = toolVector.end() ;
         endIter != iter ; ++iter)
     {
       ConnectorAlgorithmTool *pTool = *iter;
-      //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pTool->Process(*this, &caloHitList));
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pTool->Process(*this));
     }
+#endif
 
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -160,8 +135,7 @@ namespace arbor_content
 
   pandora::StatusCode ArborClusteringAlgorithm::CreateClusters() const
   {
-    if( m_ecalToolList.empty() && m_hcalToolList.empty() && m_muonToolList.empty() && m_additionalToolList.empty() )
-      return pandora::STATUS_CODE_SUCCESS;
+    if( m_toolList.empty() ) return pandora::STATUS_CODE_SUCCESS;
 
     // Find seeds and build clusters from them looking for forward connected hits in the tree structure
     pandora::CaloHitList seedCaloHitList;
@@ -232,7 +206,7 @@ namespace arbor_content
   {
     pandora::AlgorithmToolVector algorithmToolList;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
-        "ECalConnectionTools", algorithmToolList));
+        "ConnectionTools", algorithmToolList));
 
     for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
         endIter != iter ; ++iter)
@@ -242,101 +216,9 @@ namespace arbor_content
       if(NULL == pTool)
         return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-      m_ecalToolList.push_back(pTool);
+      m_toolList.push_back(pTool);
     }
 
-    algorithmToolList.clear();
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
-        "HCalConnectionTools", algorithmToolList));
-
-    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
-        endIter != iter ; ++iter)
-    {
-      ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);
-
-      if(NULL == pTool)
-        return pandora::STATUS_CODE_INVALID_PARAMETER;
-
-      m_hcalToolList.push_back(pTool);
-    }
-
-    algorithmToolList.clear();
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
-        "HCalConnectionTools2", algorithmToolList));
-
-    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
-        endIter != iter ; ++iter)
-    {
-      ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);
-
-      if(NULL == pTool)
-        return pandora::STATUS_CODE_INVALID_PARAMETER;
-
-      m_hcalToolList2.push_back(pTool);
-    }
-
-    algorithmToolList.clear();
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
-        "MuonConnectionTools", algorithmToolList));
-
-    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
-        endIter != iter ; ++iter)
-    {
-      ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);
-
-      if(NULL == pTool)
-        return pandora::STATUS_CODE_INVALID_PARAMETER;
-
-      m_muonToolList.push_back(pTool);
-    }
-
-	// just use this to load all tools ----
-    algorithmToolList.clear();
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ProcessAlgorithmToolList(*this, xmlHandle,
-        "AdditionalConnectionTools", algorithmToolList));
-
-    for(pandora::AlgorithmToolVector::const_iterator iter = algorithmToolList.begin(), endIter = algorithmToolList.end() ;
-        endIter != iter ; ++iter)
-    {
-      ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(*iter);
-
-      if(NULL == pTool)
-        return pandora::STATUS_CODE_INVALID_PARAMETER;
-
-      m_additionalToolList.push_back(pTool);
-    }
-	// to here ----
-
-    algorithmToolList.clear();
-
-    m_allowSingleHitClusters = false;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "AllowSingleHitClusters", m_allowSingleHitClusters));
-
-#ifdef ARBOR_PARALLEL
-    m_useMultithread = true;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "UseMultithread", m_useMultithread));
-#else
-    m_useMultithread = false;
-#endif
-
-    unsigned int nNonEmptyToolList = 0;
-
-    nNonEmptyToolList += m_ecalToolList.empty() ? 0 : 1;
-    nNonEmptyToolList += m_hcalToolList.empty() ? 0 : 1;
-    nNonEmptyToolList += m_muonToolList.empty() ? 0 : 1;
-
-    if(nNonEmptyToolList <= 1 && m_useMultithread)
-    {
-      std::cout << "Multi-threading disabled" << std::endl;
-      m_useMultithread = false;
-    }
-    
     m_useAsIndependent = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "UseAsIndependent", m_useAsIndependent));
@@ -344,7 +226,6 @@ namespace arbor_content
 
     return pandora::STATUS_CODE_SUCCESS;
   }
-
 
 } 
 
