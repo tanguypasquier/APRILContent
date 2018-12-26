@@ -203,25 +203,33 @@ namespace arbor_content
 
 	for( auto cluIter = pMCParticleList->begin(); cluIter != pMCParticleList->end(); ++cluIter )
 	{
-		int mcpPDG = (*cluIter)->GetParticleId();
+		if(*cluIter == nullptr) continue;
 
-		if(mcpPDG == 22) 
+		try
 		{
-			photonList.push_back( *cluIter );
+			int mcpPDG = (*cluIter)->GetParticleId();
+
+		    if(mcpPDG == 22) 
+		    {
+		    	photonList.push_back( *cluIter );
+		    }
+		    else
+		    {
+		    	int mcpCharge = pandora::PdgTable::GetParticleCharge( (*cluIter)->GetParticleId() );
+		    	bool isCharged = mcpCharge != 0;
+
+		    	if(isCharged)
+		    	{
+		    		chargedList.push_back( *cluIter );
+		    	}
+		    	else
+		    	{
+		    		neutralList.push_back( *cluIter );
+		    	}
+		    }
 		}
-		else
+        catch (pandora::StatusCodeException &)
 		{
-			int mcpCharge = pandora::PdgTable::GetParticleCharge( (*cluIter)->GetParticleId() );
-			bool isCharged = mcpCharge != 0;
-
-			if(isCharged)
-			{
-				chargedList.push_back( *cluIter );
-			}
-			else
-			{
-				neutralList.push_back( *cluIter );
-			}
 		}
 	}
 
