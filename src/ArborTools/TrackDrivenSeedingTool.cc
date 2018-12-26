@@ -41,6 +41,7 @@
 
 namespace arbor_content
 {
+  TrackCaloHitVector TrackDrivenSeedingTool::m_trackHitVector;
 
   pandora::StatusCode TrackDrivenSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
@@ -77,6 +78,8 @@ namespace arbor_content
 		}
 	}
 
+	m_trackHitVector.clear();
+
     //clock_t t0, t1;
 
 	//t0 = clock();
@@ -91,22 +94,70 @@ namespace arbor_content
 	  //if(fabs(pTrack->GetMomentumAtDca().GetMagnitude() - 5.15) > 0.01) continue;
 
       pandora::CaloHitVector caloHitVector;
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, &hitsInSearchRange, caloHitVector));
+      //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, &hitsInSearchRange, caloHitVector));
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, orderedCaloHitList, caloHitVector));
 
 	  // TODO
 	  // make relationship between track and calohitvector
 	  // it can be used for further track cluster association 
 	  // however it should be careful that the same calo hit may enter into different caloHitVector 
 	  // due to nearby tracks
+	  // or nearby neutral hit may enter into this connection
 
 	  // sort by layer
       std::sort(caloHitVector.begin(), caloHitVector.end(), SortingHelper::SortCaloHitsByLayer);
+
+	  m_trackHitVector[pTrack] = caloHitVector;
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(algorithm, pTrack, caloHitVector));
     }
 	//t1 = clock();
 
 	//std::cout << " time : " << t1 - t0 << std::endl;
+	// ad hoc
+	std::cout << "track init calohitvector size: " << m_trackHitVector.size() << std::endl;
+
+	for(auto trackHitsIter = m_trackHitVector.begin(); trackHitsIter != m_trackHitVector.end(); ++trackHitsIter)
+	{
+		auto track = trackHitsIter->first;
+		auto& caloHits = trackHitsIter->second;
+
+		std::cout << "track p : " << track->GetMomentumAtDca().GetMagnitude() << ", hits size: " << caloHits.size() << std::endl;
+
+		const pandora::MCParticle *pTrackMCParticle = nullptr;
+		const pandora::MCParticle *pCaloHitMCParticle = nullptr;
+
+	    try
+	    {
+           pTrackMCParticle = pandora::MCParticleHelper::GetMainMCParticle( track );
+		   std::cout << "track MCP : " << pTrackMCParticle << std::endl;
+	    }
+        catch (pandora::StatusCodeException &)
+        {
+        }
+
+		//
+		for(unsigned int iHit = 0; iHit < caloHits.size(); ++iHit)
+		{
+	        try
+	        {
+               pCaloHitMCParticle = pandora::MCParticleHelper::GetMainMCParticle( caloHits.at(iHit) );
+
+			   if(pCaloHitMCParticle != pTrackMCParticle )
+			   {
+				   std::cout << " *** WARNING ***  hit - track diff MCP" << std::endl;
+		           std::cout << "calo hit MCP : " << pCaloHitMCParticle << std::endl;
+			   }
+
+	        }
+            catch (pandora::StatusCodeException &)
+            {
+            }
+		}
+
+		std::cout << " ============================= " << std::endl;
+	}
+
     return pandora::STATUS_CODE_SUCCESS;
   }
 
@@ -166,6 +217,58 @@ namespace arbor_content
 
       caloHitVector.push_back(pCaloHit);
     }
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::OrderedCaloHitList& orderedCaloHitList,
+      pandora::CaloHitVector &caloHitVector)
+  {
+    const float bField(PandoraContentApi::GetPlugins(algorithm)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
+    const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
+        pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
+
+	for(auto orderedCaloHitListIter = orderedCaloHitList.begin(); orderedCaloHitListIter != orderedCaloHitList.end(); ++orderedCaloHitListIter)
+	{
+		int pseudoLayer = orderedCaloHitListIter->first;
+        if(pseudoLayer > m_maxInitialPseudoLayer) break;
+
+		auto hitsOnLayer = orderedCaloHitListIter->second;
+
+		const pandora::CaloHit* bestHit = nullptr;
+		float bestDistance = 1.e6;
+
+		for(auto hitIter = hitsOnLayer->begin(); hitIter != hitsOnLayer->end(); ++hitIter)
+		{
+            const pandora::CaloHit *const pCaloHit = *hitIter;
+
+            if( ! PandoraContentApi::IsAvailable<pandora::CaloHit>( algorithm, pCaloHit ) )
+              continue;
+
+            if(!m_shouldUseIsolatedHits && pCaloHit->IsIsolated())
+              continue;
+
+            pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
+
+            if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, pCaloHit->GetPositionVector(), projectionOnHelix))
+              continue;
+
+			float trackHitDistance = (projectionOnHelix-pCaloHit->GetPositionVector()).GetMagnitude() ;
+
+            if(trackHitDistance > m_maxInitialTrackDistance)
+              continue;
+
+			if(trackHitDistance < bestDistance)
+			{
+				bestHit = pCaloHit;
+				bestDistance = trackHitDistance;
+			}
+		}
+
+		if(bestHit != nullptr) caloHitVector.push_back(bestHit);
+	}
 
     return pandora::STATUS_CODE_SUCCESS;
   }

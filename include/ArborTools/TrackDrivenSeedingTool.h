@@ -37,6 +37,8 @@ namespace arbor_content
 class CaloHit;
 class Connector;
 
+typedef std::map<const pandora::Track* const, pandora::CaloHitVector> TrackCaloHitVector;
+
 /** 
  * @brief TrackDrivenSeedingTool class
  */ 
@@ -84,6 +86,9 @@ private:
 	pandora::StatusCode FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
 			pandora::CaloHitVector &caloHitVector);
 
+	pandora::StatusCode FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::OrderedCaloHitList& orderedCaloHitList,
+			pandora::CaloHitVector &caloHitVector);
+
 	const pandora::CartesianVector GetFromHitDirection(const arbor_content::CaloHit *const pCaloHit);
 
 	/**
@@ -97,6 +102,8 @@ private:
 	pandora::StatusCode ConnectCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack,
 			pandora::CaloHitVector &caloHitVector);
 
+	static inline TrackCaloHitVector& GetTrackAndInitCaloHits() { return m_trackHitVector; }
+
 private:
 	unsigned int                    m_maxInitialPseudoLayer;
 	float                           m_maxInitialTrackDistance;
@@ -109,6 +116,8 @@ private:
 	float                           m_maxDistanceToTrackCoarse;
 
 	bool                            m_shouldUseIsolatedHits;
+
+	static TrackCaloHitVector       m_trackHitVector;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
