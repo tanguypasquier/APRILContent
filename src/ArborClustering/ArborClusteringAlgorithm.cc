@@ -34,6 +34,7 @@
 #include "ArborTools/ConnectorAlgorithmTool.h"
 #include "ArborTools/ConnectorSeedingTool.h"
 #include "ArborHelpers/CaloHitRangeSearchHelper.h"
+#include "ArborHelpers/CaloHitNeighborSearchHelper.h"
 
 namespace arbor_content
 {
@@ -104,6 +105,9 @@ namespace arbor_content
 	CaloHitRangeSearchHelper::BuildHitCollectionOfEcalLayers(&m_ecalCaloHitList);
 	CaloHitRangeSearchHelper::BuildHitCollectionOfHcalLayers(&m_hcalCaloHitList);
 	CaloHitRangeSearchHelper::BuildHitCollectionOfMuonLayers(&m_muonCaloHitList);
+
+	//
+	CaloHitNeighborSearchHelper::BuildNeighborSearch(pCaloHitList);
 
 	std::cout << "ordered hit layer size: " << std::endl;
 	std::cout << " total: " << CaloHitRangeSearchHelper::GetOrderedCaloHitList()->size() << std::endl;

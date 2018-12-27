@@ -38,6 +38,7 @@
 #include "ArborObjects/Connector.h"
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/CaloHitRangeSearchHelper.h"
+#include "ArborHelpers/CaloHitNeighborSearchHelper.h"
 
 namespace arbor_content
 {
@@ -96,6 +97,30 @@ namespace arbor_content
       pandora::CaloHitVector caloHitVector;
       //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, &hitsInSearchRange, caloHitVector));
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, orderedCaloHitList, caloHitVector));
+
+#if 0
+	  // test KNN 
+	  std::cout << "00000000000000000" << std::endl;
+
+	  for(int iHit = 0; iHit < caloHitVector.size(); ++iHit)
+	  {
+		  auto pCaloHit = caloHitVector.at(iHit);
+
+		  int nNeighbor = 2;
+		  const pandora::CartesianVector& testPosition(pCaloHit->GetPositionVector());
+		  pandora::CaloHitList neighborHits;
+
+		  CaloHitNeighborSearchHelper::SearchNeighbourHits(testPosition, nNeighbor, neighborHits);
+
+		  std::cout << "========hit: " << testPosition.GetX() << ", " << testPosition.GetY() << ", " << testPosition.GetZ() << std::endl;
+
+		  for(auto iter = neighborHits.begin(); iter != neighborHits.end(); ++iter)
+		  {
+			  auto hitPos = (*iter)->GetPositionVector();
+			  std::cout << "               nb: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << std::endl;
+		  }
+	  }
+#endif
 
 	  // TODO
 	  // make relationship between track and calohitvector

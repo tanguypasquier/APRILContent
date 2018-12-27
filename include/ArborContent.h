@@ -65,6 +65,7 @@
 
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/CaloHitRangeSearchHelper.h"
+#include "ArborHelpers/CaloHitNeighborSearchHelper.h"
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/ClusterPropertiesHelper.h"
 #include "ArborHelpers/GeometryHelper.h"
