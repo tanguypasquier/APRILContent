@@ -83,8 +83,6 @@ private:
 	 *  @param  pInputCaloHitList the input calo hit list to go all over
 	 *  @param  caloHitVector the calo hits close to track extrapolation to receive
 	 */
-	pandora::StatusCode FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
-			pandora::CaloHitVector &caloHitVector);
 
 	pandora::StatusCode FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::OrderedCaloHitList& orderedCaloHitList,
 			pandora::CaloHitVector &caloHitVector);

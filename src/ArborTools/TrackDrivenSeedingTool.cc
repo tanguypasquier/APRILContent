@@ -54,30 +54,11 @@ namespace arbor_content
     if(pTrackList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
-	CaloHitRangeSearchHelper::m_fFillingTime = 0.;
-	CaloHitRangeSearchHelper::m_fGetttingTime = 0.;
-
     // ordered calo hit list
     pandora::OrderedCaloHitList* pOrderedCaloHitList = CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList();
 
 	//std::cout << "ptr: " << pOrderedCaloHitList << ", size: " << pOrderedCaloHitList->size() << std::endl;
 	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
-
-	pandora::CaloHitList hitsInSearchRange;
-
-	for(auto orderedCaloHitListIter = orderedCaloHitList.begin(); orderedCaloHitListIter != orderedCaloHitList.end(); ++orderedCaloHitListIter)
-	{
-		int pseudoLayer = orderedCaloHitListIter->first;
-        if(pseudoLayer > m_maxInitialPseudoLayer) break;
-
-		auto hitsOnLayer = orderedCaloHitListIter->second;
-
-		for(auto hitIter = hitsOnLayer->begin(); hitIter != hitsOnLayer->end(); ++hitIter)
-		{
-			hitsInSearchRange.push_back(*hitIter);
-			(*hitIter)->GetPseudoLayer();
-		}
-	}
 
 	m_trackHitVector.clear();
 
@@ -95,32 +76,7 @@ namespace arbor_content
 	  //if(fabs(pTrack->GetMomentumAtDca().GetMagnitude() - 5.15) > 0.01) continue;
 
       pandora::CaloHitVector caloHitVector;
-      //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, &hitsInSearchRange, caloHitVector));
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindInitialCaloHits(algorithm, pTrack, orderedCaloHitList, caloHitVector));
-
-#if 0
-	  // test KNN 
-	  std::cout << "00000000000000000" << std::endl;
-
-	  for(int iHit = 0; iHit < caloHitVector.size(); ++iHit)
-	  {
-		  auto pCaloHit = caloHitVector.at(iHit);
-
-		  int nNeighbor = 2;
-		  const pandora::CartesianVector& testPosition(pCaloHit->GetPositionVector());
-		  pandora::CaloHitList neighborHits;
-
-		  CaloHitNeighborSearchHelper::SearchNeighbourHits(testPosition, nNeighbor, neighborHits);
-
-		  std::cout << "========hit: " << testPosition.GetX() << ", " << testPosition.GetY() << ", " << testPosition.GetZ() << std::endl;
-
-		  for(auto iter = neighborHits.begin(); iter != neighborHits.end(); ++iter)
-		  {
-			  auto hitPos = (*iter)->GetPositionVector();
-			  std::cout << "               nb: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << std::endl;
-		  }
-	  }
-#endif
 
 	  // TODO
 	  // make relationship between track and calohitvector
@@ -140,48 +96,7 @@ namespace arbor_content
 
 	//std::cout << " time : " << t1 - t0 << std::endl;
 	// ad hoc
-	std::cout << "track init calohitvector size: " << m_trackHitVector.size() << std::endl;
 
-	for(auto trackHitsIter = m_trackHitVector.begin(); trackHitsIter != m_trackHitVector.end(); ++trackHitsIter)
-	{
-		auto track = trackHitsIter->first;
-		auto& caloHits = trackHitsIter->second;
-
-		std::cout << "track p : " << track->GetMomentumAtDca().GetMagnitude() << ", hits size: " << caloHits.size() << std::endl;
-
-		const pandora::MCParticle *pTrackMCParticle = nullptr;
-		const pandora::MCParticle *pCaloHitMCParticle = nullptr;
-
-	    try
-	    {
-           pTrackMCParticle = pandora::MCParticleHelper::GetMainMCParticle( track );
-		   std::cout << "track MCP : " << pTrackMCParticle << std::endl;
-	    }
-        catch (pandora::StatusCodeException &)
-        {
-        }
-
-		//
-		for(unsigned int iHit = 0; iHit < caloHits.size(); ++iHit)
-		{
-	        try
-	        {
-               pCaloHitMCParticle = pandora::MCParticleHelper::GetMainMCParticle( caloHits.at(iHit) );
-
-			   if(pCaloHitMCParticle != pTrackMCParticle )
-			   {
-				   std::cout << " *** WARNING ***  hit - track diff MCP" << std::endl;
-		           std::cout << "calo hit MCP : " << pCaloHitMCParticle << std::endl;
-			   }
-
-	        }
-            catch (pandora::StatusCodeException &)
-            {
-            }
-		}
-
-		std::cout << " ============================= " << std::endl;
-	}
 
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -210,44 +125,6 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::CaloHitList *const pInputCaloHitList,
-      pandora::CaloHitVector &caloHitVector)
-  {
-    const float bField(PandoraContentApi::GetPlugins(algorithm)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
-    const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
-        pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
-
-
-    for(pandora::CaloHitList::const_iterator iter = pInputCaloHitList->begin(), endIter = pInputCaloHitList->end() ;
-        endIter != iter ; ++iter)
-    {
-      const pandora::CaloHit *const pCaloHit = *iter;
-
-      if( ! PandoraContentApi::IsAvailable<pandora::CaloHit>( algorithm, pCaloHit ) )
-        continue;
-
-      if(pCaloHit->GetPseudoLayer() > m_maxInitialPseudoLayer)
-        continue;
-
-      if(!m_shouldUseIsolatedHits && pCaloHit->IsIsolated())
-        continue;
-
-      pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
-
-      if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, pCaloHit->GetPositionVector(), projectionOnHelix))
-        continue;
-
-      if((projectionOnHelix-pCaloHit->GetPositionVector()).GetMagnitude() > m_maxInitialTrackDistance)
-        continue;
-
-      caloHitVector.push_back(pCaloHit);
-    }
-
-    return pandora::STATUS_CODE_SUCCESS;
-  }
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
   pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::OrderedCaloHitList& orderedCaloHitList,
       pandora::CaloHitVector &caloHitVector)
   {
@@ -260,12 +137,16 @@ namespace arbor_content
 		int pseudoLayer = orderedCaloHitListIter->first;
         if(pseudoLayer > m_maxInitialPseudoLayer) break;
 
-		auto hitsOnLayer = orderedCaloHitListIter->second;
-
 		const pandora::CaloHit* bestHit = nullptr;
 		float bestDistance = 1.e6;
+        
+		float range = 100.;
+		pandora::CaloHitList hitsInRange;
+		pandora::CartesianVector trackPositionAtCalo = pTrack->GetTrackStateAtCalorimeter().GetPosition();
 
-		for(auto hitIter = hitsOnLayer->begin(); hitIter != hitsOnLayer->end(); ++hitIter)
+		CaloHitRangeSearchHelper::SearchHitsInLayer(trackPositionAtCalo, pseudoLayer, range, hitsInRange);
+
+		for(auto hitIter = hitsInRange.begin(); hitIter != hitsInRange.end(); ++hitIter)
 		{
             const pandora::CaloHit *const pCaloHit = *hitIter;
 
@@ -319,9 +200,9 @@ namespace arbor_content
 	//std::cout << "ptr: " << pOrderedCaloHitList << std::endl;
 	pandora::OrderedCaloHitList& orderedCaloHitList = *pOrderedCaloHitList;
 
-	int nInitHits = caloHitVector.size();
+	//int nInitHits = caloHitVector.size();
 
-	int firstLayer = -1;
+	//int firstLayer = -1;
 
 	//std::cout << "Track seeding hits: " << nInitHits << std::endl;
 
@@ -338,7 +219,7 @@ namespace arbor_content
       const pandora::CartesianVector &position(pCaloHit->GetPositionVector());
       const unsigned int pseudoLayer = pCaloHit->GetPseudoLayer();
 
-	  if(i==0) firstLayer = pseudoLayer;
+	  //if(i==0) firstLayer = pseudoLayer;
 
 #if 0
 	  if(i<=nInitHits)
@@ -378,16 +259,15 @@ namespace arbor_content
 
         if(!plIter->second->empty())
         {
-	  // TODO
           // create search range for each layer 
 
           const float range = 200.; // OK ???
 
 		  // use pseudo layer
-          int pseudoLayer = plIter->first;
+          int toPseudoLayer = plIter->first;
           pandora::CaloHitList hitsInRange;
 
-          CaloHitRangeSearchHelper::SearchHitsInLayer(position, pseudoLayer, range, hitsInRange);
+          CaloHitRangeSearchHelper::SearchHitsInLayer(position, toPseudoLayer, range, hitsInRange);
 	
           for(pandora::CaloHitList::const_iterator iter = hitsInRange.begin(), endIter = hitsInRange.end() ;
               endIter != iter ; ++iter)
