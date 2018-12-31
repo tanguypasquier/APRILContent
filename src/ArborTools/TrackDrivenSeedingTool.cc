@@ -63,8 +63,8 @@ namespace arbor_content
 	m_trackHitVector.clear();
 
     //clock_t t0, t1;
-
 	//t0 = clock();
+	
     for(pandora::TrackList::const_iterator trackIter = pTrackList->begin(), trackEndIter = pTrackList->end() ;
         trackEndIter != trackIter ; ++trackIter)
     {
@@ -92,14 +92,184 @@ namespace arbor_content
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ConnectCaloHits(algorithm, pTrack, caloHitVector));
     }
+
 	//t1 = clock();
-
 	//std::cout << " time : " << t1 - t0 << std::endl;
-	// ad hoc
-
+	
+    //CheckInitialTrackHit();
+	
+	CleanTrackInitHitsAssociation(algorithm);
 
     return pandora::STATUS_CODE_SUCCESS;
   }
+
+  void TrackDrivenSeedingTool::CheckInitialTrackHit() const
+  {
+	  std::cout << "TrackDrivenSeedingTool::CheckInitialTrackHit" << std::endl;
+
+      for(auto trackHitsIter = m_trackHitVector.begin(); trackHitsIter != m_trackHitVector.end(); ++trackHitsIter)
+      {
+          auto track = trackHitsIter->first;
+          auto& caloHits = trackHitsIter->second;
+          
+          std::cout << "track p : " << track->GetMomentumAtDca().GetMagnitude() << ", hits size: " << caloHits.size() << std::endl;
+          
+          const pandora::MCParticle *pTrackMCParticle = nullptr;
+          const pandora::MCParticle *pCaloHitMCParticle = nullptr;
+          
+          try
+          {
+			  pTrackMCParticle = pandora::MCParticleHelper::GetMainMCParticle( track );
+			  //std::cout << "track MCP : " << pTrackMCParticle << std::endl;
+          }
+          catch (pandora::StatusCodeException &)
+          {
+          }
+          
+          //
+          for(unsigned int iHit = 0; iHit < caloHits.size(); ++iHit)
+          {
+			  std::cout << " ******** hit: " << caloHits.at(iHit) << std::endl;
+              try
+              {
+				  pCaloHitMCParticle = pandora::MCParticleHelper::GetMainMCParticle( caloHits.at(iHit) );
+              
+                  if(pCaloHitMCParticle != pTrackMCParticle )
+                  {
+                      std::cout << " *** WARNING *** hit - track diff MCP" << std::endl;
+                      //std::cout << "calo hit MCP : " << pCaloHitMCParticle << std::endl;
+                      std::cout << "calo hit : " << caloHits.at(iHit) << ", track: " << track << std::endl;
+                      
+                      const pandora::CartesianVector & pos = track->GetTrackStateAtCalorimeter().GetPosition();
+                      
+                      std::cout << "track on calo pos: " << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << std::endl;
+                  }
+          
+              }
+              catch (pandora::StatusCodeException &)
+              {
+              }
+          }
+          
+          std::cout << " ============================= " << std::endl;
+      }
+  }
+
+
+  void TrackDrivenSeedingTool::CleanTrackInitHitsAssociation(const pandora::Algorithm &algorithm) const
+  {
+	  // create a map from hit to track
+      std::map< const pandora::CaloHit*, std::list<const pandora::Track*> > caloHitTracks;
+      
+      for(auto trackHitsIter = m_trackHitVector.begin(); trackHitsIter != m_trackHitVector.end(); ++trackHitsIter)
+      {
+          auto track = trackHitsIter->first;
+          auto& caloHits = trackHitsIter->second;
+          
+          for(unsigned int iHit = 0; iHit < caloHits.size(); ++iHit)
+          {
+              auto pCaloHit = caloHits.at(iHit);
+              
+              if(caloHitTracks.find(pCaloHit) == caloHitTracks.end())
+              {
+                  std::list<const pandora::Track*> trackList;
+                  trackList.push_back(track);
+                  caloHitTracks[pCaloHit] = trackList;
+              }
+              else
+              {
+                  caloHitTracks[pCaloHit].push_back(track);
+              }
+          }
+      }
+      
+	  // check each calo hit:
+	  // if a hit mapped to more than one track
+	  // then this mapping should be corrected
+      for(auto hitIter = caloHitTracks.begin(); hitIter != caloHitTracks.end(); ++hitIter)
+      {
+		  auto caloHit = hitIter->first;
+          auto tracks = hitIter->second;
+
+          if(tracks.size() > 1)
+          {
+#if 0
+              std::cout << "warning: track size > 1, calo hit: " << hitIter->first << std::endl;
+
+              for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
+              {
+                  std::cout << " ---> track: " << *trackIter << ", p = " << (*trackIter)->GetMomentumAtDca().GetMagnitude() 
+					  << ", GetEndCap: " << (*trackIter)->IsProjectedToEndCap() << std::endl;
+              }
+#endif
+
+			  // get the closest track to hit
+			  const pandora::Track* bestTrackToHit = nullptr;
+			  float bestTrackHitDistance = 1.e6;
+
+              for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
+			  {
+				  auto testingTrack = *trackIter;
+
+                  pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
+    
+				  const float bField(PandoraContentApi::GetPlugins(algorithm)->GetBFieldPlugin()->GetBField(
+							  pandora::CartesianVector(0.f, 0.f, 0.f)));
+
+				  const pandora::Helix helix(testingTrack->GetTrackStateAtCalorimeter().GetPosition(),
+						  testingTrack->GetTrackStateAtCalorimeter().GetMomentum(), testingTrack->GetCharge(), bField);
+
+                  if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, caloHit->GetPositionVector(), projectionOnHelix))
+                    continue;
+
+			      float trackHitDistance = (projectionOnHelix - caloHit->GetPositionVector()).GetMagnitude();
+
+				  if(trackHitDistance < bestTrackHitDistance)
+				  {
+					  bestTrackToHit = testingTrack;
+					  bestTrackHitDistance = trackHitDistance;
+				  }
+			  }
+
+			  // remove the hit which badly associated to track
+              for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
+              {
+				  auto testingTrack = *trackIter;
+                  auto trackIterInMap = m_trackHitVector.find(testingTrack);
+
+				  if(trackIterInMap == m_trackHitVector.end() ) continue;
+
+				  auto suspiciousTrack = trackIterInMap->first;
+
+				  if( (suspiciousTrack != bestTrackToHit) && (!IsSiblingTrack(bestTrackToHit, suspiciousTrack)) ) 
+				  {
+                     auto& associatedCaloHits = trackIterInMap->second;
+					 auto foundCaloHit = std::find(associatedCaloHits.begin(), associatedCaloHits.end(), caloHit);
+
+					 if(foundCaloHit != associatedCaloHits.end())
+					 {
+#if 0
+				         std::cout << "remove hit: " << *foundCaloHit << " from track: " << suspiciousTrack
+							 << ", p = " << suspiciousTrack->GetMomentumAtDca().GetMagnitude() 
+					         << ", GetEndCap: " << suspiciousTrack->IsProjectedToEndCap() << std::endl;
+#endif
+						 associatedCaloHits.erase(foundCaloHit);
+					 }
+				  }
+			  } 
+
+          } // if a hit is associated to more than one track
+
+      } // for each init calo hit 
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+	bool TrackDrivenSeedingTool::IsSiblingTrack(const pandora::Track *const trackA, const pandora::Track *const trackB) const
+	{
+		auto& siblingTrackList = trackA->GetSiblingList();
+
+		return ( std::find(siblingTrackList.begin(), siblingTrackList.end(), trackB) != siblingTrackList.end()  ? true : false) ;
+	}
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 	const pandora::CartesianVector TrackDrivenSeedingTool::GetFromHitDirection(const arbor_content::CaloHit *const pCaloHit)

@@ -100,6 +100,12 @@ private:
 	pandora::StatusCode ConnectCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack,
 			pandora::CaloHitVector &caloHitVector);
 
+    void CheckInitialTrackHit() const;
+
+    void CleanTrackInitHitsAssociation(const pandora::Algorithm &algorithm) const;
+
+	bool IsSiblingTrack(const pandora::Track *const trackA, const pandora::Track *const trackB) const;
+
 	static inline TrackCaloHitVector& GetTrackAndInitCaloHits() { return m_trackHitVector; }
 
 private:
