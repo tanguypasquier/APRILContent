@@ -39,6 +39,9 @@
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/CaloHitRangeSearchHelper.h"
 #include "ArborHelpers/CaloHitNeighborSearchHelper.h"
+#include "ArborHelpers/HistogramHelper.h"
+
+#include "ArborUtility/EventPreparationAlgorithm.h"
 
 namespace arbor_content
 {
@@ -96,23 +99,24 @@ namespace arbor_content
 	//t1 = clock();
 	//std::cout << " time : " << t1 - t0 << std::endl;
 	
-    //CheckInitialTrackHit();
-	
 	CleanTrackInitHitsAssociation(algorithm);
+
+    CheckInitialTrackHit();
 
     return pandora::STATUS_CODE_SUCCESS;
   }
 
   void TrackDrivenSeedingTool::CheckInitialTrackHit() const
   {
-	  std::cout << "TrackDrivenSeedingTool::CheckInitialTrackHit" << std::endl;
+	  //std::cout << "TrackDrivenSeedingTool::CheckInitialTrackHit" << std::endl;
+      extern HistogramManager AHM;
 
       for(auto trackHitsIter = m_trackHitVector.begin(); trackHitsIter != m_trackHitVector.end(); ++trackHitsIter)
       {
           auto track = trackHitsIter->first;
           auto& caloHits = trackHitsIter->second;
           
-          std::cout << "track p : " << track->GetMomentumAtDca().GetMagnitude() << ", hits size: " << caloHits.size() << std::endl;
+          //std::cout << "track p : " << track->GetMomentumAtDca().GetMagnitude() << ", hits size: " << caloHits.size() << std::endl;
           
           const pandora::MCParticle *pTrackMCParticle = nullptr;
           const pandora::MCParticle *pCaloHitMCParticle = nullptr;
@@ -127,31 +131,51 @@ namespace arbor_content
           }
           
           //
+		  int nRightCaloHit = 0;
+
           for(unsigned int iHit = 0; iHit < caloHits.size(); ++iHit)
           {
-			  std::cout << " ******** hit: " << caloHits.at(iHit) << std::endl;
+			  //std::cout << " ******** hit: " << caloHits.at(iHit) << std::endl;
               try
               {
 				  pCaloHitMCParticle = pandora::MCParticleHelper::GetMainMCParticle( caloHits.at(iHit) );
               
                   if(pCaloHitMCParticle != pTrackMCParticle )
                   {
-                      std::cout << " *** WARNING *** hit - track diff MCP" << std::endl;
+                      std::cout << " *** WARNING *** Event: " << EventPreparationAlgorithm::GetEventNumber() 
+						  << " hit - track diff MCP" << std::endl;
                       //std::cout << "calo hit MCP : " << pCaloHitMCParticle << std::endl;
-                      std::cout << "calo hit : " << caloHits.at(iHit) << ", track: " << track << std::endl;
+                      std::cout << "calo hit : " << caloHits.at(iHit) << ", track: " << track << ", p: " 
+						  << track->GetMomentumAtDca().GetMagnitude() << ", reach endcap: " 
+						  << track->IsProjectedToEndCap() << std::endl;
                       
                       const pandora::CartesianVector & pos = track->GetTrackStateAtCalorimeter().GetPosition();
-                      
+
                       std::cout << "track on calo pos: " << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << std::endl;
                   }
+				  else
+				  {
+					  ++nRightCaloHit;
+				  }
           
               }
               catch (pandora::StatusCodeException &)
               {
               }
           }
+
+		  ///////////////////////////////
+	      std::vector<float> vars;
+	      vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+	      vars.push_back( track->GetMomentumAtDca().GetMagnitude() );
+		  vars.push_back( float(track->IsProjectedToEndCap()) );
+		  vars.push_back( float(caloHits.size()) );
+		  vars.push_back( float(nRightCaloHit) );
+	
+	      AHM.CreateFill("TrackAndInitHits", "evtNumber:trackMomentum:reachEndcap:nInitCaloHit:nRightCaloHit", vars);
+		  ///////////////////////////////
           
-          std::cout << " ============================= " << std::endl;
+          //std::cout << " ============================= " << std::endl;
       }
   }
 
