@@ -48,6 +48,8 @@ public:
         pandora::Algorithm *CreateAlgorithm() const;
     };
 
+	static inline int GetEventNumber() { return m_evtNumber; }
+
 private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
@@ -62,6 +64,8 @@ private:
     std::string     m_replacementCaloHitListName;   ///< The replacement calo hit list name
 
     bool            m_mergeECalHCalCaloHitLists;    ///< Whether the ecal and hcal calo hit list have to merged
+
+	static int      m_evtNumber;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

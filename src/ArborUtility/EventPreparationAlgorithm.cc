@@ -33,8 +33,12 @@
 namespace arbor_content
 {
 
+int EventPreparationAlgorithm::m_evtNumber = 0;
+
 pandora::StatusCode EventPreparationAlgorithm::Run()
 {
+	++m_evtNumber;
+
     // Filter current track list to select tracks to be used during clustering
     const pandora::TrackList *pCurrentTrackList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCurrentTrackList));
