@@ -322,9 +322,13 @@ namespace arbor_content
   pandora::StatusCode TrackDrivenSeedingTool::FindInitialCaloHits(const pandora::Algorithm &algorithm, const pandora::Track *pTrack, const pandora::OrderedCaloHitList& orderedCaloHitList,
       pandora::CaloHitVector &caloHitVector)
   {
+	//if(fabs(pTrack->GetMomentumAtDca().GetMagnitude() - 63.6429) > 0.1) return pandora::STATUS_CODE_SUCCESS;
+
     const float bField(PandoraContentApi::GetPlugins(algorithm)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
     const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
         pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
+
+	//std::cout << "track p: " << pTrack->GetMomentumAtDca().GetMagnitude() << std::endl;
 
 	for(auto orderedCaloHitListIter = orderedCaloHitList.begin(); orderedCaloHitListIter != orderedCaloHitList.end(); ++orderedCaloHitListIter)
 	{
@@ -334,11 +338,18 @@ namespace arbor_content
 		const pandora::CaloHit* bestHit = nullptr;
 		float bestDistance = 1.e6;
         
+		// TODO
+		// the reference point and range can be updated after a hit is found
 		float range = 100.;
 		pandora::CaloHitList hitsInRange;
 		pandora::CartesianVector trackPositionAtCalo = pTrack->GetTrackStateAtCalorimeter().GetPosition();
 
 		CaloHitRangeSearchHelper::SearchHitsInLayer(trackPositionAtCalo, pseudoLayer, range, hitsInRange);
+#if 0
+		std::cout << "layer: " << pseudoLayer << ", hits in range: " << hitsInRange.size() 
+			<< ", track pos on calo: " << trackPositionAtCalo.GetX() << ", " << trackPositionAtCalo.GetY() 
+			<< ", " << trackPositionAtCalo.GetZ() << std::endl;
+#endif
 
 		for(auto hitIter = hitsInRange.begin(); hitIter != hitsInRange.end(); ++hitIter)
 		{
@@ -350,12 +361,13 @@ namespace arbor_content
             if(!m_shouldUseIsolatedHits && pCaloHit->IsIsolated())
               continue;
 
-            pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
+			pandora::CartesianVector thDistance(0., 0., 0.);
+			float genericTime = 0.;
 
-            if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, pCaloHit->GetPositionVector(), projectionOnHelix))
-              continue;
+			if(pandora::STATUS_CODE_SUCCESS != helix.GetDistanceToPoint(pCaloHit->GetPositionVector(), thDistance, genericTime))
+				continue;
 
-			float trackHitDistance = (projectionOnHelix-pCaloHit->GetPositionVector()).GetMagnitude() ;
+			float trackHitDistance = thDistance.GetMagnitude();
 
             if(trackHitDistance > m_maxInitialTrackDistance)
               continue;
