@@ -239,12 +239,13 @@ namespace arbor_content
           const pandora::Granularity granularity(pGeometryManager->GetHitTypeGranularity(pCaloHit->GetHitType()));
           const float maxDistanceToHelix(granularity <= pandora::FINE ? m_isolationMaxDistanceToHelixFine : m_isolationMaxDistanceToHelixCoarse);
 
-          pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
+		  pandora::CartesianVector thDistance(0., 0., 0.);
+		  float genericTime = 0.;
 
-          if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, pCaloHit->GetPositionVector(), projectionOnHelix))
-            continue;
+		  if(pandora::STATUS_CODE_SUCCESS != helix.GetDistanceToPoint(pCaloHit->GetPositionVector(), thDistance, genericTime))
+			continue;
 
-          const float distanceToHelix((pCaloHit->GetPositionVector()-projectionOnHelix).GetMagnitude());
+		  float distanceToHelix = thDistance.GetMagnitude();
 
           // un-flag isolated hit if near helix
           if(distanceToHelix < maxDistanceToHelix)
