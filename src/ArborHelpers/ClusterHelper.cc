@@ -491,9 +491,13 @@ namespace arbor_content
       if(trackHitAngle > (2*M_PI)/3.f)
         continue;
 
-      pandora::CartesianVector projectionOnHelix(0.f, 0.f, 0.f);
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnHelix(helix, pCaloHit->GetPositionVector(), projectionOnHelix));
-      const float hitDistanceToHelix((pCaloHit->GetPositionVector()-projectionOnHelix).GetMagnitude());
+	  pandora::CartesianVector thDistance(0., 0., 0.);
+	  float genericTime = 0.;
+
+	  if(pandora::STATUS_CODE_SUCCESS != helix.GetDistanceToPoint(pCaloHit->GetPositionVector(), thDistance, genericTime))
+	  	continue;
+
+	  const float hitDistanceToHelix = thDistance.GetMagnitude();
 
       if(hitDistanceToHelix < maxTransverseDistance)
       {

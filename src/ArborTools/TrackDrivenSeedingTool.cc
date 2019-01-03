@@ -242,11 +242,14 @@ namespace arbor_content
 
 				  const pandora::Helix helix(testingTrack->GetTrackStateAtCalorimeter().GetPosition(),
 						  testingTrack->GetTrackStateAtCalorimeter().GetMomentum(), testingTrack->GetCharge(), bField);
+				 
+			      pandora::CartesianVector thDistance(0., 0., 0.);
+			      float genericTime = 0.;
 
-                  if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, caloHit->GetPositionVector(), projectionOnHelix))
-                    continue;
+			      if(pandora::STATUS_CODE_SUCCESS != helix.GetDistanceToPoint(caloHit->GetPositionVector(), thDistance, genericTime))
+			      	continue;
 
-			      float trackHitDistance = (projectionOnHelix - caloHit->GetPositionVector()).GetMagnitude();
+			      float trackHitDistance = thDistance.GetMagnitude();
 
 				  if(trackHitDistance < bestTrackHitDistance)
 				  {
@@ -434,12 +437,7 @@ namespace arbor_content
 	  }
 #endif
 
-      pandora::CartesianVector helixProjection(0.f, 0.f, 0.f);
-
-      if(pandora::STATUS_CODE_SUCCESS != GeometryHelper::GetProjectionOnHelix(helix, position, helixProjection))
-        continue;
-
-      const pandora::CartesianVector extrapolatedMomentum(helix.GetExtrapolatedMomentum(helixProjection));
+      const pandora::CartesianVector extrapolatedMomentum( helix.GetExtrapolatedMomentum(position) );
       //const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
 
 	  // the layer of the starting hit
