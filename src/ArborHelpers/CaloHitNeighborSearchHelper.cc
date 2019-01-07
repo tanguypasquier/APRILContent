@@ -44,40 +44,59 @@ namespace arbor_content
 	pandora::CaloHitVector CaloHitNeighborSearchHelper::m_caloHitVector;
 	mlpack::neighbor::KNN CaloHitNeighborSearchHelper::m_neighborSearch(m_caloHitsMatrix);
 	CaloKNN CaloHitNeighborSearchHelper::m_neighborSearch4D(m_caloHitsMatrix4D);
+	CaloDBSCAN CaloHitNeighborSearchHelper::m_caloDBSCAN(20., 4);
 
   //--------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode CaloHitNeighborSearchHelper::FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix,
-		  arma::mat& caloHitsMatrix4D)
+  pandora::StatusCode CaloHitNeighborSearchHelper::FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix)
   {
       arma::mat matrix(3, 1);
-      arma::mat matrix4D(4, 1);
 
 	  // first hit 
 	  pandora::CartesianVector caloHitPosition0 = caloHitVector.at(0)->GetPositionVector();
 	  matrix.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ() } );
-	  matrix4D.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ(), 
-			  caloHitVector.at(0)->GetPseudoLayer() } );
 
 	  // other hits
 	  //std::cout << "caloHitVector.size : " << caloHitVector.size() << std::endl;
 	  matrix.insert_cols(1, caloHitVector.size() - 1); 
-	  matrix4D.insert_cols(1, caloHitVector.size() - 1); 
 
 	  for(int i = 1; i < caloHitVector.size(); ++i)
 	  {
 	      pandora::CartesianVector caloHitPosition = caloHitVector.at(i)->GetPositionVector();
 	      matrix.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ() } );
-	      matrix4D.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ(),
-				 caloHitVector.at(i)->GetPseudoLayer() } );
 	  }
 
 	  caloHitsMatrix = matrix;
-	  caloHitsMatrix4D = matrix4D;
 	  
 	  return pandora::STATUS_CODE_SUCCESS;
   }
 
+  //--------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode CaloHitNeighborSearchHelper::FillMatix4DFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix4D)
+  {
+      arma::mat matrix4D(4, 1);
+
+	  // first hit 
+	  pandora::CartesianVector caloHitPosition0 = caloHitVector.at(0)->GetPositionVector();
+	  matrix4D.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ(), 
+			  caloHitVector.at(0)->GetPseudoLayer() } );
+
+	  // other hits
+	  //std::cout << "caloHitVector.size : " << caloHitVector.size() << std::endl;
+	  matrix4D.insert_cols(1, caloHitVector.size() - 1); 
+
+	  for(int i = 1; i < caloHitVector.size(); ++i)
+	  {
+	      pandora::CartesianVector caloHitPosition = caloHitVector.at(i)->GetPositionVector();
+	      matrix4D.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ(),
+				 caloHitVector.at(i)->GetPseudoLayer() } );
+	  }
+
+	  caloHitsMatrix4D = matrix4D;
+	  
+	  return pandora::STATUS_CODE_SUCCESS;
+  }
   //--------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode CaloHitNeighborSearchHelper::BuildNeighborSearch(const pandora::CaloHitList *const pCaloHitList)
@@ -88,7 +107,8 @@ namespace arbor_content
 		  m_caloHitVector.clear();
 	      m_caloHitVector.insert(m_caloHitVector.begin(), pCaloHitList->begin(), pCaloHitList->end());
 
-		  FillMatixFromCaloHits(m_caloHitVector, m_caloHitsMatrix, m_caloHitsMatrix4D);
+		  FillMatixFromCaloHits(m_caloHitVector, m_caloHitsMatrix);
+		  FillMatix4DFromCaloHits(m_caloHitVector, m_caloHitsMatrix4D);
 
 		  std::cout << "FillMatixFromCaloHits done " << std::endl;
 
@@ -178,6 +198,54 @@ namespace arbor_content
 		neighborHits.push_back( m_caloHitVector.at(neighbor) );
       }
 
+   	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  pandora::StatusCode CaloHitNeighborSearchHelper::ClusteringByDBSCAN(const pandora::CaloHitVector& caloHitVector, 
+		  std::vector<pandora::CaloHitVector>& hitsForCluster)
+  {
+	  //m_caloDBSCAN = CaloDBSCAN(22., 5);
+	  arma::mat caloHitsMatrix4D;
+
+      FillMatix4DFromCaloHits(caloHitVector, caloHitsMatrix4D);
+
+	  arma::Row< size_t > clu;
+	  m_caloDBSCAN.Cluster(caloHitsMatrix4D, clu);
+
+	  hitsForCluster.clear();
+	  hitsForCluster.resize(clu.size());
+
+	  unsigned long noCluster = (unsigned long)-1;
+
+	  int nClusters = 0;
+
+	  for(int i = 0; i < clu.size(); ++i)
+      {   
+		  unsigned long cluIndex = (unsigned long)clu[i];
+
+          if (cluIndex != noCluster)
+          {
+			  auto caloHit = caloHitVector.at(i);
+			  auto hitPos = caloHit->GetPositionVector();
+			  auto layer = caloHit->GetPseudoLayer();
+
+			  hitsForCluster.at(cluIndex).push_back(caloHit);
+
+              std::cout << " --- " << i << ": " << clu[i] << ", caloHit: " << caloHit 
+				  << ", X: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << ", layer: " << layer << std::endl;
+
+			  if(cluIndex >= nClusters) ++nClusters;
+          }
+          else
+          {
+              std::cout << " --- " << i << ": no cluter" << std::endl;
+          }
+      }
+
+	  std::cout << "nCluster: " << nClusters << std::endl;
+
+	  hitsForCluster.resize(nClusters);
+ 
    	  return pandora::STATUS_CODE_SUCCESS;
   }
 

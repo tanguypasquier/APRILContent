@@ -43,12 +43,16 @@
 #include <mlpack/core/math/range.hpp>
 #include <mlpack/methods/neighbor_search/neighbor_search.hpp>
 
+#include <mlpack/methods/dbscan/dbscan.hpp>
+
 namespace pandora { class Algorithm; class CaloHit; class Track; }
 
 namespace arbor_content
 {
 
 typedef mlpack::neighbor::NeighborSearch<mlpack::neighbor::NearestNeighborSort, CaloMetric, arma::mat, mlpack::tree::MeanSplitBallTree> CaloKNN;
+
+typedef mlpack::dbscan::DBSCAN< mlpack::range::RangeSearch<CaloMetric, arma::mat, mlpack::tree::MeanSplitBallTree> > CaloDBSCAN;
 
 /** 
  * @brief CaloHitNeighborSearchHelper class
@@ -63,11 +67,13 @@ public:
     static pandora::StatusCode SearchNeighbourHits(pandora::CartesianVector testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
   
 	static pandora::StatusCode SearchNeighbourHits(std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
+  
+	static pandora::StatusCode ClusteringByDBSCAN(const pandora::CaloHitVector& caloHitVector, std::vector<pandora::CaloHitVector>& hitsForCluster);
 
 private:
 
-    static pandora::StatusCode FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix, 
-			arma::mat& caloHitsMatrix4D);
+    static pandora::StatusCode FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix);
+	static pandora::StatusCode FillMatix4DFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix4D);
 
 	static arma::mat m_caloHitsMatrix;
 	static arma::mat m_caloHitsMatrix4D; // store calohit in 4D (x, y, z, layer)
@@ -80,6 +86,8 @@ private:
 
 	static mlpack::neighbor::KNN m_neighborSearch;
 	static CaloKNN m_neighborSearch4D;
+
+	static CaloDBSCAN m_caloDBSCAN;
 };
 
 } 
