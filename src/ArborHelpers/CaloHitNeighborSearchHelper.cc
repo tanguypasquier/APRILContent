@@ -39,31 +39,41 @@ using namespace mlpack::math;
 namespace arbor_content
 {
 	arma::mat CaloHitNeighborSearchHelper::m_caloHitsMatrix(3,1);
+	arma::mat CaloHitNeighborSearchHelper::m_caloHitsMatrix4D(4,1);
 	const pandora::CaloHitList* CaloHitNeighborSearchHelper::m_pCaloHitList(nullptr);
 	pandora::CaloHitVector CaloHitNeighborSearchHelper::m_caloHitVector;
 	mlpack::neighbor::KNN CaloHitNeighborSearchHelper::m_neighborSearch(m_caloHitsMatrix);
+	CaloKNN CaloHitNeighborSearchHelper::m_neighborSearch4D(m_caloHitsMatrix4D);
 
   //--------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode CaloHitNeighborSearchHelper::FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix)
+  pandora::StatusCode CaloHitNeighborSearchHelper::FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix,
+		  arma::mat& caloHitsMatrix4D)
   {
-	  // first hit 
       arma::mat matrix(3, 1);
+      arma::mat matrix4D(4, 1);
 
+	  // first hit 
 	  pandora::CartesianVector caloHitPosition0 = caloHitVector.at(0)->GetPositionVector();
 	  matrix.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ() } );
+	  matrix4D.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ(), 
+			  caloHitVector.at(0)->GetPseudoLayer() } );
 
 	  // other hits
 	  //std::cout << "caloHitVector.size : " << caloHitVector.size() << std::endl;
 	  matrix.insert_cols(1, caloHitVector.size() - 1); 
+	  matrix4D.insert_cols(1, caloHitVector.size() - 1); 
 
 	  for(int i = 1; i < caloHitVector.size(); ++i)
 	  {
 	      pandora::CartesianVector caloHitPosition = caloHitVector.at(i)->GetPositionVector();
 	      matrix.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ() } );
+	      matrix4D.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ(),
+				 caloHitVector.at(i)->GetPseudoLayer() } );
 	  }
 
 	  caloHitsMatrix = matrix;
+	  caloHitsMatrix4D = matrix4D;
 	  
 	  return pandora::STATUS_CODE_SUCCESS;
   }
@@ -77,10 +87,17 @@ namespace arbor_content
 		  std::cout << "build new matrix for NeighborSearch..." << std::endl;
 		  m_caloHitVector.clear();
 	      m_caloHitVector.insert(m_caloHitVector.begin(), pCaloHitList->begin(), pCaloHitList->end());
-		  FillMatixFromCaloHits(m_caloHitVector, m_caloHitsMatrix);
+
+		  FillMatixFromCaloHits(m_caloHitVector, m_caloHitsMatrix, m_caloHitsMatrix4D);
+
+		  std::cout << "FillMatixFromCaloHits done " << std::endl;
 
 	      // the relatively time-comsuming part
 	      m_neighborSearch.Train(m_caloHitsMatrix);
+		  std::cout << "m_neighborSearch.Train done " << std::endl;
+
+	      m_neighborSearch4D.Train(m_caloHitsMatrix4D);
+		  std::cout << "m_neighborSearch4D.Train done " << std::endl;
 	  
 		  m_pCaloHitList = pCaloHitList;
 	  }
@@ -106,6 +123,45 @@ namespace arbor_content
 	  arma::mat resultingDistances;
 
       m_neighborSearch.Search(testPoint, nNeighbor, resultingNeighbors, resultingDistances);
+
+      for(size_t j=0; j < resultingNeighbors.n_elem; ++j)
+      {
+      	size_t neighbor = resultingNeighbors[j];
+      	double hitsDist = resultingDistances[j];
+
+#if 0
+   	    auto posVec = m_caloHitVector.at(neighbor)->GetPositionVector();
+   
+      	std::cout <<  "    -> neighbor " << neighbor << ", hits distance: " << hitsDist 
+   	  	 << ", X = " << posVec.GetX() << ", " << posVec.GetY() << ", " << posVec.GetZ() << std::endl;
+#endif
+
+		neighborHits.push_back( m_caloHitVector.at(neighbor) );
+      }
+
+   	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  pandora::StatusCode CaloHitNeighborSearchHelper::SearchNeighbourHits(std::vector<float> testPosition, int nNeighbor, 
+		  pandora::CaloHitList& neighborHits)
+  {
+	  neighborHits.clear();
+
+	  /////
+      arma::mat testPoint(4, 1);
+
+	  testPoint.col(0)[0] = testPosition.at(0);
+	  testPoint.col(0)[1] = testPosition.at(1);
+	  testPoint.col(0)[2] = testPosition.at(2);
+	  testPoint.col(0)[3] = testPosition.at(3);
+
+	  //std::cout << "point: " << testPoint.col(0)[0] << ", " << testPoint.col(0)[1] << ", " << testPoint.col(0)[2] 
+		//  << ", " << testPoint.col(0)[3] << std::endl;
+
+	  arma::Mat<size_t> resultingNeighbors;
+	  arma::mat resultingDistances;
+
+      m_neighborSearch4D.Search(testPoint, nNeighbor, resultingNeighbors, resultingDistances);
 
       for(size_t j=0; j < resultingNeighbors.n_elem; ++j)
       {
