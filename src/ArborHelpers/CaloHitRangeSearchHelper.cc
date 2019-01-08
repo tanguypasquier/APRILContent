@@ -59,6 +59,7 @@ namespace arbor_content
 
 	//
 	mlpack::range::RangeSearch<> CaloHitRangeSearchHelper::m_rangeSearch(m_caloHitsMatrix);
+	CaloRangeSearch CaloHitRangeSearchHelper::m_caloRangeSearch(arma::mat(4,1));
 
 	std::vector< mlpack::range::RangeSearch<> > CaloHitRangeSearchHelper::m_rangeSearchOfLayers;
 	std::vector< mlpack::range::RangeSearch<> > CaloHitRangeSearchHelper::m_ecalRangeSearchOfLayers;
@@ -95,6 +96,33 @@ namespace arbor_content
 	  }
 
 	  caloHitsMatrix = matrix;
+	  
+	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode CaloHitRangeSearchHelper::FillMatix4DFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix4D)
+  {
+      arma::mat matrix4D(4, 1);
+
+	  // first hit 
+	  pandora::CartesianVector caloHitPosition0 = caloHitVector.at(0)->GetPositionVector();
+	  matrix4D.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ(), 
+			  caloHitVector.at(0)->GetPseudoLayer() } );
+
+	  // other hits
+	  //std::cout << "caloHitVector.size : " << caloHitVector.size() << std::endl;
+	  matrix4D.insert_cols(1, caloHitVector.size() - 1); 
+
+	  for(int i = 1; i < caloHitVector.size(); ++i)
+	  {
+	      pandora::CartesianVector caloHitPosition = caloHitVector.at(i)->GetPositionVector();
+	      matrix4D.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ(),
+				 caloHitVector.at(i)->GetPseudoLayer() } );
+	  }
+
+	  caloHitsMatrix4D = matrix4D;
 	  
 	  return pandora::STATUS_CODE_SUCCESS;
   }
@@ -258,6 +286,67 @@ namespace arbor_content
 	  // TODO
 	  // may be sorted by distance
    
+      for(size_t j=0; j < neighbors.size(); ++j)
+      {
+      	size_t neighbor = neighbors.at(j);
+      	double hitsDist = distances.at(j);
+
+#if 0
+   	    auto posVec = m_caloHitVector.at(neighbor)->GetPositionVector();
+   
+      	std::cout <<  "    -> neighbor " << neighbor << ", hits distance: " << hitsDist 
+   	  	 << ", X = " << posVec.GetX() << ", " << posVec.GetY() << ", " << posVec.GetZ() << std::endl;
+#endif
+
+		hitsInRange.push_back( caloHitVector.at(neighbor) );
+      }
+
+   	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode CaloHitRangeSearchHelper::BuildCaloRangeSearch(const pandora::CaloHitVector& caloHitVector)
+  {
+	  arma::mat caloHitsMatrix4D;
+	  FillMatix4DFromCaloHits(caloHitVector, caloHitsMatrix4D);
+
+      m_caloRangeSearch.Train(caloHitsMatrix4D);
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode CaloHitRangeSearchHelper::SearchHitsInRange4D(const pandora::CaloHitVector& caloHitVector, 
+		  const std::vector<float>& testPosition, float distance, pandora::CaloHitList& hitsInRange)
+  {
+	  hitsInRange.clear();
+
+	  const Range range(0., distance);
+
+      arma::mat matTestPoint(4, 1);
+
+	  matTestPoint.col(0)[0] = testPosition.at(0);
+	  matTestPoint.col(0)[1] = testPosition.at(1);
+	  matTestPoint.col(0)[2] = testPosition.at(2);
+	  matTestPoint.col(0)[3] = testPosition.at(3);
+
+	  std::cout << " --- point: " << matTestPoint.col(0)[0] << ", " << matTestPoint.col(0)[1] << ", " << matTestPoint.col(0)[2] 
+		  <<  ", " << matTestPoint.col(0)[3] << std::endl;
+
+      std::vector<std::vector<size_t> > resultingNeighbors;
+      std::vector<std::vector<double> > resultingDistances;
+
+      m_caloRangeSearch.Search(matTestPoint, range, resultingNeighbors, resultingDistances);
+
+      if(resultingNeighbors.size() != 1 ) 
+	  {
+		  std::cout << "error " << std::endl;
+
+   	      return pandora::STATUS_CODE_SUCCESS;
+	  }
+
+      std::vector<size_t>& neighbors = resultingNeighbors.at(0);
+      std::vector<double>& distances = resultingDistances.at(0);
+
       for(size_t j=0; j < neighbors.size(); ++j)
       {
       	size_t neighbor = neighbors.at(j);

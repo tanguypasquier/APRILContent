@@ -34,6 +34,7 @@
 
 #include "ArborObjects/CaloHit.h"
 #include "ArborObjects/Connector.h"
+#include "ArborHelpers/CaloMetric.h"
 
 #include <mlpack/core.hpp>
 #include <mlpack/core/math/range.hpp>
@@ -43,6 +44,7 @@ namespace pandora { class Algorithm; class CaloHit; class Track; }
 
 namespace arbor_content
 {
+typedef mlpack::range::RangeSearch<CaloMetric, arma::mat, mlpack::tree::MeanSplitBallTree> CaloRangeSearch;
 
 /** 
  * @brief CaloHitRangeSearchHelper class
@@ -61,6 +63,8 @@ public:
   
 	static pandora::StatusCode BuildHitCollectionOfMuonLayers(const pandora::CaloHitList *const pMuonCaloHitList);
 
+    static pandora::StatusCode BuildCaloRangeSearch(const pandora::CaloHitVector& caloHitVector);
+
     // search 
 
     static pandora::StatusCode SearchNeighbourHitsInRange(pandora::CartesianVector testPosition, float distance, pandora::CaloHitList& hitsInRange);
@@ -76,6 +80,9 @@ public:
 
 	static pandora::StatusCode SearchMuonHitsInLayer(pandora::CartesianVector testPosition, int pseudoLayer,
 		  float distance, pandora::CaloHitList& hitsInRange);
+
+    static pandora::StatusCode SearchHitsInRange4D(const pandora::CaloHitVector& caloHitVector, const std::vector<float>& testPosition, 
+			float distance, pandora::CaloHitList& hitsInRange);
 
 	static pandora::OrderedCaloHitList* GetOrderedCaloHitList()     { return &m_orderedCaloHitList;     }
 	static pandora::OrderedCaloHitList* GetOrderedEcalCaloHitList() { return &m_orderedEcalCaloHitList; }
@@ -96,6 +103,7 @@ private:
 	static arma::mat m_caloHitsMatrix;
 
     static pandora::StatusCode FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix);
+    static pandora::StatusCode FillMatix4DFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix4D);
 
 	// all hits
 	static const pandora::CaloHitList* m_pCaloHitList;
@@ -121,6 +129,7 @@ private:
 	static std::vector<pandora::CaloHitVector> m_muonCaloHitVectorOfLayers;
 
 	static mlpack::range::RangeSearch<> m_rangeSearch;
+	static CaloRangeSearch m_caloRangeSearch;
 
 	static std::vector< mlpack::range::RangeSearch<> > m_rangeSearchOfLayers;
 	static std::vector< mlpack::range::RangeSearch<> > m_ecalRangeSearchOfLayers;
