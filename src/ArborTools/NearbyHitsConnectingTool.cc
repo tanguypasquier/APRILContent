@@ -79,7 +79,17 @@ namespace arbor_content
 	std::cout << "# hits having no connector: " << seedHits.size() << std::endl;
 
 	std::vector<pandora::CaloHitVector> hitsForCluster;
-	CaloHitNeighborSearchHelper::ClusteringByDBSCAN(seedHits, hitsForCluster);
+
+	if(m_metricType > 0)
+	{
+		std::cout << "4D metric, eps: " << m_epsDBSCAN << ", minPoint: " << m_minpDBSCAN << std::endl;
+		CaloHitNeighborSearchHelper::ClusteringByDBSCAN4D(seedHits, hitsForCluster, m_epsDBSCAN, m_minpDBSCAN);
+	}
+	else
+	{
+		std::cout << "3D metric, eps: " << m_epsDBSCAN << ", minPoint: " << m_minpDBSCAN << std::endl;
+		CaloHitNeighborSearchHelper::ClusteringByDBSCAN(seedHits, hitsForCluster, m_epsDBSCAN, m_minpDBSCAN);
+	}
 
 	for(int i = 0; i < hitsForCluster.size(); ++i)
 	{
@@ -91,6 +101,32 @@ namespace arbor_content
 		// MakeConnectorsInHits(hitVector);
         CaloHitNeighborSearchHelper::BuildCaloNeighborSearch(caloHitVector);
 
+		////////////////////////////////////////////////////////////////////////////////////
+		// for test
+		////////////////////////////////////////////////////////////////////////////////////
+		{
+            pandora::CaloHitList clusterCaloHitList;
+
+            // create a cluster with this list
+		    for(int i = 0; i < caloHitVector.size(); ++i)
+		    {
+		    	clusterCaloHitList.push_back(caloHitVector.at(i));
+		    }
+
+            const pandora::Cluster *pCluster = NULL;
+	        object_creation::ClusterParameters clusterParameters;
+            clusterParameters.m_caloHitList = clusterCaloHitList;
+
+			// FIXME:: check if it is possible to create cluster ?
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pCluster));
+
+			//std::cout << "================ test hits from dbscan: " << caloHitVector.size() << std::endl;
+			std::cout << "================ create a test cluster: " << pCluster << ",  calo hit size: "
+				<< pCluster->GetNCaloHits() << std::endl;
+		}
+		////////////////////////////////////////////////////////////////////////////////////
+
+		// FIXME:: if cluster is made, hit is not available ...
 		for(int i = 0; i < caloHitVector.size(); ++i)
 		{
 		    pandora::CaloHitList neighborHits;
@@ -103,6 +139,10 @@ namespace arbor_content
               continue;
 
 			auto caloHitPos = pCaloHitI->GetPositionVector();
+
+		    std::cout << "  --- calo hit: " << caloHitPos.GetX() << ", " << caloHitPos.GetY() << ", " << caloHitPos.GetZ() 
+		    	<< ", layer: " << caloHit->GetPseudoLayer() << std::endl;
+
 
 		    const std::vector<float> testPosition{caloHitPos.GetX(), caloHitPos.GetY(), caloHitPos.GetZ(), pCaloHitI->GetPseudoLayer()};
 
@@ -118,9 +158,11 @@ namespace arbor_content
 
 		    float distance = (neighborHitPos - caloHitPos).GetMagnitude();
 
+#if 0
 		    std::cout << "    nb: " << neighborHitPos.GetX() << ", " << neighborHitPos.GetY() << ", " << neighborHitPos.GetZ() 
 		    	<< ", layer: " << neighborHit->GetPseudoLayer()
 		    	<< ", d = " << distance << std::endl;
+#endif
 
             const arbor_content::CaloHit *const pCaloHitJ = dynamic_cast<const arbor_content::CaloHit *const>(neighborHit);
 
@@ -156,21 +198,25 @@ namespace arbor_content
 
   pandora::StatusCode NearbyHitsConnectingTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
-    m_maxPseudoLayerConnection = 4;
+    m_metricType = 1; // > 0: 4D, = 0: 3D
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MaxPseudoLayerConnection", m_maxPseudoLayerConnection));
+        "MetricType", m_metricType));
+
+    m_epsDBSCAN = 50.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EpsDBSCAN", m_epsDBSCAN));
+
+    m_minpDBSCAN = 5;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MinPointDBSCAN", m_minpDBSCAN));
 
     m_connectOnlyAvailable = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ConnectOnlyAvailable", m_connectOnlyAvailable));
 
-    m_maxConnectionAngleFine = 0.6;
+    m_shouldUseIsolatedHits = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MaxConnectionAngleFine", m_maxConnectionAngleFine));
-
-    m_maxConnectionAngleCoarse = 0.9;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MaxConnectionAngleCoarse", m_maxConnectionAngleCoarse));
+        "ShouldUseIsolatedHits", m_shouldUseIsolatedHits));
 
     m_maxTransverseDistanceFine = 20.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
@@ -179,10 +225,6 @@ namespace arbor_content
     m_maxTransverseDistanceCoarse = 65.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxTransverseDistanceCoarse", m_maxTransverseDistanceCoarse));
-
-    m_shouldUseIsolatedHits = false;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "ShouldUseIsolatedHits", m_shouldUseIsolatedHits));
 
     m_shouldDiscriminateConnectedHits = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

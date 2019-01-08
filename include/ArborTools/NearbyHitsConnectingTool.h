@@ -68,14 +68,16 @@ public:
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
 private:
-	float                       m_maxConnectionAngleFine;
-	float                       m_maxConnectionAngleCoarse;
+    unsigned int                m_metricType;
+    float                       m_epsDBSCAN;
+    unsigned int                m_minpDBSCAN;
 	float                       m_maxTransverseDistanceFine;
 	float                       m_maxTransverseDistanceCoarse;
 	unsigned int                m_maxPseudoLayerConnection;
 	bool                        m_connectOnlyAvailable;
 	bool                        m_shouldUseIsolatedHits;
 	bool                        m_shouldDiscriminateConnectedHits;
+
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
