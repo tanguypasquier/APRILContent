@@ -51,7 +51,7 @@ namespace arbor_content
 {
 
 typedef mlpack::neighbor::NeighborSearch<mlpack::neighbor::NearestNeighborSort, CaloMetric, arma::mat, mlpack::tree::MeanSplitBallTree> CaloKNN;
-
+typedef mlpack::dbscan::DBSCAN< mlpack::range::RangeSearch<> > MLPACKDBSCAN;
 typedef mlpack::dbscan::DBSCAN< mlpack::range::RangeSearch<CaloMetric, arma::mat, mlpack::tree::MeanSplitBallTree> > CaloDBSCAN;
 
 /** 
@@ -70,7 +70,11 @@ public:
     static pandora::StatusCode SearchNeighbourHits4D(const pandora::CaloHitVector& caloHitVector, 
 		  std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
   
-	static pandora::StatusCode ClusteringByDBSCAN(const pandora::CaloHitVector& caloHitVector, std::vector<pandora::CaloHitVector>& hitsForCluster);
+	static pandora::StatusCode ClusteringByDBSCAN(const pandora::CaloHitVector& caloHitVector,
+			std::vector<pandora::CaloHitVector>& hitsForCluster, float eps, int minPoints);
+
+	static pandora::StatusCode ClusteringByDBSCAN4D(const pandora::CaloHitVector& caloHitVector, 
+			std::vector<pandora::CaloHitVector>& hitsForCluster, float eps, int minPoints);
 
 private:
 

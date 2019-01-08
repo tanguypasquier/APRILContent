@@ -32,6 +32,8 @@
 #include "ArborApi/ArborContentApi.h"
 #include "ArborObjects/CaloHit.h"
 
+//#define __DEBUG__ 
+
 
 using namespace mlpack;
 using namespace mlpack::math;
@@ -210,16 +212,19 @@ namespace arbor_content
    	  return pandora::STATUS_CODE_SUCCESS;
   }
 
-  pandora::StatusCode CaloHitNeighborSearchHelper::ClusteringByDBSCAN(const pandora::CaloHitVector& caloHitVector, 
-		  std::vector<pandora::CaloHitVector>& hitsForCluster)
-  {
-	  //m_caloDBSCAN = CaloDBSCAN(22., 5);
-	  arma::mat caloHitsMatrix4D;
+  //--------------------------------------------------------------------------------------------------------------------
 
-      FillMatix4DFromCaloHits(caloHitVector, caloHitsMatrix4D);
+  pandora::StatusCode CaloHitNeighborSearchHelper::ClusteringByDBSCAN(const pandora::CaloHitVector& caloHitVector, 
+		  std::vector<pandora::CaloHitVector>& hitsForCluster, float eps, int minPoints)
+  {
+	  MLPACKDBSCAN dbscan(eps, minPoints);
+
+	  arma::mat caloHitsMatrix;
+
+      FillMatixFromCaloHits(caloHitVector, caloHitsMatrix);
 
 	  arma::Row< size_t > clu;
-	  m_caloDBSCAN.Cluster(caloHitsMatrix4D, clu);
+	  dbscan.Cluster(caloHitsMatrix, clu);
 
 	  hitsForCluster.clear();
 	  hitsForCluster.resize(clu.size());
@@ -231,27 +236,92 @@ namespace arbor_content
 	  for(int i = 0; i < clu.size(); ++i)
       {   
 		  unsigned long cluIndex = (unsigned long)clu[i];
+		  auto caloHit = caloHitVector.at(i);
+		  auto hitPos = caloHit->GetPositionVector();
+		  auto layer = caloHit->GetPseudoLayer();
 
           if (cluIndex != noCluster)
           {
-			  auto caloHit = caloHitVector.at(i);
-			  auto hitPos = caloHit->GetPositionVector();
-			  auto layer = caloHit->GetPseudoLayer();
-
 			  hitsForCluster.at(cluIndex).push_back(caloHit);
 
+#ifdef __DEBUG__
               std::cout << " --- " << i << ": " << clu[i] << ", caloHit: " << caloHit 
 				  << ", X: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << ", layer: " << layer << std::endl;
+#endif
 
 			  if(cluIndex >= nClusters) ++nClusters;
           }
           else
           {
-              std::cout << " --- " << i << ": no cluter" << std::endl;
+#ifdef __DEBUG__
+              std::cout << " --- " << i << ": " << "no cluster, caloHit: " << caloHit 
+				  << ", X: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << ", layer: " << layer << std::endl;
+#endif
           }
       }
 
+	
+#ifdef __DEBUG__
 	  std::cout << "nCluster: " << nClusters << std::endl;
+#endif
+
+	  hitsForCluster.resize(nClusters);
+ 
+   	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode CaloHitNeighborSearchHelper::ClusteringByDBSCAN4D(const pandora::CaloHitVector& caloHitVector, 
+		  std::vector<pandora::CaloHitVector>& hitsForCluster, float eps, int minPoints)
+  {
+	  CaloDBSCAN caloDBSCAN(eps, minPoints);
+
+	  arma::mat caloHitsMatrix4D;
+
+      FillMatix4DFromCaloHits(caloHitVector, caloHitsMatrix4D);
+
+	  arma::Row< size_t > clu;
+	  caloDBSCAN.Cluster(caloHitsMatrix4D, clu);
+
+	  hitsForCluster.clear();
+	  hitsForCluster.resize(clu.size());
+
+	  unsigned long noCluster = (unsigned long)-1;
+
+	  int nClusters = 0;
+
+	  for(int i = 0; i < clu.size(); ++i)
+      {   
+		  unsigned long cluIndex = (unsigned long)clu[i];
+		  auto caloHit = caloHitVector.at(i);
+		  auto hitPos = caloHit->GetPositionVector();
+		  auto layer = caloHit->GetPseudoLayer();
+
+          if (cluIndex != noCluster)
+          {
+
+			  hitsForCluster.at(cluIndex).push_back(caloHit);
+#ifdef __DEBUG__
+
+              std::cout << " --- " << i << ": " << clu[i] << ", caloHit: " << caloHit 
+				  << ", X: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << ", layer: " << layer << std::endl;
+#endif
+
+			  if(cluIndex >= nClusters) ++nClusters;
+          }
+          else
+          {
+#ifdef __DEBUG__
+              std::cout << " --- " << i << ": " << "no cluster, caloHit: " << caloHit 
+				  << ", X: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << ", layer: " << layer << std::endl;
+#endif
+          }
+      }
+
+#ifdef __DEBUG__
+	  std::cout << "nCluster: " << nClusters << std::endl;
+#endif
 
 	  hitsForCluster.resize(nClusters);
  
