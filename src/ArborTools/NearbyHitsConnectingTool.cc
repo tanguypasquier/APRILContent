@@ -78,130 +78,77 @@ namespace arbor_content
 
 	std::cout << "# hits having no connector: " << seedHits.size() << std::endl;
 
-	/////////////////////////////////////////////////////////
-	
-	for(int iHit = 0; iHit < seedHits.size(); ++iHit)
+	std::vector<pandora::CaloHitVector> hitsForCluster;
+	CaloHitNeighborSearchHelper::ClusteringByDBSCAN(seedHits, hitsForCluster);
+
+	for(int i = 0; i < hitsForCluster.size(); ++i)
 	{
-		//std::cout << "seedHits.size: " << seedHits.size() << ", iHit: " << iHit << std::endl;
-        const arbor_content::CaloHit *const pCaloHitI = dynamic_cast<const arbor_content::CaloHit *const>( seedHits.at(iHit) );
+		const auto& caloHitVector = hitsForCluster.at(i);
+		std::cout << "hits for clustering: " << caloHitVector.size() << std::endl;
 
-		int nNeighbor = 1;
+		if(caloHitVector.size() < 2) continue;
 
-        const pandora::CartesianVector& testPosition(pCaloHitI->GetPositionVector());
-        pandora::CaloHitList neighborHits;
+		// MakeConnectorsInHits(hitVector);
+        CaloHitNeighborSearchHelper::BuildCaloNeighborSearch(caloHitVector);
 
-		// the test position itself is included in the queury point set
-		const std::vector<float> caloHit{testPosition.GetX(), testPosition.GetY(), testPosition.GetZ(), pCaloHitI->GetPseudoLayer()};
-        CaloHitNeighborSearchHelper::SearchNeighbourHits(caloHit, nNeighbor+1, neighborHits);
+		for(int i = 0; i < caloHitVector.size(); ++i)
+		{
+		    pandora::CaloHitList neighborHits;
 
-        //CaloHitNeighborSearchHelper::SearchNeighbourHits(testPosition, nNeighbor+1, neighborHits);
+			auto caloHit = caloHitVector.at(i);
+            const arbor_content::CaloHit *const pCaloHitI = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
+		    if(pCaloHitI == nullptr) continue;
 
-        std::cout << "========hit: " << testPosition.GetX() << ", " << testPosition.GetY() << ", " << testPosition.GetZ()
-		          << ", layer: " << pCaloHitI->GetPseudoLayer() << std::endl;
-        
-		auto iter = neighborHits.begin();
-		++iter;
-
-		auto hitPos = (*iter)->GetPositionVector();
-		float distance = (hitPos - testPosition).GetMagnitude();
-		std::cout << "    nb: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() 
-			<< ", layer: " << (*iter)->GetPseudoLayer()
-			<< ", d = " << distance << std::endl;
-
-
-        const arbor_content::CaloHit *const pCaloHitJ = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
-
-		if(pCaloHitJ == nullptr) continue;
-        
-        const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
-        const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
-		const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
-
-        // check if already connected
-        if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION))
-          continue;
-
-        // check for availability
-        if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(algorithm, pCaloHitJ))
-          continue;
-
-		if(pCaloHitJ->GetPseudoLayer() == pCaloHitI->GetPseudoLayer())
-		  continue;
-
-        // connect !
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION));
-
-#if 0
-        for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
-        {
-          pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pl);
-
-          if(orderedCaloHitList.end() == findIter) continue;
-
-		  const pandora::CartesianVector &position(pCaloHitI->GetPositionVector());
-
-		  // TODO
-		  // range parametrized layer difference
-          const float range = 200.; // OK ???
-
-          int layer = pl;
-          pandora::CaloHitList hitsInRange;
-
-          CaloHitRangeSearchHelper::SearchHitsInLayer(position, layer, range, hitsInRange);
-
-		  //std::cout << "hits in layer " << layer << ": " << hitsInRange.size() << std::endl;
-
-          for(pandora::CaloHitList::const_iterator iterJ = hitsInRange.begin(), endIterJ = hitsInRange.end() ;
-              endIterJ != iterJ ; ++iterJ)
-          {
-            const arbor_content::CaloHit *const pCaloHitJ = dynamic_cast<const arbor_content::CaloHit *const>(*iterJ);
-
-            if(NULL == pCaloHitJ)
+            if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(algorithm, pCaloHitI))
               continue;
 
+			auto caloHitPos = pCaloHitI->GetPositionVector();
+
+		    const std::vector<float> testPosition{caloHitPos.GetX(), caloHitPos.GetY(), caloHitPos.GetZ(), pCaloHitI->GetPseudoLayer()};
+
+			// get the neighbor hit
+			CaloHitNeighborSearchHelper::SearchNeighbourHits4D(caloHitVector, testPosition, 2, neighborHits);
+			std::cout << "   nb hits size: " << neighborHits.size() - 1 << std::endl;
+
+		    auto neighborHititer = neighborHits.begin();
+		    ++neighborHititer;
+
+			auto neighborHit = *neighborHititer;
+		    auto neighborHitPos = neighborHit->GetPositionVector();
+
+		    float distance = (neighborHitPos - caloHitPos).GetMagnitude();
+
+		    std::cout << "    nb: " << neighborHitPos.GetX() << ", " << neighborHitPos.GetY() << ", " << neighborHitPos.GetZ() 
+		    	<< ", layer: " << neighborHit->GetPseudoLayer()
+		    	<< ", d = " << distance << std::endl;
+
+            const arbor_content::CaloHit *const pCaloHitJ = dynamic_cast<const arbor_content::CaloHit *const>(neighborHit);
+
+		    if(pCaloHitJ == nullptr) continue;
+            
+            const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
+            const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
+		    const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
+
             // check if already connected
-            if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION))
+            if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION) || 
+			   ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, BACKWARD_DIRECTION) )
               continue;
 
             // check for availability
             if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(algorithm, pCaloHitJ))
               continue;
 
-            if(m_shouldDiscriminateConnectedHits && !ArborContentApi::GetConnectorList(pCaloHitJ, BACKWARD_DIRECTION).empty())
-              continue;
-
-            const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
-            const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
-            const pandora::HitType hitTypeJ(pCaloHitJ->GetHitType());
-            const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
-            const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
-
-            const float transverseDistance = std::sin( angle ) * difference;
-            const pandora::Granularity &granularity(PandoraContentApi::GetGeometry(algorithm)->GetHitTypeGranularity(hitTypeJ));
-
-            const float maxTransverseDistance = granularity <= pandora::FINE ?
-                m_maxTransverseDistanceFine : m_maxTransverseDistanceCoarse;
-
-            const float maxConnectionAngle = granularity <= pandora::FINE ?
-                m_maxConnectionAngleFine : m_maxConnectionAngleCoarse;
-
-            // check transverse distance
-            if(transverseDistance > maxTransverseDistance)
-              continue;
-
-            // check angle
-            if(angle > maxConnectionAngle)
-              continue;
+		    if(pCaloHitJ->GetPseudoLayer() == pCaloHitI->GetPseudoLayer())
+		      continue;
 
             // connect !
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION));
-		
-			seedHits.push_back(pCaloHitJ);
-          }
-		}
-#endif
-	}
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, 
+						pCaloHitI->GetPseudoLayer() < pCaloHitJ->GetPseudoLayer() ? FORWARD_DIRECTION : BACKWARD_DIRECTION));
 
+		}
+	}
+	
     return pandora::STATUS_CODE_SUCCESS;
   }
 
