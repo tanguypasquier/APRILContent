@@ -62,11 +62,13 @@ class CaloHitNeighborSearchHelper
 public:
 	// build 
     static pandora::StatusCode BuildNeighborSearch(const pandora::CaloHitList *const pCaloHitList);
+    static pandora::StatusCode BuildCaloNeighborSearch(const pandora::CaloHitVector& caloHitVector);
 	
     // search 
     static pandora::StatusCode SearchNeighbourHits(pandora::CartesianVector testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
   
-	static pandora::StatusCode SearchNeighbourHits(std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
+    static pandora::StatusCode SearchNeighbourHits4D(const pandora::CaloHitVector& caloHitVector, 
+		  std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
   
 	static pandora::StatusCode ClusteringByDBSCAN(const pandora::CaloHitVector& caloHitVector, std::vector<pandora::CaloHitVector>& hitsForCluster);
 

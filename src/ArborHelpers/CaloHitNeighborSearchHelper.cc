@@ -97,6 +97,7 @@ namespace arbor_content
 	  
 	  return pandora::STATUS_CODE_SUCCESS;
   }
+
   //--------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode CaloHitNeighborSearchHelper::BuildNeighborSearch(const pandora::CaloHitList *const pCaloHitList)
@@ -108,22 +109,17 @@ namespace arbor_content
 	      m_caloHitVector.insert(m_caloHitVector.begin(), pCaloHitList->begin(), pCaloHitList->end());
 
 		  FillMatixFromCaloHits(m_caloHitVector, m_caloHitsMatrix);
-		  FillMatix4DFromCaloHits(m_caloHitVector, m_caloHitsMatrix4D);
-
-		  std::cout << "FillMatixFromCaloHits done " << std::endl;
 
 	      // the relatively time-comsuming part
 	      m_neighborSearch.Train(m_caloHitsMatrix);
-		  std::cout << "m_neighborSearch.Train done " << std::endl;
 
-	      m_neighborSearch4D.Train(m_caloHitsMatrix4D);
-		  std::cout << "m_neighborSearch4D.Train done " << std::endl;
-	  
 		  m_pCaloHitList = pCaloHitList;
 	  }
 
 	  return pandora::STATUS_CODE_SUCCESS;
   }
+
+  //--------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode CaloHitNeighborSearchHelper::SearchNeighbourHits(pandora::CartesianVector testPosition, int nNeighbor, 
 		  pandora::CaloHitList& neighborHits)
@@ -162,8 +158,21 @@ namespace arbor_content
    	  return pandora::STATUS_CODE_SUCCESS;
   }
 
-  pandora::StatusCode CaloHitNeighborSearchHelper::SearchNeighbourHits(std::vector<float> testPosition, int nNeighbor, 
-		  pandora::CaloHitList& neighborHits)
+  //--------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode CaloHitNeighborSearchHelper::BuildCaloNeighborSearch(const pandora::CaloHitVector& caloHitVector)
+  {
+	  FillMatix4DFromCaloHits(caloHitVector, m_caloHitsMatrix4D);
+	  
+	  //std::cout << "FillMatixFromCaloHits done " << std::endl;
+	  m_neighborSearch4D.Train(m_caloHitsMatrix);
+	  //std::cout << "m_neighborSearch.Train done " << std::endl;
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode CaloHitNeighborSearchHelper::SearchNeighbourHits4D(const pandora::CaloHitVector& caloHitVector, 
+		  std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits)
   {
 	  neighborHits.clear();
 
@@ -175,7 +184,7 @@ namespace arbor_content
 	  testPoint.col(0)[2] = testPosition.at(2);
 	  testPoint.col(0)[3] = testPosition.at(3);
 
-	  //std::cout << "point: " << testPoint.col(0)[0] << ", " << testPoint.col(0)[1] << ", " << testPoint.col(0)[2] 
+	  //std::cout << " --- point: " << testPoint.col(0)[0] << ", " << testPoint.col(0)[1] << ", " << testPoint.col(0)[2] 
 		//  << ", " << testPoint.col(0)[3] << std::endl;
 
 	  arma::Mat<size_t> resultingNeighbors;
