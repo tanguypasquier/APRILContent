@@ -71,7 +71,6 @@ bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *
 
 namespace arbor_content
 {
-  extern HistogramManager AHM;
 
   float MaxTrackClusterAngle = 0.6;
   
@@ -179,7 +178,7 @@ namespace arbor_content
 	  vars.push_back( float(m_maxClusterInnerPseudoLayer) );
 	  vars.push_back( float(pCluster->GetNCaloHits()) );
 
-	  AHM.CreateFill("ClusterProperty", "isPhoton:isNeutron:innerPseudoLayer:maxClusterInnerPseudoLayer:nCaloHits", vars);
+	  HistogramManager::CreateFill("ClusterProperty", "isPhoton:isNeutron:innerPseudoLayer:maxClusterInnerPseudoLayer:nCaloHits", vars);
 
 	  if(isPhoton || isNeutron) 
 	  {
@@ -297,7 +296,7 @@ namespace arbor_content
 	vars.push_back( float(isMatched) );
 	vars.push_back( matchProb );
 	
-	AHM.CreateFill(tupleName, varListName, vars);
+	HistogramManager::CreateFill(tupleName, varListName, vars);
 	/////////////////////////////////////////////////////////////////
 
     //return true;
@@ -554,7 +553,7 @@ namespace arbor_content
 	std::vector<float> vars0;
 	vars0.push_back( float(canComputeInnerCentroid0) );
 	vars0.push_back( float(trkCluMatched) );
-	AHM.CreateFill(tupleName0, varListName0, vars0);
+	HistogramManager::CreateFill(tupleName0, varListName0, vars0);
 #endif
 
     // get b field and track helix
@@ -611,11 +610,11 @@ namespace arbor_content
 	// generate sigal and background for MVA trainning
 	if(isMatched)
 	{
-		AHM.CreateFill(tupleNameMatched, varListName, vars);
+		HistogramManager::CreateFill(tupleNameMatched, varListName, vars);
 	}
 	else
 	{
-		AHM.CreateFill(tupleNameUnmatched, varListName, vars);
+		HistogramManager::CreateFill(tupleNameUnmatched, varListName, vars);
 	}
 
 	if(!canComputeInnerCentroid0) return false;
@@ -675,7 +674,7 @@ namespace arbor_content
 	std::vector<float> vars;
 	//vars.push_back();
 
-	//AHM.CreateFill(tupleName, varListName, vars);
+	//HistogramManager::CreateFill(tupleName, varListName, vars);
 #endif
 
     return pandora::STATUS_CODE_SUCCESS;

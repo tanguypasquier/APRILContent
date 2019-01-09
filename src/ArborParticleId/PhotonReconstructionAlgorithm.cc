@@ -181,19 +181,17 @@ namespace arbor_content
 	   const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(*iter));
 	   int clusterPID = pMCParticle->GetParticleId();
 
-       extern HistogramManager AHM;
-
 	   float clusterMCPEnergy = pMCParticle->GetEnergy();
 
 	   if( clusterMCPEnergy > 1. )
 	   { 
 		   if( clusterPID == 22 )
 	       {
-	           AHM.CreateFill("PhotonClustersVars", "minHitLayer:clusterVol:energyRatio:hitOutsideRatio:axisLengthRatio:shortAxisLengthRatio:nHit", vars);
+			   HistogramManager::CreateFill("PhotonClustersVars", "minHitLayer:clusterVol:energyRatio:hitOutsideRatio:axisLengthRatio:shortAxisLengthRatio:nHit", vars);
 	       }
 	       else
 	       { 
-	           AHM.CreateFill("NonPhotonClustersVars", "minHitLayer:clusterVol:energyRatio:hitOutsideRatio:axisLengthRatio:shortAxisLengthRatio:nHit", vars);
+			   HistogramManager::CreateFill("NonPhotonClustersVars", "minHitLayer:clusterVol:energyRatio:hitOutsideRatio:axisLengthRatio:shortAxisLengthRatio:nHit", vars);
 	       }
 	   }
 

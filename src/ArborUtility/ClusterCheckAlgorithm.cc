@@ -37,7 +37,6 @@
 
 namespace arbor_content
 {
-  extern HistogramManager AHM;
 
   pandora::StatusCode ClusterCheckAlgorithm::Run()
   {
@@ -132,7 +131,8 @@ namespace arbor_content
 	    vars.push_back( hasAssociatedCluster );
 	    vars.push_back( siblingTrack );
 	
-	    AHM.CreateFill("PFOTrack", "energy:charge:reachesCalorimeter:isProjectedToEndCap:canFormPfo:canFormClusterlessPfo:hasAssociatedCluster:siblingTrack", vars);
+		HistogramManager::CreateFill("PFOTrack", 
+				"energy:charge:reachesCalorimeter:isProjectedToEndCap:canFormPfo:canFormClusterlessPfo:hasAssociatedCluster:siblingTrack", vars);
 
 		}
 

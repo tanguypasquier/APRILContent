@@ -14,19 +14,15 @@ namespace arbor_content
 
 class HistogramManager {
 
-private:
-
-	std::vector<TNtuple*> tupleVec;
-
 public:
     HistogramManager(const char * filename="Monitoring.root");
     virtual ~HistogramManager();
 
     // Create (if doesn't exist) and Fill a fixed bin histogram (TH1F or TH2F)
-    void CreateFill(string tupleName, string varNamelist, std::vector<float> varList);
+    static void CreateFill(string tupleName, string varNamelist, std::vector<float> varList);
 
-    void Reset();
-    void Write();
+private:
+	//static std::vector<TNtuple*> tupleVec;
 };
 
 }

@@ -109,7 +109,6 @@ namespace arbor_content
   void TrackDrivenSeedingTool::CheckInitialTrackHit() const
   {
 	  //std::cout << "TrackDrivenSeedingTool::CheckInitialTrackHit" << std::endl;
-      extern HistogramManager AHM;
 
       for(auto trackHitsIter = m_trackHitVector.begin(); trackHitsIter != m_trackHitVector.end(); ++trackHitsIter)
       {
@@ -172,7 +171,7 @@ namespace arbor_content
 		  vars.push_back( float(caloHits.size()) );
 		  vars.push_back( float(nRightCaloHit) );
 	
-	      AHM.CreateFill("TrackAndInitHits", "evtNumber:trackMomentum:reachEndcap:nInitCaloHit:nRightCaloHit", vars);
+		  HistogramManager::CreateFill("TrackAndInitHits", "evtNumber:trackMomentum:reachEndcap:nInitCaloHit:nRightCaloHit", vars);
 		  ///////////////////////////////
           
           //std::cout << " ============================= " << std::endl;

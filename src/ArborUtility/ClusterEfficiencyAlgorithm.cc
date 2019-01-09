@@ -42,8 +42,6 @@ namespace arbor_content
 
   pandora::StatusCode ClusterEfficiencyAlgorithm::Run()
   {
-    extern HistogramManager AHM;
-
 	////////
     const pandora::PfoList *pPfoList = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
@@ -226,7 +224,8 @@ namespace arbor_content
 	    vars.push_back( collectedEnergy/clusterEnergy );
 	    vars.push_back( siblingClusterNumber );
 	
-	    AHM.CreateFill("ClusterEfficiency", "clusterSize:pid:clusterCharge:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency:siblingClusterNumber", vars);
+		HistogramManager::CreateFill("ClusterEfficiency", 
+				"clusterSize:pid:clusterCharge:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency:siblingClusterNumber", vars);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;

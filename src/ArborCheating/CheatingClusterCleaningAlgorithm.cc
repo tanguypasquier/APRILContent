@@ -85,8 +85,8 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
 							vars.push_back( hitCharge );
 							vars.push_back( cluCharge );
 
-							extern HistogramManager AHM;
-		                    AHM.CreateFill("CheatingClusterCleaning", "clusterEnergy:hitEnergy:fwdConnection:bakConnection:hitCharge:cluCharge", vars);
+							HistogramManager::CreateFill("CheatingClusterCleaning", 
+									"clusterEnergy:hitEnergy:fwdConnection:bakConnection:hitCharge:cluCharge", vars);
                         }
                     }
                     catch (StatusCodeException &)

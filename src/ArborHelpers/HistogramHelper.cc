@@ -12,7 +12,7 @@ namespace arbor_content
 {
 
 //______________________________________________________________________________
-HistogramManager::HistogramManager(const char * filename)
+HistogramManager::HistogramManager(const char * /* filename */)
 {
 }
 
@@ -42,7 +42,9 @@ void HistogramManager::CreateFill(string tupleName, string varNamelist, std::vec
 	if(ptr == NULL )
 	{
 		ptr = new TNtuple(tupleName.c_str(), tupleName.c_str(), varNamelist.c_str());
-		tupleVec.push_back(ptr);
+
+		// not needed
+		// tupleVec.push_back(ptr);
 	}
 	else
 	{
@@ -51,17 +53,6 @@ void HistogramManager::CreateFill(string tupleName, string varNamelist, std::vec
 
 	float* listToFill = &varList[0];
 	ptr->Fill(listToFill);
-}
-
-//______________________________________________________________________________
-void HistogramManager::Reset()
-{
-    //TODO to be implemented
-}
-
-//______________________________________________________________________________
-void HistogramManager::Write()
-{
 }
 
 }

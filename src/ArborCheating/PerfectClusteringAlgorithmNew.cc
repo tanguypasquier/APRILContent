@@ -18,8 +18,6 @@ using namespace pandora;
 namespace arbor_content // changed namespace
 {
 
-HistogramManager AHM;
-
 const MCParticle* GetCaloHitMainMCParticle(const CaloHit *const pCaloHit)
 {
     float bestWeight(0.f);
@@ -101,7 +99,7 @@ StatusCode PerfectClusteringAlgorithmNew::Run()
 
 		vars.push_back(pClusterList->size());
 
-	    AHM.CreateFill(tupleName, varListName, vars);
+		HistogramManager::CreateFill(tupleName, varListName, vars);
 
         PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::SaveList<Cluster>(*this, m_outputClusterListName));
 

@@ -75,8 +75,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 		vars.push_back( pfoTargetEnergy );
 		vars.push_back( pfoTargets );
 
-        extern HistogramManager AHM;
-		AHM.CreateFill("PfoTargetEnergy", "pfoTargetEnergy:pfoTargets", vars);
+        HistogramManager::CreateFill("PfoTargetEnergy", "pfoTargetEnergy:pfoTargets", vars);
 	}
 }
 
@@ -309,8 +308,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 		        vars.push_back( falseHitSize );
 		        vars.push_back( falseHitEnergy );
 
-                extern HistogramManager AHM;
-		        AHM.CreateFill("neutralMCP", "mcpEnergy:mcpClusterEnergy:mcpClusterSize:falseHitSize:falseHitEnergy", vars);
+                HistogramManager::CreateFill("neutralMCP", "mcpEnergy:mcpClusterEnergy:mcpClusterSize:falseHitSize:falseHitEnergy", vars);
 #endif
 			}
 
@@ -354,8 +352,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 		        vars.push_back( innerZ );
 		        vars.push_back( outerZ );
 
-                extern HistogramManager AHM;
-		        AHM.CreateFill("MissingPfo", "pid:energy:innerR:outerR:innerZ:outerZ", vars);
+				HistogramManager::CreateFill("MissingPfo", "pid:energy:innerR:outerR:innerZ:outerZ", vars);
 			}
 		}
 
@@ -380,8 +377,8 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 		vars.push_back( pfoTargets );
 
 		///////////////////////////////
-        extern HistogramManager AHM;
-		AHM.CreateFill("SimplePfoEnergy", "pfoTargetChargedWithoutClusterEnergy:pfoTargetChargedEnergy:pfoTargetNeutralEnergy:missingPfoEnergy:extraPfoEnergy:pfoTargets", vars);
+        HistogramManager::CreateFill("SimplePfoEnergy", 
+		"pfoTargetChargedWithoutClusterEnergy:pfoTargetChargedEnergy:pfoTargetNeutralEnergy:missingPfoEnergy:extraPfoEnergy:pfoTargets", vars);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;

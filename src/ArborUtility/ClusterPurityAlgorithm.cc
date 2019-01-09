@@ -42,10 +42,6 @@ namespace arbor_content
 
   pandora::StatusCode ClusterPurityAlgorithm::Run()
   {
-	// TODO 
-	// make static function
-    extern HistogramManager AHM;
-
 #if 0
 	std::cout << "m_listType: " << m_listType << std::endl;
 
@@ -87,7 +83,8 @@ namespace arbor_content
 			vars.push_back( hitPurity );
 			vars.push_back( energyPurity );
 
-			AHM.CreateFill("ClusterPurity", "clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
+			HistogramManager::CreateFill("ClusterPurity", 
+					"clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
 
 			//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
 			//	      << std::endl;
