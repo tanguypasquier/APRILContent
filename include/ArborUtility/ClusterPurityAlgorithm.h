@@ -58,14 +58,14 @@ private:
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 	pandora::StatusCode	Initialize();
   
-	pandora::StatusCode getPurity(const pandora::Cluster* cluster, float& sizePurity, float& energyPurity, 
+    pandora::StatusCode GetClusterList(pandora::ClusterList& clusterList);
+
+	pandora::StatusCode GetPurity(const pandora::Cluster* cluster, float& sizePurity, float& energyPurity, 
 			 float& ordClusterHit) const;
 
-    bool                            m_timing;
 
-    float                           m_timeCut;
-
-	//TNtupleD*                       caloHitsMonitor;
+	unsigned int            m_listType;
+    pandora::StringVector   m_listNames; 
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

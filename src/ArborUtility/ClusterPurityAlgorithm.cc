@@ -42,66 +42,118 @@ namespace arbor_content
 
   pandora::StatusCode ClusterPurityAlgorithm::Run()
   {
+	// TODO 
+	// make static function
     extern HistogramManager AHM;
 
-	////////
-    const pandora::PfoList *pPfoList = NULL; 
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pPfoList));
-	std::cout << "------- # PFO : " << pPfoList->size() << std::endl;
+#if 0
+	std::cout << "m_listType: " << m_listType << std::endl;
 
-    for(pandora::PfoList::const_iterator iter = pPfoList->begin(), endIter = pPfoList->end(); endIter != iter ; ++iter)
-    {
-		const pandora::ParticleFlowObject* pfo = *iter;
-		//std::cout << "PFO : " << pfo << ", PID: " << pfoPID << ", charge: " << pfoCharge << std::endl;
+	for(auto& listName : m_listNames)
+	{
+		std::cout << " list name: " << listName << std::endl;
+	}
+#endif
 
-		const pandora::ClusterList& pfoClusterList = pfo->GetClusterList();
-    
-		for(pandora::ClusterList::const_iterator cluIter = pfoClusterList.begin(); cluIter != pfoClusterList.end(); ++cluIter)
-		{
-			//std::cout << "cluster: " << *cluIter << std::endl;
-			const pandora::Cluster* cluster = *cluIter;
+	pandora::ClusterList clusterList;
+	GetClusterList(clusterList);
 
-    		try
-    		{
-				float hitPurity;
-				float energyPurity;
-				float ordClusterHit;
+	for(pandora::ClusterList::const_iterator cluIter = clusterList.begin(); cluIter != clusterList.end(); ++cluIter)
+	{
+		//std::cout << "cluster: " << *cluIter << std::endl;
+		const pandora::Cluster* cluster = *cluIter;
 
-				getPurity(cluster, hitPurity, energyPurity, ordClusterHit);
+    	try
+    	{
+			float hitPurity;
+			float energyPurity;
+			float ordClusterHit;
 
-				float clusterSize = cluster->GetNCaloHits();
-				float clusterEnergy = cluster->GetHadronicEnergy();
-		
-                const pandora::MCParticle *const pCluMCParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
-				float pid = pCluMCParticle->GetParticleId();
-				float clusterCharge = pandora::PdgTable::GetParticleCharge(pCluMCParticle->GetParticleId());
+			GetPurity(cluster, hitPurity, energyPurity, ordClusterHit);
+
+			float clusterSize = cluster->GetNCaloHits();
+			float clusterEnergy = cluster->GetHadronicEnergy();
 	
-				std::vector<float> vars;
-				vars.push_back( clusterSize );
-				vars.push_back( pid );
-				vars.push_back( clusterCharge );
-				vars.push_back( ordClusterHit );
-				vars.push_back( clusterEnergy );
-				vars.push_back( hitPurity );
-				vars.push_back( energyPurity );
+            const pandora::MCParticle *const pCluMCParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
+			float pid = pCluMCParticle->GetParticleId();
+			float clusterCharge = pandora::PdgTable::GetParticleCharge(pCluMCParticle->GetParticleId());
+	
+			std::vector<float> vars;
+			vars.push_back( clusterSize );
+			vars.push_back( pid );
+			vars.push_back( clusterCharge );
+			vars.push_back( ordClusterHit );
+			vars.push_back( clusterEnergy );
+			vars.push_back( hitPurity );
+			vars.push_back( energyPurity );
 
-				AHM.CreateFill("ClusterPurity", "clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
+			AHM.CreateFill("ClusterPurity", "clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
 
-				//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
-				//	      << std::endl;
-
-				//histogram.Fill(clusterSize, clusterEnergy, clusterPurity);
-    		}
-    		catch (pandora::StatusCodeException &)
-    		{
-    		}
-		}
+			//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
+			//	      << std::endl;
+    	}
+    	catch (pandora::StatusCodeException &)
+    	{
+    	}
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
   }
 
-  pandora::StatusCode ClusterPurityAlgorithm::getPurity(const pandora::Cluster* cluster, float& hitPurity, float& energyPurity, 
+  pandora::StatusCode ClusterPurityAlgorithm::GetClusterList(pandora::ClusterList& clusterList)
+  {
+	  clusterList.clear();
+
+	  if(m_listType == 0) 
+	  {
+		  // looking for clusters from cluster list
+	      for(auto& listName : m_listNames)
+	      {
+            const pandora::ClusterList *pClusterList = NULL;
+
+			if(pandora::STATUS_CODE_SUCCESS == PandoraContentApi::GetList(*this, listName, pClusterList))
+			{
+				std::cout << "list " << listName << " size: " << pClusterList->size() << std::endl;
+
+				for(auto& cluster : *pClusterList) clusterList.push_back(cluster);
+			}
+			else
+			{
+				std::cout << "list " << listName << " not found" << std::endl;
+			}
+	      }
+	  }
+	  else
+	  {
+		  // clusters from pfo list
+	      for(auto& listName : m_listNames)
+		  {
+			const pandora::PfoList *pPfoList = NULL; 
+    
+			if(pandora::STATUS_CODE_SUCCESS != PandoraContentApi::GetList(*this, listName, pPfoList)) continue;
+
+			if(NULL == pPfoList) continue;
+
+			// for each pfo 
+            for(pandora::PfoList::const_iterator iter = pPfoList->begin(), endIter = pPfoList->end(); endIter != iter ; ++iter)
+            {
+	        	const pandora::ParticleFlowObject* pfo = *iter;
+	        	//std::cout << "PFO : " << pfo << ", PID: " << pfoPID << ", charge: " << pfoCharge << std::endl;
+
+	        	const pandora::ClusterList& pfoClusterList = pfo->GetClusterList();
+
+				// each cluster in pfo
+				for(auto& cluster : pfoClusterList) clusterList.push_back(cluster);
+	        }
+		  }
+	  }
+
+	  std::cout << "cluster size: " << clusterList.size() << std::endl;
+    
+	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  pandora::StatusCode ClusterPurityAlgorithm::GetPurity(const pandora::Cluster* cluster, float& hitPurity, float& energyPurity, 
 		   float& ordClusterHit) const
   {
 	  const pandora::MCParticle *const pMCClusterParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
@@ -150,7 +202,7 @@ namespace arbor_content
 		 }
 		 else
 		 {
-			 std::cout << "purity degrading..." << std::endl;
+			 //std::cout << "purity degrading..." << std::endl;
 		 }
 	  }
 
@@ -169,13 +221,13 @@ namespace arbor_content
 
   pandora::StatusCode ClusterPurityAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
-	m_timing = false;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "ApplyTiming", m_timing));
+	m_listType = 0; // 0: cluster list; 1: pfo list
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, 
+			pandora::XmlHelper::ReadValue(xmlHandle, "ListType", m_listType));
 
-    m_timeCut = 100.f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "TimeCut", m_timeCut));
+    m_listNames.clear(); 
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, 
+			pandora::XmlHelper::ReadVectorOfValues(xmlHandle, "ListNames", m_listNames));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
