@@ -33,8 +33,10 @@
 #include "ArborObjects/CaloHit.h"
 #include "ArborHelpers/GeometryHelper.h"
 #include "ArborHelpers/ReclusterHelper.h"
-
 #include "ArborHelpers/HistogramHelper.h"
+
+#include "ArborUtility/EventPreparationAlgorithm.h"
+
 using namespace pandora;
 
 namespace arbor_content
@@ -75,6 +77,7 @@ namespace arbor_content
 			float clusterCharge = pandora::PdgTable::GetParticleCharge(pCluMCParticle->GetParticleId());
 	
 			std::vector<float> vars;
+	        vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 			vars.push_back( clusterSize );
 			vars.push_back( pid );
 			vars.push_back( clusterCharge );
@@ -84,7 +87,7 @@ namespace arbor_content
 			vars.push_back( energyPurity );
 
 			HistogramManager::CreateFill("ClusterPurity", 
-					"clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
+					"eventNumber:clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
 
 			//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
 			//	      << std::endl;
