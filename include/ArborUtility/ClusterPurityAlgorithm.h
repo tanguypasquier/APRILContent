@@ -61,7 +61,7 @@ private:
     pandora::StatusCode GetClusterList(pandora::ClusterList& clusterList);
 
 	pandora::StatusCode GetPurity(const pandora::Cluster* cluster, float& sizePurity, float& energyPurity, 
-			 float& ordClusterHit) const;
+			 float& ordClusterHit, bool printMCP = false) const;
 
 
 	unsigned int            m_listType;

@@ -69,6 +69,13 @@ namespace arbor_content
 
 			GetPurity(cluster, hitPurity, energyPurity, ordClusterHit);
 
+			if(energyPurity < 0.1) 
+			{
+				std::cout << "====== dumping cluster with low purity" << std::endl;
+			
+				GetPurity(cluster, hitPurity, energyPurity, ordClusterHit, true);
+			}
+
 			float clusterSize = cluster->GetNCaloHits();
 			float clusterEnergy = cluster->GetHadronicEnergy();
 	
@@ -154,10 +161,14 @@ namespace arbor_content
   }
 
   pandora::StatusCode ClusterPurityAlgorithm::GetPurity(const pandora::Cluster* cluster, float& hitPurity, float& energyPurity, 
-		   float& ordClusterHit) const
+		   float& ordClusterHit, bool printMCP) const
   {
 	  const pandora::MCParticle *const pMCClusterParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
-	  //std::cout << "Cluster : " << cluster << ", mcp: " << pMCClusterParticle << std::endl;
+
+	  if(printMCP)
+	  {
+		  std::cout << "Cluster : " << cluster << ", main mcp: " << pMCClusterParticle << std::endl;
+	  }
 
 	  pandora::CaloHitList caloHitList;
 	  cluster->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
@@ -182,7 +193,11 @@ namespace arbor_content
          try
          {
          	const pandora::MCParticle *const pMCHitParticle(pandora::MCParticleHelper::GetMainMCParticle(caloHit));
-         	//std::cout << "calo hit: " << caloHit << ", mcp: " << pMCHitParticle << std::endl;
+
+			if(printMCP)
+			{
+				std::cout << "calo hit: " << caloHit << ", mcp: " << pMCHitParticle << std::endl;
+			}
 
 			caloHitMCP = pMCHitParticle;
          }
