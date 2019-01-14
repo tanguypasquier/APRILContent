@@ -43,6 +43,7 @@ namespace arbor_content
   {
 	//std::cout << " ConnectorPlusTool : pCaloHitList " << pCaloHitList << ", size: " << pCaloHitList->size() << std::endl;
 	
+	// TODO:: paramter: from
     // ordered calo hit list of ECAL
     pandora::OrderedCaloHitList& orderedEcalCaloHitList = *( CaloHitRangeSearchHelper::GetOrderedEcalCaloHitList() );
     pandora::OrderedCaloHitList& orderedCaloHitList = *( CaloHitRangeSearchHelper::GetOrderedCaloHitList() );
@@ -50,11 +51,15 @@ namespace arbor_content
 	// seed hits
 	pandora::CaloHitVector seedHits;
 
+	// the reverse iterator
 	pandora::OrderedCaloHitList::const_reverse_iterator layerEndIter = orderedEcalCaloHitList.rbegin();
+	
+	// maximum ECAL layer
+	const unsigned int maxLayer = layerEndIter->first;
 
-	// FIXME
-	// maximum layer of going back
-	std::advance(layerEndIter, 3);
+	// going back in the layers
+	// check m_maxBackLayer
+	std::advance(layerEndIter, m_maxBackLayer);
 
 	// search seed hits in ECAL
     for(pandora::OrderedCaloHitList::const_reverse_iterator layerIter = orderedEcalCaloHitList.rbegin();
@@ -75,6 +80,7 @@ namespace arbor_content
         if(!m_shouldUseIsolatedHits && pCaloHitI->IsIsolated())
           continue;
 
+		// get hit with backward connector but without forward connector
         if( !ArborContentApi::GetConnectorList(pCaloHitI, BACKWARD_DIRECTION).empty() && 
 			ArborContentApi::GetConnectorList(pCaloHitI, FORWARD_DIRECTION).empty() )
 		{
@@ -85,16 +91,23 @@ namespace arbor_content
 	}
 
 	/////////////////////////////////////////////////////////
-	
+	// from ECAL to HCAL
+	//
+	// FIXME:: bad name
+	pandora::CaloHitVector seedHitsInHCAL;
+
+	//
 	for(int iHit = 0; iHit < seedHits.size(); ++iHit)
 	{
 		//std::cout << "seedHits.size: " << seedHits.size() << ", iHit: " << iHit << std::endl;
         const arbor_content::CaloHit *const pCaloHitI = dynamic_cast<const arbor_content::CaloHit *const>( seedHits.at(iHit) );
-		int pseudoLayerI = pCaloHitI->GetPseudoLayer();
+
+		//int pseudoLayerI = pCaloHitI->GetPseudoLayer();
 
 		//std::cout << "hit: " << pCaloHitI << ", layer: " << pseudoLayerI << std::endl;
 
-        for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
+        //for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
+        for(unsigned int pl = maxLayer+1 ; pl <= maxLayer + m_maxPseudoLayerConnection ; ++pl)
         {
           pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pl);
 
@@ -102,14 +115,12 @@ namespace arbor_content
 
 		  const pandora::CartesianVector &position(pCaloHitI->GetPositionVector());
 
-		  // TODO
-		  // range parametrized layer difference
-          const float range = 200.; // OK ???
+          const float searchRange(300.);
 
           int layer = pl;
           pandora::CaloHitList hitsInRange;
 
-          CaloHitRangeSearchHelper::SearchHitsInLayer(position, layer, range, hitsInRange);
+          CaloHitRangeSearchHelper::SearchHitsInLayer(position, layer, searchRange, hitsInRange);
 
 		  //std::cout << "hits in layer " << layer << ": " << hitsInRange.size() << std::endl;
 
@@ -136,6 +147,101 @@ namespace arbor_content
             const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
             const pandora::HitType hitTypeJ(pCaloHitJ->GetHitType());
             const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
+
+            // FIXME
+			if( difference > 120. ) continue;
+
+            const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
+
+
+
+            const float transverseDistance = std::sin( angle ) * difference;
+            const pandora::Granularity &granularity(PandoraContentApi::GetGeometry(algorithm)->GetHitTypeGranularity(hitTypeJ));
+
+            const float maxTransverseDistance = granularity <= pandora::FINE ?
+                m_maxTransverseDistanceFine : m_maxTransverseDistanceCoarse;
+
+            const float maxConnectionAngle = granularity <= pandora::FINE ?
+                m_maxConnectionAngleFine : m_maxConnectionAngleCoarse;
+
+            // check transverse distance
+            if(transverseDistance > maxTransverseDistance)
+              continue;
+
+            // check angle
+            if(angle > maxConnectionAngle)
+              continue;
+
+            // connect !
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION));
+		
+			seedHitsInHCAL.push_back(pCaloHitJ);
+          }
+		}
+	}
+	
+
+	std::cout << "Initial seedHitsInHCAL size: " << seedHitsInHCAL.size() << std::endl;
+	// HCAL
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	for(int iHit = 0; iHit < seedHitsInHCAL.size(); ++iHit)
+	{
+		//std::cout << "seedHitsInHCAL size: " << seedHitsInHCAL.size() << ", iHit: " << iHit << std::endl;
+        const arbor_content::CaloHit *const pCaloHitI = dynamic_cast<const arbor_content::CaloHit *const>( seedHitsInHCAL.at(iHit) );
+
+		// maximum ECAL layer
+		//const unsigned int maxLayer = orderedEcalCaloHitList.rbegin()->first;
+
+		//std::cout << "maxLayer: " << maxLayer << std::endl;
+		int pseudoLayerI = pCaloHitI->GetPseudoLayer();
+
+		//std::cout << "hit: " << pCaloHitI << ", layer: " << pseudoLayerI << std::endl;
+
+        for(unsigned int pl = pseudoLayerI+1 ; pl <= pseudoLayerI + m_maxPseudoLayerConnection ; pl++)
+        //for(unsigned int pl = maxLayer+1 ; pl <= maxLayer + m_maxPseudoLayerConnection ; ++pl)
+        {
+          pandora::OrderedCaloHitList::const_iterator findIter = orderedCaloHitList.find(pl);
+
+          if(orderedCaloHitList.end() == findIter) continue;
+
+		  const pandora::CartesianVector &position(pCaloHitI->GetPositionVector());
+
+          const float searchRange(m_hitSearchRange);
+
+          int layer = pl;
+          pandora::CaloHitList hitsInRange;
+
+          CaloHitRangeSearchHelper::SearchHitsInLayer(position, layer, searchRange, hitsInRange);
+
+		  //std::cout << " searching in HCAL: hits in layer " << layer << ": " << hitsInRange.size() << std::endl;
+
+          for(pandora::CaloHitList::const_iterator iterJ = hitsInRange.begin(), endIterJ = hitsInRange.end() ;
+              endIterJ != iterJ ; ++iterJ)
+          {
+            const arbor_content::CaloHit *const pCaloHitJ = dynamic_cast<const arbor_content::CaloHit *const>(*iterJ);
+
+            if(NULL == pCaloHitJ)
+              continue;
+
+            // check if already connected
+            if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION))
+              continue;
+
+            // check for availability
+            if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(algorithm, pCaloHitJ))
+              continue;
+
+            if(m_shouldDiscriminateConnectedHits && !ArborContentApi::GetConnectorList(pCaloHitJ, BACKWARD_DIRECTION).empty())
+              continue;
+
+            const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
+            const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
+            const pandora::HitType hitTypeJ(pCaloHitJ->GetHitType());
+            const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
+
+            // FIXME
+			if( difference > 55. ) continue;
+
             const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
 
             const float transverseDistance = std::sin( angle ) * difference;
@@ -158,7 +264,9 @@ namespace arbor_content
             // connect !
             PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION));
 		
-			seedHits.push_back(pCaloHitJ);
+			seedHitsInHCAL.push_back(pCaloHitJ);
+
+			//std::cout << "  ---> add a hit in seedHitsInHCAL: " << pCaloHitJ << std::endl;
           }
 		}
 	}
@@ -170,6 +278,14 @@ namespace arbor_content
 
   pandora::StatusCode ConnectorPlusTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+	m_maxBackLayer = 3;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxBackLayer", m_maxBackLayer));
+
+	m_hitSearchRange = 200.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "HitSearchRange", m_hitSearchRange));
+
     m_maxPseudoLayerConnection = 4;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxPseudoLayerConnection", m_maxPseudoLayerConnection));

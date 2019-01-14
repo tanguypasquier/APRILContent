@@ -68,6 +68,8 @@ public:
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
 private:
+	unsigned int                m_maxBackLayer;
+	float                       m_hitSearchRange;
 	float                       m_maxConnectionAngleFine;
 	float                       m_maxConnectionAngleCoarse;
 	float                       m_maxTransverseDistanceFine;
