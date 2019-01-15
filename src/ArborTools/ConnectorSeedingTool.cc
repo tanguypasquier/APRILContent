@@ -39,6 +39,7 @@ namespace arbor_content
 {
   pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
   {
+	//std::cout << " ------ ConnectorSeedingTool::Process " << std::endl;
     // ordered calo hit list of ECAL
 	pandora::OrderedCaloHitList* pOrderedCaloHitList;
 
@@ -106,6 +107,17 @@ namespace arbor_content
 
           CaloHitRangeSearchHelper::SearchHitsInLayer(position, pseudoLayer, range, hitsInRange);
 
+          // the pseudo layer of LHCAL seems having a problem: in some cases, two nearby readout layer may the same pseudo layer
+          // Here is a ad hoc way to sovle it
+          if(pCaloHitI->GetHitType() == pandora::HCAL && pCaloHitI->GetHitRegion() == pandora::ENDCAP 
+             && (pseudoLayer - pseudoLayerI) == 1 )
+          {
+              pandora::CaloHitList addtionalHitsInRange;
+              CaloHitRangeSearchHelper::SearchHitsInLayer(position, pseudoLayer-1, range, addtionalHitsInRange);
+
+              hitsInRange.insert(hitsInRange.begin(), addtionalHitsInRange.begin(), addtionalHitsInRange.end());
+          }
+
           for(pandora::CaloHitList::const_iterator iterJ = hitsInRange.begin(), endIterJ = hitsInRange.end() ;
               endIterJ != iterJ ; ++iterJ)
           {
@@ -113,6 +125,10 @@ namespace arbor_content
 
             if(NULL == pCaloHitJ)
               continue;
+
+            if(pCaloHitJ->GetLayer() == pCaloHitI->GetLayer() ) continue;
+
+            const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
 
             // check if already connected
             if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION))
@@ -125,9 +141,11 @@ namespace arbor_content
             if(m_shouldDiscriminateConnectedHits && !ArborContentApi::GetConnectorList(pCaloHitJ, BACKWARD_DIRECTION).empty())
               continue;
 
-            const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
             const pandora::HitType hitTypeJ(pCaloHitJ->GetHitType());
             const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
+	  
+            if(difference > m_maxCollectorLength) continue;
+
             const float angle = (positionVectorJ - positionVectorI).GetOpeningAngle(positionVectorI);
 
             const float transverseDistance = std::sin( angle ) * difference;
@@ -161,6 +179,10 @@ namespace arbor_content
 
   pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+	m_maxCollectorLength = 300.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxCollectorLength", m_maxCollectorLength));
+
     m_hitCollectionToUse = 0;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "CaloHitCollection", m_hitCollectionToUse));
