@@ -37,9 +37,16 @@
 
 namespace arbor_content
 {
+  float ConnectorOrderParameter::m_smallAngleRange(0.01);
+  float ConnectorOrderParameter::m_orderParameterAnglePower(1.);
+  float ConnectorOrderParameter::m_orderParameterDistancePower(1.);
 
-  pandora::StatusCode ConnectorCleaningTool::Process(const pandora::Algorithm &/*algorithm*/, const pandora::CaloHitList *const caloHitList)
+  pandora::StatusCode ConnectorCleaningTool::Process(const pandora::Algorithm& /*algorithm*/, const pandora::CaloHitList *const /* caloHitList */)
   {
+	//std::cout << "  --- ConnectorCleaningTool::Process" << std::endl;
+    ConnectorOrderParameter::m_orderParameterAnglePower = m_orderParameterAnglePower;
+    ConnectorOrderParameter::m_orderParameterDistancePower = m_orderParameterDistancePower;
+
     const pandora::CaloHitList* pCaloHitList = ArborClusteringAlgorithm::GetCaloHitList();
 
     if(0 == m_strategy)
@@ -55,20 +62,6 @@ namespace arbor_content
     }
 
     return pandora::STATUS_CODE_SUCCESS;
-  }
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
-  float ConnectorCleaningTool::GetOrderParameter(const arbor_content::Connector *const pConnector, const pandora::CartesianVector &referenceDirection) const
-  {
-    const pandora::CartesianVector connectorVector = pConnector->GetVector(BACKWARD_DIRECTION);
-    const float angle = referenceDirection.GetOpeningAngle(connectorVector)/M_PI;
-    const float distance = pConnector->GetNormalizedLength();
-
-    //const unsigned int layerDiff = abs( pConnector->GetTo()->GetPseudoLayer() - pConnector->GetFrom()->GetPseudoLayer() );
-
-    //return (std::pow(layerDiff, 5) * std::pow(angle, m_orderParameterAnglePower) * std::pow(distance, m_orderParameterDistancePower));
-    return (std::pow(angle, m_orderParameterAnglePower) * std::pow(distance, m_orderParameterDistancePower));
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -89,12 +82,31 @@ namespace arbor_content
       PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, CaloHitHelper::GetMeanDirection(pCaloHit, BACKWARD_DIRECTION,
           meanBackwardDirection, m_backwardReferenceDirectionDepth));
 
+	  //std::cout << "m_backwardConnectorWeight: " << m_backwardConnectorWeight << ", m_forwardConnectorWeight: "
+		//  << m_forwardConnectorWeight << ", m_backwardReferenceDirectionDepth: " << m_backwardReferenceDirectionDepth 
+		//  << ", m_forwardReferenceDirectionDepth: " << m_forwardReferenceDirectionDepth << std::endl;
+
       meanBackwardDirection *= m_backwardConnectorWeight;
 
       if(meanForwardDirection == meanBackwardDirection)
         throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
-      referenceVector = meanBackwardDirection - meanForwardDirection;
+      // both directions are defined in the forward direction 
+      referenceVector = meanBackwardDirection + meanForwardDirection;
+
+
+#if 0
+	  std::cout << "  GetReferenceVector ==== " << std::endl;
+	  std::cout << "  --- meanBackwardDirection: " << meanBackwardDirection.GetX() << ", " << meanBackwardDirection.GetY() << ", " 
+		        << meanBackwardDirection.GetZ() << std::endl;
+
+	  std::cout << "  --- meanForwardDirection: " << meanForwardDirection.GetX() << ", " << meanForwardDirection.GetY() << ", " 
+		        << meanForwardDirection.GetZ() << std::endl;
+
+	  std::cout << "  --- referenceVector: " << referenceVector.GetX() << ", " << referenceVector.GetY() << ", " 
+		        << referenceVector.GetZ() << std::endl;
+#endif
+
     }
     catch(pandora::StatusCodeException &exception)
     {
@@ -119,18 +131,50 @@ namespace arbor_content
 
       const ConnectorList &backwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, BACKWARD_DIRECTION));
 
-      // should be 1 ???
+#if 0
+	  auto hitPos = pCaloHit->GetPositionVector();
+	  //std::cout << "---> calo hit: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() 
+		//  << ", backwardConnectorList.size: " << backwardConnectorList.size() << std::endl;
+
+	  pandora::CartesianVector testPos(-110, 90, -2790.4);
+
+	  if((testPos-hitPos).GetMagnitude() < 0.1)
+	  {
+		  std::cout << "  ===> print the forwardConnectorlist: " << std::endl;
+		  const ConnectorList &forwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, FORWARD_DIRECTION));
+		  for(auto& connector : forwardConnectorList)
+		  {
+			  auto fromHit = connector->GetFrom();
+			  auto toHit = connector->GetTo();
+			  auto fromHitPos = fromHit->GetPositionVector();
+			  auto toHitPos = toHit->GetPositionVector();
+	          std::cout << "            - connector: from " << fromHitPos.GetX() << ", " << fromHitPos.GetY() << ", " << fromHitPos.GetZ() 
+				  << " to " << toHitPos.GetX() << ", " << toHitPos.GetY() << ", " << toHitPos.GetZ() << std::endl;
+		  }
+
+		  std::cout << "  ===> print the backwardConnectorlist: " << std::endl;
+		  for(auto& connector : backwardConnectorList)
+		  {
+			  auto fromHit = connector->GetFrom();
+			  auto toHit = connector->GetTo();
+			  auto fromHitPos = fromHit->GetPositionVector();
+			  auto toHitPos = toHit->GetPositionVector();
+	          std::cout << "            - connector: from " << fromHitPos.GetX() << ", " << fromHitPos.GetY() << ", " << fromHitPos.GetZ() 
+				  << " to " << toHitPos.GetX() << ", " << toHitPos.GetY() << ", " << toHitPos.GetZ() << std::endl;
+		  }
+	  }
+#endif
+
       if(backwardConnectorList.size() < 2)
         continue;
 
       pandora::CartesianVector referenceVector(this->GetReferenceVector(pCaloHit));
 
-      // undefined reference vector ?
       if(referenceVector == pandora::CartesianVector(0.f, 0.f, 0.f))
         return pandora::STATUS_CODE_FAILURE;
 
       const CaloHit *pBestCaloHit = NULL;
-      float bestOrderParameter = std::numeric_limits<float>::max();
+      ConnectorOrderParameter bestOrderParameter; 
       pandora::CaloHitList deleteConnectionCaloHitList;
 
       // find the best connector with the smallest order parameter
@@ -139,9 +183,24 @@ namespace arbor_content
       {
         const Connector *pConnector = *connectorIter;
         const CaloHit *pFromCaloHit = pConnector->GetFrom();
-        const float orderParameter(this->GetOrderParameter(pConnector, referenceVector));
+        const pandora::CartesianVector connectorVector = pConnector->GetVector(FORWARD_DIRECTION);
+        const float distance = pConnector->GetLength();
 
-        if(orderParameter< bestOrderParameter)
+		// FIXME
+        //const float angle = referenceVector.GetOpeningAngle(connectorVector)/M_PI;
+        const float angle = referenceVector.GetOpeningAngle(connectorVector);
+
+		///////
+	  //std::cout << "  --- vector1 ref: " << referenceVector.GetX() << ", " << referenceVector.GetY() << ", " 
+		      //  << referenceVector.GetZ() << std::endl;
+	  //std::cout << "  --- vector2 con: " << connectorVector.GetX() << ", " << connectorVector.GetY() << ", " 
+		      //  << connectorVector.GetZ() << "  *** angle: " << angle << std::endl;
+
+		ConnectorOrderParameter orderParameter(distance, angle);
+
+		//std::cout << " angle: " << angle << ", distance: " << distance << ", order: " << orderParameter.m_orderParameter << std::endl;
+
+        if(orderParameter < bestOrderParameter)
         {
           if(NULL != pBestCaloHit)
             deleteConnectionCaloHitList.push_back(pBestCaloHit);

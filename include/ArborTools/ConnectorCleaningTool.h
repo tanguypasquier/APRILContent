@@ -40,6 +40,49 @@ class Connector;
 /** 
  *  @brief  ConnectorCleaningTool class
  */ 
+
+class ConnectorOrderParameter
+{
+public:
+	ConnectorOrderParameter()
+	: m_distance(std::numeric_limits<float>::max()),
+	  m_openingAngle(std::numeric_limits<float>::max()),
+	  m_orderParameter(std::numeric_limits<float>::max())
+	{
+		//std::cout << "best ConnectorOrderParameter: " << m_distance << ", " << m_openingAngle << ", " << m_orderParameter << std::endl;
+		//std::cout << " --- small angle range: " << m_smallAngleRange << std::endl;
+	}
+
+	ConnectorOrderParameter(float distance, float openingAngle) 
+	: m_distance(distance), 
+	  m_openingAngle(openingAngle)
+	{
+        m_orderParameter = std::pow(m_openingAngle, m_orderParameterAnglePower) * 
+			               std::pow(m_distance, m_orderParameterDistancePower);
+	}
+
+	bool operator<(const ConnectorOrderParameter& a) const
+	{
+		//std::cout << " ---+++ small angle range: " << m_smallAngleRange << std::endl;
+
+		if(m_openingAngle < m_smallAngleRange && a.m_openingAngle < m_smallAngleRange)
+		{
+			//std::cout << "small angle, distance: " << m_distance << ", " << a.m_distance << std::endl;
+			return m_distance < a.m_distance;
+		}
+
+		return m_orderParameter < a.m_orderParameter;
+	}
+
+	float m_distance;
+	float m_openingAngle;
+	float m_orderParameter;
+
+	static float m_smallAngleRange;
+	static float m_orderParameterAnglePower;
+	static float m_orderParameterDistancePower;
+};
+
 class ConnectorCleaningTool : public ConnectorAlgorithmTool
 {
 	typedef std::map<const arbor_content::CaloHit*, pandora::CaloHitList> CaloHitCleaningMap;
@@ -83,7 +126,7 @@ private:
 	 *
 	 *  @return the order parameter
 	 */
-	float GetOrderParameter(const arbor_content::Connector *const pConnector, const pandora::CartesianVector &referenceDirection) const;
+	//float GetOrderParameter(const arbor_content::Connector *const pConnector, const pandora::CartesianVector &referenceDirection) const;
 
 	/**
 	 *  @brief  Get the reference vector of the calo hit. The vector is oriented backwardly.
