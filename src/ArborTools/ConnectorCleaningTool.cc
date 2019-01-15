@@ -33,7 +33,10 @@
 #include "ArborObjects/CaloHit.h"
 #include "ArborObjects/Connector.h"
 #include "ArborHelpers/CaloHitHelper.h"
+#include "ArborHelpers/HistogramHelper.h"
 #include "ArborClustering/ArborClusteringAlgorithm.h"
+
+#include "ArborUtility/EventPreparationAlgorithm.h"
 
 namespace arbor_content
 {
@@ -186,9 +189,16 @@ namespace arbor_content
         const pandora::CartesianVector connectorVector = pConnector->GetVector(FORWARD_DIRECTION);
         const float distance = pConnector->GetLength();
 
-		// FIXME
-        //const float angle = referenceVector.GetOpeningAngle(connectorVector)/M_PI;
         const float angle = referenceVector.GetOpeningAngle(connectorVector);
+
+        ///////////////////////////////
+        std::vector<float> vars;
+        vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+        vars.push_back( angle );
+        vars.push_back( distance );
+	
+        HistogramManager::CreateFill("ConnectorProperties", "evtNumber:angle:distance", vars);
+        ///////////////////////////////
 
 		///////
 	  //std::cout << "  --- vector1 ref: " << referenceVector.GetX() << ", " << referenceVector.GetY() << ", " 

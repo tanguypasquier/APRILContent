@@ -106,7 +106,7 @@ namespace arbor_content
   {
 	  if(pCaloHitList != m_pCaloHitList)
 	  {
-		  std::cout << "build new matrix for NeighborSearch..." << std::endl;
+		  //std::cout << "build new matrix for NeighborSearch..." << std::endl;
 		  m_caloHitVector.clear();
 	      m_caloHitVector.insert(m_caloHitVector.begin(), pCaloHitList->begin(), pCaloHitList->end());
 
