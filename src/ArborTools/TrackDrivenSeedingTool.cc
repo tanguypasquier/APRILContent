@@ -73,7 +73,7 @@ namespace arbor_content
     {
       const pandora::Track *pTrack = *trackIter;
 
-      if(!pTrack->ReachesCalorimeter() || !pTrack->CanFormPfo())
+      if(!pTrack->ReachesCalorimeter() && !pTrack->CanFormPfo())
         continue;
 
 	  //if(fabs(pTrack->GetMomentumAtDca().GetMagnitude() - 5.15) > 0.01) continue;
