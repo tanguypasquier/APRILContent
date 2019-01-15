@@ -193,6 +193,8 @@ namespace arbor_content
   pandora::StatusCode CaloHitHelper::GetMeanDirection(const CaloHit *const pCaloHit, ConnectorDirection connectorDirection,
       pandora::CartesianVector &direction, unsigned int depth)
   {
+    // the mean direction is in the forward direction 
+
     if(NULL == pCaloHit)
       return pandora::STATUS_CODE_FAILURE;
 
@@ -213,6 +215,10 @@ namespace arbor_content
       const CaloHit *const pConnectedCaloHit = pConnector->Get(connectorDirection);
 
       pandora::CartesianVector differencePosition(pConnectedCaloHit->GetPositionVector() - positionVector);
+
+	  // make it in the forward direction
+	  if(connectorDirection == BACKWARD_DIRECTION) differencePosition *= -1.;
+
       const float normalizationWeight = 1.f / (differencePosition.GetMagnitudeSquared());
       direction += (differencePosition * normalizationWeight);
 
