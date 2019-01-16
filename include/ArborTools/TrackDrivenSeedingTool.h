@@ -109,6 +109,8 @@ private:
 	static inline TrackCaloHitVector& GetTrackAndInitCaloHits() { return m_trackHitVector; }
 
 private:
+	float                           m_initialHitSearchRange;
+	float                           m_hitSearchRange;
 	unsigned int                    m_maxInitialPseudoLayer;
 	float                           m_maxInitialTrackDistance;
 	float                           m_maxInitialTrackAngle;

@@ -329,6 +329,8 @@ namespace arbor_content
     const float bField(PandoraContentApi::GetPlugins(algorithm)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
     const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
         pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
+	
+	pandora::CartesianVector referencePoint = pTrack->GetTrackStateAtCalorimeter().GetPosition();
 
 	//std::cout << "track p: " << pTrack->GetMomentumAtDca().GetMagnitude() << std::endl;
 
@@ -342,11 +344,11 @@ namespace arbor_content
         
 		// TODO
 		// the reference point and range can be updated after a hit is found
-		float range = 100.;
-		pandora::CaloHitList hitsInRange;
-		pandora::CartesianVector trackPositionAtCalo = pTrack->GetTrackStateAtCalorimeter().GetPosition();
+		const float range = m_initialHitSearchRange;
 
-		CaloHitRangeSearchHelper::SearchHitsInLayer(trackPositionAtCalo, pseudoLayer, range, hitsInRange);
+		pandora::CaloHitList hitsInRange;
+
+		CaloHitRangeSearchHelper::SearchHitsInLayer(referencePoint, pseudoLayer, range, hitsInRange);
 #if 0
 		std::cout << "layer: " << pseudoLayer << ", hits in range: " << hitsInRange.size() 
 			<< ", track pos on calo: " << trackPositionAtCalo.GetX() << ", " << trackPositionAtCalo.GetY() 
@@ -381,7 +383,11 @@ namespace arbor_content
 			}
 		}
 
-		if(bestHit != nullptr) caloHitVector.push_back(bestHit);
+		if(bestHit != nullptr) 
+		{
+			caloHitVector.push_back(bestHit);
+			referencePoint = bestHit->GetPositionVector();
+		}
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -436,7 +442,7 @@ namespace arbor_content
 	  }
 #endif
 
-      const pandora::CartesianVector extrapolatedMomentum( helix.GetExtrapolatedMomentum(position) );
+      pandora::CartesianVector extrapolatedMomentum( helix.GetExtrapolatedMomentum(position) );
       //const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
 
 	  // the layer of the starting hit
@@ -464,7 +470,7 @@ namespace arbor_content
         {
           // create search range for each layer 
 
-          const float range = 200.; // OK ???
+          const float range = m_hitSearchRange; 
 
 		  // use pseudo layer
           int toPseudoLayer = plIter->first;
@@ -487,8 +493,6 @@ namespace arbor_content
             const pandora::Granularity &granularity(algorithm.GetPandora().GetGeometry()->GetHitTypeGranularity(pTestCaloHit->GetHitType()));
             const float maxTransverseDistance = (granularity >= pandora::COARSE) ? m_maxTransverseDistanceCoarse : m_maxTransverseDistanceFine;
 
-			// only set for ECAL
-            const float maxDistanceToTrack = (granularity >= pandora::COARSE) ? m_maxDistanceToTrackCoarse : m_maxDistanceToTrackFine;
 
             const pandora::CartesianVector caloHitsVector(pTestCaloHit->GetPositionVector() - pCaloHit->GetPositionVector());
             const float caloHitsAngle = caloHitsVector.GetOpeningAngle(extrapolatedMomentum);
@@ -537,7 +541,9 @@ namespace arbor_content
 
 			// TODO
 			// only check for first 5 layers after starting layer (ECAL)
-            if(distanceToHelix.GetZ() > maxDistanceToTrack)
+			// only set for ECAL
+            const float maxDistanceToTrack = (granularity >= pandora::COARSE) ? m_maxDistanceToTrackCoarse : m_maxDistanceToTrackFine;
+            if(distanceToHelix.GetZ() > maxDistanceToTrack) // x, y ?
               continue;
 
             PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHit, pTestCaloHit, arbor_content::FORWARD_DIRECTION));
@@ -559,6 +565,14 @@ namespace arbor_content
 
   pandora::StatusCode TrackDrivenSeedingTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+    m_initialHitSearchRange = 100.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "InitialHitSearchRange", m_initialHitSearchRange));
+
+    m_hitSearchRange = 200.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "HitSearchRange", m_hitSearchRange));
+
     m_maxInitialPseudoLayer = 3;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxInitialPseudoLayer", m_maxInitialPseudoLayer));
