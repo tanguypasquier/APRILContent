@@ -110,7 +110,9 @@ private:
 
 private:
 	float                           m_initialHitSearchRange;
-	float                           m_hitSearchRange;
+    float                           m_hitSearchRangeFine;
+    float                           m_hitSearchRangeCoarse;
+	float                           m_hitSearchRangeAtBoundary;
 	unsigned int                    m_maxInitialPseudoLayer;
 	float                           m_maxInitialTrackDistance;
 	float                           m_maxInitialTrackAngle;

@@ -436,6 +436,7 @@ namespace arbor_content
 
       const pandora::CartesianVector &position(pCaloHit->GetPositionVector());
       const unsigned int pseudoLayer = pCaloHit->GetPseudoLayer();
+	  pandora::HitType fromHitType = pCaloHit->GetHitType();
 
 	  if(i==0) firstPseudoLayer = pseudoLayer;
 
@@ -473,8 +474,15 @@ namespace arbor_content
         if(!plIter->second->empty())
         {
           // create search range for each layer 
+		  const pandora::CaloHit* aCaloHit = *(plIter->second->begin());
 
-          const float range = m_hitSearchRange; 
+		  if(aCaloHit == nullptr) continue;
+
+          const pandora::Granularity &detGranularity(algorithm.GetPandora().GetGeometry()->GetHitTypeGranularity(aCaloHit->GetHitType()));
+          float range = (detGranularity >= pandora::COARSE) ? m_hitSearchRangeCoarse : m_hitSearchRangeFine; 
+
+		  pandora::HitType toHitType = aCaloHit->GetHitType();
+		  if(fromHitType != toHitType) range = m_hitSearchRangeAtBoundary;
 
 		  // use pseudo layer
           int toPseudoLayer = plIter->first;
@@ -516,12 +524,14 @@ namespace arbor_content
             const pandora::Granularity &granularity(algorithm.GetPandora().GetGeometry()->GetHitTypeGranularity(pTestCaloHit->GetHitType()));
             const float maxTransverseDistance = (granularity >= pandora::COARSE) ? m_maxTransverseDistanceCoarse : m_maxTransverseDistanceFine;
 
+#if 0
+			// this is very cpu consuming at high energy, for instance, Ecm = 500 GeV
             if(transverseDistance > maxTransverseDistance)
 			{
 			    // check transverse distance between two hits for layers after the fifth one
 				// check last connector (or last average connector): angle with next connetor and get local transverse distance
 			
-			    if(pTestCaloHit->GetPseudoLayer() - firstPseudoLayer > 5)
+			    if(pTestCaloHit->GetPseudoLayer() - firstPseudoLayer > 3)
 			    {
 					const float maxLocalTransversDistance = maxTransverseDistance;
 
@@ -540,6 +550,8 @@ namespace arbor_content
 				}
 
 			}
+#endif
+            if(transverseDistance > maxTransverseDistance) continue;
 
             // N.B., the default is set to infinity
             const float maxDistanceToTrack = (granularity >= pandora::COARSE) ? m_maxDistanceToTrackCoarse : m_maxDistanceToTrackFine;
@@ -571,9 +583,17 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "InitialHitSearchRange", m_initialHitSearchRange));
 
-    m_hitSearchRange = 200.;
+    m_hitSearchRangeFine = 200.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "HitSearchRange", m_hitSearchRange));
+        "HitSearchRangeFine", m_hitSearchRangeFine));
+
+    m_hitSearchRangeCoarse = 200.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "HitSearchRangeCoarse", m_hitSearchRangeCoarse));
+
+	m_hitSearchRangeAtBoundary = 200.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "HitSearchRangeAtBoundary", m_hitSearchRangeAtBoundary));
 
     m_maxInitialPseudoLayer = 3;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
