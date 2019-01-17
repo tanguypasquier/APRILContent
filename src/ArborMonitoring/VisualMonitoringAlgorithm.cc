@@ -403,6 +403,12 @@ namespace arbor_content
     {
       if(m_showCurrentConnectors && m_connectorLevel == "clusters")
       {
+           VisualizeClusterListWithConnectors(&clusterList,listName.empty() ? "CurrentClusters" : listName.c_str(), 0, 
+				(m_hitColors.find("particleid") != std::string::npos) ? ::AUTOID :
+				(m_hitColors.find("iterate") != std::string::npos) ? ::AUTOITER :
+				(m_hitColors.find("energy") != std::string::npos) ? ::AUTOENERGY : ::AUTO,
+			     m_showAssociatedTracks);	
+#if 0
         TEveElement *pParentElement = pandora_monitoring::PandoraMonitoring::GetInstance(this->GetPandora())->VisualizeClusters(&clusterList, listName.empty() ? "CurrentClusters" : listName.c_str(), 0,
             (m_hitColors.find("particleid") != std::string::npos) ? ::AUTOID :
                 (m_hitColors.find("iterate") != std::string::npos) ? ::AUTOITER :
@@ -424,6 +430,7 @@ namespace arbor_content
                   (m_hitColors.find("iterate") != std::string::npos) ? ::AUTOITER :
                       (m_hitColors.find("energy") != std::string::npos) ? ::AUTOENERGY : ::AUTO);
         }
+#endif
       }
       else
       {
@@ -435,6 +442,98 @@ namespace arbor_content
       }
     }
 #endif
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  std::string VisualMonitoringAlgorithm::GetHitTypeString(const pandora::HitType hitType) const
+  {
+      switch (hitType)
+      {
+		  case pandora::TRACKER : return "TRACKER";
+		  case pandora::ECAL : return "ECAL";
+          case pandora::HCAL : return "HCAL";
+          case pandora::MUON : return "MUON";
+          case pandora::TPC_VIEW_U : return "TPC_VIEW_U";
+          case pandora::TPC_VIEW_V : return "TPC_VIEW_V";
+          case pandora::TPC_VIEW_W : return "TPC_VIEW_W";
+          case pandora::TPC_3D : return "TPC_3D";
+          case pandora::HIT_CUSTOM : return "HIT_CUSTOM";
+          default : return "Unknown";
+      }
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  
+  // rewrite the VisualizeClusters function in Pandora for visualizing connectors
+  TEveElement* VisualMonitoringAlgorithm::VisualizeClusterListWithConnectors(const pandora::ClusterList *const pClusterList, 
+		  const std::string &name, TEveElement *parent, const Color color, bool showAssociatedTracks) const
+  {
+	  pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
+      
+	  std::sort(clusterVector.begin(), clusterVector.end(), pandora_monitoring::PandoraMonitoring::SortClustersByHadronicEnergy);
+  
+      const std::string starter("---");
+      const std::string clusterListTitle(name.empty() ? "Clusters" : name);
+      std::string clusterListName(clusterListTitle);
+      if (clusterListName.find(starter) != std::string::npos)
+          clusterListName.replace(clusterListName.find(starter), starter.length(), "Clusters/");
+      std::replace_if(clusterListName.begin(), clusterListName.end(), std::bind2nd(std::equal_to<char>(),'\n'), '/');
+  
+      TEveElement *pClusterVectorElement = new TEveElementList();
+      pClusterVectorElement->SetElementNameTitle(clusterListName.c_str(), clusterListTitle.c_str());
+  
+      for (const pandora::Cluster *const pCluster : clusterVector)
+      {
+          if (pCluster->GetNCaloHits() == 0)
+              continue;
+  
+          std::stringstream sstr;
+          sstr << starter << "Cluster\nEem(corr)=" << pCluster->GetElectromagneticEnergy() << "\nEhad(corr)=" << pCluster->GetHadronicEnergy()
+              << "\nNHits=" << pCluster->GetNCaloHits()
+			  << "\nInnerHitType=" << GetHitTypeString(pCluster->GetInnerLayerHitType())
+              << "\nOuterHitType=" << GetHitTypeString(pCluster->GetOuterLayerHitType());
+  
+          const Color clusterColor((color != AUTO) ? color : (pCluster->GetAssociatedTrackList().empty()) ? LIGHTBLUE : MAGENTA);
+  
+		  pandora::CaloHitList caloHitList;
+          pCluster->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
+
+		  std::string clusterName(sstr.str());
+
+          TEveElement *pCaloHitsElement = 
+			  pandora_monitoring::PandoraMonitoring::GetInstance(this->GetPandora())->VisualizeCaloHits(
+			  &caloHitList, clusterName.c_str(), pClusterVectorElement, clusterColor);
+
+          TEveElement *pConnectorDirectory = new TEveElementList();
+          pConnectorDirectory->SetElementNameTitle("ClusterConnectors", "ClusterConnectors");
+          
+          pCaloHitsElement->AddElement(pConnectorDirectory);
+
+          this->VisualizeConnectors(&caloHitList, clusterListName.empty() ? "CurrentClustersConnectors" : (clusterListName+"Connectors").c_str(), 
+				  pConnectorDirectory, clusterColor);
+
+          if (showAssociatedTracks && !pCluster->GetAssociatedTrackList().empty())
+          {
+              TEveElement *pTrackParentElement = pCaloHitsElement;
+          
+			  pandora_monitoring::PandoraMonitoring::GetInstance(this->GetPandora())->VisualizeTracks(
+			  &(pCluster->GetAssociatedTrackList()), "Tracks", pTrackParentElement, MAGENTA);
+          }
+      }
+  
+
+      if (parent)
+      {
+          parent->AddElement(pClusterVectorElement);
+      }
+      else
+      {
+          gEve->AddElement(pClusterVectorElement);
+          gEve->Redraw3D();
+      }
+  
+      return pClusterVectorElement;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -558,6 +657,28 @@ namespace arbor_content
       if(NULL == parent)
         return;
 
+	  ConnectorList clusterConnectorList;
+
+      for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin() , endIter = pCaloHitList->end() ;
+          endIter != iter ; ++iter)
+      {
+        const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
+
+        if(NULL == pCaloHit)
+          continue;
+
+        const ConnectorList &connectorList(ArborContentApi::GetConnectorList(pCaloHit, FORWARD_DIRECTION));
+
+        for(ConnectorList::const_iterator connectorIter = connectorList.begin(), connectorEndIter = connectorList.end() ;
+            connectorEndIter != connectorIter ; ++connectorIter)
+        {
+          const Connector *const pConnector = *connectorIter;
+		  clusterConnectorList.insert(pConnector);
+		}
+	  }
+
+	  if(clusterConnectorList.empty()) return;
+
       TEveElement *pConnectorListElement = new TEveElementList();
       const std::string connectorListTitle(name.empty() ? "Connectors" : name);
 
@@ -577,19 +698,10 @@ namespace arbor_content
       pConnectorListElement->SetElementNameTitle( connectorListTitle.c_str(), connectorListTitle.c_str() );
       pConnectorListElement->SetMainColor(GetROOTColor(color));
 
-      for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin() , endIter = pCaloHitList->end() ;
-          endIter != iter ; ++iter)
-      {
-        const arbor_content::CaloHit *const pCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(*iter);
 
-        if(NULL == pCaloHit)
-          continue;
-
-        const ConnectorList &connectorList(ArborContentApi::GetConnectorList(pCaloHit, FORWARD_DIRECTION));
-
-        for(ConnectorList::const_iterator connectorIter = connectorList.begin(), connectorEndIter = connectorList.end() ;
+      for(ConnectorList::const_iterator connectorIter = clusterConnectorList.begin(), connectorEndIter = clusterConnectorList.end() ;
             connectorEndIter != connectorIter ; ++connectorIter)
-        {
+	  {
           const Connector *const pConnector = *connectorIter;
 
           const CaloHit *const pCaloHitFrom = pConnector->GetFrom();
@@ -612,7 +724,6 @@ namespace arbor_content
           pConnectorArrow->SetMainColor(GetROOTColor(color));
           pConnectorArrow->SetPickable(true);
           pConnectorListElement->AddElement(pConnectorArrow);
-        }
       }
 
       parent->AddElement(pConnectorListElement);

@@ -555,6 +555,8 @@ namespace arbor_content
 
             // N.B., the default is set to infinity
             const float maxDistanceToTrack = (granularity >= pandora::COARSE) ? m_maxDistanceToTrackCoarse : m_maxDistanceToTrackFine;
+
+			// z component: 3D distance magnitude
             if(distanceToHelix.GetZ() > maxDistanceToTrack)
               continue;
 

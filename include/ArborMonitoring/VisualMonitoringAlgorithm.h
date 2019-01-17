@@ -104,6 +104,11 @@ private:
      *  @param  listName the list name
      */
     void VisualizeVertexList(const std::string &listName) const;
+  
+    std::string GetHitTypeString(const pandora::HitType hitType) const;
+
+	TEveElement* VisualizeClusterListWithConnectors(const pandora::ClusterList *const pClusterList, 
+		  const std::string &name, TEveElement *parent, const Color color, bool showAssociatedTracks) const;
 
 #ifdef MONITORING
     /**
