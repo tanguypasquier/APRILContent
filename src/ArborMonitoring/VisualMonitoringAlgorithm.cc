@@ -357,7 +357,7 @@ namespace arbor_content
         trackList.push_back(pTrack);
     }
 
-    PANDORA_MONITORING_API(VisualizeTracks(this->GetPandora(), &trackList, listName.empty() ? "CurrentTracks" : listName.c_str(), ::GRAY));
+    PANDORA_MONITORING_API(VisualizeTracks(this->GetPandora(), &trackList, listName.empty() ? "CurrentTracks" : listName.c_str(), ::MAGENTA));
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -505,13 +505,7 @@ namespace arbor_content
 			  pandora_monitoring::PandoraMonitoring::GetInstance(this->GetPandora())->VisualizeCaloHits(
 			  &caloHitList, clusterName.c_str(), pClusterVectorElement, clusterColor);
 
-          TEveElement *pConnectorDirectory = new TEveElementList();
-          pConnectorDirectory->SetElementNameTitle("ClusterConnectors", "ClusterConnectors");
-          
-          pCaloHitsElement->AddElement(pConnectorDirectory);
-
-          this->VisualizeConnectors(&caloHitList, clusterListName.empty() ? "CurrentClustersConnectors" : (clusterListName+"Connectors").c_str(), 
-				  pConnectorDirectory, clusterColor);
+          this->VisualizeConnectors(&caloHitList, "Connectors", pCaloHitsElement, MAGENTA);
 
           if (showAssociatedTracks && !pCluster->GetAssociatedTrackList().empty())
           {
@@ -696,6 +690,8 @@ namespace arbor_content
       }
 
       pConnectorListElement->SetElementNameTitle( connectorListTitle.c_str(), connectorListTitle.c_str() );
+      pConnectorListElement->SetRnrSelf(false);
+      pConnectorListElement->SetRnrChildren(false);
       pConnectorListElement->SetMainColor(GetROOTColor(color));
 
 
