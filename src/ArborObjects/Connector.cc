@@ -31,10 +31,12 @@
 namespace arbor_content
 {
 
-  Connector::Connector(const arbor_content::CaloHit *const pFromCaloHit, const arbor_content::CaloHit *const pToCaloHit, float referenceLength) :
+  Connector::Connector(const arbor_content::CaloHit *const pFromCaloHit, const arbor_content::CaloHit *const pToCaloHit, float referenceLength,
+		  unsigned int creationStage) :
       m_pFromCaloHit(pFromCaloHit),
       m_pToCaloHit(pToCaloHit),
-      m_referenceLength(referenceLength)
+      m_referenceLength(referenceLength),
+      m_creationStage(creationStage)
   {
     /* nop */
   }
@@ -119,6 +121,11 @@ namespace arbor_content
     const pandora::CartesianVector otherDirection(pConnector->GetTo()->GetPositionVector() - pConnector->GetTo()->GetPositionVector());
 
     return direction.GetOpeningAngle(otherDirection);
+  }
+
+  unsigned int Connector::GetCreationStage() const
+  {
+	  return m_creationStage;
   }
 
 } 

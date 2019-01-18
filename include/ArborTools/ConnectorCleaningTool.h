@@ -47,15 +47,17 @@ public:
 	ConnectorOrderParameter()
 	: m_distance(std::numeric_limits<float>::max()),
 	  m_openingAngle(std::numeric_limits<float>::max()),
+	  m_creationStage(-1),
 	  m_orderParameter(std::numeric_limits<float>::max())
 	{
 		//std::cout << "best ConnectorOrderParameter: " << m_distance << ", " << m_openingAngle << ", " << m_orderParameter << std::endl;
 		//std::cout << " --- small angle range: " << m_smallAngleRange << std::endl;
 	}
 
-	ConnectorOrderParameter(float distance, float openingAngle) 
+	ConnectorOrderParameter(float distance, float openingAngle, unsigned int creationStage) 
 	: m_distance(distance), 
-	  m_openingAngle(openingAngle)
+	  m_openingAngle(openingAngle),
+	  m_creationStage(creationStage)
 	{
         m_orderParameter = std::pow(m_openingAngle, m_orderParameterAnglePower) * 
 			               std::pow(m_distance, m_orderParameterDistancePower);
@@ -64,6 +66,11 @@ public:
 	bool operator<(const ConnectorOrderParameter& a) const
 	{
 		//std::cout << " ---+++ small angle range: " << m_smallAngleRange << std::endl;
+
+		if( m_creationStage != a.m_creationStage )
+		{
+			return m_creationStage < a.m_creationStage;
+		}
 
 		if(m_openingAngle < m_smallAngleRange && a.m_openingAngle < m_smallAngleRange)
 		{
@@ -74,13 +81,14 @@ public:
 		return m_orderParameter < a.m_orderParameter;
 	}
 
-	float m_distance;
-	float m_openingAngle;
-	float m_orderParameter;
+	float                     m_distance;
+	float                     m_openingAngle;
+	unsigned int              m_creationStage;
+	float                     m_orderParameter;
 
-	static float m_smallAngleRange;
-	static float m_orderParameterAnglePower;
-	static float m_orderParameterDistancePower;
+	static float              m_smallAngleRange;
+	static float              m_orderParameterAnglePower;
+	static float              m_orderParameterDistancePower;
 };
 
 class ConnectorCleaningTool : public ConnectorAlgorithmTool

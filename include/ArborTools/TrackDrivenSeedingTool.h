@@ -124,6 +124,7 @@ private:
 	float                           m_maxDistanceToTrackCoarse;
 
 	bool                            m_shouldUseIsolatedHits;
+	unsigned int                    m_connectorCreationStage;
 
 	static TrackCaloHitVector       m_trackHitVector;
 };

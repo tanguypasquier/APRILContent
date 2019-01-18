@@ -162,7 +162,7 @@ public:
 	 *  @param  referenceLength the reference length assigned to the connector
 	 */
 	static pandora::StatusCode Connect(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2,
-			arbor_content::ConnectorDirection direction, float referenceLength = 1.f);
+			arbor_content::ConnectorDirection direction, float referenceLength = 1.f, unsigned int creationStage = -1);
 
 	/**
 	 *  @brief  Connect the two calo hits in a given direction
@@ -174,7 +174,8 @@ public:
 	 *  @param  referenceLength the reference length assigned to the connector
 	 */
 	static pandora::StatusCode Connect(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2,
-			arbor_content::ConnectorDirection direction, const arbor_content::Connector *&pConnector, float referenceLength = 1.f);
+			arbor_content::ConnectorDirection direction, const arbor_content::Connector *&pConnector, float referenceLength = 1.f,
+			unsigned int creationStage = -1);
 
 	/**
 	 *  @brief  Remove and delete the connection between the two calo hits.

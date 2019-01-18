@@ -93,12 +93,14 @@ public:
 	 */
 	float GetOpeningAngle(const Connector *const pConnector) const;
 
+	unsigned int GetCreationStage() const;
+
 private:
 	/**
 	 *  @brief  Constructor with two calo hits and a reference length
 	 */
 	Connector(const arbor_content::CaloHit *const pFromCaloHit, const arbor_content::CaloHit *const pToCaloHit,
-			float referenceLength = 1.f);
+        float referenceLength = 1.f, unsigned int creationStage = -1);
 
 	/**
 	 *  @brief  Destructor
@@ -109,6 +111,7 @@ private:
 	const CaloHit                        *m_pFromCaloHit;     ///< The 'from' calo hit of this connector
 	const CaloHit                        *m_pToCaloHit;       ///< The 'to' calo hit of this connector
 	float                                 m_referenceLength;  ///< The reference length on connector creation
+        unsigned int                          m_creationStage;    ///< The clustering stage of connector creation
 
 	// friendship
 	friend class CaloHit;

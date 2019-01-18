@@ -206,7 +206,10 @@ namespace arbor_content
 	  //std::cout << "  --- vector2 con: " << connectorVector.GetX() << ", " << connectorVector.GetY() << ", " 
 		      //  << connectorVector.GetZ() << "  *** angle: " << angle << std::endl;
 
-		ConnectorOrderParameter orderParameter(distance, angle);
+		const float creationStage = pConnector->GetCreationStage();
+		//std::cout << "connector creation at stage: " << creationStage << std::endl;
+
+		ConnectorOrderParameter orderParameter(distance, angle, creationStage);
 
 		//std::cout << " angle: " << angle << ", distance: " << distance << ", order: " << orderParameter.m_orderParameter << std::endl;
 

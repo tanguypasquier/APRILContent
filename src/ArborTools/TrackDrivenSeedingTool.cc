@@ -420,7 +420,7 @@ namespace arbor_content
 
 	//int nInitHits = caloHitVector.size();
 
-	int firstPseudoLayer = -1;
+	//int firstPseudoLayer = -1;
 
 	//std::cout << "Track seeding hits: " << nInitHits << std::endl;
 
@@ -438,7 +438,7 @@ namespace arbor_content
       const unsigned int pseudoLayer = pCaloHit->GetPseudoLayer();
 	  pandora::HitType fromHitType = pCaloHit->GetHitType();
 
-	  if(i==0) firstPseudoLayer = pseudoLayer;
+	  //if(i==0) firstPseudoLayer = pseudoLayer;
 
 #if 0
 	  if(i<=nInitHits)
@@ -560,7 +560,8 @@ namespace arbor_content
             if(distanceToHelix.GetZ() > maxDistanceToTrack)
               continue;
 
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHit, pTestCaloHit, arbor_content::FORWARD_DIRECTION));
+            unsigned int creationStage = m_connectorCreationStage;
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHit, pTestCaloHit, arbor_content::FORWARD_DIRECTION, 1., creationStage));
 
             // add it if not done, this will update the starting hit vector
             if(std::find(caloHitVector.begin(), caloHitVector.end(), pTestCaloHit) == caloHitVector.end())
@@ -633,6 +634,11 @@ namespace arbor_content
     m_shouldUseIsolatedHits = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ShouldUseIsolatedHits", m_shouldUseIsolatedHits));
+
+	m_connectorCreationStage = -1;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ConnectorCreationStage", m_connectorCreationStage));
+
 
     return pandora::STATUS_CODE_SUCCESS;
   }

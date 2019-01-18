@@ -118,23 +118,23 @@ bool ArborContentApi::IsLeaf(const arbor_content::CaloHit *const pCaloHit)
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode ArborContentApi::Connect(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2, arbor_content::ConnectorDirection direction,
-    float referenceLength)
+    float referenceLength, unsigned int creationStage)
 {
   const arbor_content::Connector *pConnector = NULL;
-  return ArborContentApi::Connect(pCaloHit1, pCaloHit2, direction, pConnector, referenceLength);
+  return ArborContentApi::Connect(pCaloHit1, pCaloHit2, direction, pConnector, referenceLength, creationStage);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 pandora::StatusCode ArborContentApi::Connect(const arbor_content::CaloHit *const pCaloHit1, const arbor_content::CaloHit *const pCaloHit2, arbor_content::ConnectorDirection direction,
-    const arbor_content::Connector *&pConnector, float referenceLength)
+    const arbor_content::Connector *&pConnector, float referenceLength, unsigned int creationStage)
 {
   pConnector = NULL;
 
   arbor_content::CaloHit *const pCaloHitFrom = direction == arbor_content::BACKWARD_DIRECTION ? ArborContentApi::Modifiable(pCaloHit2) : ArborContentApi::Modifiable(pCaloHit1);
   arbor_content::CaloHit *const pCaloHitTo = direction == arbor_content::BACKWARD_DIRECTION ? ArborContentApi::Modifiable(pCaloHit1) : ArborContentApi::Modifiable(pCaloHit2);
 
-  pConnector = new arbor_content::Connector(pCaloHitFrom, pCaloHitTo, referenceLength);
+  pConnector = new arbor_content::Connector(pCaloHitFrom, pCaloHitTo, referenceLength, creationStage);
 
   PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitFrom->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::FORWARD_DIRECTION));
   PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pCaloHitTo->m_pCaloHitMetaData->AddConnector(pConnector, arbor_content::BACKWARD_DIRECTION));
