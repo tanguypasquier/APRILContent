@@ -98,9 +98,7 @@ namespace arbor_content
 
 		  const pandora::CartesianVector &position(pCaloHitI->GetPositionVector());
 
-		  // TODO
-		  // range parametrized layer difference
-          const float range = 80.; // OK ???
+          const float range = m_hitSearchRange; 
 
           int pseudoLayer = pl;
           pandora::CaloHitList hitsInRange;
@@ -179,6 +177,10 @@ namespace arbor_content
 
   pandora::StatusCode ConnectorSeedingTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+	m_hitSearchRange = 80.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "HitSearchRange", m_hitSearchRange));
+
 	m_maxCollectorLength = 300.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxCollectorLength", m_maxCollectorLength));

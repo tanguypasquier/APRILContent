@@ -76,25 +76,25 @@ namespace arbor_content
 	  }
 	}
 
-	std::cout << "# hits having no connector: " << seedHits.size() << std::endl;
+	//std::cout << "# hits having no connector: " << seedHits.size() << std::endl;
 
 	std::vector<pandora::CaloHitVector> hitsForCluster;
 
 	if(m_metricType > 0)
 	{
-		std::cout << "4D metric, eps: " << m_epsDBSCAN << ", minPoint: " << m_minpDBSCAN << std::endl;
+		//std::cout << "4D metric, eps: " << m_epsDBSCAN << ", minPoint: " << m_minpDBSCAN << std::endl;
 		CaloHitNeighborSearchHelper::ClusteringByDBSCAN4D(seedHits, hitsForCluster, m_epsDBSCAN, m_minpDBSCAN);
 	}
 	else
 	{
-		std::cout << "3D metric, eps: " << m_epsDBSCAN << ", minPoint: " << m_minpDBSCAN << std::endl;
+		//std::cout << "3D metric, eps: " << m_epsDBSCAN << ", minPoint: " << m_minpDBSCAN << std::endl;
 		CaloHitNeighborSearchHelper::ClusteringByDBSCAN(seedHits, hitsForCluster, m_epsDBSCAN, m_minpDBSCAN);
 	}
 
 	for(int i = 0; i < hitsForCluster.size(); ++i)
 	{
 		const auto& caloHitVector = hitsForCluster.at(i);
-		std::cout << "hits for clustering: " << caloHitVector.size() << std::endl;
+		//std::cout << "hits for clustering: " << caloHitVector.size() << std::endl;
 
 		if(caloHitVector.size() < 2) continue;
 
@@ -121,8 +121,8 @@ namespace arbor_content
             PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pCluster));
 
 			//std::cout << "================ test hits from dbscan: " << caloHitVector.size() << std::endl;
-			std::cout << "================ create a test cluster: " << pCluster << ",  calo hit size: "
-				<< pCluster->GetNCaloHits() << std::endl;
+			//std::cout << "================ create a test cluster: " << pCluster << ",  calo hit size: "
+			//	<< pCluster->GetNCaloHits() << std::endl;
 		}
 		////////////////////////////////////////////////////////////////////////////////////
 
@@ -140,15 +140,15 @@ namespace arbor_content
 
 			auto caloHitPos = pCaloHitI->GetPositionVector();
 
-		    std::cout << "  --- calo hit: " << caloHitPos.GetX() << ", " << caloHitPos.GetY() << ", " << caloHitPos.GetZ() 
-		    	<< ", layer: " << caloHit->GetPseudoLayer() << std::endl;
+		    //std::cout << "  --- calo hit: " << caloHitPos.GetX() << ", " << caloHitPos.GetY() << ", " << caloHitPos.GetZ() 
+		    //	<< ", layer: " << caloHit->GetPseudoLayer() << std::endl;
 
 
 		    const std::vector<float> testPosition{caloHitPos.GetX(), caloHitPos.GetY(), caloHitPos.GetZ(), pCaloHitI->GetPseudoLayer()};
 
 			// get the neighbor hit
 			CaloHitNeighborSearchHelper::SearchNeighbourHits4D(caloHitVector, testPosition, 2, neighborHits);
-			std::cout << "   nb hits size: " << neighborHits.size() - 1 << std::endl;
+			//std::cout << "   nb hits size: " << neighborHits.size() - 1 << std::endl;
 
 		    auto neighborHititer = neighborHits.begin();
 		    ++neighborHititer;
