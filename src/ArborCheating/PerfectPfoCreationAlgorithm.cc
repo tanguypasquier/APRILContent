@@ -139,7 +139,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::TrackCollection(const pandora::
         {
 			///// std::cout << e.ToString() << std::endl;
 			///// skip this event
-			std::cout << " track " << pTrack << " mcp is not found " << std::endl;
+			//std::cout << " track " << pTrack << " mcp is not found " << std::endl;
 			///// return pandora::STATUS_CODE_FAILURE;
 			///// continue;
         }
@@ -430,11 +430,11 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::ParticleFlowObject::Create(*this, pfoParameters, pPfo));
 
 			neutralPfoEnergy += pfoParameters.m_energy.Get();
-			std::cout << "neutral pfo energy: " << pfoParameters.m_energy.Get() << std::endl;
+			//std::cout << "neutral pfo energy: " << pfoParameters.m_energy.Get() << std::endl;
 		}
         catch (pandora::StatusCodeException &)
 		{
-			std::cout << "Create cluster failed..." << std::endl;
+			//std::cout << "Create cluster failed..." << std::endl;
 		}
     }
 
@@ -497,7 +497,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
 
 			if(createStatus != pandora::STATUS_CODE_SUCCESS)
 			{
-				std::cout << "PFO creation error: " << createStatus << std::endl;
+				//std::cout << "PFO creation error: " << createStatus << std::endl;
 			}
 		}
         catch (pandora::StatusCodeException &)
@@ -536,14 +536,14 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::CreateTrackBasedPfos() const
 	}
     catch (pandora::StatusCodeException &)
 	{
-		std::cout << "StatusCodeException" << std::endl;
+		//std::cout << "StatusCodeException" << std::endl;
 	}
 
 	std::vector<float> vars;
 	vars.push_back( chargedPfoEnergy );
 	vars.push_back( neutralPfoEnergy );
 
-	std::cout << "chargedPfoEnergy: " << chargedPfoEnergy << ", neutralPfoEnergy: " << neutralPfoEnergy << std::endl;
+	//std::cout << "chargedPfoEnergy: " << chargedPfoEnergy << ", neutralPfoEnergy: " << neutralPfoEnergy << std::endl;
 
     HistogramManager::CreateFill("PerfectPfoCreation_PfoEnergy", "chargedPfoEnergy:neutralPfoEnergy", vars);
 

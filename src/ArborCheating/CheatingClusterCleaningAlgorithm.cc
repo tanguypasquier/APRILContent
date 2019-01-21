@@ -22,6 +22,8 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
     const ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
+	//std::cout << " cluster size: " << pClusterList->size() << std::endl;
+
     // Examine clusters, reducing each to just the hits corresponding to the main mc particle
     for (ClusterList::const_iterator itCluster = pClusterList->begin(), itClusterEnd = pClusterList->end(); itCluster != itClusterEnd; ++itCluster )
     {
@@ -45,6 +47,8 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
                         if (pMainMCParticle != pMCParticle)
                         {
                             PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveFromCluster(*this, pCluster, pCaloHit));
+
+							//std::cout << " --- remove hit " << pCaloHit << " from cluster: " << pCluster << std::endl;
         
 							const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>( pCaloHit );
 

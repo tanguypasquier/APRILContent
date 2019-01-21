@@ -141,16 +141,16 @@ namespace arbor_content
               
                   if(pCaloHitMCParticle != pTrackMCParticle )
                   {
-                      std::cout << " *** WARNING *** Event: " << EventPreparationAlgorithm::GetEventNumber() 
-						  << " hit - track diff MCP" << std::endl;
+                      //std::cout << " *** WARNING *** Event: " << EventPreparationAlgorithm::GetEventNumber() 
+					  //  << " hit - track diff MCP" << std::endl;
                       //std::cout << "calo hit MCP : " << pCaloHitMCParticle << std::endl;
-                      std::cout << "calo hit : " << caloHits.at(iHit) << ", track: " << track << ", p: " 
-						  << track->GetMomentumAtDca().GetMagnitude() << ", reach endcap: " 
-						  << track->IsProjectedToEndCap() << std::endl;
+                      //std::cout << "calo hit : " << caloHits.at(iHit) << ", track: " << track << ", p: " 
+					  //	  << track->GetMomentumAtDca().GetMagnitude() << ", reach endcap: " 
+					  //	  << track->IsProjectedToEndCap() << std::endl;
                       
                       const pandora::CartesianVector & pos = track->GetTrackStateAtCalorimeter().GetPosition();
 
-                      std::cout << "track on calo pos: " << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << std::endl;
+                      //std::cout << "track on calo pos: " << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << std::endl;
                   }
 				  else
 				  {
