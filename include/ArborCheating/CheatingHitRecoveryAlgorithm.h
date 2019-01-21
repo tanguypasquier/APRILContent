@@ -31,7 +31,11 @@ public:
 private:
     pandora::StatusCode Run();
 	pandora::StatusCode MergeClusters();
+    pandora::StatusCode RecoverHits();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+	bool m_shouldUseRecovery;
+	bool m_shouldUseMerge;
 };
 
 inline pandora::Algorithm *CheatingHitRecoveryAlgorithm::Factory::CreateAlgorithm() const
