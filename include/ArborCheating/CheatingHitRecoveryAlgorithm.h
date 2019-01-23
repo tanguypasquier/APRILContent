@@ -36,6 +36,7 @@ private:
 
 	bool m_shouldUseRecovery;
 	bool m_shouldUseMerge;
+    std::string  m_mergedClusterListName;
 };
 
 inline pandora::Algorithm *CheatingHitRecoveryAlgorithm::Factory::CreateAlgorithm() const

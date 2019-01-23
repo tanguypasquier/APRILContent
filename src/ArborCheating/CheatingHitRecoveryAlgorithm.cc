@@ -9,13 +9,14 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborCheating/CheatingHitRecoveryAlgorithm.h"
-
-using namespace pandora;
+#include "ArborHelpers/ClusterHelper.h"
+#include "ArborHelpers/HistogramHelper.h"
+#include "ArborUtility/EventPreparationAlgorithm.h"
 
 namespace arbor_content
 {
 
-StatusCode CheatingHitRecoveryAlgorithm::Run()
+pandora::StatusCode CheatingHitRecoveryAlgorithm::Run()
 {
 	if(m_shouldUseRecovery)
 	{
@@ -27,14 +28,14 @@ StatusCode CheatingHitRecoveryAlgorithm::Run()
 		MergeClusters();
 	}
 	
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
-StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
+pandora::StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 {
     const pandora::CaloHitList *pCaloHitList = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
-	std::cout << "------- # CaloHit : " << pCaloHitList->size() << std::endl;
+	//std::cout << "------- # CaloHit : " << pCaloHitList->size() << std::endl;
 
 	// make mcp and unused hits relationship
 	std::map<const pandora::MCParticle* const, pandora::CaloHitList> mcpCaloHitListMap;
@@ -70,11 +71,11 @@ StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 		}
 	}
 
-	// make mcp and cluster relationship
+	// make mcp and exsiting cluster relationship
     const pandora::ClusterList* pClusterList = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-	std::cout << "orginal cluster: " << pClusterList->size() << std::endl;
+	//std::cout << "orginal cluster: " << pClusterList->size() << std::endl;
 
 	std::map<const pandora::MCParticle* const, pandora::ClusterList> mcpClusterListMap;
 	
@@ -105,7 +106,7 @@ StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 		}
 	}
 
-	std::cout << "CheatingHitRecovery, mcpClusterListMap size: " << mcpClusterListMap.size() << std::endl;
+	//std::cout << "CheatingHitRecovery, mcpClusterListMap size: " << mcpClusterListMap.size() << std::endl;
 
 	// add the unused hit to exsiting clusters
 	for(auto mcpIt = mcpClusterListMap.begin(); mcpIt != mcpClusterListMap.end(); ++mcpIt)
@@ -120,20 +121,56 @@ StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 
 		// just a check
 		if(!mcp->IsPfoTarget()) continue;
+        
+		// charged particle
+    	int mcpCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
+	    if(mcpCharge != 0) continue;
 
         // simply add the hits to the first cluster of the mcp
 		auto pCluster = *(clusterList.begin());
 
-        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pCluster, &hitList));
+		pandora::CaloHitList hitsAddToCluster;
 
-		hitList.clear();
+#if 1
+		for(auto caloHitIter = hitList.begin(); caloHitIter != hitList.end(); ++caloHitIter)
+		{
+			auto pCaloHit = *caloHitIter;
+			const pandora::CartesianVector hitPos = pCaloHit->GetPositionVector();
+			float hitClusterDistance;
+			ClusterHelper::GetClosestDistanceApproach(pCluster, hitPos, hitClusterDistance);
+
+			//std::cout << " === hit pos: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << "  - cluster: " 
+			//	<< pCluster->GetHadronicEnergy() << " - distance: " << hitClusterDistance << std::endl;
+
+			if(hitClusterDistance > -1.)
+			{
+			   hitsAddToCluster.push_back(pCaloHit);
+
+		       ///////////////////////////////
+	           std::vector<float> vars;
+	           vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+	           vars.push_back( hitClusterDistance );
+	           vars.push_back( float(pCaloHit->GetElectromagneticEnergy()) );
+	           vars.push_back( float(pCaloHit->GetHadronicEnergy()) );
+	           vars.push_back( float(pCluster->GetElectromagneticEnergy()) );
+	           vars.push_back( float(pCluster->GetHadronicEnergy()) );
+
+		       HistogramManager::CreateFill("AddHitToCluster", 
+			   "evtNumber:hitClusterDistance:hitEMEnergy:hitHadEnergy:clusterEMEnergy:clusterHadEnergy", vars);
+			}
+		}
+#endif
+
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pCluster, &hitsAddToCluster));
+
+		//hitList.clear();
 	}
 	
 	// if no cluster to add hit, create new cluster for neutral one
-    const ClusterList *pNewClusterList = NULL; 
+    const pandora::ClusterList *pNewClusterList = NULL; 
 	std::string clusterListName;
 
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, 
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
 	PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pNewClusterList, clusterListName));
 
 	for(auto mcpIt = mcpCaloHitListMap.begin(); mcpIt != mcpCaloHitListMap.end(); ++mcpIt)
@@ -144,11 +181,11 @@ StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 		if(hitList.empty()) continue;
 
         PandoraContentApi::Cluster::Parameters parameters;
-        CaloHitList& caloHitList(parameters.m_caloHitList);
+		pandora::CaloHitList& caloHitList(parameters.m_caloHitList);
 		caloHitList = hitList;
 
-		const Cluster *pCluster = NULL;
-        PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
+		const pandora::Cluster *pCluster = NULL;
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
 	}
 
 	//std::cout << "newly created cluster: " << pNewClusterList->size() << std::endl;
@@ -160,11 +197,9 @@ StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
     const pandora::ClusterList *pClusterListToSave = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterListToSave));
 
-	std::string mergedClusterListName("PfoCreation");
-
 	//std::cout << "temp cluster to save: " << pClusterListToSave->size() << std::endl;
 
-	if (pClusterListToSave->empty()) return STATUS_CODE_SUCCESS;
+	if (pClusterListToSave->empty()) return pandora::STATUS_CODE_SUCCESS;
 
 	for(auto it = pClusterListToSave->begin(); it != pClusterListToSave->end(); ++it)
 	{
@@ -186,23 +221,14 @@ StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 		clustersToSave.push_back( *it );
 	}
 	
-
+	// save clusters to the exsiting cluster list
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
-			PandoraContentApi::SaveList(*this, mergedClusterListName, clustersToSave));
+			PandoraContentApi::SaveList(*this, m_mergedClusterListName, clustersToSave));
 
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=,
-			PandoraContentApi::ReplaceCurrentList<pandora::Cluster>(*this, mergedClusterListName));
-
-	//std::cout << "temp cluster after saving: " << pClusterListToSave->size() << std::endl;
-
-    //const pandora::ClusterList* pClusterList = NULL; 
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
-	//std::cout << "cluster after saving: " << pClusterList->size() << std::endl;
-
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
-StatusCode CheatingHitRecoveryAlgorithm::MergeClusters()
+pandora::StatusCode CheatingHitRecoveryAlgorithm::MergeClusters()
 {
 	////////////////////////////////////////////////////////////////////////////////
 	// check the cluster and its mcp:
@@ -210,10 +236,12 @@ StatusCode CheatingHitRecoveryAlgorithm::MergeClusters()
 	// it is especially mandatory for charged clusters
 	////////////////////////////////////////////////////////////////////////////////
 	
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=,
+			PandoraContentApi::ReplaceCurrentList<pandora::Cluster>(*this, m_mergedClusterListName));
+
     const pandora::ClusterList* pClusterList = NULL; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
-
-	//std::cout << "orginal cluster: " << pClusterList->size() << std::endl;
+	//std::cout << "cluster after saving: " << pClusterList->size() << std::endl;
 
 	std::map<const pandora::MCParticle* const, pandora::ClusterList> mcpClusterListMap;
 	
@@ -268,12 +296,12 @@ StatusCode CheatingHitRecoveryAlgorithm::MergeClusters()
 		}// end if
 	} // end for
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode CheatingHitRecoveryAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
+pandora::StatusCode CheatingHitRecoveryAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
     m_shouldUseRecovery = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
@@ -283,7 +311,10 @@ StatusCode CheatingHitRecoveryAlgorithm::ReadSettings(const TiXmlHandle xmlHandl
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ShouldUseMerge", m_shouldUseMerge));
 
-    return STATUS_CODE_SUCCESS;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ClusterListToTakeNewClusters", m_mergedClusterListName));
+
+    return pandora::STATUS_CODE_SUCCESS;
 }
 
 } // namespace arbor_content
