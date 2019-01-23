@@ -79,7 +79,7 @@ namespace arbor_content
           TrackList trackList;
           trackList.push_back(pTrack);
 
-		  //FIME:: check existence
+		  //FIXME:: check existence
 		  if(!tracksPerMCParticle.insert(TracksPerMCParticle::value_type(pMCParticle, TrackList(1, pTrack))).second)
             throw StatusCodeException(STATUS_CODE_FAILURE);
           //if (!tracksPerMCParticle.push_back(TracksPerMCParticle::value_type(pMCParticle, trackList)).second)
@@ -133,14 +133,25 @@ namespace arbor_content
 
 				if(track->HasAssociatedCluster())
 				{
-					//std::cout << __LINE__ << ": the track has AssociatedCluster !!! Track energy: " << track->GetEnergyAtDca() 
+					//std::cout << __LINE__ << ": the track has AssociatedCluster !!! Track p: " << track->GetMomentumAtDca().GetMagnitude()
 					//	      << ", cluster energy to match: " << pCluster->GetHadronicEnergy() <<  ", AssociatedCluster energy: " <<
 					//track->GetAssociatedCluster()->GetHadronicEnergy() << std::endl;
+
+					// if this is true, it means cluster should be merged.
 
 					continue;
 				}
 
-				if( !PandoraContentApi::IsAvailable(*this, track) || !PandoraContentApi::IsAvailable(*this, pCluster) ) continue;
+				if( !PandoraContentApi::IsAvailable(*this, track) || !PandoraContentApi::IsAvailable(*this, pCluster) ) 
+				{
+					//std::cout << " AddTrackClusterAssociation issue: track or cluster is not available " << 
+					//	" track p: " << track->GetMomentumAtDca().GetMagnitude() << ", cluster Ehad: " << 
+					//	pCluster->GetHadronicEnergy() << std::endl;
+
+					continue;
+				}
+
+				//std::cout << "match track with cluster : " << track << " --- " << pCluster << std::endl;
 				PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
 			}
 		}
@@ -199,9 +210,9 @@ namespace arbor_content
 				    if(! track->HasAssociatedCluster() ) 
 					{
 				        // add association for the track and cluster
-						//std::cout << "match t-c : " << track << " --- " << pCluster << std::endl;
-						//std::cout << "track energy: " << track->GetMomentumAtDca().GetMagnitude() << ", cluster energy: "
-						//	      << pCluster->GetHadronicEnergy() << std::endl;
+						std::cout << "match track with cluster : " << track << " --- " << pCluster << std::endl;
+						std::cout << "track energy: " << track->GetMomentumAtDca().GetMagnitude() << ", cluster energy: "
+							      << pCluster->GetHadronicEnergy() << std::endl;
 						// make a map
 				        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
 					}
@@ -217,9 +228,12 @@ namespace arbor_content
 	  }
 	}
 
+    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
 	//std::cout << "------------------" << std::endl;
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// merge the cluster fragments from the same track
+	if(!m_shouldMergeTrackClusters) return STATUS_CODE_SUCCESS;
 
 	std::map<const pandora::Cluster*, pandora::ClusterList> clustersToMerge;
 	
@@ -311,8 +325,8 @@ namespace arbor_content
 		for( auto iter : clusters)
 		{
 			auto clu = iter;
-			//std::cout << "merge clusters: " << mainCluster << " --- " << clu << std::endl;
-			//std::cout << "cluster energy: " << mainCluster->GetHadronicEnergy() << " --- " << clu->GetHadronicEnergy() << std::endl;
+			std::cout << "merge clusters: " << mainCluster << " --- " << clu << std::endl;
+			std::cout << "cluster energy: " << mainCluster->GetHadronicEnergy() << " --- " << clu->GetHadronicEnergy() << std::endl;
 		    PandoraContentApi::MergeAndDeleteClusters(*this, mainCluster, clu);
 		}
 	}
@@ -322,8 +336,12 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  StatusCode CheatingTrackToClusterMatching::ReadSettings(const TiXmlHandle /*xmlHandle*/)
+  StatusCode CheatingTrackToClusterMatching::ReadSettings(const TiXmlHandle xmlHandle)
   {
+    m_shouldMergeTrackClusters = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ShouldMergeTrackClusters", m_shouldMergeTrackClusters));
+
     return STATUS_CODE_SUCCESS;
   }
 
