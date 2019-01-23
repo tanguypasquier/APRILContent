@@ -314,6 +314,70 @@ pandora::StatusCode ArborContentApi::EndReclustering(const pandora::Algorithm &a
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+pandora::StatusCode ArborContentApi::Create(const pandora::Algorithm &algorithm, 
+		PandoraContentApi::Cluster::Parameters clusterParameters, const pandora::Cluster *&pCluster)
+{
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pCluster));
+
+	pandora::CaloHitList& caloHitList(clusterParameters.m_caloHitList);
+
+	for(auto& caloHit : caloHitList)
+	{
+        const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
+		Modifiable(pArborCaloHit)->SetMother(pCluster);
+	}
+
+    return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+            
+pandora::StatusCode ArborContentApi::RemoveFromCluster(const pandora::Algorithm &algorithm, 
+		const pandora::Cluster *const pCluster, const pandora::CaloHit *const pCaloHit)
+{
+    const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit);
+	Modifiable(pArborCaloHit)->SetMother(nullptr);
+
+	return PandoraContentApi::RemoveFromCluster(algorithm, pCluster, pCaloHit);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ArborContentApi::MergeAndDeleteClusters(const pandora::Algorithm &algorithm, 
+		const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *pClusterToDelete)
+{
+	pandora::CaloHitList clusterHits;
+    pClusterToDelete->GetOrderedCaloHitList().FillCaloHitList(clusterHits);
+	pandora::CaloHitList isoCaloHitList = pClusterToDelete->GetIsolatedCaloHitList();
+	clusterHits.insert(clusterHits.begin(), isoCaloHitList.begin(), isoCaloHitList.end());
+
+	for(auto& caloHit : clusterHits)
+	{
+        const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
+		Modifiable(pArborCaloHit)->SetMother(pClusterToEnlarge);
+	}
+
+	return PandoraContentApi::MergeAndDeleteClusters(algorithm, pClusterToEnlarge, pClusterToDelete);
+}
+        
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+pandora::StatusCode ArborContentApi::AddToCluster(const pandora::Algorithm &algorithm, 
+		const pandora::Cluster *const pCluster, const pandora::CaloHitList *const pCaloHitList)
+{
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(algorithm, pCluster, pCaloHitList));
+
+	for(auto& caloHit : *pCaloHitList)
+	{
+        const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
+		Modifiable(pArborCaloHit)->SetMother(pCluster);
+	}
+
+    return pandora::STATUS_CODE_SUCCESS;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 template <typename T>
 T *ArborContentApi::Modifiable(const T *const pT)
 {

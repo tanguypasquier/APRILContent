@@ -67,13 +67,13 @@ namespace arbor_content
 			float energyPurity;
 			float ordClusterHit;
 
-			GetPurity(cluster, hitPurity, energyPurity, ordClusterHit);
+			PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GetPurity(cluster, hitPurity, energyPurity, ordClusterHit));
 
 			if(energyPurity < 0.1) 
 			{
 				std::cout << "====== dumping cluster with low purity" << std::endl;
 			
-				GetPurity(cluster, hitPurity, energyPurity, ordClusterHit, true);
+			    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GetPurity(cluster, hitPurity, energyPurity, ordClusterHit, true));
 			}
 
 			float clusterSize = cluster->GetNCaloHits();
@@ -173,6 +173,8 @@ namespace arbor_content
 	  pandora::CaloHitList caloHitList;
 	  cluster->GetOrderedCaloHitList().FillCaloHitList(caloHitList);
 
+	  if(cluster->GetNIsolatedCaloHits() != 0) return pandora::STATUS_CODE_INVALID_PARAMETER;
+
 	  float clusterHitEnergy = 0.;
 
 	  // FIXME
@@ -186,6 +188,14 @@ namespace arbor_content
       for(pandora::CaloHitList::const_iterator caloHitIter = caloHitList.begin(); caloHitIter != caloHitList.end(); ++caloHitIter)
       {
          const pandora::CaloHit* caloHit = *caloHitIter;
+		 const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
+	  
+		 if(pArborCaloHit->GetMother() != cluster ) 
+		 {
+		     std::cout << " hit mother is set to: " << pArborCaloHit->GetMother() << ", but it is inside the cluster: " << cluster << std::endl;
+			 return pandora::STATUS_CODE_INVALID_PARAMETER;
+		 }
+	
 		 const pandora::MCParticle* caloHitMCP = NULL;
 
 		 float hitEnergy = caloHit->GetHadronicEnergy();

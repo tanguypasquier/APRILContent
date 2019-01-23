@@ -12,6 +12,7 @@
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/HistogramHelper.h"
 #include "ArborUtility/EventPreparationAlgorithm.h"
+#include "ArborApi/ArborContentApi.h"
 
 namespace arbor_content
 {
@@ -116,15 +117,14 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 
 		pandora::CaloHitList& hitList = mcpCaloHitListMap[mcp];
 
-		if(hitList.empty()) continue;
-		if(clusterList.empty()) continue;
+		if(hitList.empty() || clusterList.empty()) continue;
 
 		// just a check
-		if(!mcp->IsPfoTarget()) continue;
+		//if(!mcp->IsPfoTarget()) continue;
         
 		// charged particle
     	int mcpCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
-	    if(mcpCharge != 0) continue;
+	    //if(mcpCharge != 0) continue;
 
         // simply add the hits to the first cluster of the mcp
 		auto pCluster = *(clusterList.begin());
@@ -142,7 +142,11 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 			//std::cout << " === hit pos: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << "  - cluster: " 
 			//	<< pCluster->GetHadronicEnergy() << " - distance: " << hitClusterDistance << std::endl;
 
-			if(hitClusterDistance > -1.)
+			// charged hit with distance less than a specified value is not included
+			//if( !(hitClusterDistance < 400 && mcpCharge != 0) )
+			if(1)
+			//if(hitClusterDistance < 400)
+			//if( mcpCharge != 0 )
 			{
 			   hitsAddToCluster.push_back(pCaloHit);
 
@@ -161,9 +165,9 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 		}
 #endif
 
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddToCluster(*this, pCluster, &hitsAddToCluster));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::AddToCluster(*this, pCluster, &hitsAddToCluster));
 
-		//hitList.clear();
+		hitList.clear();
 	}
 	
 	// if no cluster to add hit, create new cluster for neutral one
@@ -185,7 +189,7 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::RecoverHits()
 		caloHitList = hitList;
 
 		const pandora::Cluster *pCluster = NULL;
-        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Create(*this, parameters, pCluster));
 	}
 
 	//std::cout << "newly created cluster: " << pNewClusterList->size() << std::endl;
@@ -290,7 +294,7 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::MergeClusters()
 				if(cluIt == clusterList.begin()) continue;
 
 		        const pandora::Cluster* cluToMerge = *cluIt;
-				PandoraContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
+				ArborContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
 			}
 
 		}// end if

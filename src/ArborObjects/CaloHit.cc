@@ -33,7 +33,8 @@ namespace arbor_content
   CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
       pandora::CaloHit(parameters),
       m_surroundingEnergy(0.f),
-      m_density(0.f)
+      m_density(0.f),
+	  m_motherCluster(nullptr)
   {
     m_pCaloHitMetaData = new CaloHitMetaData(this);
   }
@@ -44,7 +45,8 @@ namespace arbor_content
   CaloHit::CaloHit(const PandoraContentApi::CaloHitFragment::Parameters &parameters) :
       pandora::CaloHit(parameters),
       m_surroundingEnergy(0.f),
-      m_density(0.f)
+      m_density(0.f),
+	  m_motherCluster(nullptr)
 
   {
     const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit);
@@ -78,6 +80,20 @@ namespace arbor_content
   float CaloHit::GetDensity() const
   {
     return m_density;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  const pandora::Cluster* CaloHit::GetMother() const
+  {
+	  return m_motherCluster;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  void CaloHit::SetMother(const pandora::Cluster* cluster)
+  {
+	  m_motherCluster = cluster;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

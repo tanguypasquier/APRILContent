@@ -177,7 +177,20 @@ namespace arbor_content
 	  object_creation::ClusterParameters clusterParameters;
       clusterParameters.m_caloHitList = clusterCaloHitList;
 
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, clusterParameters, pCluster));
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Create(*this, clusterParameters, pCluster));
+
+#if 0
+	  std::cout << "check cluster ptr: "  << pCluster << std::endl;
+      pandora::CaloHitList checkCaloHitList;
+      pCluster->GetOrderedCaloHitList().FillCaloHitList(checkCaloHitList);
+
+	  for(auto& caloHit : clusterCaloHitList)
+	  {
+        const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
+		  std::cout << " calo hit mother cluser: " << pArborCaloHit->GetMother() << ", cluster energy: "  
+			  << pArborCaloHit->GetMother()->GetHadronicEnergy() << std::endl;
+	  }
+#endif
     }
       
     if(m_useAsIndependent)

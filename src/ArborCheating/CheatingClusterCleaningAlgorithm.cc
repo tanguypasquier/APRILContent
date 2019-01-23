@@ -46,7 +46,7 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
 
                         if (pMainMCParticle != pMCParticle)
                         {
-                            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveFromCluster(*this, pCluster, pCaloHit));
+                            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveFromCluster(*this, pCluster, pCaloHit));
 
 							//std::cout << " --- remove hit " << pCaloHit << " from cluster: " << pCluster << std::endl;
         

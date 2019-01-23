@@ -35,6 +35,7 @@
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/CaloHitRangeSearchHelper.h"
 #include "ArborHelpers/CaloHitNeighborSearchHelper.h"
+#include "ArborApi/ArborContentApi.h"
 
 namespace arbor_content
 {
@@ -118,7 +119,7 @@ namespace arbor_content
             clusterParameters.m_caloHitList = clusterCaloHitList;
 
 			// FIXME:: check if it is possible to create cluster ?
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pCluster));
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Create(algorithm, clusterParameters, pCluster));
 
 			//std::cout << "================ test hits from dbscan: " << caloHitVector.size() << std::endl;
 			//std::cout << "================ create a test cluster: " << pCluster << ",  calo hit size: "

@@ -31,6 +31,7 @@
 
 #include "Api/PandoraContentApi.h"
 #include "ArborApi/ArborInputTypes.h"
+#include "Objects/Cluster.h"
 
 namespace arbor_content { class CaloHit; class Connector; }
 
@@ -264,6 +265,18 @@ public:
 	 *  @param  selectedClusterListName the name of the selected cluster list
 	 */
 	static pandora::StatusCode EndReclustering(const pandora::Algorithm &algorithm, const std::string &selectedClusterListName);
+
+	static pandora::StatusCode Create(const pandora::Algorithm &algorithm, 
+		PandoraContentApi::Cluster::Parameters clusterParameters, const pandora::Cluster *&pCluster);
+
+	static pandora::StatusCode AddToCluster(const pandora::Algorithm &algorithm, 
+		const pandora::Cluster *const pCluster, const pandora::CaloHitList *const pCaloHitList);
+
+	static pandora::StatusCode MergeAndDeleteClusters(const pandora::Algorithm &algorithm, 
+		const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *pClusterToDelete);
+
+	static pandora::StatusCode RemoveFromCluster(const pandora::Algorithm &algorithm, 
+		const pandora::Cluster *const pCluster, const pandora::CaloHit *const pCaloHit);
 
 private:
 	/**

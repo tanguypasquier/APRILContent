@@ -61,6 +61,9 @@ public:
 	 */
 	float GetDensity() const;
 
+	const pandora::Cluster* GetMother() const;
+	void  SetMother(const pandora::Cluster* cluster);
+
 private:
 	/**
 	 *  @brief  Constructor with pandora calo hit parameters
@@ -113,6 +116,8 @@ protected:
     float                                   m_surroundingEnergy;
     float                                   m_density;
     HitTagMap                               m_hitTagMap;
+
+	const pandora::Cluster*                 m_motherCluster;
 
     friend class CaloHitFactory;
     friend class ::ArborContentApi;

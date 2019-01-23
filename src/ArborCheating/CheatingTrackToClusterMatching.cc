@@ -9,8 +9,7 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborCheating/CheatingTrackToClusterMatching.h"
-
-using namespace pandora;
+#include "ArborApi/ArborContentApi.h"
 
 namespace arbor_content
 {
@@ -45,43 +44,43 @@ namespace arbor_content
 	  return foundParentMCP;
   }
 
-  StatusCode CheatingTrackToClusterMatching::Run()
+  pandora::StatusCode CheatingTrackToClusterMatching::Run()
   {
 	//std::cout << "CheatingTrackToCluster......" << std::endl;
     // Read current lists
-    const TrackList *pCurrentTrackList = NULL;
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCurrentTrackList));
+    const pandora::TrackList *pCurrentTrackList = NULL;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCurrentTrackList));
 
-    const ClusterList *pClusterList = NULL;
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+    const pandora::ClusterList *pClusterList = NULL;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
     // Clear any existing track - cluster associations
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
 
     // Construct a map from mc particle to tracks
-    typedef std::map<const MCParticle*, TrackList> TracksPerMCParticle;
+    typedef std::map<const pandora::MCParticle*, pandora::TrackList> TracksPerMCParticle;
     TracksPerMCParticle tracksPerMCParticle;
     TracksPerMCParticle tracksPfoTarget;
 
-    for (TrackList::const_iterator iter = pCurrentTrackList->begin(), iterEnd = pCurrentTrackList->end(); iter != iterEnd; ++iter)
+    for (pandora::TrackList::const_iterator iter = pCurrentTrackList->begin(), iterEnd = pCurrentTrackList->end(); iter != iterEnd; ++iter)
     {
       try
       {
-        const Track *const pTrack = *iter;
+        const pandora::Track *const pTrack = *iter;
         //const MCParticle *const pMCParticle(pTrack->GetMainMCParticle());
-		const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pTrack));
-		const MCParticle *const pPfoTarget(pMCParticle->GetPfoTarget());
+		const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pTrack));
+		const pandora::MCParticle *const pPfoTarget(pMCParticle->GetPfoTarget());
 
         TracksPerMCParticle::iterator itTracksPerMCParticle(tracksPerMCParticle.find(pMCParticle));
 
         if (tracksPerMCParticle.end() == itTracksPerMCParticle)
         {
-          TrackList trackList;
+		  pandora::TrackList trackList;
           trackList.push_back(pTrack);
 
 		  //FIXME:: check existence
-		  if(!tracksPerMCParticle.insert(TracksPerMCParticle::value_type(pMCParticle, TrackList(1, pTrack))).second)
-            throw StatusCodeException(STATUS_CODE_FAILURE);
+		  if(!tracksPerMCParticle.insert(TracksPerMCParticle::value_type(pMCParticle, pandora::TrackList(1, pTrack))).second)
+            throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
           //if (!tracksPerMCParticle.push_back(TracksPerMCParticle::value_type(pMCParticle, trackList)).second)
         }
         else
@@ -94,11 +93,11 @@ namespace arbor_content
 
         if (tracksPfoTarget.end() == itTrackPfoParget)
         {
-          TrackList trackList;
+		  pandora::TrackList trackList;
           trackList.push_back(pTrack);
 
-		  if(!tracksPfoTarget.insert(TracksPerMCParticle::value_type(pPfoTarget, TrackList(1, pTrack))).second)
-            throw StatusCodeException(STATUS_CODE_FAILURE);
+		  if(!tracksPfoTarget.insert(TracksPerMCParticle::value_type(pPfoTarget, pandora::TrackList(1, pTrack))).second)
+            throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
           //if (!tracksPerMCParticle.push_back(TracksPerMCParticle::value_type(pMCParticle, trackList)).second)
         }
         else
@@ -107,25 +106,25 @@ namespace arbor_content
         }
 
       }
-      catch (StatusCodeException &)
+      catch (pandora::StatusCodeException &)
       {
       }
     }
 
 	////////////////////////////////////////// matching track-cluster by direct MCP
-    for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
+    for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
     {
       try
       {
-        const Cluster *const pCluster = *iter;
-        const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
+        const pandora::Cluster *const pCluster = *iter;
+        const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
         //const MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
 
 		auto foundMCPTracks = tracksPerMCParticle.find(pMCParticle);
 
 		if(foundMCPTracks != tracksPerMCParticle.end() && PandoraContentApi::IsAvailable(*this, pCluster))
 		{
-			const TrackList& tracks = foundMCPTracks->second;
+			const pandora::TrackList& tracks = foundMCPTracks->second;
 
 			for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
 			{
@@ -152,11 +151,11 @@ namespace arbor_content
 				}
 
 				//std::cout << "match track with cluster : " << track << " --- " << pCluster << std::endl;
-				PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
+				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
 			}
 		}
 	  }
-      catch (StatusCodeException &)
+      catch (pandora::StatusCodeException &)
 	  {
 	  }
 	}
@@ -169,21 +168,21 @@ namespace arbor_content
 	// 3) finally merge all clusters in the record
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-    for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
+    for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
     {
       try
       {
 		//std::cout << "haha" << std::endl;
-        const Cluster *const pCluster = *iter;
+        const pandora::Cluster *const pCluster = *iter;
 	    //std::cout << pCluster << std::endl;
-        const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
-        const MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
+        const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
+        const pandora::MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
 
 		auto foundMCPTracksByPfo = tracksPfoTarget.find( pClusterPfoTarget );
 
 		if( foundMCPTracksByPfo != tracksPfoTarget.end() && PandoraContentApi::IsAvailable(*this, pCluster) )
 		{
-			const TrackList& tracks = foundMCPTracksByPfo->second;
+			const pandora::TrackList& tracks = foundMCPTracksByPfo->second;
 			for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
 			{
 				auto track = *trackIter;
@@ -194,11 +193,11 @@ namespace arbor_content
 
 				try
 				{
-                    const MCParticle *const trackMCP(MCParticleHelper::GetMainMCParticle(track));
-                    const MCParticle *const cluMCP(MCParticleHelper::GetMainMCParticle(pCluster));
+                    const pandora::MCParticle *const trackMCP(pandora::MCParticleHelper::GetMainMCParticle(track));
+                    const pandora::MCParticle *const cluMCP(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
 				    isParent = IsParent(trackMCP, cluMCP); // recursive function
 				}
-                catch (StatusCodeException &)
+                catch (pandora::StatusCodeException &)
 				{
 					//std::cout << "============= mcp problem ...." << std::endl;
 					continue;
@@ -214,7 +213,8 @@ namespace arbor_content
 						std::cout << "track energy: " << track->GetMomentumAtDca().GetMagnitude() << ", cluster energy: "
 							      << pCluster->GetHadronicEnergy() << std::endl;
 						// make a map
-				        PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
+				        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
+								PandoraContentApi::AddTrackClusterAssociation(*this, track, pCluster));
 					}
 
 				    // if the cluster is associated to track, stop the loop
@@ -223,33 +223,33 @@ namespace arbor_content
 			} // for each track
 		}
 	  }
-      catch (StatusCodeException &)
+      catch (pandora::StatusCodeException &)
 	  {
 	  }
 	}
 
-    PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
 	//std::cout << "------------------" << std::endl;
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// merge the cluster fragments from the same track
-	if(!m_shouldMergeTrackClusters) return STATUS_CODE_SUCCESS;
+	if(!m_shouldMergeTrackClusters) return pandora::STATUS_CODE_SUCCESS;
 
 	std::map<const pandora::Cluster*, pandora::ClusterList> clustersToMerge;
 	
-    for (ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
+    for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
     {
       try
       {
-        const Cluster *const pCluster = *iter;
-        const MCParticle *const pMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
-        const MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
+        const pandora::Cluster *const pCluster = *iter;
+        const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
+        const pandora::MCParticle *const pClusterPfoTarget(pMCParticle->GetPfoTarget());
 
 		auto foundMCPTracksByPfo = tracksPfoTarget.find( pClusterPfoTarget );
 
 		if( foundMCPTracksByPfo != tracksPfoTarget.end() && PandoraContentApi::IsAvailable(*this, pCluster) )
 		{
-			const TrackList& tracks = foundMCPTracksByPfo->second;
+			const pandora::TrackList& tracks = foundMCPTracksByPfo->second;
 			for(auto trackIter = tracks.begin(); trackIter != tracks.end(); ++trackIter)
 			{
 				auto track = *trackIter;
@@ -260,11 +260,11 @@ namespace arbor_content
 
 				try
 				{
-                    const MCParticle *const trackMCP(MCParticleHelper::GetMainMCParticle(track));
-                    const MCParticle *const cluMCP(MCParticleHelper::GetMainMCParticle(pCluster));
+                    const pandora::MCParticle *const trackMCP(pandora::MCParticleHelper::GetMainMCParticle(track));
+                    const pandora::MCParticle *const cluMCP(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
 				    isParent = IsParent(trackMCP, cluMCP); // recursive function
 				}
-                catch (StatusCodeException &)
+                catch (pandora::StatusCodeException &)
 				{
 					//std::cout << "============= mcp problem ...." << std::endl;
 					continue;
@@ -309,7 +309,7 @@ namespace arbor_content
 			} // for each track
 		}
 	  }
-      catch (StatusCodeException &)
+      catch (pandora::StatusCodeException &)
 	  {
 	  }
 	}
@@ -327,22 +327,22 @@ namespace arbor_content
 			auto clu = iter;
 			std::cout << "merge clusters: " << mainCluster << " --- " << clu << std::endl;
 			std::cout << "cluster energy: " << mainCluster->GetHadronicEnergy() << " --- " << clu->GetHadronicEnergy() << std::endl;
-		    PandoraContentApi::MergeAndDeleteClusters(*this, mainCluster, clu);
+		    ArborContentApi::MergeAndDeleteClusters(*this, mainCluster, clu);
 		}
 	}
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  StatusCode CheatingTrackToClusterMatching::ReadSettings(const TiXmlHandle xmlHandle)
+  pandora::StatusCode CheatingTrackToClusterMatching::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
     m_shouldMergeTrackClusters = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ShouldMergeTrackClusters", m_shouldMergeTrackClusters));
 
-    return STATUS_CODE_SUCCESS;
+    return pandora::STATUS_CODE_SUCCESS;
   }
 
 } // namespace arbor_content

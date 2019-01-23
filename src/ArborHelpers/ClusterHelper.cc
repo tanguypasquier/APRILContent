@@ -180,6 +180,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_FAILURE;
 
     pandora::CartesianVector clusterCentroid(0.f, 0.f, 0.f);
+	// TODO:: centroid as input may save CPU time
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, clusterCentroid));
 
     centroidDistance = (clusterCentroid - point).GetMagnitude();
