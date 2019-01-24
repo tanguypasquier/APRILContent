@@ -12,6 +12,9 @@
 
 namespace arbor_content
 {
+typedef std::map<const pandora::MCParticle* const, pandora::CaloHitList> MCPCaloHitListMap;
+typedef std::map<const pandora::MCParticle* const, pandora::ClusterList> MCPClusterListMap;
+typedef std::map<const pandora::Cluster* const,    pandora::CaloHitList> ClusterCaloHitListMap;
 
 /**
  *  @brief CheatingHitRecoveryAlgorithm class
@@ -30,12 +33,23 @@ public:
 
 private:
     pandora::StatusCode Run();
+
+    pandora::StatusCode MakeMCPClustersAssociation(MCPClusterListMap& mcpClusterListMap);
+    pandora::StatusCode MakeMCPHitsAssociation(MCPCaloHitListMap& mcpCaloHitListMap);
+    pandora::StatusCode AddHitToClusterByMCP(MCPClusterListMap& mcpClusterListMap, MCPCaloHitListMap& mcpCaloHitListMap);
+    pandora::StatusCode AddHitsToNewClusters(MCPCaloHitListMap& mcpCaloHitListMap);
+
+    pandora::StatusCode MakeClusterHitsAssociation(ClusterCaloHitListMap& clusterCaloHitListMap);
+    pandora::StatusCode AddHitToCluster(ClusterCaloHitListMap& clusterCaloHitListMap);
+
 	pandora::StatusCode MergeClusters();
-    pandora::StatusCode RecoverHits();
+
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
-	bool m_shouldUseRecovery;
-	bool m_shouldUseMerge;
+	bool m_shouldUseMCRecovery;
+	bool m_shouldUseMCMerge;
+    bool m_shouldUseRecovery;
+
     std::string  m_mergedClusterListName;
 };
 
