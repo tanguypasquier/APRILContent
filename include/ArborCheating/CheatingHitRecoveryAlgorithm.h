@@ -50,6 +50,10 @@ private:
 	bool m_shouldUseMCMerge;
     bool m_shouldUseRecovery;
 
+	unsigned int m_nNeighborHits;
+
+	float m_maxHitsDistance;
+
     std::string  m_mergedClusterListName;
 };
 

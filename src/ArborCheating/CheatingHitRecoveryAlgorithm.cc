@@ -264,18 +264,20 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clu
     const pandora::CaloHitList *pCaloHitList = nullptr; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
 
+	int nUnclusteredHits = 0;
+
     for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
 	{
 		const pandora::CaloHit* const pCaloHit = *iter;
 
         if (PandoraContentApi::IsAvailable(*this, pCaloHit))
 		{
-		   const pandora::MCParticle* pMCHitParticle  = nullptr;
+		   ++nUnclusteredHits;
+		   const pandora::MCParticle* pMCHitParticle = nullptr;
 
 		   pandora::CartesianVector testPosition = pCaloHit->GetPositionVector();
 		   
-		   // FIXME
-		   int nNeighbor = 10;
+		   const int nNeighbor = m_nNeighborHits;
 		   pandora::CaloHitList neighborHits;
 
 		   CaloHitNeighborSearchHelper::SearchNeighbourHits(testPosition, nNeighbor, neighborHits);
@@ -355,6 +357,8 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clu
 		}
 	}
 
+	std::cout << "===unClusteredHits size: " << nUnclusteredHits << std::endl;
+
     return pandora::STATUS_CODE_SUCCESS;
 }
 
@@ -372,6 +376,25 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitToCluster(ClusterCaloHit
 
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::AddToCluster(*this, cluster, &hitsAddToCluster));
 	}
+
+	// check 
+    const pandora::CaloHitList *pCaloHitList = nullptr; 
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+	//std::cout << "------- # CaloHit : " << pCaloHitList->size() << std::endl;
+	
+	pandora::CaloHitList unClusteredHits;
+
+    for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
+	{
+		const pandora::CaloHit* const pCaloHit = *iter;
+
+        if (PandoraContentApi::IsAvailable(*this, pCaloHit))
+		{
+			unClusteredHits.push_back(pCaloHit);
+		}
+	}
+
+	std::cout << "===unClusteredHits size: " << unClusteredHits.size() << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
 }
@@ -463,6 +486,14 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::ReadSettings(const pandora::Ti
     m_shouldUseMCMerge = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ShouldUseMCMerge", m_shouldUseMCMerge));
+
+    m_nNeighborHits = 10;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "NeighborHitsNumber", m_nNeighborHits));
+
+    m_maxHitsDistance = std::numeric_limits<float>::max();
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxHitsDistance", m_maxHitsDistance));
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ClusterListToTakeNewClusters", m_mergedClusterListName));
