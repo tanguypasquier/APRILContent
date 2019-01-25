@@ -98,7 +98,7 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::MakeMCPClustersAssociation(MCP
     const pandora::ClusterList* pClusterList = nullptr; 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-	//std::cout << "orginal cluster: " << pClusterList->size() << std::endl;
+	std::cout << "orginal cluster: " << pClusterList->size() << std::endl;
 
 	for(auto it = pClusterList->begin(); it != pClusterList->end(); ++it)
 	{
@@ -219,7 +219,7 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitsToNewClusters(MCPCaloHi
         PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Create(*this, parameters, pCluster));
 	}
 
-	//std::cout << "newly created cluster: " << pNewClusterList->size() << std::endl;
+	std::cout << "newly created cluster: " << pNewClusterList->size() << std::endl;
     
 	// merge the new clusters into the exsiting cluster list
     // Save the merged list and set it to be the current list for future algorithms
