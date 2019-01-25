@@ -313,7 +313,7 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clu
 		       continue;
            }
 
-		   if(clusterToAdd != nullptr)
+		   if(clusterToAdd != nullptr && hitsDistance < m_maxHitsDistance)
 		   {
 		      const pandora::MCParticle* pClusterMCParticle  = nullptr;
 
