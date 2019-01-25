@@ -130,6 +130,7 @@
 #include "ArborUtility/ClusterEfficiencyAlgorithm.h"
 #include "ArborUtility/IsolatedHitClusteringAlgorithm.h"
 #include "ArborUtility/LoadEMClusterAlgorithm.h"
+#include "ArborUtility/NearbyHitRecoveryAlgorithm.h"
 
 /** 
  * @brief  ArborContent class used to register arbor algorithms and plugins
@@ -200,8 +201,9 @@ public:
     d("CaloHitTiming",                       arbor_content::CaloHitTimingAlgorithm::Factory) \
     d("ClusterCheck",                        arbor_content::ClusterCheckAlgorithm::Factory) \
     d("ClusterPurity",                       arbor_content::ClusterPurityAlgorithm::Factory) \
-    d("ClusterEfficiency",                       arbor_content::ClusterEfficiencyAlgorithm::Factory) \
+    d("ClusterEfficiency",                   arbor_content::ClusterEfficiencyAlgorithm::Factory) \
     d("IsolatedHitClustering",               arbor_content::IsolatedHitClusteringAlgorithm::Factory) \
+    d("NearbyHitRecovery",                   arbor_content::NearbyHitRecoveryAlgorithm::Factory) \
     d("LoadEMCluster",                       arbor_content::LoadEMClusterAlgorithm::Factory)
 
 
