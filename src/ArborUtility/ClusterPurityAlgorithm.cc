@@ -104,6 +104,55 @@ namespace arbor_content
     	}
 	}
 
+    const pandora::CaloHitList *pCaloHitList = nullptr; 
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+
+	unsigned int nUnclusteredHits = 0;
+
+	unsigned int nECAL  = 0;
+	unsigned int nHCAL  = 0;
+	unsigned int nMUON  = 0;
+	unsigned int nOther = 0;
+
+    for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
+	{
+		const pandora::CaloHit* const pCaloHit = *iter;
+
+        if (PandoraContentApi::IsAvailable(*this, pCaloHit))
+		{
+		   ++nUnclusteredHits;
+	  
+		   pandora::HitType hitType = pCaloHit->GetHitType();
+
+		   switch(hitType)
+		   {
+			   case pandora::HitType::ECAL:
+				   ++nECAL;
+				   break;
+			   case pandora::HitType::HCAL:
+				   ++nHCAL;
+				   break;
+			   case pandora::HitType::MUON:
+				   ++nMUON;
+				   break;
+			   default:
+				   ++nOther;
+		   }
+		}
+	}
+	
+	std::vector<float> hitVars;
+	hitVars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+	hitVars.push_back( float(nUnclusteredHits) );
+	hitVars.push_back( float(nECAL) );
+	hitVars.push_back( float(nHCAL) );
+	hitVars.push_back( float(nMUON) );
+	hitVars.push_back( float(nOther) );
+
+	HistogramManager::CreateFill("LeftHits", 
+			"eventNumber:nUnclusteredHits:nECAL:nHCAL:nMUON:nOther", hitVars);
+	std::cout << "===unClusteredHits size: " << nUnclusteredHits << std::endl;
+
     return pandora::STATUS_CODE_SUCCESS;
   }
 
