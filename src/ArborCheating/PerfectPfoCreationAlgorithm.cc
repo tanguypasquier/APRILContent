@@ -222,7 +222,7 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 {
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
-	//std::cout << "check the cluster again: " << pClusterList->size() << std::endl;
+	std::cout << "check the cluster again: " << pClusterList->size() << std::endl;
 
 	neutralPfoEnergy = 0.;
 
@@ -303,10 +303,23 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 #endif
 
         //const bool isPhoton(pCluster->PassPhotonId(this->GetPandora()));
-        const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
+		const pandora::MCParticle *pMCParticle = nullptr;
+		try
+		{
+			pMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pCluster);
+		}
+        catch (pandora::StatusCodeException &e)
+		{
+			std::cout << "failure: getting cluster mcp..." << std::endl;
+			continue;
+		}
+
+		//std::cout << "cluster MCParticle: " << pMCParticle << endl;
         //const bool isPhoton(pandora::PHOTON == pMCParticle->GetParticleId());
         const bool isPhoton(pandora::PHOTON == pMCParticle->GetPfoTarget()->GetParticleId());
+		//std::cout << "cluster is photon ?: " << isPhoton  << endl;
         float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+		//std::cout << "cluster energy: " << clusterEnergy << endl;
 
 		// if cluster has associated tracks, use the energy from tracks
 		// N.B. if the varible 'ShouldCollapseMCParticlesToPfoTarget' in the steering file is false, should be set to false now
@@ -437,6 +450,9 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 			//std::cout << "Create cluster failed..." << std::endl;
 		}
     }
+
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
+	std::cout << "check the cluster again and again: " << pClusterList->size() << std::endl;
 
     return pandora::STATUS_CODE_SUCCESS;
 }

@@ -10,6 +10,8 @@
 
 #include "ArborCheating/CheatingClusterMergingNewAlgorithm.h"
 #include "ArborApi/ArborContentApi.h"
+#include "ArborUtility/EventPreparationAlgorithm.h"
+#include "ArborHelpers/HistogramHelper.h"
 
 //#include "ArborHelpers/ClusterHelper.h"
 //#include "ArborUtility/EventPreparationAlgorithm.h"
@@ -64,6 +66,16 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 		{
 		    mcpClusterListMap[pClusterMCParticle].push_back( clu );
 		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+	    std::vector<float> vars;
+	    vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+	    vars.push_back( float(clu->GetNCaloHits()) );
+	    vars.push_back( float(clu->GetElectromagneticEnergy()) );
+	    vars.push_back( float(clu->GetHadronicEnergy()) );
+
+		HistogramManager::CreateFill("ClusterBeforeMerging", 
+		"evtNumber:nCaloHit:clusterEMEnergy:clusterHadEnergy", vars);
 	}
 
 	for(auto it = mcpClusterListMap.begin(); it != mcpClusterListMap.end(); ++it)
