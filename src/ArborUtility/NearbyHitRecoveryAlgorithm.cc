@@ -8,6 +8,7 @@
 
 #include "Pandora/AlgorithmHeaders.h"
 
+#include "ArborTools/ConnectorAlgorithmTool.h"
 #include "ArborUtility/NearbyHitRecoveryAlgorithm.h"
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/CaloHitRangeSearchHelper.h"
@@ -25,6 +26,61 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::Run()
 
 	MakeClusterHitsAssociation(clusterCaloHitListMap);
 	AddHitToCluster(clusterCaloHitListMap);
+
+	if(m_pAlgorithmTool != nullptr)
+	{
+        const pandora::ClusterList *pNewClusterList = nullptr; 
+	    std::string clusterListName;
+
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
+	    PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pNewClusterList, clusterListName));
+
+		ConnectorAlgorithmTool *pTool = dynamic_cast<ConnectorAlgorithmTool*>(m_pAlgorithmTool);
+
+		if(pTool != nullptr) pTool->Process(*this);
+	    
+		std::cout << "NearbyHitRecoveryAlgorithm: created new clusters size: " << pNewClusterList->size() << std::endl;
+
+		//////////
+	    pandora::ClusterList clustersToSave;
+
+        const pandora::ClusterList *pClusterListToSave = nullptr; 
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterListToSave));
+
+	    std::cout << "temp cluster to save: " << pClusterListToSave->size() << std::endl;
+
+	    if (pClusterListToSave->empty()) return pandora::STATUS_CODE_SUCCESS;
+
+	    for(auto it = pClusterListToSave->begin(); it != pClusterListToSave->end(); ++it)
+	    {
+	    	auto clu = *it;
+	    	clustersToSave.push_back(*it);
+	    }
+	    
+		std::string m_mergedClusterListName("MergedClustersForPFOCreation");
+
+	    // save clusters to the exsiting cluster list
+        PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
+	    		PandoraContentApi::SaveList(*this, m_mergedClusterListName, clustersToSave));
+
+	}
+
+	int nUnclusteredHits = 0;
+
+    const pandora::CaloHitList *pCaloHitList = nullptr; 
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
+
+    for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
+	{
+		const pandora::CaloHit* const pCaloHit = *iter;
+
+        if (PandoraContentApi::IsAvailable(*this, pCaloHit))
+		{
+		   ++nUnclusteredHits;
+		}
+	}
+
+	std::cout << "===unClusteredHits size: " << nUnclusteredHits << std::endl;
     
 	return pandora::STATUS_CODE_SUCCESS;
 }
@@ -73,15 +129,16 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 			   }
 		   }
 
+#if 0
            try
            {
-           	 pMCHitParticle = pandora::MCParticleHelper::GetMainMCParticle(pCaloHit);
-           	//std::cout << "calo hit: " << caloHit << ", mcp: " << pMCHitParticle << std::endl;
+           	 std::cout << "calo hit: " << pCaloHit << ", mcp: " << pMCHitParticle << std::endl;
            }
            catch (pandora::StatusCodeException &)
            {
 		       continue;
            }
+#endif
 
 		   if(clusterToAdd != nullptr && hitsDistance < m_maxHitsDistance)
 		   {
@@ -90,11 +147,8 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
               try
               {
               	 pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(clusterToAdd);
-              }
-              catch (pandora::StatusCodeException &)
-              {
-		          continue;
-		      }
+           	  
+				 pMCHitParticle = pandora::MCParticleHelper::GetMainMCParticle(pCaloHit);
 		      //////
 		   	
 		      //std::cout << "  ====== hit: " << pCaloHit << ", mcp: " << pMCHitParticle 
@@ -123,6 +177,11 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 
 		      HistogramManager::CreateFill("TestAddHitToCluster", 
 			  "evtNumber:hitsDistance:isRight:hitMCPCharge:clusterMCPCharge", vars);
+			  }
+              catch (pandora::StatusCodeException &)
+              {
+		          continue;
+		      }
 		   }
 		}
 	}
@@ -180,6 +239,10 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::ReadSettings(const pandora::TiXm
     m_maxHitsDistance = std::numeric_limits<float>::max();
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxHitsDistance", m_maxHitsDistance));
+
+    m_pAlgorithmTool = nullptr;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, 
+        pandora::XmlHelper::ProcessAlgorithmTool(*this, xmlHandle, "CaloHitMergingTool", m_pAlgorithmTool));
 
     return pandora::STATUS_CODE_SUCCESS;
 }

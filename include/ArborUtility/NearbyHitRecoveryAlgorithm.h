@@ -42,6 +42,8 @@ private:
 	unsigned int m_nNeighborHits;
 
 	float m_maxHitsDistance;
+
+    pandora::AlgorithmTool *m_pAlgorithmTool;
 };
 
 inline pandora::Algorithm *NearbyHitRecoveryAlgorithm::Factory::CreateAlgorithm() const
