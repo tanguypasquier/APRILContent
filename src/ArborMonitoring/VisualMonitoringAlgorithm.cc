@@ -690,8 +690,8 @@ namespace arbor_content
       }
 
       pConnectorListElement->SetElementNameTitle( connectorListTitle.c_str(), connectorListTitle.c_str() );
-      pConnectorListElement->SetRnrSelf(false);
-      pConnectorListElement->SetRnrChildren(false);
+      //pConnectorListElement->SetRnrSelf(false);
+      //pConnectorListElement->SetRnrChildren(false);
       pConnectorListElement->SetMainColor(GetROOTColor(color));
 
 
