@@ -125,11 +125,14 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::TrackCollection(const pandora::
 			float trackEnergy = pTrack->GetEnergyAtDca();
 			float trackMCPEnergy = pTrkMCParticle->GetEnergy();
 
+			// FIXME: this may be good for real clustering
+#if 0
 			if(trackMCPEnergy > 5. && fabs(trackEnergy-trackMCPEnergy)/trackMCPEnergy > 0.5) 
 			{
-				//std::cout << "error: track energy: " << trackEnergy << ", mcp energy: " << trackMCPEnergy << std::endl;
+				std::cout << "error: track energy: " << trackEnergy << ", mcp energy: " << trackMCPEnergy << std::endl;
 				continue;
 			}
+#endif
 
             pfoParameters.m_trackList.push_back(pTrack);
 
@@ -310,13 +313,21 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
 		}
         catch (pandora::StatusCodeException &e)
 		{
-			std::cout << "failure: getting cluster mcp..." << std::endl;
-			continue;
+			//std::cout << "failure: getting cluster mcp..." << std::endl;
 		}
 
 		//std::cout << "cluster MCParticle: " << pMCParticle << endl;
         //const bool isPhoton(pandora::PHOTON == pMCParticle->GetParticleId());
-        const bool isPhoton(pandora::PHOTON == pMCParticle->GetPfoTarget()->GetParticleId());
+        bool isPhoton;
+
+		if(pMCParticle!=nullptr)
+		{
+			isPhoton = pandora::PHOTON == pMCParticle->GetPfoTarget()->GetParticleId();
+		}
+		else
+		{
+			isPhoton = true;
+		}
 		//std::cout << "cluster is photon ?: " << isPhoton  << endl;
         float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
 		//std::cout << "cluster energy: " << clusterEnergy << endl;
