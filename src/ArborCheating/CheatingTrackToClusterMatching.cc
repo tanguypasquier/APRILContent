@@ -68,7 +68,19 @@ namespace arbor_content
       {
         const pandora::Track *const pTrack = *iter;
         //const MCParticle *const pMCParticle(pTrack->GetMainMCParticle());
-		const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pTrack));
+		const pandora::MCParticle *pMCParticle = nullptr;
+		
+		try
+		{
+			pMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pTrack); 
+		}
+        catch (pandora::StatusCodeException &)
+        {	
+	        std::cout << "============= mcp problem .... " << __LINE__ << " track: " << pTrack << " p: " 
+				<< pTrack->GetMomentumAtDca().GetMagnitude() << std::endl;
+			continue;
+        }
+
 		const pandora::MCParticle *const pPfoTarget(pMCParticle->GetPfoTarget());
 
         TracksPerMCParticle::iterator itTracksPerMCParticle(tracksPerMCParticle.find(pMCParticle));
@@ -80,7 +92,10 @@ namespace arbor_content
 
 		  //FIXME:: check existence
 		  if(!tracksPerMCParticle.insert(TracksPerMCParticle::value_type(pMCParticle, pandora::TrackList(1, pTrack))).second)
-            throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+		  {
+			  std::cout << "tracksPerMCParticle.insert FAILURE" << __LINE__ << std::endl;
+              throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+		  }
           //if (!tracksPerMCParticle.push_back(TracksPerMCParticle::value_type(pMCParticle, trackList)).second)
         }
         else
@@ -97,7 +112,10 @@ namespace arbor_content
           trackList.push_back(pTrack);
 
 		  if(!tracksPfoTarget.insert(TracksPerMCParticle::value_type(pPfoTarget, pandora::TrackList(1, pTrack))).second)
-            throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+		  {
+			  std::cout << "tracksPerMCParticle.insert FAILURE" << __LINE__ << std::endl;
+			  throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+		  }
           //if (!tracksPerMCParticle.push_back(TracksPerMCParticle::value_type(pMCParticle, trackList)).second)
         }
         else
@@ -107,7 +125,8 @@ namespace arbor_content
 
       }
       catch (pandora::StatusCodeException &)
-      {
+      {	
+		  std::cout << "============= mcp problem ...." << __LINE__ << std::endl;
       }
     }
 
@@ -157,6 +176,7 @@ namespace arbor_content
 	  }
       catch (pandora::StatusCodeException &)
 	  {
+		  std::cout << "============= mcp problem ...." << __LINE__ << std::endl;
 	  }
 	}
 
@@ -199,7 +219,7 @@ namespace arbor_content
 				}
                 catch (pandora::StatusCodeException &)
 				{
-					//std::cout << "============= mcp problem ...." << std::endl;
+				    std::cout << "============= mcp problem ...." << __LINE__ << std::endl;
 					continue;
 				}
 
@@ -225,6 +245,7 @@ namespace arbor_content
 	  }
       catch (pandora::StatusCodeException &)
 	  {
+		  std::cout << "============= mcp problem ...." << __LINE__ << std::endl;
 	  }
 	}
 
@@ -266,7 +287,7 @@ namespace arbor_content
 				}
                 catch (pandora::StatusCodeException &)
 				{
-					//std::cout << "============= mcp problem ...." << std::endl;
+					std::cout << "============= mcp problem ...." << __LINE__ << std::endl;
 					continue;
 				}
 
@@ -311,6 +332,7 @@ namespace arbor_content
 	  }
       catch (pandora::StatusCodeException &)
 	  {
+			std::cout << "============= mcp problem ...." << __LINE__ << std::endl;
 	  }
 	}
 
