@@ -148,8 +148,8 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitToClusterByMCP(MCPCluste
 		//if(!mcp->IsPfoTarget()) continue;
         
 		// charged particle
-    	//int mcpCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
-	    //if(mcpCharge != 0) continue;
+    	int clusterCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
+	    //if(clusterCharge != 0) continue;
 
         // simply add the hits to the first cluster of the mcp
 		auto pCluster = *(clusterList.begin());
@@ -174,6 +174,8 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitToClusterByMCP(MCPCluste
 			{
 			   hitsAddToCluster.push_back(pCaloHit);
 
+		       pandora::HitType hitType = pCaloHit->GetHitType();
+
 		       ///////////////////////////////
 	           std::vector<float> vars;
 	           vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
@@ -182,9 +184,11 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitToClusterByMCP(MCPCluste
 	           vars.push_back( float(pCaloHit->GetHadronicEnergy()) );
 	           vars.push_back( float(pCluster->GetElectromagneticEnergy()) );
 	           vars.push_back( float(pCluster->GetHadronicEnergy()) );
+	           vars.push_back( float(hitType) );
+	           vars.push_back( float(clusterCharge) );
 
 		       HistogramManager::CreateFill("AddHitToCluster", 
-			   "evtNumber:hitClusterDistance:hitEMEnergy:hitHadEnergy:clusterEMEnergy:clusterHadEnergy", vars);
+			   "evtNumber:hitClusterDistance:hitEMEnergy:hitHadEnergy:clusterEMEnergy:clusterHadEnergy:hitType:clusterCharge", vars);
 			}
 		}
 
