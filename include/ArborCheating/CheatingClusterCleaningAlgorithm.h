@@ -31,6 +31,8 @@ public:
 private:
     pandora::StatusCode Run();
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+    bool m_isOnlyCleanPhoton;
 };
 
 inline pandora::Algorithm *CheatingClusterCleaningAlgorithm::Factory::CreateAlgorithm() const

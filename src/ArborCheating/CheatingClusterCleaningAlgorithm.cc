@@ -31,6 +31,9 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
         {
             const Cluster *const pCluster = *itCluster;
             const MCParticle *const pMainMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
+			int clusterPDG = pMainMCParticle->GetParticleId();
+
+			if(m_isOnlyCleanPhoton && clusterPDG != 22) continue;
 
             // Remove all calo hits that do not correspond to the cluster main mc particle
 			pandora::OrderedCaloHitList orderedCaloHitList(pCluster->GetOrderedCaloHitList());
@@ -132,8 +135,12 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-StatusCode CheatingClusterCleaningAlgorithm::ReadSettings(const TiXmlHandle /*xmlHandle*/)
+StatusCode CheatingClusterCleaningAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
 {
+    m_isOnlyCleanPhoton= false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "OnlyCleanPhoton", m_isOnlyCleanPhoton));
+
     return STATUS_CODE_SUCCESS;
 }
 
