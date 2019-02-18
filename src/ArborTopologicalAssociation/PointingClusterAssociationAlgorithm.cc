@@ -74,9 +74,6 @@ namespace arbor_content
       if(!this->CanMergeCluster(pCluster))
         continue;
 
-      if(m_discriminatePhotonPid && pCluster->PassPhotonId(this->GetPandora()))
-        continue;
-
       clusterVector.push_back(pCluster);
     }
 
@@ -116,11 +113,8 @@ namespace arbor_content
     {
       const pandora::Cluster *const pDaughterCluster = *iter;
 
-      if(NULL == pDaughterCluster)
-        continue;
-
-      if( ! pDaughterCluster->GetAssociatedTrackList().empty() )
-        continue;
+      //if( ! pDaughterCluster->GetAssociatedTrackList().empty() )
+      //  continue;
 
       const pandora::Cluster *pBestParentCluster = NULL;
 
@@ -278,15 +272,15 @@ namespace arbor_content
 
   pandora::StatusCode PointingClusterAssociationAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
-    m_discriminatePhotonPid = true;
+    m_discriminatePhotonPid = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DiscriminatePhotonPid", m_discriminatePhotonPid));
 
-    m_allowNeutralParentMerging = false;
+    m_allowNeutralParentMerging = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "AllowNeutralParentMerging", m_allowNeutralParentMerging));
 
-    m_minNCaloHits = 10;
+    m_minNCaloHits = 0;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinNCaloHits", m_minNCaloHits));
 
@@ -294,7 +288,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxNCaloHits", m_maxNCaloHits));
 
-    m_minNPseudoLayers = 4;
+    m_minNPseudoLayers = 2;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinNPseudoLayers", m_minNPseudoLayers));
 
