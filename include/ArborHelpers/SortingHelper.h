@@ -51,6 +51,7 @@ namespace arbor_content
      *  @param  pLhs the left handed cluster to compare
      *  @param  pRhs the right handed cluster to compare
      */
+    static bool SortClustersByNHits(const pandora::Cluster *const pLhs, const pandora::Cluster *const pRhs);
     static bool SortClustersByInnerLayer(const pandora::Cluster *const pLhs, const pandora::Cluster *const pRhs);
   
 	static bool SortCaloHitsByLayer(const pandora::CaloHit *const pLhs, const pandora::CaloHit *const pRhs);
@@ -69,6 +70,8 @@ namespace arbor_content
      *  @param  pRhs the right handed track to compare
      */
     static bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs);
+  
+	static bool SortTracksByMomentum(const pandora::Track* const pLhs, const pandora::Track* const pRhs);
 
     /**
      *  @brief  SortClusterByOmegaTracks class

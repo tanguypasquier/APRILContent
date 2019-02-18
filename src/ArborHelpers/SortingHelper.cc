@@ -36,6 +36,47 @@
 
 namespace arbor_content
 {
+  bool SortingHelper::SortClustersByNHits(const pandora::Cluster *const pLhs, const pandora::Cluster *const pRhs)
+  {
+      // NHits
+      const unsigned int nCaloHitsLhs(pLhs->GetNCaloHits()), nCaloHitsRhs(pRhs->GetNCaloHits());
+  
+      if (nCaloHitsLhs != nCaloHitsRhs)
+          return (nCaloHitsLhs > nCaloHitsRhs);
+  
+      // Track seeds
+      if ((0 == nCaloHitsLhs) && (0 == nCaloHitsRhs))
+      {
+          const float trackEnergyLhs(pLhs->IsTrackSeeded() ? pLhs->GetTrackSeed()->GetEnergyAtDca() : 0.f);
+          const float trackEnergyRhs(pRhs->IsTrackSeeded() ? pRhs->GetTrackSeed()->GetEnergyAtDca() : 0.f);
+  
+          if (std::fabs(trackEnergyLhs - trackEnergyRhs) > std::numeric_limits<float>::epsilon())
+              return (trackEnergyLhs > trackEnergyRhs);
+      }
+  
+      // Energy
+      const float energyLhs(pLhs->GetHadronicEnergy()), energyRhs(pRhs->GetHadronicEnergy());
+  
+      if (std::fabs(energyLhs - energyRhs) > std::numeric_limits<float>::epsilon())
+          return (energyLhs > energyRhs);
+  
+      // Energy in isolated hits
+      const float isolatedEnergyLhs(pLhs->GetIsolatedHadronicEnergy()), isolatedEnergyRhs(pRhs->GetIsolatedHadronicEnergy());
+  
+      if (std::fabs(isolatedEnergyLhs - isolatedEnergyRhs) > std::numeric_limits<float>::epsilon())
+          return (isolatedEnergyLhs > isolatedEnergyRhs);
+  
+      // Final attempt to distinguish
+      if ((nCaloHitsLhs > 0) && (nCaloHitsRhs > 0))
+      {
+          const pandora::CaloHit *const pFirstHitLhs((pLhs->GetOrderedCaloHitList().begin())->second->front());
+          const pandora::CaloHit *const pFirstHitRhs((pRhs->GetOrderedCaloHitList().begin())->second->front());
+  
+          return (*pFirstHitLhs < *pFirstHitRhs);
+      }
+  
+      throw pandora::StatusCodeException(pandora::STATUS_CODE_NOT_FOUND);
+  }
 
   bool SortingHelper::SortClustersByInnerLayer(const pandora::Cluster *const pLhs, const pandora::Cluster *const pRhs)
   {
@@ -59,6 +100,14 @@ namespace arbor_content
     const unsigned int layerLhs(pLhs->GetPseudoLayer()), layerRhs(pRhs->GetPseudoLayer());
 
     return (layerLhs < layerRhs);
+  }
+
+  bool SortingHelper::SortTracksByMomentum(const pandora::Track* const pLhs, const pandora::Track* const pRhs)
+  {
+	  const float momentumLhs( pLhs->GetMomentumAtDca().GetMagnitude() );
+	  const float momentumRhs( pRhs->GetMomentumAtDca().GetMagnitude() );
+
+	  return (momentumLhs < momentumRhs);
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
