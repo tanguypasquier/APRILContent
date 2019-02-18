@@ -11,6 +11,7 @@
 #include "ArborCheating/CheatingClusterCleaningAlgorithm.h"
 #include "ArborObjects/CaloHit.h"
 #include "ArborHelpers/HistogramHelper.h"
+#include "ArborHelpers/ClusterHelper.h"
 
 using namespace pandora;
 
@@ -38,6 +39,8 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
             // Remove all calo hits that do not correspond to the cluster main mc particle
 			pandora::OrderedCaloHitList orderedCaloHitList(pCluster->GetOrderedCaloHitList());
 
+			pandora::CaloHitList savedHits;
+
             for (pandora::OrderedCaloHitList::const_iterator itLyr = orderedCaloHitList.begin(), itLyrEnd = orderedCaloHitList.end(); itLyr != itLyrEnd; ++itLyr)
             {
                 for (pandora::CaloHitList::const_iterator hitIter = itLyr->second->begin(), hitIterEnd = itLyr->second->end(); hitIter != hitIterEnd; ++hitIter)
@@ -49,13 +52,19 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
 
                         if (pMainMCParticle != pMCParticle)
                         {
-                            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveFromCluster(*this, pCluster, pCaloHit));
-
 							//std::cout << " --- remove hit " << pCaloHit << " from cluster: " << pCluster << std::endl;
+                            PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, ArborContentApi::RemoveFromCluster(*this, pCluster, pCaloHit));
         
 							const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>( pCaloHit );
 
                             if(NULL == pArborCaloHit) continue;
+				
+							float centroidDistance = 0.;
+							float closestDistance = 0.;
+
+							const pandora::CartesianVector hitPoint = pCaloHit->GetPositionVector();
+				            ClusterHelper::GetCentroidDistance(pCluster, hitPoint, centroidDistance);
+				            ClusterHelper::GetClosestDistanceApproach(pCluster, hitPoint, closestDistance);
 
 							//pArborCaloHit->GetDensity();
 							float fwdConnection = 0.;
@@ -91,9 +100,18 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
 							vars.push_back( bakConnection );
 							vars.push_back( hitCharge );
 							vars.push_back( cluCharge );
+							vars.push_back( centroidDistance );
+							vars.push_back( closestDistance );
+
+							// FIXME
+							if(closestDistance>200.) 
+							{
+								savedHits.push_back(pCaloHit);
+								continue;
+							}
 
 							HistogramManager::CreateFill("CheatingClusterCleaning", 
-									"clusterEnergy:hitEnergy:fwdConnection:bakConnection:hitCharge:cluCharge", vars);
+									"clusterEnergy:hitEnergy:fwdConnection:bakConnection:hitCharge:cluCharge:centroidDistance:closestDistance", vars);
                         }
                     }
                     catch (StatusCodeException &)
@@ -101,6 +119,8 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
                     }
                 }
             }
+                                
+			PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, ArborContentApi::AddToCluster(*this, pCluster, &savedHits));
 
 #if 0
             // Repeat for isolated hits
