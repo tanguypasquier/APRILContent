@@ -251,12 +251,12 @@ namespace arbor_content
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-	//std::cout << "------------------" << std::endl;
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// merge the cluster fragments from the same track
 	if(!m_shouldMergeTrackClusters) return pandora::STATUS_CODE_SUCCESS;
 
 	std::map<const pandora::Cluster*, pandora::ClusterList> clustersToMerge;
+	std::cout << "  --- Cluster number before merging: " << pClusterList->size() << std::endl;
 	
     for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
     {
@@ -347,8 +347,8 @@ namespace arbor_content
 		for( auto iter : clusters)
 		{
 			auto clu = iter;
-			std::cout << "merge clusters: " << mainCluster << " --- " << clu << std::endl;
-			std::cout << "cluster energy: " << mainCluster->GetHadronicEnergy() << " --- " << clu->GetHadronicEnergy() << std::endl;
+			//std::cout << "merge clusters: " << mainCluster << " --- " << clu << std::endl;
+			//std::cout << "cluster energy: " << mainCluster->GetHadronicEnergy() << " --- " << clu->GetHadronicEnergy() << std::endl;
 		    ArborContentApi::MergeAndDeleteClusters(*this, mainCluster, clu);
 		}
 	}

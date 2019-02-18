@@ -90,6 +90,7 @@
 #include "ArborPlugins/ArborPseudoLayerPlugin.h"
 #include "ArborPlugins/EnergyCorrectionPlugins.h"
 #include "ArborPlugins/ParticleIdPlugins.h"
+#include "ArborPlugins/ShowerProfilePlugin.h"
 
 #include "ArborReclustering/EnergyExcessReclusteringAlgorithm.h"
 #include "ArborReclustering/MissingEnergyReclusteringAlgorithm.h"
@@ -106,12 +107,14 @@
 
 #include "ArborTopologicalAssociation/TopologicalAssociationParentAlgorithm.h"
 #include "ArborTopologicalAssociation/PointingClusterAssociationAlgorithm.h"
+#include "ArborTopologicalAssociation/PointingClusterAssociationNewAlgorithm.h"
 #include "ArborTopologicalAssociation/ClosebySeedMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/ClusterFragmentMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/SurroundingHitsMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/NearbyTrackPhotonRemovalAlg.h"
 #include "ArborTopologicalAssociation/MipFragmentMergingAlg.h"
 #include "ArborTopologicalAssociation/FragmentRemovalAlgorithm.h"
+#include "ArborTopologicalAssociation/ConeBasedMergingAlgorithm.h"
 
 #include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/TrackClusterAssociationMVAAlgorithm.h"
@@ -178,12 +181,14 @@ public:
     d("ForceSplitTrackAssociations",         arbor_content::ForceSplitTrackAssociationsAlg::Factory) \
     d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
     d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory) \
+    d("PointingClusterAssociationNew",       arbor_content::PointingClusterAssociationNewAlgorithm::Factory) \
     d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \
     d("ClusterFragmentMerging",              arbor_content::ClusterFragmentMergingAlgorithm::Factory) \
     d("SurroundingHitsMerging",              arbor_content::SurroundingHitsMergingAlgorithm::Factory) \
     d("NearbyTrackPhotonRemoval",            arbor_content::NearbyTrackPhotonRemovalAlg::Factory) \
     d("MipFragmentMerging",                  arbor_content::MipFragmentMergingAlg::Factory) \
     d("FragmentRemoval",                     arbor_content::FragmentRemovalAlgorithm::Factory) \
+    d("ConeBasedMerging",                    arbor_content::ConeBasedMergingAlgorithm::Factory) \
     d("TrackClusterAssociation",             arbor_content::TrackClusterAssociationAlgorithm::Factory) \
     d("TrackClusterAssociationMVA",          arbor_content::TrackClusterAssociationMVAAlgorithm::Factory) \
     d("UnassociatedTrackRecovery",           arbor_content::UnassociatedTrackRecoveryAlg::Factory) \
@@ -238,6 +243,7 @@ public:
    *  @param  pandora the pandora instance with which to register content
    */
   static pandora::StatusCode RegisterArborPseudoLayerPlugin(const pandora::Pandora &pandora);
+  static pandora::StatusCode RegisterArborShowerProfilePlugin(const pandora::Pandora &pandora);
 
   /**
    *  @brief  Register the b field plugin (note user side configuration) with pandora
@@ -281,6 +287,11 @@ inline pandora::StatusCode ArborContent::RegisterAlgorithms(const pandora::Pando
 inline pandora::StatusCode ArborContent::RegisterArborPseudoLayerPlugin(const pandora::Pandora &pandora)
 {
   return PandoraApi::SetPseudoLayerPlugin(pandora, new arbor_content::ArborPseudoLayerPlugin());
+}
+
+inline pandora::StatusCode ArborContent::RegisterArborShowerProfilePlugin(const pandora::Pandora &pandora)
+{
+  return PandoraApi::SetShowerProfilePlugin(pandora, new arbor_content::ArborShowerProfilePlugin());
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
