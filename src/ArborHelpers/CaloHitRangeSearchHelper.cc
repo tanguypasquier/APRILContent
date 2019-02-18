@@ -77,25 +77,41 @@ namespace arbor_content
 
   //--------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode CaloHitRangeSearchHelper::FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix)
+  pandora::StatusCode CaloHitRangeSearchHelper::FillMatixByPoints(const std::vector<pandora::CartesianVector>& points, arma::mat& caloHitsMatrix)
   {
 	  // first hit 
       arma::mat matrix(3, 1);
 
-	  pandora::CartesianVector caloHitPosition0 = caloHitVector.at(0)->GetPositionVector();
-	  matrix.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ() } );
+	  const pandora::CartesianVector& position0 = points.at(0);
+	  matrix.col(0) = arma::vec( { position0.GetX(), position0.GetY(), position0.GetZ() } );
 
 	  // other hits
-	  //std::cout << "caloHitVector.size : " << caloHitVector.size() << std::endl;
-	  matrix.insert_cols(1, caloHitVector.size() - 1); 
+	  matrix.insert_cols(1, points.size() - 1); 
 
-	  for(int i = 1; i < caloHitVector.size(); ++i)
+	  for(int i = 1; i < points.size(); ++i)
 	  {
-	      pandora::CartesianVector caloHitPosition = caloHitVector.at(i)->GetPositionVector();
-	      matrix.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ() } );
+	      const pandora::CartesianVector& position = points.at(i);
+	      matrix.col(i) = arma::vec( { position.GetX(), position.GetY(), position.GetZ() } );
 	  }
 
 	  caloHitsMatrix = matrix;
+	  
+	  return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //--------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode CaloHitRangeSearchHelper::FillMatixFromCaloHits(const pandora::CaloHitVector& caloHitVector, arma::mat& caloHitsMatrix)
+  {
+	  std::vector<pandora::CartesianVector> hitPoints;
+
+	  for(int i = 0; i < caloHitVector.size(); ++i)
+	  {
+	      const pandora::CartesianVector& caloHitPosition = caloHitVector.at(i)->GetPositionVector();
+		  hitPoints.push_back(caloHitPosition);
+	  }
+
+	  FillMatixByPoints(hitPoints, caloHitsMatrix);
 	  
 	  return pandora::STATUS_CODE_SUCCESS;
   }
