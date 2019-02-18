@@ -182,7 +182,7 @@ namespace arbor_content
 
 	  if(isPhoton || isNeutron) 
 	  {
-		  std::cout << "isPhoton: " << isPhoton << ", isNeutron: " << isNeutron << std::endl;
+		  //std::cout << "isPhoton: " << isPhoton << ", isNeutron: " << isNeutron << std::endl;
 		  continue;
 	  }
 
