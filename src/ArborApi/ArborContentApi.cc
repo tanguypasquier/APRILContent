@@ -346,12 +346,19 @@ pandora::StatusCode ArborContentApi::RemoveFromCluster(const pandora::Algorithm 
 pandora::StatusCode ArborContentApi::MergeAndDeleteClusters(const pandora::Algorithm &algorithm, 
 		const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *pClusterToDelete)
 {
+	pandora::CaloHitList origClusterHits;
+    pClusterToEnlarge->GetOrderedCaloHitList().FillCaloHitList(origClusterHits);
+	pandora::CaloHitList origIsoCaloHitList = pClusterToEnlarge->GetIsolatedCaloHitList();
+	origClusterHits.insert(origClusterHits.begin(), origIsoCaloHitList.begin(), origIsoCaloHitList.end());
+
 	pandora::CaloHitList clusterHits;
     pClusterToDelete->GetOrderedCaloHitList().FillCaloHitList(clusterHits);
 	pandora::CaloHitList isoCaloHitList = pClusterToDelete->GetIsolatedCaloHitList();
 	clusterHits.insert(clusterHits.begin(), isoCaloHitList.begin(), isoCaloHitList.end());
 
-	for(auto& caloHit : clusterHits)
+	origClusterHits.insert(origClusterHits.begin(), clusterHits.begin(), clusterHits.end());
+
+	for(auto& caloHit : origClusterHits)
 	{
         const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
 		Modifiable(pArborCaloHit)->SetMother(pClusterToEnlarge);
