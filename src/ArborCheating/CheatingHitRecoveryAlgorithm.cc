@@ -149,7 +149,6 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitToClusterByMCP(MCPCluste
         
 		// charged particle
     	int clusterCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
-	    //if(clusterCharge != 0) continue;
 
         // simply add the hits to the first cluster of the mcp
 		auto pCluster = *(clusterList.begin());
@@ -169,7 +168,7 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitToClusterByMCP(MCPCluste
 			// charged hit with distance less than a specified value is not included
 			//if( !(hitClusterDistance < 400 && mcpCharge != 0) )
 			if(1)
-			//if(hitClusterDistance < 400)
+			//if(hitClusterDistance < 1000)
 			//if( mcpCharge != 0 )
 			{
 			   hitsAddToCluster.push_back(pCaloHit);
@@ -177,22 +176,27 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitToClusterByMCP(MCPCluste
 		       pandora::HitType hitType = pCaloHit->GetHitType();
 
 		       ///////////////////////////////
+               const arbor_content::CaloHit *const pArborCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit));
 	           std::vector<float> vars;
 	           vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	           vars.push_back( hitClusterDistance );
 	           vars.push_back( float(pCaloHit->GetElectromagneticEnergy()) );
 	           vars.push_back( float(pCaloHit->GetHadronicEnergy()) );
+	           vars.push_back( float(pArborCaloHit->GetDensity()) );
 	           vars.push_back( float(pCluster->GetElectromagneticEnergy()) );
 	           vars.push_back( float(pCluster->GetHadronicEnergy()) );
 	           vars.push_back( float(hitType) );
 	           vars.push_back( float(clusterCharge) );
 
 		       HistogramManager::CreateFill("AddHitToCluster", 
-			   "evtNumber:hitClusterDistance:hitEMEnergy:hitHadEnergy:clusterEMEnergy:clusterHadEnergy:hitType:clusterCharge", vars);
+			   "evtNumber:hitClusterDistance:hitEMEnergy:hitHadEnergy:hitDensity:clusterEMEnergy:clusterHadEnergy:hitType:clusterCharge", vars);
 			}
 		}
 
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::AddToCluster(*this, pCluster, &hitsAddToCluster));
+	    //if(clusterCharge == 0)
+		{
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::AddToCluster(*this, pCluster, &hitsAddToCluster));
+		}
 
 		hitList.clear();
 	}
