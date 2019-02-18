@@ -227,6 +227,18 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::SetPfoParametersFromClusters() 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 	std::cout << "check the cluster again: " << pClusterList->size() << std::endl;
 
+    for (pandora::ClusterList::const_iterator iter = pClusterList->begin(), iterEnd = pClusterList->end(); iter != iterEnd; ++iter)
+	{
+		auto pCluster = *iter;
+
+		std::vector<float> vars;
+		vars.push_back( pCluster->GetNCaloHits() );
+		vars.push_back( pCluster->GetHadronicEnergy() );
+		HistogramManager::CreateFill("PerfectPfoCreation_cluster", "clusterSize:hadEnergy", vars);
+        //int showerStartLayer(pCluster->GetShowerStartLayer(this->GetPandora()));
+		//std::cout << "showerStartLayer: " << showerStartLayer << std::endl;
+	}
+
 	neutralPfoEnergy = 0.;
 
     // Examine clusters with no associated tracks to form neutral pfos
