@@ -189,7 +189,7 @@ namespace arbor_content
       if(performAssociation)
       {
         // merge clusters
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pParentCluster, pDaughterCluster));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::MergeAndDeleteClusters(*this, pParentCluster, pDaughterCluster));
 
         // clean iterator for next iterations
         (*iIter) = NULL;

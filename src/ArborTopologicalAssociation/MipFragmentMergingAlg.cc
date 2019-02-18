@@ -176,7 +176,7 @@ namespace arbor_content
         continue;
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->TidyClusterMap(pParentCluster, pDaughterCluster, clusterToClusterMap));
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pParentCluster, pDaughterCluster));
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::MergeAndDeleteClusters(*this, pParentCluster, pDaughterCluster));
 
       (iter->second) = NULL;
     }

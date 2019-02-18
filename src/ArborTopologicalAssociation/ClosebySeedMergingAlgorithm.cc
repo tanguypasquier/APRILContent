@@ -56,7 +56,8 @@ namespace arbor_content
 
   pandora::StatusCode ClosebySeedMergingAlgorithm::FindMergeCandidateClusters(const pandora::ClusterList *const pClusterList, CaloHitSeedToClusterMap &caloHitSeedToClusterMap) const
   {
-	std::cout << "FindMergeCandidateClusters: ClusterList size: " << pClusterList->size() << std::endl;	
+	std::cout << "ClusterList size before ClosebySeedMerging: " << pClusterList->size() << std::endl;	
+
     for(pandora::ClusterList::const_iterator iter = pClusterList->begin(), endIter = pClusterList->end() ;
         endIter != iter ; ++iter)
     {
@@ -166,7 +167,7 @@ namespace arbor_content
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ReplaceClusterEntryInSeedMap(pClusterJ, pClusterI, caloHitSeedToClusterMap));
 
         // merge clusters
-        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::MergeAndDeleteClusters(*this, pClusterI, pClusterJ));
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::MergeAndDeleteClusters(*this, pClusterI, pClusterJ));
       }
     }
 
@@ -174,7 +175,7 @@ namespace arbor_content
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-	std::cout << "pClusterList: " << pClusterList->size() << std::endl;
+	std::cout << "Cluster size after ClosebySeedMerging: " << pClusterList->size() << std::endl;
 #endif
 
     return pandora::STATUS_CODE_SUCCESS;
