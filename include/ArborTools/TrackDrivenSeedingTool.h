@@ -74,6 +74,8 @@ public:
 	 */
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
+	static inline TrackCaloHitVector& GetTrackAndInitCaloHits() { return m_trackHitVector; }
+
 private:
 	/**
 	 *  @brief  Find the initial calo hits close to track extrapolation
@@ -106,7 +108,6 @@ private:
 
 	bool IsSiblingTrack(const pandora::Track *const trackA, const pandora::Track *const trackB) const;
 
-	static inline TrackCaloHitVector& GetTrackAndInitCaloHits() { return m_trackHitVector; }
 
 private:
 	float                           m_initialHitSearchRange;
