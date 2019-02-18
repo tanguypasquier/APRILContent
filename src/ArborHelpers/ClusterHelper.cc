@@ -136,6 +136,21 @@ namespace arbor_content
     return pandora::STATUS_CODE_SUCCESS;
   }
 
+  bool ClusterHelper::CanMergeCluster(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, 
+		  const float minMipFraction, const float maxAllHitsFitRms)
+  {
+      if (0 == pCluster->GetNCaloHits())
+          return false;
+  
+      if (!(pCluster->PassPhotonId(pandora)))
+          return true;
+  
+      if (pCluster->GetMipFraction() - minMipFraction > std::numeric_limits<float>::epsilon())
+          return true;
+  
+      return (pCluster->GetFitToAllHitsResult().IsFitSuccessful() && (pCluster->GetFitToAllHitsResult().GetRms() < maxAllHitsFitRms));
+  }
+
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,

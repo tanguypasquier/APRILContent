@@ -295,6 +295,9 @@ public:
          *
          */
         static pandora::StatusCode CleanAndDeleteClusters(const pandora::Algorithm &algorithm, const pandora::ClusterList &clusterList);
+  
+		static bool CanMergeCluster(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const float minMipFraction, 
+				const float maxAllHitsFitRms);
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
