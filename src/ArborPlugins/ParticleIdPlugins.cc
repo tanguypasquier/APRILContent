@@ -465,10 +465,12 @@ namespace arbor_content
 
   bool ArborParticleIdPlugins::ArborPhotonId::IsMatch(const pandora::Cluster *const pCluster) const
   {
+#if 0
     if (pandora::PHOTON == pCluster->GetParticleId())
     {
       return true;
     }
+#endif
 
     if(this->GetPandora().GetPlugins()->GetParticleId()->IsEmShower(pCluster))
     {
