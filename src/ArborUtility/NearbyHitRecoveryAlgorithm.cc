@@ -63,7 +63,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::Initialize()
 	    	std::cout << "Error: MVA reader !!!" << std::endl;
 			delete m_reader;
 			m_reader = nullptr;
-			return pandora::STATUS_CODE_NOT_INITIALIZED;
+			//return pandora::STATUS_CODE_NOT_INITIALIZED;
         }
 	}
 
