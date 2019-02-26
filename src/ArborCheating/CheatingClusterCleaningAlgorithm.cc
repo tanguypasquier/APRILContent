@@ -30,7 +30,7 @@ StatusCode CheatingClusterCleaningAlgorithm::Run()
     {
         try
         {
-            const Cluster *const pCluster = *itCluster;
+            const pandora::Cluster *const pCluster = *itCluster;
             const MCParticle *const pMainMCParticle(MCParticleHelper::GetMainMCParticle(pCluster));
 			int clusterPDG = pMainMCParticle->GetParticleId();
 
