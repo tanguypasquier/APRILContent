@@ -119,7 +119,7 @@ namespace arbor_content
             clusterParameters.m_caloHitList = clusterCaloHitList;
 
 			// FIXME:: check if it is possible to create cluster ?
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Create(algorithm, clusterParameters, pCluster));
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::CreateArborCluster(algorithm, clusterParameters, pCluster));
 
 			//std::cout << "================ test hits from dbscan: " << caloHitVector.size() << std::endl;
 			//std::cout << "================ create a test cluster: " << pCluster << ",  calo hit size: "

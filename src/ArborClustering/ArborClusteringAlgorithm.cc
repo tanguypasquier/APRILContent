@@ -177,7 +177,7 @@ namespace arbor_content
 	  object_creation::ClusterParameters clusterParameters;
       clusterParameters.m_caloHitList = clusterCaloHitList;
 
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Create(*this, clusterParameters, pCluster));
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::CreateArborCluster(*this, clusterParameters, pCluster));
 
 #if 0
 	  std::cout << "check cluster ptr: "  << pCluster << std::endl;
