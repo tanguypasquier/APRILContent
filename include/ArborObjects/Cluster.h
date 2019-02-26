@@ -34,8 +34,10 @@
 #include "Api/PandoraContentApi.h"
 
 
-#include "ArborApi/ArborContentApi.h"
+#include "Pandora/PandoraInputTypes.h"
 #include "ArborApi/ArborInputTypes.h"
+
+#include "ArborApi/ArborContentApi.h"
 
 //#include "ArborObjects/ArborMetaData.h"
 
@@ -49,14 +51,44 @@ class ClusterFactory;
  */ 
 class ArborCluster : public pandora::Cluster
 {
+	float GetMergedHadronicEnergy();
+
+	const ArborCluster* GetMotherCluster();
+	const std::vector<ArborCluster*>& GetClustersToMerge();
+	const std::vector<ArborCluster*>& GetNearbyClusters();
+
+	const pandora::CartesianVector& GetAxis();
+	const pandora::CartesianVector& GetIntercept();
+	const pandora::CartesianVector& GetCentroid();
+
+	bool IsPhoton();
+
+	void SetMotherCluster(const ArborCluster* cluster);
+	void SetClustersToMerge(const std::vector<ArborCluster*>& clusterVector);
+	void SetNearbyClusters(const std::vector<ArborCluster*>& clusterVector);
+
 private:
+
+    //
 	ArborCluster(const PandoraContentApi::Cluster::Parameters &parameters);
 
 	~ArborCluster();
 
-	void SetMotherCluster(ArborCluster* cluster);
 
 protected:
+	const pandora::Cluster* m_pCluster;
+
+	const ArborCluster* m_pMotherCluster;
+
+	std::vector<ArborCluster*> m_clustersToMerge;
+	std::vector<ArborCluster*> m_nearbyClusters;
+
+	pandora::CartesianVector m_axis;
+	pandora::CartesianVector m_intercept;
+	pandora::CartesianVector m_centroid;
+
+	bool m_isPhoton;
+
 	ArborCluster* m_motherCluster;
 
     friend class ClusterFactory;

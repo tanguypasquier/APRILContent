@@ -30,7 +30,8 @@
 namespace arbor_content
 {
   ArborCluster::ArborCluster(const PandoraContentApi::Cluster::Parameters &parameters) :
-      pandora::Cluster(parameters)
+      pandora::Cluster(parameters),
+	  m_axis(0., 0., 0.), m_intercept(0., 0., 0.), m_centroid(0., 0., 0.)
   {
   }
 
@@ -38,9 +39,68 @@ namespace arbor_content
   {
   }
 
-  void ArborCluster::SetMotherCluster(ArborCluster* cluster)
+  float ArborCluster::GetMergedHadronicEnergy()
   {
-	  m_motherCluster = cluster;
+	  float hadronicEnergy = 0.;
+
+	  hadronicEnergy += m_pCluster->GetHadronicEnergy();
+
+	  for(auto& cluster : m_clustersToMerge)
+	  {
+		  hadronicEnergy += cluster->GetMergedHadronicEnergy();
+	  }
+
+	  return hadronicEnergy;
+  }
+
+  const ArborCluster* ArborCluster::GetMotherCluster()
+  {
+	  return m_pMotherCluster;
+  }
+
+  const std::vector<ArborCluster*>& ArborCluster::GetClustersToMerge()
+  {
+	  return m_clustersToMerge;
+  }
+
+  const std::vector<ArborCluster*>& ArborCluster::GetNearbyClusters()
+  {
+	  return m_nearbyClusters;
+  }
+
+  const pandora::CartesianVector& ArborCluster::GetAxis()
+  {
+	  return m_axis;
+  }
+
+  const pandora::CartesianVector& ArborCluster::GetIntercept()
+  {
+	  return m_intercept;
+  }
+
+  const pandora::CartesianVector& ArborCluster::GetCentroid()
+  {
+	  return m_centroid;
+  }
+
+  bool ArborCluster::IsPhoton()
+  {
+	  return m_isPhoton;
+  }
+
+  void ArborCluster::SetMotherCluster(const ArborCluster* cluster)
+  {
+	  m_pMotherCluster = cluster;
+  }
+
+  void ArborCluster::SetClustersToMerge(const std::vector<ArborCluster*>& clusterVector)
+  {
+	  m_clustersToMerge = clusterVector;
+  }
+
+  void ArborCluster::SetNearbyClusters(const std::vector<ArborCluster*>& clusterVector)
+  {
+	  m_nearbyClusters = clusterVector;
   }
 } 
 
