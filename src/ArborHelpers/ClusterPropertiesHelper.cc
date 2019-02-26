@@ -120,6 +120,17 @@ pandora::StatusCode arbor_content::ClusterPropertiesHelper::GetClusterProperties
 			                     axis); // axis is local
 }
 
+TVector3 arbor_content::ClusterPropertiesHelper::GetMainAxis(const pandora::Cluster* const pCluster)
+{
+	TVector3 axis;
+
+	float minHitLayer, clusterVol, energyRatio, hitOutsideRatio, axisLengthRatio, shortAxisLengthRatio;
+
+    CalcClusterProperties(pCluster, minHitLayer, clusterVol, energyRatio, hitOutsideRatio, axisLengthRatio, shortAxisLengthRatio, axis);
+
+	return axis;
+}
+
 pandora::StatusCode arbor_content::ClusterPropertiesHelper::GetAxisInformation(
 	std::vector<TVector3>& relativePositionVector, std::vector<float>& hitWeightVector, float weightSum, 
 	TVector3& clusterMainAxis, float& axisLengthRatio, float& shortAxisLengthRatio)
