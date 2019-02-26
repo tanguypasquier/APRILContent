@@ -414,6 +414,8 @@ T *ArborContentApi::Modifiable(const T *const pT)
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 
+template arbor_content::ArborCluster *ArborContentApi::Modifiable(const arbor_content::ArborCluster *const);
+
 template arbor_content::CaloHit   *ArborContentApi::Modifiable(const arbor_content::CaloHit   *const);
 template arbor_content::Connector *ArborContentApi::Modifiable(const arbor_content::Connector *const);
 

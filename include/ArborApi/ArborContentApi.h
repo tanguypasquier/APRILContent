@@ -283,12 +283,6 @@ public:
 	static pandora::StatusCode RemoveFromCluster(const pandora::Algorithm &algorithm, 
 		const pandora::Cluster *const pCluster, const pandora::CaloHit *const pCaloHit);
 
-private:
-	/**
-	 *  @brief  Remove the connection. Destructor not called, the connector responsibility is forwarded to the caller
-	 *
-	 *  @param  pConnector the connector to remove
-	 */
 	static pandora::StatusCode RemoveConnector(const arbor_content::Connector *const pConnector);
 
 	/**
@@ -300,6 +294,13 @@ private:
 	 */
 	template <typename T>
 	static T *Modifiable(const T *const pT);
+
+private:
+	/**
+	 *  @brief  Remove the connection. Destructor not called, the connector responsibility is forwarded to the caller
+	 *
+	 *  @param  pConnector the connector to remove
+	 */
 	static arbor_content::ClusterFactory m_clusterFactory;
 }; 
 
