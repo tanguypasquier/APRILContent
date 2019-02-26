@@ -53,32 +53,32 @@ namespace arbor_content
 	  return hadronicEnergy;
   }
 
-  const ArborCluster* ArborCluster::GetMotherCluster()
+  const ArborCluster* ArborCluster::GetMotherCluster() const
   {
 	  return m_pMotherCluster;
   }
 
-  const std::vector<ArborCluster*>& ArborCluster::GetClustersToMerge()
+  const std::vector<ArborCluster*>& ArborCluster::GetClustersToMerge() const
   {
 	  return m_clustersToMerge;
   }
 
-  const std::vector<ArborCluster*>& ArborCluster::GetNearbyClusters()
+  const std::vector<ArborCluster*>& ArborCluster::GetNearbyClusters() const
   {
 	  return m_nearbyClusters;
   }
 
-  const pandora::CartesianVector& ArborCluster::GetAxis()
+  const pandora::CartesianVector& ArborCluster::GetAxis() const
   {
 	  return m_axis;
   }
 
-  const pandora::CartesianVector& ArborCluster::GetIntercept()
+  const pandora::CartesianVector& ArborCluster::GetIntercept() const
   {
 	  return m_intercept;
   }
 
-  const pandora::CartesianVector& ArborCluster::GetCentroid()
+  const pandora::CartesianVector& ArborCluster::GetCentroid() const
   {
 	  return m_centroid;
   }

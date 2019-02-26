@@ -51,15 +51,16 @@ class ClusterFactory;
  */ 
 class ArborCluster : public pandora::Cluster
 {
+public:
 	float GetMergedHadronicEnergy();
 
-	const ArborCluster* GetMotherCluster();
-	const std::vector<ArborCluster*>& GetClustersToMerge();
-	const std::vector<ArborCluster*>& GetNearbyClusters();
+	const ArborCluster* GetMotherCluster() const;
+	const std::vector<ArborCluster*>& GetClustersToMerge() const;
+	const std::vector<ArborCluster*>& GetNearbyClusters() const;
 
-	const pandora::CartesianVector& GetAxis();
-	const pandora::CartesianVector& GetIntercept();
-	const pandora::CartesianVector& GetCentroid();
+	const pandora::CartesianVector& GetAxis() const;
+	const pandora::CartesianVector& GetIntercept() const;
+	const pandora::CartesianVector& GetCentroid() const;
 
 	bool IsPhoton();
 
