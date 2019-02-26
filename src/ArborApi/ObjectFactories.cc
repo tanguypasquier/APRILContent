@@ -135,6 +135,58 @@ namespace arbor_content
     return pandora::STATUS_CODE_SUCCESS;
   }
 
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  PandoraContentApi::Cluster::Parameters *ClusterFactory::NewParameters() const
+  {
+    return new PandoraContentApi::Cluster::Parameters();
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode ClusterFactory::Read(PandoraContentApi::Cluster::Parameters &/*parameters*/, pandora::FileReader &/*fileReader*/) const
+  {
+    /* nop */
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode ClusterFactory::Write(const pandora::Cluster *const /*pCluster*/, pandora::FileWriter &/*fileWriter*/) const
+  {
+    /* nop */
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode ClusterFactory::Create(const PandoraContentApi::Cluster::Parameters &parameters, const pandora::Cluster *&pCluster) const
+  {
+    pCluster = NULL;
+    const arbor_content::ArborCluster *pArborCluster = NULL;
+
+    try
+    {
+      pArborCluster = new arbor_content::ArborCluster(parameters);
+
+      if(NULL == pArborCluster)
+        return pandora::STATUS_CODE_FAILURE;
+    }
+    catch(pandora::StatusCodeException &statusCodeException)
+    {
+      std::cout << "ClusterFactory: failed to create a arbor_content::Cluster object : " << statusCodeException.ToString() << std::endl;
+
+      if(NULL != pArborCluster)
+        delete pArborCluster;
+
+      return statusCodeException.GetStatusCode();
+    }
+
+    pCluster = pArborCluster;
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
 } 
 
 

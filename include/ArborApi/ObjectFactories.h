@@ -30,6 +30,7 @@
 #define OBJECTFACTORIES_H
 
 #include "Api/PandoraApi.h"
+#include "Api/PandoraContentApi.h"
 
 #include "ArborApi/ArborInputTypes.h"
 #include "Pandora/ObjectFactory.h"
@@ -117,6 +118,44 @@ private:
 	 */
 	pandora::StatusCode Create(const PandoraApi::Track::Parameters &parameters, const pandora::Track *&pTrack) const;
 
+};
+
+/**
+ *  @brief  ClusterFactory class
+ */
+class ClusterFactory : public pandora::ObjectFactory<PandoraContentApi::Cluster::Parameters, pandora::Cluster>
+{
+private:
+    /**
+	 *  @brief  Create new parameters instance on the heap (memory-management to be controlled by user)
+	 *
+	 *  @return the address of the new parameters instance
+	 */
+	PandoraContentApi::Cluster::Parameters *NewParameters() const;
+
+    /**
+	 *  @brief  Read any additional (derived class only) object parameters from file using the specified file reader
+	 *
+	 *  @param  parameters the parameters to pass in constructor
+	 *  @param  fileReader the file reader, used to extract any additional parameters from file
+	 */
+	pandora::StatusCode Read(PandoraContentApi::Cluster::Parameters &parameters, pandora::FileReader &fileReader) const;
+
+	/**
+	 *  @brief  Persist any additional (derived class only) object parameters using the specified file writer
+	 *
+	 *  @param  pCluster the address of the object to persist
+	 *  @param  fileWriter the file writer
+	 */
+	pandora::StatusCode Write(const pandora::Cluster *const pCluster, pandora::FileWriter &fileWriter) const;
+
+    /**
+	 *  @brief  Create an object with the given parameters
+	 *
+	 *  @param  parameters the parameters to pass in constructor
+	 *  @param  pObject to receive the address of the object created
+	 */
+	pandora::StatusCode Create(const PandoraContentApi::Cluster::Parameters &parameters, const pandora::Cluster *&pCluster) const;
 };
 
 
