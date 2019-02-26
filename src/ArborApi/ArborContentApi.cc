@@ -34,6 +34,8 @@
 
 #include "Api/PandoraContentApi.h"
 
+arbor_content::ClusterFactory ArborContentApi::m_clusterFactory;
+
 pandora::StatusCode ArborContentApi::AlterMetadata(const pandora::Algorithm &algorithm, const arbor_content::CaloHit *const pCaloHit, const ArborContentApi::CaloHitMetadata &caloHitMetadata)
 {
   // alter pandora calo hit meta data
@@ -331,7 +333,25 @@ pandora::StatusCode ArborContentApi::Create(const pandora::Algorithm &algorithm,
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
+pandora::StatusCode ArborContentApi::CreateArborCluster(const pandora::Algorithm &algorithm, 
+		PandoraContentApi::Cluster::Parameters clusterParameters, const pandora::Cluster *&pCluster)
+{
+	PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(algorithm, clusterParameters, pCluster, m_clusterFactory));
+
+	pandora::CaloHitList& caloHitList(clusterParameters.m_caloHitList);
+
+	for(auto& caloHit : caloHitList)
+	{
+        const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
+		Modifiable(pArborCaloHit)->SetMother(pCluster);
+	}
+
+    return pandora::STATUS_CODE_SUCCESS;
+
+}
             
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 pandora::StatusCode ArborContentApi::RemoveFromCluster(const pandora::Algorithm &algorithm, 
 		const pandora::Cluster *const pCluster, const pandora::CaloHit *const pCaloHit)
 {

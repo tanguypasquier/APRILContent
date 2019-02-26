@@ -32,6 +32,8 @@
 #include "Api/PandoraContentApi.h"
 #include "ArborApi/ArborInputTypes.h"
 #include "Objects/Cluster.h"
+#include "ArborObjects/Cluster.h"
+#include "ArborApi/ObjectFactories.h"
 
 namespace arbor_content { class CaloHit; class Connector; }
 
@@ -269,6 +271,9 @@ public:
 	static pandora::StatusCode Create(const pandora::Algorithm &algorithm, 
 		PandoraContentApi::Cluster::Parameters clusterParameters, const pandora::Cluster *&pCluster);
 
+	static pandora::StatusCode CreateArborCluster(const pandora::Algorithm &algorithm, 
+		PandoraContentApi::Cluster::Parameters clusterParameters, const pandora::Cluster *&pCluster);
+
 	static pandora::StatusCode AddToCluster(const pandora::Algorithm &algorithm, 
 		const pandora::Cluster *const pCluster, const pandora::CaloHitList *const pCaloHitList);
 
@@ -295,6 +300,7 @@ private:
 	 */
 	template <typename T>
 	static T *Modifiable(const T *const pT);
+	static arbor_content::ClusterFactory m_clusterFactory;
 }; 
 
 
