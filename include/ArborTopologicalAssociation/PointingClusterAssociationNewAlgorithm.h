@@ -60,17 +60,17 @@ private:
 	pandora::StatusCode Run();
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
   
-	const pandora::Cluster* GetMainCluster(const pandora::CaloHitVector& caloHitVector);
+    arbor_content::ArborCluster* GetMainCluster(const pandora::CaloHitVector& caloHitVector);
   
-	void GetNearbyClusters(const pandora::Cluster* const cluster, const pandora::ClusterVector& clusterVector,
-			pandora::ClusterVector& clustersInRange);
+    void GetNearbyClusters(pandora::Cluster* cluster, const std::vector<arbor_content::ArborCluster*>& clusterVector, 
+			std::vector<arbor_content::ArborCluster*>& clustersInRange);
 
 	/**
 	 *  @brief  Get the eligible clusters for parent-daughter association
 	 *
 	 *  @param  clusterVector the cluster vector to receive
 	 */
-	pandora::StatusCode GetEligibleClusters(pandora::ClusterVector &clusterVector) const;
+	pandora::StatusCode GetEligibleClusters(std::vector<ArborCluster*>& clusterVector) const;
 
 	/**
 	 *  @brief  Algorithm workhorse, find associations between daughter and parent cluster
