@@ -53,9 +53,6 @@ namespace arbor_content
 	std::vector<ArborCluster*> clusterVector;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetEligibleClusters(clusterVector));
 
-	// cluster vector
-	std::vector<ArborCluster*> clusterVectorSelection = clusterVector;
-
 	// get cluster PCA
 	for(int i = 0; i < clusterVector.size(); ++i)
 	{
@@ -102,16 +99,6 @@ namespace arbor_content
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	std::vector<pandora::CartesianVector> m_clusterCentroids;
-
-	for(auto clu : clusterVector)
-	{
-		pandora::CartesianVector centroid(0., 0., 0);
-		ClusterHelper::GetCentroid(clu, centroid);
-		m_clusterCentroids.push_back(centroid);
-	}
-
-	CaloHitRangeSearchHelper::FillMatixByPoints(m_clusterCentroids, m_clusterCentroidsMatrix);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -142,6 +129,8 @@ namespace arbor_content
 
 	int nClusterWithTrack = 0;
 
+	std::vector<ArborCluster*> trackStartingClusters;
+
 	for(int iTrack = trackWithCaloHitsVector.size() - 1; iTrack >= 0; --iTrack)
 	{
 		auto pTrack = trackWithCaloHitsVector.at(iTrack);
@@ -155,6 +144,9 @@ namespace arbor_content
 		
 		// make track-cluster association
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::AddTrackClusterAssociation(*this, pTrack, mainCluster));
+
+		trackStartingClusters.push_back(mainCluster);
+
 		++nClusterWithTrack;
 
 		// ---------- make the record of track-cluster association
@@ -197,60 +189,90 @@ namespace arbor_content
 		    HistogramManager::CreateFill("PointingClusterAssociation_TrackCheck", "evtNum:trackMomentum:reachEndcap:nCaloHit:isRightMatch", vars);
 		}
 
-		std::vector<arbor_content::ArborCluster*> nearbyClusters;
-		GetNearbyClusters(mainCluster, clusterVector, nearbyClusters);
 	}
 
+	std::cout << "nClusterWithTrack : " << nClusterWithTrack << std::endl;
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	//std::cout << "nClusterWithTrack : " << nClusterWithTrack << std::endl;
-
-	// GetNearbyCluster for these tracks
-	//
+	std::vector<ArborCluster*> clustersToMerge;
 	
-	//std::cout << "clusterVectorSelection.size: " << clusterVectorSelection.size() << std::endl;
-	for(int i = 0; i < clusterVectorSelection.size(); ++i)
+	for(int i = 0; i < clusterVector.size(); ++i)
 	{
-		if(clusterVectorSelection.at(i)->GetAssociatedTrackList().size() > 0)
-		{
-			//std::cout << "remove cluster: " << *(clusterVectorSelection.begin() + i) << std::endl;
-			clusterVectorSelection.erase( clusterVectorSelection.begin() + i );
+		auto cluster = clusterVector.at(i);
 
-			// important
-			--i;
+		if(cluster->GetAssociatedTrackList().size() == 0)
+		{
+			clustersToMerge.push_back(cluster);
 		}
 	}
 
-	// For Test
-	//std::cout << "clusterVectorSelection.size: " << clusterVectorSelection.size() << std::endl;
+	std::vector<pandora::CartesianVector> m_clusterCentroids;
 
+	for(auto clu : clustersToMerge)
+	{
+		pandora::CartesianVector centroid(0., 0., 0);
+		ClusterHelper::GetCentroid(clu, centroid);
+		m_clusterCentroids.push_back(centroid);
+	}
+
+	CaloHitRangeSearchHelper::FillMatixByPoints(m_clusterCentroids, m_clusterCentroidsMatrix);
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+	// get nearby clusters for each starting charged cluster
+	for(int i = 0; i < trackStartingClusters.size(); ++i)
+	{
+		auto trackStartCluster = trackStartingClusters.at(i);
+
+		std::vector<arbor_content::ArborCluster*> nearbyClusters;
+		GetNearbyClusters(trackStartCluster, clustersToMerge, nearbyClusters);
+
+		trackStartCluster->SetClustersToMerge(nearbyClusters);
+		std::cout << "     ---> cluster nearby clusters: " << trackStartCluster->GetClustersToMerge().size() << std::endl;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// for each starting charged cluster, find proper clusters
+
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    std::sort(trackWithoutCaloHitsVector.begin(), trackWithoutCaloHitsVector.end(), SortingHelper::SortTracksByMomentum);
+
+	// search nearby cluster around these tracks
+		
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+
+#if 0
+	// For Test
+	
 	// divide the vector of cluster into two
 	pandora::ClusterVector startingClusters;
 	pandora::ClusterVector subsequentClusters;
 
-	for(int i = 0; i < clusterVectorSelection.size(); ++i)
+	for(int i = 0; i < clustersToMerge.size(); ++i)
 	{
-		if(clusterVectorSelection.at(i)->GetAssociatedTrackList().size() > 0)
+		auto cluster = clustersToMerge.at(i);
+
+		if(cluster->GetAssociatedTrackList().size() > 0)
 		{
-		   std::cout << "cluster which should not here: " << clusterVectorSelection.at(i) << std::endl;
+		   std::cout << "cluster which should not here: " << cluster << std::endl;
 		}
 
-	    unsigned int innerLayer = clusterVectorSelection.at(i)->GetInnerPseudoLayer();
+	    unsigned int innerLayer = cluster->GetInnerPseudoLayer();
 		//std::cout << "cluster inner layer: " << innerLayer << std::endl;
 
 		if(innerLayer <= 10)
 		{
-			startingClusters.push_back(clusterVectorSelection.at(i));
+			startingClusters.push_back(cluster);
 		}
 		else
 		{
-			subsequentClusters.push_back(clusterVectorSelection.at(i));
+			subsequentClusters.push_back(cluster);
 		}
 	}
 
-#if 0
 	for(int i = 0; i < startingClusters.size(); ++i)
 	{
 		auto cluster = startingClusters.at(i);
@@ -271,10 +293,9 @@ namespace arbor_content
 #endif
 
 	
-	// ----------------------------------------------------------------
-    std::sort(trackWithoutCaloHitsVector.begin(), trackWithoutCaloHitsVector.end(), SortingHelper::SortTracksByMomentum);
 
 	// ----------------------------------------------------------------
+#if 0
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
@@ -350,6 +371,7 @@ namespace arbor_content
 		}
 #endif
 	}
+#endif
 
 #if 0
     ClusterToClusterMap clusterToClusterMap;
@@ -439,9 +461,11 @@ namespace arbor_content
 
 		clustersInRange.push_back( clusterVector.at(neighbor) );
 	  }
+		
+	  auto pClusterMCP = pandora::MCParticleHelper::GetMainMCParticle(cluster);
 
-	  std::cout << "------------ cluster: " << cluster << ", energy: " << cluster->GetHadronicEnergy() << ", nearby clusters: " 
-		  << clustersInRange.size() << std::endl;
+	  std::cout << "------------ cluster: " << cluster << ", energy: " << cluster->GetHadronicEnergy() 
+		  << ", MCP: " << pClusterMCP << ", nearby clusters: " << clustersInRange.size() << std::endl;
 
 	  for(int i = 0; i < clustersInRange.size(); ++i)
 	  {
