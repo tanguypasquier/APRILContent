@@ -61,6 +61,8 @@ public:
 	const pandora::CartesianVector& GetAxis() const;
 	const pandora::CartesianVector& GetIntercept() const;
 	const pandora::CartesianVector& GetCentroid() const;
+	const pandora::CartesianVector& GetStartingPoint() const;
+	const pandora::CartesianVector& GetEndpoint() const;
 
 	bool IsPhoton();
 
@@ -71,6 +73,10 @@ public:
 	void SetAxis(pandora::CartesianVector axis);
 	void SetIntercept(pandora::CartesianVector intercept);
 	void SetCentroid(pandora::CartesianVector centrod);
+	void SetStartingPoint(pandora::CartesianVector startingPoint);
+	void SetEndpoint(pandora::CartesianVector endpoint);
+
+	void SetPhoton(bool isPhoton);
 
 private:
 
@@ -89,6 +95,8 @@ protected:
 	pandora::CartesianVector m_axis;
 	pandora::CartesianVector m_intercept;
 	pandora::CartesianVector m_centroid;
+	pandora::CartesianVector m_startingPoint;
+	pandora::CartesianVector m_endpoint;
 
 	bool m_isPhoton;
 

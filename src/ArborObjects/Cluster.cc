@@ -31,7 +31,8 @@ namespace arbor_content
 {
   ArborCluster::ArborCluster(const PandoraContentApi::Cluster::Parameters &parameters) :
       pandora::Cluster(parameters),
-	  m_axis(0., 0., 0.), m_intercept(0., 0., 0.), m_centroid(0., 0., 0.)
+	  m_axis(0., 0., 0.), m_intercept(0., 0., 0.), m_centroid(0., 0., 0.),
+	  m_startingPoint(0., 0., 0.), m_endpoint(0., 0., 0.)
   {
   }
 
@@ -83,6 +84,16 @@ namespace arbor_content
 	  return m_centroid;
   }
 
+  const pandora::CartesianVector& ArborCluster::GetStartingPoint() const
+  {
+	  return m_startingPoint;
+  }
+
+  const pandora::CartesianVector& ArborCluster::GetEndpoint() const
+  {
+	  return m_endpoint;
+  }
+
   bool ArborCluster::IsPhoton()
   {
 	  return m_isPhoton;
@@ -117,5 +128,21 @@ namespace arbor_content
   {
 	  m_centroid = centroid;
   }
+
+  void ArborCluster::SetStartingPoint(pandora::CartesianVector startingPoint)
+  {
+	  m_startingPoint = startingPoint;
+  }
+
+  void ArborCluster::SetEndpoint(pandora::CartesianVector endpoint)
+  {
+	  m_endpoint = endpoint;
+  }
+	
+  void ArborCluster::SetPhoton(bool isPhoton)
+  {
+	  m_isPhoton = isPhoton;
+  }
+
 } 
 
