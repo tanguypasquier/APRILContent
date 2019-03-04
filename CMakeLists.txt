@@ -119,11 +119,11 @@ IF( ARBOR_PARALLEL )
 ENDIF()
 
 # mlpack
-INCLUDE_DIRECTORIES( "/projects/soft/mlpack-3.0.3/include" )
+INCLUDE_DIRECTORIES( SYSTEM "/projects/soft/mlpack-3.0.3/include" )
 LINK_LIBRARIES( "/projects/soft/mlpack-3.0.3/lib/libmlpack.so" )
 
 # dlib
-INCLUDE_DIRECTORIES( "/projects/soft/dlib-19.16/include" )
+INCLUDE_DIRECTORIES( SYSTEM "/projects/soft/dlib-19.16/include" )
 LINK_LIBRARIES( "/projects/soft/dlib-19.16/lib/libdlib.so" )
 
 
