@@ -211,7 +211,7 @@ namespace arbor_content
 
 	}
 
-	std::cout << "nClusterWithTrack : " << nClusterWithTrack << std::endl;
+	//std::cout << "nClusterWithTrack : " << nClusterWithTrack << std::endl;
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -247,19 +247,28 @@ namespace arbor_content
 		std::vector<arbor_content::ArborCluster*> nearbyClusters;
 		GetNearbyClusters(trackStartCluster, clustersToMerge, nearbyClusters);
 
-		trackStartCluster->SetClustersToMerge(nearbyClusters);
-		std::cout << "     ---> cluster's nearby clusters: " << trackStartCluster->GetClustersToMerge().size() << std::endl;
-	}
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// for each starting charged cluster, find proper clusters
-	for(int iClu = 0; iClu < trackStartingClusters.size(); ++iClu)
-	{
-		auto trackStartCluster = trackStartingClusters.at(iClu);
-		auto& nearbyClusters = trackStartCluster->GetClustersToMerge();
+		//std::cout << "     ---> cluster's nearby clusters: " << nearbyClusters.size() << std::endl;
 
 		std::vector<ArborCluster*> properClusters;
 		SearchProperClusters(trackStartCluster, nearbyClusters, properClusters);
+		trackStartCluster->SetClustersToMerge(properClusters);
+	}
+
+	for(int i = 0; i < trackStartingClusters.size(); ++i)
+	{
+		auto trackStartCluster = trackStartingClusters.at(i);
+		auto& clusterVec = trackStartCluster->GetClustersToMerge();
+
+		for(int i = 0; i < clusterVec.size(); ++i)
+		{
+			auto cluToMerge = clusterVec.at(i);
+
+			if(cluToMerge != nullptr)
+			{
+				//std::cout << "   ---> cluster: " << trackStartCluster << " merging cluster: " << cluToMerge << std::endl;
+				ArborContentApi::MergeAndDeleteClusters(*this, trackStartCluster, cluToMerge);
+			}
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -409,11 +418,20 @@ namespace arbor_content
 	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
 	  float startCluEnergy = trackStartCluster->GetHadronicEnergy();
 
-	  std::cout << "cluster: " << trackStartCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+	  //std::cout << "cluster: " << trackStartCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+
+	  // map for sorting cluster by distance
+	  std::multimap<float, ArborCluster*> clusterDistanceMap;
 
 	  for(int i = 0; i < nearbyClusters.size(); ++i)
 	  {
+		  //std::cout << "nearbyClusters: " << i << std::endl;
 		  auto nearbyCluster = nearbyClusters.at(i);
+	      const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+		
+		  if (!PandoraContentApi::IsAvailable(*this, pandoraNearbyClu)) continue;
+
+		  //std::cout << "cluster : " << nearbyCluster << " IsAvailable " << std::endl;
 
 		  try
 		  {
@@ -436,8 +454,20 @@ namespace arbor_content
 			  std::cout << "GetClosestDistanceApproach failed" << std::endl;
 		  }
 
-		  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
+		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
+	  }
 
+	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
+	  {
+		  //auto pCluster = clustersInRange.at(i);
+		  auto closestDistance = it->first;
+		  auto nearbyCluster = it->second;
+
+		  float m_minClusterDistanceToMerge = 40.;
+
+		  if(closestDistance>m_minClusterDistanceToMerge) break;
+
+		  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
 
 		  //GetClustersDirection
 		  auto& nearbyClusterAxis = nearbyCluster->GetAxis();
@@ -482,13 +512,16 @@ namespace arbor_content
 
 		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(trackStartClusterAxis);
 		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
-
-		  std::cout << "- cluster: " << nearbyCluster << ", Eh: " << nearbyCluEnergy
-					<< ", dist: " << closestDistance << ", axisDist: " << axisDistance
+#if 0
+		  std::cout << "-clu: " << nearbyCluster << ", Eh: " << nearbyCluEnergy
+					<< ", closeDist: " << closestDistance << ", axisDist: " << axisDistance
 					<< ", angle: " << angle << ", axisAngle: " << axisAngle << ", MCP: " << nearbyClusterMCParticle << std::endl;
+#endif
+
+		  properClusters.push_back(nearbyCluster);
 	  }
 		  
-	  std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
+	  //std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
   }
 
   arbor_content::ArborCluster* PointingClusterAssociationNewAlgorithm::GetMainCluster(const pandora::CaloHitVector& caloHitVector)
@@ -565,24 +598,41 @@ namespace arbor_content
 
 		clustersInRange.push_back( clusterVector.at(neighbor) );
 	  }
-		
-	  auto pClusterMCP = pandora::MCParticleHelper::GetMainMCParticle(cluster);
 
-	  std::cout << "------------ cluster: " << cluster << ", energy: " << cluster->GetHadronicEnergy() 
-		  << ", MCP: " << pClusterMCP << ", nearby clusters: " << clustersInRange.size() << std::endl;
+	  // sort cluster by distance
+	  std::multimap<float, ArborCluster*> clusterDistanceMap;
 
 	  for(int i = 0; i < clustersInRange.size(); ++i)
 	  {
-		  auto pCluster = clustersInRange.at(i);
+		  auto cluster = clustersInRange.at(i);
+
+		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(distances.at(i), cluster) );
+	  }
+
+	  ///////////////////////////////////////////////////////////////////////////////////////////////
+		
+	  auto pClusterMCP = pandora::MCParticleHelper::GetMainMCParticle(cluster);
+
+	  //std::cout << "------------ cluster: " << cluster << ", energy: " << cluster->GetHadronicEnergy() 
+		//  << ", MCP: " << pClusterMCP << ", nearby clusters: " << clustersInRange.size() << std::endl;
+
+	  //for(int i = 0; i < clustersInRange.size(); ++i)
+	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
+	  {
+		  //auto pCluster = clustersInRange.at(i);
+		  auto distance = it->first;
+		  auto pCluster = it->second;
 
 		  const pandora::Cluster* const clu = dynamic_cast<const pandora::Cluster* const>(pCluster);
 		  //bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(clu);
 		  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(clu);
 
-		  std::cout << " *clu: " << i << ": " << clustersInRange.at(i) << ", nhits: " << 
+#if 0
+		  std::cout << " *clu: " << clu << ", dist: " << distance << ", nhits: " << 
 			 pCluster->GetNCaloHits() << ", Ehad: " << pCluster->GetHadronicEnergy() 
 			 << ", iL: " << pCluster->GetInnerPseudoLayer() << ": isPhoton: " << pCluster->IsPhoton() 
 			 << ": MCP: " << pClusterMCParticle << std::endl;
+#endif
 	  }
   }
 
