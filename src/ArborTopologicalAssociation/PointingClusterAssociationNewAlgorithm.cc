@@ -259,9 +259,9 @@ namespace arbor_content
 		auto trackStartCluster = trackStartingClusters.at(i);
 		auto& clusterVec = trackStartCluster->GetClustersToMerge();
 
-		for(int i = 0; i < clusterVec.size(); ++i)
+		for(int iClu = 0; iClu < clusterVec.size(); ++iClu)
 		{
-			auto cluToMerge = clusterVec.at(i);
+			auto cluToMerge = clusterVec.at(iClu);
 
 			if(cluToMerge != nullptr)
 			{
@@ -414,11 +414,13 @@ namespace arbor_content
 		  const std::vector<arbor_content::ArborCluster*>& nearbyClusters, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters)
   {
+#if 0
 	  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(trackStartCluster);
-	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
 	  float startCluEnergy = trackStartCluster->GetHadronicEnergy();
 
-	  //std::cout << "cluster: " << trackStartCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
+	  std::cout << "cluster: " << trackStartCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+#endif
 
 	  // map for sorting cluster by distance
 	  std::multimap<float, ArborCluster*> clusterDistanceMap;
@@ -467,8 +469,7 @@ namespace arbor_content
 
 		  if(closestDistance>m_minClusterDistanceToMerge) break;
 
-		  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
-
+#if 0
 		  //GetClustersDirection
 		  auto& nearbyClusterAxis = nearbyCluster->GetAxis();
 		  auto& trackStartClusterAxis = trackStartCluster->GetAxis();
@@ -509,10 +510,10 @@ namespace arbor_content
 	      auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
 
 		  // get the distance between two directions (skew lines)
-
 		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(trackStartClusterAxis);
 		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
-#if 0
+		  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
+
 		  std::cout << "-clu: " << nearbyCluster << ", Eh: " << nearbyCluEnergy
 					<< ", closeDist: " << closestDistance << ", axisDist: " << axisDistance
 					<< ", angle: " << angle << ", axisAngle: " << axisAngle << ", MCP: " << nearbyClusterMCParticle << std::endl;
@@ -594,7 +595,7 @@ namespace arbor_content
       for(size_t j=0; j < neighbors.size(); ++j)
       {
       	size_t neighbor = neighbors.at(j);
-      	double hitsDist = distances.at(j);
+      	//double hitsDist = distances.at(j);
 
 		clustersInRange.push_back( clusterVector.at(neighbor) );
 	  }
@@ -604,36 +605,36 @@ namespace arbor_content
 
 	  for(int i = 0; i < clustersInRange.size(); ++i)
 	  {
-		  auto cluster = clustersInRange.at(i);
+		  auto clusterInRange = clustersInRange.at(i);
 
-		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(distances.at(i), cluster) );
+		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(distances.at(i), clusterInRange) );
 	  }
 
 	  ///////////////////////////////////////////////////////////////////////////////////////////////
 		
+#if 0
 	  auto pClusterMCP = pandora::MCParticleHelper::GetMainMCParticle(cluster);
 
-	  //std::cout << "------------ cluster: " << cluster << ", energy: " << cluster->GetHadronicEnergy() 
-		//  << ", MCP: " << pClusterMCP << ", nearby clusters: " << clustersInRange.size() << std::endl;
+	  std::cout << "------------ cluster: " << cluster << ", energy: " << cluster->GetHadronicEnergy() 
+		  << ", MCP: " << pClusterMCP << ", nearby clusters: " << clustersInRange.size() << std::endl;
 
-	  //for(int i = 0; i < clustersInRange.size(); ++i)
 	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
 	  {
 		  //auto pCluster = clustersInRange.at(i);
 		  auto distance = it->first;
 		  auto pCluster = it->second;
 
+
 		  const pandora::Cluster* const clu = dynamic_cast<const pandora::Cluster* const>(pCluster);
-		  //bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(clu);
+		  bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(clu);
 		  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(clu);
 
-#if 0
 		  std::cout << " *clu: " << clu << ", dist: " << distance << ", nhits: " << 
 			 pCluster->GetNCaloHits() << ", Ehad: " << pCluster->GetHadronicEnergy() 
 			 << ", iL: " << pCluster->GetInnerPseudoLayer() << ": isPhoton: " << pCluster->IsPhoton() 
 			 << ": MCP: " << pClusterMCParticle << std::endl;
-#endif
 	  }
+#endif
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
