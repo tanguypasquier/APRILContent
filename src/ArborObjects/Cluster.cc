@@ -106,7 +106,20 @@ namespace arbor_content
 
   void ArborCluster::SetClustersToMerge(const std::vector<ArborCluster*>& clusterVector)
   {
-	  m_clustersToMerge = clusterVector;
+	  std::vector<ArborCluster*> clustersToMerge;
+
+	  for(int i = 0; i < clusterVector.size(); ++i)
+	  {
+		  auto cluster = clusterVector.at(i);
+
+		  if(cluster->GetMotherCluster().size() < 1)
+		  {
+			  cluster->SetMotherCluster(this);
+			  clustersToMerge.push_back(cluster);
+		  }
+	  }
+
+	  m_clustersToMerge = clustersToMerge;
   }
 
   void ArborCluster::SetNearbyClusters(const std::vector<ArborCluster*>& clusterVector)
