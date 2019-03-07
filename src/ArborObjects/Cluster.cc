@@ -64,6 +64,18 @@ namespace arbor_content
 	  return m_clustersToMerge;
   }
 
+  void ArborCluster::GetAllClustersToMerge(std::vector<ArborCluster*>& allClustersToMerge) const
+  {
+	  auto& clusters = GetClustersToMerge();
+
+	  for(int iClu = 0; iClu < clusters.size(); ++iClu)
+	  {
+		  auto& clu = clusters.at(iClu);
+		  clu->GetAllClustersToMerge(allClustersToMerge);
+		  allClustersToMerge.push_back(clu);
+	  }
+  }
+
   const std::vector<ArborCluster*>& ArborCluster::GetNearbyClusters() const
   {
 	  return m_nearbyClusters;

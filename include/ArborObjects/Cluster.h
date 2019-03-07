@@ -56,6 +56,7 @@ public:
 
 	const std::vector<ArborCluster*>& GetMotherCluster() const;
 	const std::vector<ArborCluster*>& GetClustersToMerge() const;
+        void  GetAllClustersToMerge(std::vector<ArborCluster*>& allClustersToMerge) const;
 	const std::vector<ArborCluster*>& GetNearbyClusters() const;
 
 	const pandora::CartesianVector& GetAxis() const;
