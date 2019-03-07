@@ -11,6 +11,8 @@
 #include "ArborCheating/CheatingTrackToClusterMatching.h"
 #include "ArborApi/ArborContentApi.h"
 
+#define __DEBUG__ 0
+
 namespace arbor_content
 {
 
@@ -55,7 +57,32 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
     // Clear any existing track - cluster associations
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
+    // PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
+
+	// remove all the wrong track-cluster associations
+	for(auto& track : *pCurrentTrackList)
+	{
+		if( !(track->HasAssociatedCluster()) ) continue;
+
+		auto cluster = track->GetAssociatedCluster();
+
+		const pandora::MCParticle *pTrackMCParticle = nullptr;
+		const pandora::MCParticle *pClusterMCParticle = nullptr;
+
+		try
+		{
+			pTrackMCParticle = pandora::MCParticleHelper::GetMainMCParticle(track); 
+			pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(cluster); 
+		}
+                catch (pandora::StatusCodeException &)
+                {	
+                }
+
+		if(pTrackMCParticle != pClusterMCParticle)
+		{
+			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveTrackClusterAssociation(*this, track, cluster));
+		}
+	}
 
     // Construct a map from mc particle to tracks
     typedef std::map<const pandora::MCParticle*, pandora::TrackList> TracksPerMCParticle;
@@ -347,8 +374,11 @@ namespace arbor_content
 		for( auto iter : clusters)
 		{
 			auto clu = iter;
-			//std::cout << "merge clusters: " << mainCluster << " --- " << clu << std::endl;
-			//std::cout << "cluster energy: " << mainCluster->GetHadronicEnergy() << " --- " << clu->GetHadronicEnergy() << std::endl;
+
+#if __DEBUG__
+			std::cout << "cluster: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy() 
+				      << " - merge cluster: " << clu << ", E: " << clu->GetHadronicEnergy() << std::endl;
+#endif
 		    ArborContentApi::MergeAndDeleteClusters(*this, mainCluster, clu);
 		}
 	}
