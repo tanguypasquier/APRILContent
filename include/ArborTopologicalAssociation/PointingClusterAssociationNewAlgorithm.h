@@ -65,7 +65,7 @@ private:
     void GetNearbyClusters(pandora::Cluster* cluster, const std::vector<arbor_content::ArborCluster*>& clusterVector, 
 			std::vector<arbor_content::ArborCluster*>& clustersInRange);
 
-    void SearchProperClusters(ArborCluster* trackStartCluster, 
+    void SearchProperClusters(ArborCluster* startingCluster, 
 		  const std::vector<arbor_content::ArborCluster*>& nearbyClusters, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters);
 
@@ -132,6 +132,7 @@ private:
 	float                            m_minClusterFitCosOpeningAngle2;
 
 	float                            m_maxStartingClusterDistance;
+	float                            m_maxClusterDistanceToMerge;
 
 	arma::mat m_clusterCentroidsMatrix;
 };
