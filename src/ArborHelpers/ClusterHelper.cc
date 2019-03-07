@@ -123,6 +123,7 @@ namespace arbor_content
 
   pandora::StatusCode ClusterHelper::GetCentroid(const pandora::Cluster *const pCluster, pandora::CartesianVector &centroid)
   {
+#if 0
     const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
 
     for(pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.begin(), endIter = orderedCaloHitList.end() ;
@@ -132,6 +133,25 @@ namespace arbor_content
     }
 
     centroid *= 1.f/(orderedCaloHitList.size());
+#endif
+
+    pandora::CaloHitList clusterCaloHitList;
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+	unsigned int nHits = 0;
+
+	pandora::CartesianVector cluCentroid(0., 0., 0.);
+
+	for(auto caloHit : clusterCaloHitList)
+	{
+		const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(caloHit));
+		if(!ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+
+		cluCentroid += pCaloHit->GetPositionVector();
+		++nHits;
+	}
+
+	centroid = cluCentroid * (1./nHits);
 
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -171,7 +191,8 @@ namespace arbor_content
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
         endIter != iter ; ++iter)
     {
-      const pandora::CaloHit *const pCaloHit = *iter;
+      const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
+	  if(!ArborContentApi::HasAnyConnection(pCaloHit)) continue;
       const float distance = (pCaloHit->GetPositionVector() - point).GetMagnitude();
 
       if(closestDistance > distance)
@@ -222,7 +243,9 @@ namespace arbor_content
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList1.begin() , endIter = clusterCaloHitList1.end() ;
         endIter != iter ; ++iter)
     {
-      const pandora::CaloHit *const pCaloHit = *iter;
+      const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
+	  if(!ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+
       float closestHitDistanceApproach(std::numeric_limits<float>::max());
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster2,
