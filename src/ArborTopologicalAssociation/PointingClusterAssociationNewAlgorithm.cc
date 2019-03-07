@@ -215,7 +215,7 @@ namespace arbor_content
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	std::vector<ArborCluster*> clustersToMerge;
+	m_clustersToMerge.clear();
 	
 	for(int i = 0; i < clusterVector.size(); ++i)
 	{
@@ -223,13 +223,13 @@ namespace arbor_content
 
 		if(cluster->GetAssociatedTrackList().size() == 0)
 		{
-			clustersToMerge.push_back(cluster);
+			m_clustersToMerge.push_back(cluster);
 		}
 	}
 
 	std::vector<pandora::CartesianVector> m_clusterCentroids;
 
-	for(auto clu : clustersToMerge)
+	for(auto clu : m_clustersToMerge)
 	{
 		auto& centroid = clu->GetCentroid();
 		m_clusterCentroids.push_back(centroid);
@@ -244,13 +244,9 @@ namespace arbor_content
 	{
 		auto trackStartCluster = trackStartingClusters.at(i);
 
-		std::vector<arbor_content::ArborCluster*> nearbyClusters;
-		GetNearbyClusters(trackStartCluster, clustersToMerge, nearbyClusters);
-
 		//std::cout << "     ---> cluster's nearby clusters: " << nearbyClusters.size() << std::endl;
-
 		std::vector<ArborCluster*> properClusters;
-		SearchProperClusters(trackStartCluster, nearbyClusters, properClusters);
+		SearchProperClusters(trackStartCluster, properClusters);
 	}
 
 	for(int i = 0; i < trackStartingClusters.size(); ++i)
@@ -435,7 +431,6 @@ namespace arbor_content
 //#define __DEBUG__ 1
 
   void PointingClusterAssociationNewAlgorithm::SearchProperClusters(ArborCluster* startingCluster, 
-		  const std::vector<arbor_content::ArborCluster*>& nearbyClusters, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters)
   {
 #if __DEBUG__
@@ -445,6 +440,9 @@ namespace arbor_content
 	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
 	  std::cout << "cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
 #endif
+
+	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
+	  GetNearbyClusters(startingCluster, m_clustersToMerge, nearbyClusters);
 
 	  // map for sorting all nearby clusters by closest distance
 	  std::multimap<float, ArborCluster*> clusterDistanceMap;
@@ -567,7 +565,7 @@ namespace arbor_content
 		  auto clu = properClusters.at(iClu);
 		  
 		  std::vector<ArborCluster*> clusters;
-		  SearchProperClusters(clu, nearbyClusters, clusters);
+		  SearchProperClusters(clu, clusters);
 	  }
 		  
 	  //std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
@@ -988,7 +986,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinClusterFitCosOpeningAngle2", m_minClusterFitCosOpeningAngle2));
 
-    m_maxStartingClusterDistance = 500.;
+    m_maxStartingClusterDistance = 200.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxStartingClusterDistance", m_maxStartingClusterDistance));
 

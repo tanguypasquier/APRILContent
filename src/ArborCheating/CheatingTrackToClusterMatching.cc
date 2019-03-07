@@ -57,8 +57,9 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
     // Clear any existing track - cluster associations
-    // PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveCurrentTrackClusterAssociations(*this));
 
+#if 0
 	// remove all the wrong track-cluster associations
 	for(auto& track : *pCurrentTrackList)
 	{
@@ -83,6 +84,7 @@ namespace arbor_content
 			PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::RemoveTrackClusterAssociation(*this, track, cluster));
 		}
 	}
+#endif
 
     // Construct a map from mc particle to tracks
     typedef std::map<const pandora::MCParticle*, pandora::TrackList> TracksPerMCParticle;

@@ -66,7 +66,6 @@ private:
 			std::vector<arbor_content::ArborCluster*>& clustersInRange);
 
     void SearchProperClusters(ArborCluster* startingCluster, 
-		  const std::vector<arbor_content::ArborCluster*>& nearbyClusters, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters);
 
 	/**
@@ -135,6 +134,7 @@ private:
 	float                            m_maxClusterDistanceToMerge;
 
 	arma::mat m_clusterCentroidsMatrix;
+	std::vector<ArborCluster*> m_clustersToMerge;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
