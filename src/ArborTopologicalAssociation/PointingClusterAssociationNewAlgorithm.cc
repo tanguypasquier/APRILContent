@@ -446,7 +446,7 @@ namespace arbor_content
 	  std::cout << "cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
 #endif
 
-	  // map for sorting all nearby clusters by distance
+	  // map for sorting all nearby clusters by closest distance
 	  std::multimap<float, ArborCluster*> clusterDistanceMap;
 
 	  for(int i = 0; i < nearbyClusters.size(); ++i)
@@ -656,6 +656,14 @@ namespace arbor_content
 		  auto clusterInRange = clustersInRange.at(i);
 
 		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(distances.at(i), clusterInRange) );
+	  }
+
+	  clustersInRange.clear();
+
+	  for(auto& mapIter : clusterDistanceMap)
+	  {
+		  auto clu = mapIter.second;
+		  clustersInRange.push_back(clu);
 	  }
 
 	  ///////////////////////////////////////////////////////////////////////////////////////////////
