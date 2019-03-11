@@ -65,6 +65,7 @@ public:
 	const pandora::CartesianVector& GetStartingPoint() const;
 	const pandora::CartesianVector& GetEndpoint() const;
 
+    bool IsDaughter(ArborCluster* cluster);
 	bool IsPhoton();
 
 	void SetMotherCluster(ArborCluster* cluster);

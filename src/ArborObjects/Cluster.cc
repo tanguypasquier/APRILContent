@@ -71,6 +71,20 @@ namespace arbor_content
 	  for(int iClu = 0; iClu < clusters.size(); ++iClu)
 	  {
 		  auto& clu = clusters.at(iClu);
+		  if(clu->GetMotherCluster().size() > 1) 
+		  {
+			  std::cout << " ------ merging issue: " << clu << ", E: " << clu->GetHadronicEnergy() 
+				  << ", mothers: " << clu->GetMotherCluster().size() << std::endl;
+
+			  auto& mothers = clu->GetMotherCluster();
+			  for(auto& mother : mothers)
+			  {
+				  std::cout << "   --- mother: " << mother << std::endl;
+			  }
+
+			  continue;
+		  }
+
 		  clu->GetAllClustersToMerge(allClustersToMerge);
 		  allClustersToMerge.push_back(clu);
 	  }
@@ -106,6 +120,31 @@ namespace arbor_content
 	  return m_endpoint;
   }
 
+  bool ArborCluster::IsDaughter(ArborCluster* cluster)
+  {
+	  bool isDaughter = false;
+	  
+	  auto& mothers = GetMotherCluster();
+
+      if(mothers.end() != std::find(mothers.begin(), mothers.end(), cluster))
+      {
+          isDaughter = true;
+      }
+	  else
+	  {
+		  for(auto motherCluster : mothers)
+		  {
+			  if(motherCluster->IsDaughter(cluster))
+			  {
+				  isDaughter = true;
+				  break;
+			  }
+		  }
+	  }
+
+	  return isDaughter;
+  }
+
   bool ArborCluster::IsPhoton()
   {
 	  return m_isPhoton;
@@ -124,7 +163,7 @@ namespace arbor_content
 	  {
 		  auto cluster = clusterVector.at(i);
 
-		  if(cluster->GetMotherCluster().size() < 1)
+		  if(!cluster->IsDaughter(this))
 		  {
 			  cluster->SetMotherCluster(this);
 			  clustersToMerge.push_back(cluster);
