@@ -39,7 +39,7 @@ namespace arbor_content
 {
 
   // this tool is applied after photon clusters are created
-  pandora::StatusCode ConnectorPlusTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
+  pandora::StatusCode ConnectorPlusTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const /* pCaloHitList */)
   {
 	//std::cout << " ConnectorPlusTool : pCaloHitList " << pCaloHitList << ", size: " << pCaloHitList->size() << std::endl;
 	

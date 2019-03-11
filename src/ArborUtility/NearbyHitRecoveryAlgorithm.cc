@@ -175,7 +175,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeSamples()
             for(size_t j=0; j < resultingNeighbors.n_elem; ++j)
             {
             	size_t neighbor = resultingNeighbors[j];
-            	double hitsDist = resultingDistances[j];
+            	//double hitsDist = resultingDistances[j];
 
 				//std::cout << "--- cluster: " << clusterVector.at(neighbor) << std::endl;
 				neighborClusters.push_back( clusterVector.at(neighbor) );
@@ -215,12 +215,13 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeSamples()
 
 				//------------------
 	            const pandora::MCParticle* pClusterMCParticle  = nullptr;
-				int clusterPDG = 0;
+
+				//int clusterPDG = 0;
 
 				try
 				{
 					pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(cluster);
-					clusterPDG = pClusterMCParticle->GetParticleId();
+					//clusterPDG = pClusterMCParticle->GetParticleId();
 				}
                 catch (pandora::StatusCodeException &)
 				{
@@ -238,7 +239,6 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeSamples()
 				}
 
 				// ---
-				bool isPhoton = (clusterPDG == 22);
 
 				bool isRightHitMerging = false;
 
@@ -269,6 +269,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeSamples()
 				vars.push_back( meanDensity );
 				vars.push_back( surroundingEnergy );
 
+				//bool isPhoton = (clusterPDG == 22);
 	            //vars.push_back( float(isPhoton) );
 	            //vars.push_back( float(isRightHitMerging) );
 
@@ -283,6 +284,8 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeSamples()
 			}
 		}
 	}
+
+	return pandora::STATUS_CODE_SUCCESS;
 }
 
 float NearbyHitRecoveryAlgorithm::DeterminMergingByMVA(const pandora::Cluster* cluster, const pandora::CaloHit* caloHit)
@@ -293,10 +296,10 @@ float NearbyHitRecoveryAlgorithm::DeterminMergingByMVA(const pandora::Cluster* c
 	float hitEMEnergy = caloHit->GetElectromagneticEnergy();
 	float hitHadEnergy = caloHit->GetHadronicEnergy();
 
-	float hitType = caloHit->GetHitType();
+	//float hitType = caloHit->GetHitType();
 	float hitLayer = caloHit->GetPseudoLayer();
-	float clusterInnerHitType = cluster->GetInnerLayerHitType();
-	float clusterOuterHitType = cluster->GetOuterLayerHitType();
+	//float clusterInnerHitType = cluster->GetInnerLayerHitType();
+	//float clusterOuterHitType = cluster->GetOuterLayerHitType();
 
 	// ---
 	int nhits = cluster->GetNCaloHits();
@@ -397,7 +400,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MVAMergeHitToCluster(ClusterCalo
             for(size_t j=0; j < resultingNeighbors.n_elem; ++j)
             {
             	size_t neighbor = resultingNeighbors[j];
-            	double hitsDist = resultingDistances[j];
+            	//double hitsDist = resultingDistances[j];
 
 				//std::cout << "--- cluster: " << clusterVector.at(neighbor) << std::endl;
 				neighborClusters.push_back( clusterVector.at(neighbor) );
@@ -419,10 +422,10 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MVAMergeHitToCluster(ClusterCalo
 				float hitEMEnergy = pCaloHit->GetElectromagneticEnergy();
 				float hitHadEnergy = pCaloHit->GetHadronicEnergy();
 
-				float hitType = pCaloHit->GetHitType();
+				//float hitType = pCaloHit->GetHitType();
 				float hitLayer = pCaloHit->GetPseudoLayer();
-				float clusterInnerHitType = cluster->GetInnerLayerHitType();
-				float clusterOuterHitType = cluster->GetOuterLayerHitType();
+				//float clusterInnerHitType = cluster->GetInnerLayerHitType();
+				//float clusterOuterHitType = cluster->GetOuterLayerHitType();
 
 				// ---
 				int nhits = cluster->GetNCaloHits();
@@ -439,12 +442,13 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MVAMergeHitToCluster(ClusterCalo
 
 				//------------------
 	            const pandora::MCParticle* pClusterMCParticle  = nullptr;
-				int clusterPDG = 0;
+
+				//int clusterPDG = 0;
 
 				try
 				{
 					pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(cluster);
-					clusterPDG = pClusterMCParticle->GetParticleId();
+					//clusterPDG = pClusterMCParticle->GetParticleId();
 				}
                 catch (pandora::StatusCodeException &)
 				{
@@ -462,7 +466,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MVAMergeHitToCluster(ClusterCalo
 				}
 
 				// ---
-				bool isPhoton = (clusterPDG == 22);
+				//bool isPhoton = (clusterPDG == 22);
 
 				bool isRightHitMerging = false;
 
@@ -523,10 +527,12 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MVAMergeHitToCluster(ClusterCalo
 			}
 		}
 	}
+
+	return pandora::STATUS_CODE_SUCCESS;
 }
 
 
-pandora::StatusCode NearbyHitRecoveryAlgorithm::ClusteringByTool(pandora::AlgorithmTool *pAlgorithmTool)
+pandora::StatusCode NearbyHitRecoveryAlgorithm::ClusteringByTool(pandora::AlgorithmTool* /* pAlgorithmTool */)
 {
     const pandora::ClusterList *pNewClusterList = nullptr; 
 	std::string clusterListName;
@@ -552,7 +558,6 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::ClusteringByTool(pandora::Algori
 
 	for(auto it = pClusterListToSave->begin(); it != pClusterListToSave->end(); ++it)
 	{
-		auto clu = *it;
 		clustersToSave.push_back(*it);
 	}
 	
@@ -561,6 +566,8 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::ClusteringByTool(pandora::Algori
 	// save clusters to the exsiting cluster list
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_INITIALIZED, !=, 
 			PandoraContentApi::SaveList(*this, m_mergedClusterListName, clustersToSave));
+
+	return pandora::STATUS_CODE_SUCCESS;
 }
 
 pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(ClusterCaloHitListMap& clusterCaloHitListMap)
@@ -682,7 +689,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::GetNearbyClustersByDistance(cons
 
 	for(auto& caloHit : neighborHits)
 	{
-	    auto& hitPos = caloHit->GetPositionVector();
+	    //auto& hitPos = caloHit->GetPositionVector();
         const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
 	    //std::cout << "     the nearby hit distance: " << (hitPos - testPosition).GetMagnitude() 
 	 	 //  << ", pos: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() 

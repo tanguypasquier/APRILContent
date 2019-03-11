@@ -37,7 +37,7 @@
 
 namespace arbor_content
 {
-  pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
+  pandora::StatusCode ConnectorSeedingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const /* pCaloHitList */)
   {
 	//std::cout << " ------ ConnectorSeedingTool::Process " << std::endl;
     // ordered calo hit list of ECAL

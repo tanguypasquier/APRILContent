@@ -42,11 +42,12 @@ arbor_content::BDTBasedClusterIdHelper::BDTBasedClusterIdHelper()
    TString methodName = TString("BDTD method");
    TString weightfile = TString("weights/TMVAClassification_BDTD.weights.xml");
 
-   IMethod* mva = NULL;
+   //IMethod* mva = NULL;
 
    try 
    {
-	   mva = m_reader->BookMVA( methodName, weightfile ); 
+	   //mva = m_reader->BookMVA( methodName, weightfile ); 
+	   m_reader->BookMVA( methodName, weightfile ); 
 	   m_isMethodBooked = true;
    }
    catch (...)

@@ -228,12 +228,12 @@ namespace arbor_content
 
 	MaxTrackClusterAngle = 0.6;
     bool canComputeInnerCentroid0 = pandora::STATUS_CODE_SUCCESS == this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid);
-	bool canComputeInnerCentroid1;
+	//bool canComputeInnerCentroid1;
 
 	if(canComputeInnerCentroid0==false)
 	{
 		MaxTrackClusterAngle = 1.e6;
-        canComputeInnerCentroid1 = pandora::STATUS_CODE_SUCCESS == this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid);
+        //canComputeInnerCentroid1 = pandora::STATUS_CODE_SUCCESS == this->ComputeInnerCentroid(pCluster, pTrack, innerCentroid);
 	}
 
     // get b field and track helix
@@ -345,7 +345,7 @@ namespace arbor_content
 #endif
 
 #if 1
-	    bool isMatched = shouldMatch(pTrack, pCluster);
+	    //bool isMatched = shouldMatch(pTrack, pCluster);
 		
 		//if(!isMatched) continue;
 

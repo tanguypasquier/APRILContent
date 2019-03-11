@@ -93,15 +93,15 @@ namespace arbor_content
     for(pandora::PfoList::const_iterator iter = pPfoList->begin(), endIter = pPfoList->end(); endIter != iter ; ++iter)
     {
 		const pandora::ParticleFlowObject* pfo = *iter;
-		int pfoPID = pfo->GetParticleId();
-		int pfoCharge = pfo->GetCharge();
+		//int pfoPID = pfo->GetParticleId();
+		//int pfoCharge = pfo->GetCharge();
 
 		//std::cout << "PFO : " << pfo << ", PID: " << pfoPID << ", charge: " << pfoCharge << std::endl;
 
 		const pandora::TrackList& pfoTrackList = pfo->GetTrackList();
 		const pandora::ClusterList& pfoClusterList = pfo->GetClusterList();
 
-		float clustersEnergy = 0.;
+		//float clustersEnergy = 0.;
 		float tracksEnergy = 0.;
 
 		for(pandora::TrackList::const_iterator trackIter = pfoTrackList.begin(); trackIter != pfoTrackList.end(); ++trackIter)
@@ -168,7 +168,7 @@ namespace arbor_content
 	    			totAvailableHitEnergy += hitEnergy;
 	    			//std::cout << "a available hit energy: " << hitEnergy << ", total: " << totAvailableHitEnergy << std::endl;
 
-					//
+#if 0	
     			    try
     			    {
     			       const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCaloHit));
@@ -177,6 +177,7 @@ namespace arbor_content
                     {
 						//std::cout << "no MCP" << std::endl;
                     }
+#endif
 				}
 
 	    		totHitEnergy += pCaloHit->GetHadronicEnergy();
@@ -221,15 +222,16 @@ namespace arbor_content
      {
     		const pandora::Cluster* cluster = *clusterIter;
     
+#if 0
     		try
     		{
     			const pandora::MCParticle *const pMCClusterParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
-    		    //std::cout << "Cluster : " << cluster << ", MCPID: " << pMCClusterParticle->GetParticleId() << std::endl;
+    		    std::cout << "Cluster : " << cluster << ", MCPID: " << pMCClusterParticle->GetParticleId() << std::endl;
     		}
     		catch (pandora::StatusCodeException &)
     		{
     		}
-    
+#endif    
     
     		const pandora::OrderedCaloHitList& orderedHits = cluster->GetOrderedCaloHitList();
     		const pandora::CaloHitList& isoHits = cluster->GetIsolatedCaloHitList();
@@ -246,10 +248,13 @@ namespace arbor_content
     			try
     			{
     			   const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(isoHit));
+
+#if 0
     			   int mcpCharge = pandora::PdgTable::GetParticleCharge(pMCParticle->GetParticleId());
     
-    			   //    std::cout << "isohit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
-    			   //		", charge: " << mcpCharge << std::endl;
+    			       std::cout << "isohit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
+    			   		", charge: " << mcpCharge << std::endl;
+#endif
 
 				   if(firstMCP==NULL)
 				   {
@@ -273,10 +278,13 @@ namespace arbor_content
     			try
     			{
     				const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(hit));
+
     				int mcpCharge = pandora::PdgTable::GetParticleCharge(pMCParticle->GetParticleId());
     
-    			    //std::cout << "hit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
-    				//	", charge: " << mcpCharge << std::endl;
+#if 0
+    			    std::cout << "hit MCP: " << pMCParticle << ", PID: " << pMCParticle->GetParticleId()  << 
+    					", charge: " << mcpCharge << std::endl;
+#endif
 
 				   if(firstMCP==NULL)
 				   {

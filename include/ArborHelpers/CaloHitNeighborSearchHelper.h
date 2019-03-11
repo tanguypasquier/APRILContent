@@ -67,8 +67,7 @@ public:
     // search 
     static pandora::StatusCode SearchNeighbourHits(pandora::CartesianVector testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
   
-    static pandora::StatusCode SearchNeighbourHits4D(const pandora::CaloHitVector& caloHitVector, 
-		  std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
+    static pandora::StatusCode SearchNeighbourHits4D(std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits);
   
 	static pandora::StatusCode ClusteringByDBSCAN(const pandora::CaloHitVector& caloHitVector,
 			std::vector<pandora::CaloHitVector>& hitsForCluster, float eps, int minPoints);

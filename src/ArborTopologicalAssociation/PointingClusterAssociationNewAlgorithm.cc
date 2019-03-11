@@ -491,19 +491,17 @@ namespace arbor_content
 		  auto closestDistance = it->first;
 		  auto nearbyCluster = it->second;
 
+		  //startingCluster->GetAxis();
 
+#if 0
 		  //GetClustersDirection
 		  auto& nearbyClusterAxis = nearbyCluster->GetAxis();
 		  auto& startingClusterAxis = startingCluster->GetAxis();
-
-		  //startingCluster->GetAxis();
-		  float angle = 1.e6;
-		  float axisAngle = 1.e6;
-
 		  auto& nearbyClusterCOG = nearbyCluster->GetCentroid();
 		  auto& startingClusterCOG = startingCluster->GetCentroid();
 		  auto directionOfCentroids = nearbyClusterCOG - startingClusterCOG;
 
+		  float angle = 1.e6;
 		  if( directionOfCentroids.GetMagnitudeSquared() * nearbyClusterAxis.GetMagnitudeSquared() > std::numeric_limits<float>::epsilon() )
 		  {
 			  try
@@ -516,6 +514,7 @@ namespace arbor_content
 			  }
 		  }
 
+		  float axisAngle = 1.e6;
 		  if( startingClusterAxis.GetMagnitudeSquared() * nearbyClusterAxis.GetMagnitudeSquared() > std::numeric_limits<float>::epsilon() )
 		  {
 			  try
@@ -527,17 +526,19 @@ namespace arbor_content
 				  std::cout << "GetOpeningAngle failed" << std::endl;
 			  }
 		  }
-
+#endif
 
 		  // get the distance between two directions (skew lines)
-		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
-		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
+		  //auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
 
 		  // TODO: add inner layer cut
 		  bool isGoodDistance = (closestDistance < m_maxClusterDistanceToMerge);
-		  bool isGoodAxisDistance = (axisDistance < 30.) && (closestDistance < 200.);
-		  bool isGoodAngle = (angle < 0.3) && (closestDistance < 200.);
-		  bool isGoodAxisAngle = (axisAngle < 0.3) && (closestDistance < 200.);
+
+		  //float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
+		  //bool isGoodAxisDistance = (axisDistance < 30.) && (closestDistance < 200.);
+		  
+		  //bool isGoodAngle = (angle < 0.3) && (closestDistance < 200.);
+		  //bool isGoodAxisAngle = (axisAngle < 0.3) && (closestDistance < 200.);
 
 #if __DEBUG__
 	          const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);

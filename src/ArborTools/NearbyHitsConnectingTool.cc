@@ -40,7 +40,7 @@
 namespace arbor_content
 {
 
-  pandora::StatusCode NearbyHitsConnectingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const pCaloHitList)
+  pandora::StatusCode NearbyHitsConnectingTool::Process(const pandora::Algorithm &algorithm, const pandora::CaloHitList *const /* pCaloHitList */)
   {
 	//std::cout << " NearbyHitsConnectingTool : pCaloHitList " << pCaloHitList << ", size: " << pCaloHitList->size() << std::endl;
 	
@@ -109,9 +109,9 @@ namespace arbor_content
             pandora::CaloHitList clusterCaloHitList;
 
             // create a cluster with this list
-		    for(int i = 0; i < caloHitVector.size(); ++i)
+		    for(int iHit = 0; iHit < caloHitVector.size(); ++iHit)
 		    {
-		    	clusterCaloHitList.push_back(caloHitVector.at(i));
+		    	clusterCaloHitList.push_back(caloHitVector.at(iHit));
 		    }
 
             const pandora::Cluster *pCluster = NULL;
@@ -128,11 +128,11 @@ namespace arbor_content
 		////////////////////////////////////////////////////////////////////////////////////
 
 		// FIXME:: if cluster is made, hit is not available ...
-		for(int i = 0; i < caloHitVector.size(); ++i)
+		for(int iHit = 0; iHit < caloHitVector.size(); ++iHit)
 		{
 		    pandora::CaloHitList neighborHits;
 
-			auto caloHit = caloHitVector.at(i);
+			auto caloHit = caloHitVector.at(iHit);
             const arbor_content::CaloHit *const pCaloHitI = dynamic_cast<const arbor_content::CaloHit *const>(caloHit);
 		    if(pCaloHitI == nullptr) continue;
 
@@ -145,21 +145,22 @@ namespace arbor_content
 		    //	<< ", layer: " << caloHit->GetPseudoLayer() << std::endl;
 
 
-		    const std::vector<float> testPosition{caloHitPos.GetX(), caloHitPos.GetY(), caloHitPos.GetZ(), pCaloHitI->GetPseudoLayer()};
+		    std::vector<float> testPosition{caloHitPos.GetX(), caloHitPos.GetY(), caloHitPos.GetZ(), (float)pCaloHitI->GetPseudoLayer()};
 
 			// get the neighbor hit
-			CaloHitNeighborSearchHelper::SearchNeighbourHits4D(caloHitVector, testPosition, 2, neighborHits);
+			CaloHitNeighborSearchHelper::SearchNeighbourHits4D(testPosition, 2, neighborHits);
 			//std::cout << "   nb hits size: " << neighborHits.size() - 1 << std::endl;
 
 		    auto neighborHititer = neighborHits.begin();
 		    ++neighborHititer;
 
 			auto neighborHit = *neighborHititer;
+
+#if 0
 		    auto neighborHitPos = neighborHit->GetPositionVector();
 
 		    float distance = (neighborHitPos - caloHitPos).GetMagnitude();
 
-#if 0
 		    std::cout << "    nb: " << neighborHitPos.GetX() << ", " << neighborHitPos.GetY() << ", " << neighborHitPos.GetZ() 
 		    	<< ", layer: " << neighborHit->GetPseudoLayer()
 		    	<< ", d = " << distance << std::endl;
@@ -169,9 +170,9 @@ namespace arbor_content
 
 		    if(pCaloHitJ == nullptr) continue;
             
-            const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
-            const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
-		    const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
+            //const pandora::CartesianVector &positionVectorI(pCaloHitI->GetPositionVector());
+            //const pandora::CartesianVector &positionVectorJ(pCaloHitJ->GetPositionVector());
+		    //const float difference = (positionVectorJ - positionVectorI).GetMagnitude();
 
             // check if already connected
             if(ArborContentApi::IsConnected(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION) || 

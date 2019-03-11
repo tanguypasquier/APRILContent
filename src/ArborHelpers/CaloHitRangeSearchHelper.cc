@@ -125,7 +125,7 @@ namespace arbor_content
 	  // first hit 
 	  pandora::CartesianVector caloHitPosition0 = caloHitVector.at(0)->GetPositionVector();
 	  matrix4D.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ(), 
-			  caloHitVector.at(0)->GetPseudoLayer() } );
+			  (float)caloHitVector.at(0)->GetPseudoLayer() } );
 
 	  // other hits
 	  //std::cout << "caloHitVector.size : " << caloHitVector.size() << std::endl;
@@ -135,7 +135,7 @@ namespace arbor_content
 	  {
 	      pandora::CartesianVector caloHitPosition = caloHitVector.at(i)->GetPositionVector();
 	      matrix4D.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ(),
-				 caloHitVector.at(i)->GetPseudoLayer() } );
+				 (float)caloHitVector.at(i)->GetPseudoLayer() } );
 	  }
 
 	  caloHitsMatrix4D = matrix4D;
@@ -238,6 +238,8 @@ namespace arbor_content
   {
 	  CaloHitRangeSearchHelper::BuildHitCollectionForSearching(pCaloHitList, m_pCaloHitListOfLayers,
 			  m_orderedCaloHitList, m_caloHitVectorOfLayers, m_rangeSearchOfLayers);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -246,6 +248,8 @@ namespace arbor_content
   {
 	  CaloHitRangeSearchHelper::BuildHitCollectionForSearching(pEcalCaloHitList, m_pEcalCaloHitListOfLayers,
 			  m_orderedEcalCaloHitList, m_ecalCaloHitVectorOfLayers, m_ecalRangeSearchOfLayers);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -254,6 +258,8 @@ namespace arbor_content
   {
 	  CaloHitRangeSearchHelper::BuildHitCollectionForSearching(pHcalCaloHitList, m_pHcalCaloHitListOfLayers,
 			  m_orderedHcalCaloHitList, m_hcalCaloHitVectorOfLayers, m_hcalRangeSearchOfLayers);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -262,6 +268,8 @@ namespace arbor_content
   {
 	  CaloHitRangeSearchHelper::BuildHitCollectionForSearching(pMuonCaloHitList, m_pMuonCaloHitListOfLayers,
 			  m_orderedMuonCaloHitList, m_muonCaloHitVectorOfLayers, m_muonRangeSearchOfLayers);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -297,7 +305,6 @@ namespace arbor_content
 	  }
 
       std::vector<size_t>& neighbors = resultingNeighbors.at(0);
-      std::vector<double>& distances = resultingDistances.at(0);
 
 	  // TODO
 	  // may be sorted by distance
@@ -305,9 +312,10 @@ namespace arbor_content
       for(size_t j=0; j < neighbors.size(); ++j)
       {
       	size_t neighbor = neighbors.at(j);
-      	double hitsDist = distances.at(j);
 
 #if 0
+      	double hitsDist = resultingDistances.at(0).at(j);
+
    	    auto posVec = m_caloHitVector.at(neighbor)->GetPositionVector();
    
       	std::cout <<  "    -> neighbor " << neighbor << ", hits distance: " << hitsDist 
@@ -327,6 +335,8 @@ namespace arbor_content
 	  FillMatix4DFromCaloHits(caloHitVector, caloHitsMatrix4D);
 
       m_caloRangeSearch.Train(caloHitsMatrix4D);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -361,14 +371,14 @@ namespace arbor_content
 	  }
 
       std::vector<size_t>& neighbors = resultingNeighbors.at(0);
-      std::vector<double>& distances = resultingDistances.at(0);
 
       for(size_t j=0; j < neighbors.size(); ++j)
       {
       	size_t neighbor = neighbors.at(j);
-      	double hitsDist = distances.at(j);
 
 #if 0
+      	double hitsDist = resultingDistances.at(0).distances.at(j);
+
    	    auto posVec = m_caloHitVector.at(neighbor)->GetPositionVector();
    
       	std::cout <<  "    -> neighbor " << neighbor << ", hits distance: " << hitsDist 
@@ -387,6 +397,8 @@ namespace arbor_content
 		  float distance, pandora::CaloHitList& hitsInRange)
   {
 	  CaloHitRangeSearchHelper::SearchHitsInRange(m_rangeSearch, m_caloHitVector, testPosition, distance, hitsInRange);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -400,6 +412,8 @@ namespace arbor_content
 	  pandora::CaloHitVector& caloHitVectorOfLayer = m_caloHitVectorOfLayers.at( layerIndex );
 
 	  CaloHitRangeSearchHelper::SearchHitsInRange(rangeSearch, caloHitVectorOfLayer, testPosition, distance, hitsInRange);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
   
   //--------------------------------------------------------------------------------------------------------------------
@@ -413,6 +427,8 @@ namespace arbor_content
 	  pandora::CaloHitVector& caloHitVectorOfLayer = m_ecalCaloHitVectorOfLayers.at( layerIndex );
 
 	  CaloHitRangeSearchHelper::SearchHitsInRange(rangeSearch, caloHitVectorOfLayer, testPosition, distance, hitsInRange);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -426,6 +442,8 @@ namespace arbor_content
 	  pandora::CaloHitVector& caloHitVectorOfLayer = m_hcalCaloHitVectorOfLayers.at( layerIndex );
 
 	  CaloHitRangeSearchHelper::SearchHitsInRange(rangeSearch, caloHitVectorOfLayer, testPosition, distance, hitsInRange);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -439,6 +457,8 @@ namespace arbor_content
 	  pandora::CaloHitVector& caloHitVectorOfLayer = m_muonCaloHitVectorOfLayers.at( layerIndex );
 
 	  CaloHitRangeSearchHelper::SearchHitsInRange(rangeSearch, caloHitVectorOfLayer, testPosition, distance, hitsInRange);
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
 } 

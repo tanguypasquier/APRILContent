@@ -82,7 +82,7 @@ namespace arbor_content
 	  // first hit 
 	  pandora::CartesianVector caloHitPosition0 = caloHitVector.at(0)->GetPositionVector();
 	  matrix4D.col(0) = arma::vec( { caloHitPosition0.GetX(), caloHitPosition0.GetY(), caloHitPosition0.GetZ(), 
-			  caloHitVector.at(0)->GetPseudoLayer() } );
+			  (float)caloHitVector.at(0)->GetPseudoLayer() } );
 
 	  // other hits
 	  //std::cout << "caloHitVector.size : " << caloHitVector.size() << std::endl;
@@ -92,7 +92,7 @@ namespace arbor_content
 	  {
 	      pandora::CartesianVector caloHitPosition = caloHitVector.at(i)->GetPositionVector();
 	      matrix4D.col(i) = arma::vec( { caloHitPosition.GetX(), caloHitPosition.GetY(), caloHitPosition.GetZ(),
-				 caloHitVector.at(i)->GetPseudoLayer() } );
+				 (float)caloHitVector.at(i)->GetPseudoLayer() } );
 	  }
 
 	  caloHitsMatrix4D = matrix4D;
@@ -145,9 +145,10 @@ namespace arbor_content
       for(size_t j=0; j < resultingNeighbors.n_elem; ++j)
       {
       	size_t neighbor = resultingNeighbors[j];
-      	double hitsDist = resultingDistances[j];
 
 #if 0
+      	double hitsDist = resultingDistances[j];
+
    	    auto posVec = m_caloHitVector.at(neighbor)->GetPositionVector();
    
       	std::cout <<  "    -> neighbor " << neighbor << ", hits distance: " << hitsDist 
@@ -169,12 +170,13 @@ namespace arbor_content
 	  //std::cout << "FillMatixFromCaloHits done " << std::endl;
 	  m_neighborSearch4D.Train(m_caloHitsMatrix);
 	  //std::cout << "m_neighborSearch.Train done " << std::endl;
+
+   	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode CaloHitNeighborSearchHelper::SearchNeighbourHits4D(const pandora::CaloHitVector& caloHitVector, 
-		  std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits)
+  pandora::StatusCode CaloHitNeighborSearchHelper::SearchNeighbourHits4D(std::vector<float> testPosition, int nNeighbor, pandora::CaloHitList& neighborHits)
   {
 	  neighborHits.clear();
 
@@ -197,9 +199,10 @@ namespace arbor_content
       for(size_t j=0; j < resultingNeighbors.n_elem; ++j)
       {
       	size_t neighbor = resultingNeighbors[j];
-      	double hitsDist = resultingDistances[j];
 
 #if 0
+      	double hitsDist = resultingDistances[j];
+
    	    auto posVec = m_caloHitVector.at(neighbor)->GetPositionVector();
    
       	std::cout <<  "    -> neighbor " << neighbor << ", hits distance: " << hitsDist 
@@ -237,14 +240,15 @@ namespace arbor_content
       {   
 		  unsigned long cluIndex = (unsigned long)clu[i];
 		  auto caloHit = caloHitVector.at(i);
-		  auto hitPos = caloHit->GetPositionVector();
-		  auto layer = caloHit->GetPseudoLayer();
 
           if (cluIndex != noCluster)
           {
 			  hitsForCluster.at(cluIndex).push_back(caloHit);
 
 #ifdef __DEBUG__
+		      auto hitPos = caloHit->GetPositionVector();
+		      auto layer = caloHit->GetPseudoLayer();
+
               std::cout << " --- " << i << ": " << clu[i] << ", caloHit: " << caloHit 
 				  << ", X: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << ", layer: " << layer << std::endl;
 #endif
@@ -295,14 +299,14 @@ namespace arbor_content
       {   
 		  unsigned long cluIndex = (unsigned long)clu[i];
 		  auto caloHit = caloHitVector.at(i);
-		  auto hitPos = caloHit->GetPositionVector();
-		  auto layer = caloHit->GetPseudoLayer();
 
           if (cluIndex != noCluster)
           {
 
 			  hitsForCluster.at(cluIndex).push_back(caloHit);
 #ifdef __DEBUG__
+		      auto hitPos = caloHit->GetPositionVector();
+		      auto layer = caloHit->GetPseudoLayer();
 
               std::cout << " --- " << i << ": " << clu[i] << ", caloHit: " << caloHit 
 				  << ", X: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() << ", layer: " << layer << std::endl;

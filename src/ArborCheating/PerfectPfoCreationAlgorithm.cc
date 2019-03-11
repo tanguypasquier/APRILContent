@@ -122,11 +122,11 @@ pandora::StatusCode PerfectPfoCreationAlgorithm::TrackCollection(const pandora::
             if (pTrkPfoTarget != pPfoTarget)
                 continue;
 
+			// FIXME: this may be good for real clustering
+#if 0
 			float trackEnergy = pTrack->GetEnergyAtDca();
 			float trackMCPEnergy = pTrkMCParticle->GetEnergy();
 
-			// FIXME: this may be good for real clustering
-#if 0
 			if(trackMCPEnergy > 5. && fabs(trackEnergy-trackMCPEnergy)/trackMCPEnergy > 0.5) 
 			{
 				std::cout << "error: track energy: " << trackEnergy << ", mcp energy: " << trackMCPEnergy << std::endl;

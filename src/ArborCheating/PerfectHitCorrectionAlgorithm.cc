@@ -328,7 +328,7 @@ void PerfectHitCorrectionAlgorithm::FullCaloHitCollection(const MCParticle *cons
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
-StatusCode PerfectHitCorrectionAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
+StatusCode PerfectHitCorrectionAlgorithm::ReadSettings(const TiXmlHandle /* xmlHandle */)
 {
     //PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, XmlHelper::ReadValue(xmlHandle,
     //    "OutputClusterListName", m_outputClusterListName));

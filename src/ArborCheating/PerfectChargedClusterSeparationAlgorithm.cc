@@ -157,6 +157,7 @@ namespace arbor_content
 
         PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Cluster::Create(*this, parameters, pCluster));
 
+#if 0
 		const MCParticle *pClusterMCParticle = NULL;
 
 	    try
@@ -167,8 +168,9 @@ namespace arbor_content
         {
         }
 
-		//std::cout << "========PerfectClusterSeparationAlgorithm: create a cluster: " << pCluster 
-		//	      << ", MCP: " << pClusterMCParticle << std::endl;
+		std::cout << "========PerfectClusterSeparationAlgorithm: create a cluster: " << pCluster 
+			      << ", MCP: " << pClusterMCParticle << std::endl;
+#endif
 
 		newClusterList.push_back(pCluster);
 	 }

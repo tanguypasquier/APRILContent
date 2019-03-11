@@ -148,7 +148,7 @@ namespace arbor_content
 					  //	  << track->GetMomentumAtDca().GetMagnitude() << ", reach endcap: " 
 					  //	  << track->IsProjectedToEndCap() << std::endl;
                       
-                      const pandora::CartesianVector & pos = track->GetTrackStateAtCalorimeter().GetPosition();
+                      //const pandora::CartesianVector & pos = track->GetTrackStateAtCalorimeter().GetPosition();
 
                       //std::cout << "track on calo pos: " << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << std::endl;
                   }

@@ -110,7 +110,7 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode CheatingClusterMergingNewAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+pandora::StatusCode CheatingClusterMergingNewAlgorithm::ReadSettings(const pandora::TiXmlHandle /* xmlHandle */)
 {
     //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
     //    "ClusterListToTakeNewClusters", m_mergedClusterListName));

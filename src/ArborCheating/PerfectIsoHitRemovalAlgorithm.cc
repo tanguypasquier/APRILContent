@@ -169,7 +169,7 @@ namespace arbor_content
 		                                                  const MCParticleToClusterMap &mcParticleToClusterMap) const
   {
 	int nHitMerged = 0;
-	int nPassed = 0;
+	//int nPassed = 0;
 
     for (MCParticleToCaloHitListMap::const_iterator mapIter = mcParticleToCaloHitListMap.begin(), 
 	    mapIterEnd = mcParticleToCaloHitListMap.end(); mapIter != mapIterEnd; ++mapIter)

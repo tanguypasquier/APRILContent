@@ -64,14 +64,16 @@ pandora::StatusCode TrackPreparationAlgorithm::Run()
         {
 			//std::cout << "track: " << *trackIter << ", energy: " << (*trackIter)->GetEnergyAtDca() << std::endl;
 
+#if 0
 			try 
 			{
 				const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(*trackIter));
-				//std::cout << "track MCP: " << pMCParticle << std::endl << std::endl;
+				std::cout << "track MCP: " << pMCParticle << std::endl << std::endl;
 			}
     		catch (pandora::StatusCodeException &)
     		{
     		}
+#endif
 
             if ((*trackIter)->IsAvailable()) {
                 candidateTrackList.push_back(*trackIter);
@@ -193,14 +195,16 @@ pandora::StatusCode TrackPreparationAlgorithm::CreatePfoTrackList(const pandora:
         }
 		else 
 		{
+#if 0
 			try 
 			{
 				const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pTrack));
-				//std::cout << "track MCP: " << pMCParticle << std::endl;
+				std::cout << "track MCP: " << pMCParticle << std::endl;
 			}
     		catch (pandora::StatusCodeException &)
     		{
     		}
+#endif
 
 			//std::cout << " !!! track : " << pTrack << ", ignored, energy: " << pTrack->GetEnergyAtDca() << std::endl;
             // FIXME we should be very careful here !!!!!!!!!!!!!

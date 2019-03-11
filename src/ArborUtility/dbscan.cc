@@ -152,7 +152,9 @@ namespace arbor_content
 
          for (size_t i = 0; i < points.size(); ++i)
          {
-             unsigned int iCluster = points.at(i);
+             //unsigned int iCluster = points.at(i);
+			 // FIXME: for removing the warning
+             int iCluster = points.at(i);
                
              if(iCluster>=0)
                 std::cout << "elment " << i << " is in cluster: " << iCluster << std::endl;

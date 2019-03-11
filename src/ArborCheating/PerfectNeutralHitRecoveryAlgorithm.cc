@@ -63,7 +63,7 @@ namespace arbor_content
 		const TrackList& trackList = pCluster->GetAssociatedTrackList();
 		bool isChargedCluster = trackList.size() != 0;
 
-#if 1
+#if 0
 		const MCParticle *pClusterMCParticle = NULL;
 
 	    try
