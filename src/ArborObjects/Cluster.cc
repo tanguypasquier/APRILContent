@@ -29,10 +29,13 @@
 
 namespace arbor_content
 {
+  std::vector<ArborCluster*> m_clusterHasMotherAtSearch;
+
   ArborCluster::ArborCluster(const PandoraContentApi::Cluster::Parameters &parameters) :
       pandora::Cluster(parameters),
 	  m_axis(0., 0., 0.), m_intercept(0., 0., 0.), m_centroid(0., 0., 0.),
-	  m_startingPoint(0., 0., 0.), m_endpoint(0., 0., 0.)
+	  m_startingPoint(0., 0., 0.), m_endpoint(0., 0., 0.),
+	  m_isRoot(false), m_motherAtSearch(nullptr)
   {
   }
 
@@ -82,7 +85,7 @@ namespace arbor_content
 				  std::cout << "   --- mother: " << mother << std::endl;
 			  }
 
-			  continue;
+			  throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 		  }
 
 		  clu->GetAllClustersToMerge(allClustersToMerge);
@@ -93,6 +96,11 @@ namespace arbor_content
   const std::vector<ArborCluster*>& ArborCluster::GetNearbyClusters() const
   {
 	  return m_nearbyClusters;
+  }
+
+  const ArborCluster* ArborCluster::GetMotherAtSearch() const
+  {
+	  return m_motherAtSearch;
   }
 
   const pandora::CartesianVector& ArborCluster::GetAxis() const
@@ -118,6 +126,16 @@ namespace arbor_content
   const pandora::CartesianVector& ArborCluster::GetEndpoint() const
   {
 	  return m_endpoint;
+  }
+
+  bool ArborCluster::IsRoot()
+  {
+	  return m_isRoot;
+  }
+
+  bool ArborCluster::HasMotherAtSearch()
+  {
+	  return (m_motherAtSearch != nullptr);
   }
 
   bool ArborCluster::IsDaughter(ArborCluster* cluster)
@@ -148,6 +166,17 @@ namespace arbor_content
   bool ArborCluster::IsPhoton()
   {
 	  return m_isPhoton;
+  }
+
+  void ArborCluster::SetMotherAtSearch(ArborCluster* cluster)
+  {
+	  m_motherAtSearch = cluster;
+	  m_clusterHasMotherAtSearch.push_back(this);
+  }
+
+  void ArborCluster::ResetMotherAtSearch()
+  {
+	  m_motherAtSearch = nullptr;
   }
 
   void ArborCluster::SetMotherCluster(ArborCluster* cluster)
@@ -206,6 +235,21 @@ namespace arbor_content
   void ArborCluster::SetPhoton(bool isPhoton)
   {
 	  m_isPhoton = isPhoton;
+  }
+
+  void ArborCluster::SetRoot()
+  {
+	  m_isRoot = true;
+  }
+	
+  void ArborCluster::ResetClusterMothersAtSearch()
+  {
+	  for(int i = 0; i < m_clusterHasMotherAtSearch.size(); ++i)
+	  {
+		  m_clusterHasMotherAtSearch.at(i)->ResetMotherAtSearch();
+	  }
+
+	  m_clusterHasMotherAtSearch.clear();
   }
 
 } 

@@ -56,8 +56,9 @@ public:
 
 	const std::vector<ArborCluster*>& GetMotherCluster() const;
 	const std::vector<ArborCluster*>& GetClustersToMerge() const;
-        void  GetAllClustersToMerge(std::vector<ArborCluster*>& allClustersToMerge) const;
+    void  GetAllClustersToMerge(std::vector<ArborCluster*>& allClustersToMerge) const;
 	const std::vector<ArborCluster*>& GetNearbyClusters() const;
+	const ArborCluster* GetMotherAtSearch() const;
 
 	const pandora::CartesianVector& GetAxis() const;
 	const pandora::CartesianVector& GetIntercept() const;
@@ -65,9 +66,13 @@ public:
 	const pandora::CartesianVector& GetStartingPoint() const;
 	const pandora::CartesianVector& GetEndpoint() const;
 
+    bool IsRoot();
+    bool HasMotherAtSearch();
     bool IsDaughter(ArborCluster* cluster);
 	bool IsPhoton();
 
+	void SetMotherAtSearch(ArborCluster* cluster);
+	void ResetMotherAtSearch();
 	void SetMotherCluster(ArborCluster* cluster);
 	void SetClustersToMerge(const std::vector<ArborCluster*>& clusterVector);
 	void SetNearbyClusters(const std::vector<ArborCluster*>& clusterVector);
@@ -79,6 +84,9 @@ public:
 	void SetEndpoint(pandora::CartesianVector endpoint);
 
 	void SetPhoton(bool isPhoton);
+	void SetRoot();
+
+	static void ResetClusterMothersAtSearch();
 
 private:
 
@@ -101,6 +109,11 @@ protected:
 	pandora::CartesianVector m_endpoint;
 
 	bool m_isPhoton;
+	bool m_isRoot;
+
+	ArborCluster*              m_motherAtSearch;
+
+	static std::vector<ArborCluster*> m_clusterHasMotherAtSearch;
 
     friend class ClusterFactory;
 };
