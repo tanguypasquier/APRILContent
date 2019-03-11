@@ -108,6 +108,7 @@
 #include "ArborTopologicalAssociation/TopologicalAssociationParentAlgorithm.h"
 #include "ArborTopologicalAssociation/PointingClusterAssociationAlgorithm.h"
 #include "ArborTopologicalAssociation/PointingClusterAssociationNewAlgorithm.h"
+#include "ArborTopologicalAssociation/ClustersMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/MatchTrackWithStartingClusterAlgorithm.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/ClosebySeedMergingAlgorithm.h"
@@ -184,6 +185,7 @@ public:
     d("TopologicalAssociationParent",        arbor_content::TopologicalAssociationParentAlgorithm::Factory) \
     d("PointingClusterAssociation",          arbor_content::PointingClusterAssociationAlgorithm::Factory) \
     d("PointingClusterAssociationNew",       arbor_content::PointingClusterAssociationNewAlgorithm::Factory) \
+    d("ClustersMerging",                     arbor_content::ClustersMergingAlgorithm::Factory) \
     d("MatchTrackWithStartingCluster",       arbor_content::MatchTrackWithStartingClusterAlgorithm::Factory) \
     d("ClusterFromTrackMerging",             arbor_content::ClusterFromTrackMergingAlgorithm::Factory) \
     d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \

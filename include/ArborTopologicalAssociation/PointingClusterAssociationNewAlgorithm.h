@@ -146,4 +146,4 @@ inline pandora::Algorithm *PointingClusterAssociationNewAlgorithm::Factory::Crea
 
 } 
 
-#endif  //  POINTINGCLUSTERASSOCIATIONALGORITHM_H
+#endif  
