@@ -39,6 +39,7 @@
 #include "ArborApi/ArborContentApi.h"
 
 #include "ArborUtility/EventPreparationAlgorithm.h"
+#include "ArborUtility/ClusterShape.h"
 
 #include "ArborTools/TrackDrivenSeedingTool.h"
 #include "ArborObjects/CaloHit.h"
@@ -145,7 +146,8 @@ namespace arbor_content
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// search nearby clusters along track
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    const pandora::TrackList *pTrackList = NULL;
+
+    const pandora::TrackList *pTrackList = nullptr;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
 
 #if 1
@@ -153,17 +155,20 @@ namespace arbor_content
 
 	for(auto track : *pTrackList)
 	{
+	    arbor_content::ArborCluster::ResetClusterMothersAtSearch();
+
 		if( !(track->HasAssociatedCluster()) ) continue;
 
 		auto clu = track->GetAssociatedCluster();
 		auto associatedCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(clu));
+		associatedCluster->SetRoot();
 
-		std::cout << "     ---> SearchProperClusters: " << clu << std::endl;
+		std::cout << "     ---> SearchProperClusters from starting cluster: " << clu << std::endl;
 		std::vector<ArborCluster*> properClusters;
 		SearchProperClusters(track, associatedCluster, properClusters);
 
 		++i;
-		if(i>1) break;
+		//if(i>1) break;
 	}
 #endif
 
@@ -243,14 +248,26 @@ namespace arbor_content
 		  auto nearbyCluster = nearbyClusters.at(i);
 
 		  if(nearbyCluster == startingCluster) continue;
+		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster->IsRoot()) continue;
+
+		  // angle selection
+		  pandora::CartesianVector trackPointAtCalo = pTrack->GetTrackStateAtCalorimeter().GetPosition();
+		  pandora::CartesianVector trackMomentumAtCalo = pTrack->GetTrackStateAtCalorimeter().GetMomentum();
+
+		  pandora::CartesianVector trackPointAtCaloClusterDistance = nearbyCluster->GetCentroid() - trackPointAtCalo;
+
+		  float clusterTrackAngle = trackPointAtCaloClusterDistance.GetOpeningAngle(trackMomentumAtCalo);
+
+		  float m_maxClusterTrackAngle = 0.3;
+		  if(clusterTrackAngle > m_maxClusterTrackAngle ) continue;
 
 #if __DEBUG__
+		  ClusterShape clusterShape(nearbyCluster);
+
 		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 
 			  << ", E: " << nearbyCluster->GetHadronicEnergy() 
-			  << ", mother: " << nearbyCluster->GetMotherCluster().size() << std::endl;
+			  << ", form factor: " << clusterShape.CalcClusterShapeFactor() << ", angle: " << clusterTrackAngle << std::endl;
 #endif
-
-		  //if(nearbyCluster->GetMotherCluster().size() >=1) continue;
 
 		  try
 		  {
@@ -281,13 +298,11 @@ namespace arbor_content
 	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
 	  {
 		  //auto pCluster = clustersInRange.at(i);
-		  auto closestDistance = it->first;
+		  //auto closestDistance = it->first;
 		  auto nearbyCluster = it->second;
 
-		  if(nearbyCluster->IsDaughter(startingCluster)) continue;
-
 		  //GetClustersDirection
-		  auto& nearbyClusterAxis = nearbyCluster->GetAxis();
+		  //auto& nearbyClusterAxis = nearbyCluster->GetAxis();
 		  auto& startingClusterAxis = startingCluster->GetAxis();
 
 		  //startingCluster->GetAxis();
@@ -324,14 +339,14 @@ namespace arbor_content
 		  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
 		  ///
 
-		  bool isGoodAngle = (angle < 0.5) ;
+		  bool isGoodAngle = (angle < 0.3) ;
 
 #if __DEBUG__
-	          const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
-	          auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
+	          //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+	          //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
 			  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
 
-		        std::cout << "-clu: " << nearbyCluster << ", Eh: " << nearbyCluEnergy
+		        std::cout << " --- clu: " << nearbyCluster << ", E: " << nearbyCluEnergy
 		      			<< ", trackCluCentroidDistance: " << trackCluCentroidDistance << ", angle: " << angle << std::endl;
 #endif
 
@@ -343,11 +358,11 @@ namespace arbor_content
 		  if( (startingLayer1 < startingLayer2) && (trackCluCentroidDistance < 10. || isGoodAngle) ) 
 		  {
 			  properClusters.push_back(nearbyCluster);
+			  nearbyCluster->SetMotherAtSearch(startingCluster);
 		  }
 	  }
 		
-	  startingCluster->SetClustersToMerge(properClusters);
-
+#if 0
 	  // search proper cluster's proper cluster
 	  for(int iClu = 0; iClu < properClusters.size(); ++iClu)
 	  {
@@ -356,8 +371,9 @@ namespace arbor_content
 		  std::vector<ArborCluster*> clusters;
 		  SearchProperClusters(pTrack, clu, clusters);
 	  }
+#endif
 		  
-	  //std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
+	  std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
   }
 
   void ClusterFromTrackMergingAlgorithm::GetNearbyClusters(pandora::Cluster* cluster, 
@@ -680,7 +696,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinClusterFitCosOpeningAngle2", m_minClusterFitCosOpeningAngle2));
 
-    m_maxStartingClusterDistance = 500.;
+    m_maxStartingClusterDistance = 1000.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxStartingClusterDistance", m_maxStartingClusterDistance));
 
