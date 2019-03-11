@@ -29,7 +29,7 @@
 
 namespace arbor_content
 {
-  std::vector<ArborCluster*> m_clusterHasMotherAtSearch;
+  std::vector<ArborCluster*> ArborCluster::m_clusterHasMotherAtSearch;
 
   ArborCluster::ArborCluster(const PandoraContentApi::Cluster::Parameters &parameters) :
       pandora::Cluster(parameters),
