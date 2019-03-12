@@ -68,6 +68,8 @@ private:
     void SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters);
 
+    pandora::StatusCode CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector);
+
 	/**
 	 *  @brief  Get the eligible clusters for parent-daughter association
 	 *

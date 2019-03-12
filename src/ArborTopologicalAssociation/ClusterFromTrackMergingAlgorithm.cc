@@ -172,6 +172,9 @@ namespace arbor_content
 	}
 #endif
 
+	// clean clusters
+	CleanClusterForMerging(clusterVector);
+	
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// merge clusters 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -293,16 +296,10 @@ namespace arbor_content
 		  ////////////////////////
 
 		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
-	  }
-
-	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
-	  {
-		  //auto pCluster = clustersInRange.at(i);
-		  //auto closestDistance = it->first;
-		  auto nearbyCluster = it->second;
+	  
+	      //------
 
 		  //GetClustersDirection
-		  //auto& nearbyClusterAxis = nearbyCluster->GetAxis();
 		  auto& startingClusterAxis = startingCluster->GetAxis();
 
 		  //startingCluster->GetAxis();
@@ -324,7 +321,6 @@ namespace arbor_content
 			  }
 		  }
 
-		  ///
 		  const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField( pandora::CartesianVector(0.f, 0.f, 0.f)));
 
 		  const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
@@ -339,8 +335,6 @@ namespace arbor_content
 		  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
 		  ///
 
-		  bool isGoodAngle = (angle < 0.3) ;
-
 #if __DEBUG__
 	          //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
 	          //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
@@ -350,17 +344,33 @@ namespace arbor_content
 		      			<< ", trackCluCentroidDistance: " << trackCluCentroidDistance << ", angle: " << angle << std::endl;
 #endif
 
+#if 0
+		  bool isGoodAngle = (angle < 0.3) ;
 		  auto pseudoLayerPlugin = PandoraContentApi::GetPlugins(*this)->GetPseudoLayerPlugin();
 		  const unsigned int startingLayer1(pseudoLayerPlugin->GetPseudoLayer(startingCluster->GetStartingPoint()));
 		  const unsigned int startingLayer2(pseudoLayerPlugin->GetPseudoLayer(nearbyCluster->GetStartingPoint()));
 
-		  //if(isGoodAngle) 
+		  if(isGoodAngle) 
 		  if( (startingLayer1 < startingLayer2) && (trackCluCentroidDistance < 10. || isGoodAngle) ) 
-		  {
-			  properClusters.push_back(nearbyCluster);
-			  nearbyCluster->SetMotherAtSearch(startingCluster);
-		  }
+#endif
+
+		  auto& nearbyClusterAxis = nearbyCluster->GetAxis();
+		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
+		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
+
+		  ClustersOrderParameter orderParameter(clusterTrackAngle, angle, axisDistance);
+		  nearbyCluster->SetOrderParameterWithMother(startingCluster, orderParameter);
+      }
+		  
+	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
+	  {
+		  auto nearbyCluster = it->second;
+
+		  properClusters.push_back(nearbyCluster);
+		  nearbyCluster->SetMotherAtSearch(startingCluster);
 	  }
+
+	  startingCluster->SetClustersToMerge(properClusters);
 		
 #if 0
 	  // search proper cluster's proper cluster
@@ -449,6 +459,60 @@ namespace arbor_content
 			 << ": MCP: " << pClusterMCParticle << std::endl;
 	  }
 #endif
+  }
+
+  pandora::StatusCode ClusterFromTrackMergingAlgorithm::CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector)
+  {
+	for(int i = 0; i < clusterVector.size(); ++i)
+	{
+		auto& cluster = clusterVector.at(i);
+
+		auto& mothers = cluster->GetMotherCluster();
+
+		std::cout << " --- cluster " << cluster << " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
+
+		// find the best one
+		ClustersOrderParameter bestOrderParameter;
+		ArborCluster* bestCluster;
+
+		for(int iMother = 0; iMother < mothers.size(); ++iMother)
+		{
+			auto mother = mothers.at(iMother);
+			ClustersOrderParameter orderParameter = cluster->GetOrderParameterWithMother(mother);
+
+			std::cout << "    ---> cluster mother " << mother << ", para: " 
+				<< orderParameter.m_clusterTrackAngle << ", "
+				<< orderParameter.m_clustersAxisAngle << ", "
+	            << orderParameter.m_clustersAxisDistance << ", "
+				<< orderParameter.m_orderParameter << std::endl;
+
+			if(orderParameter < bestOrderParameter)
+			{
+				bestOrderParameter = orderParameter;
+				bestCluster = mother;
+			}
+		}
+
+		// simply take the first one
+		if(mothers.size() > 1)
+		{
+			for(int iMother = 0; iMother < mothers.size(); ++iMother)
+			{
+				auto mother = mothers.at(iMother);
+
+				if(mother != bestCluster)
+				{
+				    std::cout << " !!! cluster: " << mother << " remove cluster to merge: " << cluster << std::endl;
+					mother->RemoveFromClustersToMerge(cluster);
+				}
+			}
+
+			mothers.clear();
+			mothers.push_back(bestCluster);
+		}
+	}
+
+    return pandora::STATUS_CODE_SUCCESS;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
