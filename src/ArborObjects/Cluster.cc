@@ -57,23 +57,24 @@ namespace arbor_content
 	  return hadronicEnergy;
   }
 
-  const std::vector<ArborCluster*>& ArborCluster::GetMotherCluster() const
+  std::vector<ArborCluster*>& ArborCluster::GetMotherCluster()
   {
 	  return m_motherCluster;
   }
 
-  const std::vector<ArborCluster*>& ArborCluster::GetClustersToMerge() const
+  const std::list<ArborCluster*>& ArborCluster::GetClustersToMerge() const
   {
 	  return m_clustersToMerge;
   }
 
-  void ArborCluster::GetAllClustersToMerge(std::vector<ArborCluster*>& allClustersToMerge) const
+  void ArborCluster::GetAllClustersToMerge(std::list<ArborCluster*>& allClustersToMerge) const
   {
 	  auto& clusters = GetClustersToMerge();
 
-	  for(int iClu = 0; iClu < clusters.size(); ++iClu)
+	  //for(int iClu = 0; iClu < clusters.size(); ++iClu)
+	  for(auto& clu : clusters)
 	  {
-		  auto& clu = clusters.at(iClu);
+		  //auto& clu = cluIter; 
 		  if(clu->GetMotherCluster().size() > 1) 
 		  {
 			  std::cout << " ------ merging issue: " << clu << ", E: " << clu->GetHadronicEnergy() 
@@ -186,7 +187,7 @@ namespace arbor_content
 
   void ArborCluster::SetClustersToMerge(const std::vector<ArborCluster*>& clusterVector)
   {
-	  std::vector<ArborCluster*> clustersToMerge;
+	  std::list<ArborCluster*> clustersToMerge;
 
 	  for(int i = 0; i < clusterVector.size(); ++i)
 	  {
@@ -200,6 +201,12 @@ namespace arbor_content
 	  }
 
 	  m_clustersToMerge = clustersToMerge;
+  }
+
+  void ArborCluster::RemoveFromClustersToMerge(ArborCluster* cluster)
+  {
+	  m_clustersToMerge.remove(cluster);
+	  std::cout << " m_clustersToMerge size: " << m_clustersToMerge.size() << std::endl;
   }
 
   void ArborCluster::SetNearbyClusters(const std::vector<ArborCluster*>& clusterVector)
@@ -230,6 +237,33 @@ namespace arbor_content
   void ArborCluster::SetEndpoint(pandora::CartesianVector endpoint)
   {
 	  m_endpoint = endpoint;
+  }
+	
+  void ArborCluster::SetOrderParameterWithMother(ArborCluster* motherCluster, ClustersOrderParameter& clustersOrderParameter)
+  {
+	  if(m_orderWithMotherClusters.find(motherCluster) == m_orderWithMotherClusters.end())
+	  {
+		  m_orderWithMotherClusters[motherCluster] = clustersOrderParameter;
+	  }
+	  else
+	  {
+		  throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+	  }
+  }
+
+  ClustersOrderParameter ArborCluster::GetOrderParameterWithMother(ArborCluster* motherCluster)
+  {
+	  auto orderIter = m_orderWithMotherClusters.find(motherCluster);
+
+	  if(orderIter != m_orderWithMotherClusters.end())
+	  {
+		  return orderIter->second;
+	  }
+	  else
+	  {
+		  ClustersOrderParameter clustersOrderParameter;
+		  return clustersOrderParameter;
+	  }
   }
 	
   void ArborCluster::SetPhoton(bool isPhoton)

@@ -46,6 +46,57 @@ namespace arbor_content
 
 class ClusterFactory;
 
+class ClustersOrderParameter
+{
+public:
+	ClustersOrderParameter()
+	: m_clusterTrackAngle(std::numeric_limits<float>::max()),
+	  m_clustersAxisAngle(std::numeric_limits<float>::max()),
+	  m_clustersAxisDistance(std::numeric_limits<float>::max()),
+	  m_creationStage(-1)
+	{
+		//std::cout << "best ClustersOrderParameter: " << m_distance << ", " << m_openingAngle << ", " << m_orderParameter << std::endl;
+		//std::cout << " --- small angle range: " << m_smallAngleRange << std::endl;
+		m_orderParameter = std::numeric_limits<float>::max();
+	}
+
+	ClustersOrderParameter(float clusterTrackAngle, float clustersAxisAngle, float clustersAxisDistance, unsigned int creationStage = -1) 
+	: m_clusterTrackAngle(clusterTrackAngle), 
+	  m_clustersAxisAngle(clustersAxisAngle),
+	  m_clustersAxisDistance(clustersAxisDistance),
+	  m_creationStage(creationStage)
+	{
+		const float orderParameterAnglePower = 5.;
+		const float orderParameterAxisAnglePower = 1.;
+		const float orderParameterAxisDistancePower = 0.; 
+
+        m_orderParameter = std::pow(m_clusterTrackAngle,    orderParameterAnglePower) * 
+			               std::pow(m_clustersAxisAngle,    orderParameterAxisAnglePower) * 
+			               std::pow(m_clustersAxisDistance, orderParameterAxisDistancePower);
+	}
+
+	bool operator<(const ClustersOrderParameter& a) const
+	{
+		//std::cout << " ---+++ small angle range: " << m_smallAngleRange << std::endl;
+
+#if 0
+		if( m_creationStage != a.m_creationStage )
+		{
+			return m_creationStage < a.m_creationStage;
+		}
+#endif
+
+		return m_orderParameter < a.m_orderParameter;
+	}
+
+	float                     m_clusterTrackAngle;
+	float                     m_clustersAxisAngle;
+	float                     m_clustersAxisDistance;
+	unsigned int              m_creationStage;
+
+	float                     m_orderParameter;
+};
+
 /** 
  *  @brief  Cluster class
  */ 
@@ -54,9 +105,10 @@ class ArborCluster : public pandora::Cluster
 public:
 	float GetMergedHadronicEnergy();
 
-	const std::vector<ArborCluster*>& GetMotherCluster() const;
-	const std::vector<ArborCluster*>& GetClustersToMerge() const;
-    void  GetAllClustersToMerge(std::vector<ArborCluster*>& allClustersToMerge) const;
+	std::vector<ArborCluster*>& GetMotherCluster();
+
+	const std::list<ArborCluster*>& GetClustersToMerge() const;
+    void  GetAllClustersToMerge(std::list<ArborCluster*>& allClustersToMerge) const;
 	const std::vector<ArborCluster*>& GetNearbyClusters() const;
 	const ArborCluster* GetMotherAtSearch() const;
 
@@ -75,6 +127,7 @@ public:
 	void ResetMotherAtSearch();
 	void SetMotherCluster(ArborCluster* cluster);
 	void SetClustersToMerge(const std::vector<ArborCluster*>& clusterVector);
+	void RemoveFromClustersToMerge(ArborCluster* cluster);
 	void SetNearbyClusters(const std::vector<ArborCluster*>& clusterVector);
 
 	void SetAxis(pandora::CartesianVector axis);
@@ -82,6 +135,10 @@ public:
 	void SetCentroid(pandora::CartesianVector centrod);
 	void SetStartingPoint(pandora::CartesianVector startingPoint);
 	void SetEndpoint(pandora::CartesianVector endpoint);
+
+	void SetOrderParameterWithMother(ArborCluster* motherCluster, ClustersOrderParameter& clustersOrderParameter);
+
+    ClustersOrderParameter GetOrderParameterWithMother(ArborCluster* motherCluster);
 
 	void SetPhoton(bool isPhoton);
 	void SetRoot();
@@ -99,7 +156,7 @@ private:
 protected:
 	std::vector<ArborCluster*> m_motherCluster;
 
-	std::vector<ArborCluster*> m_clustersToMerge;
+	std::list<ArborCluster*> m_clustersToMerge;
 	std::vector<ArborCluster*> m_nearbyClusters;
 
 	pandora::CartesianVector m_axis;
@@ -112,6 +169,8 @@ protected:
 	bool m_isRoot;
 
 	ArborCluster*              m_motherAtSearch;
+
+	std::map<ArborCluster*, ClustersOrderParameter> m_orderWithMotherClusters;
 
 	static std::vector<ArborCluster*> m_clusterHasMotherAtSearch;
 
