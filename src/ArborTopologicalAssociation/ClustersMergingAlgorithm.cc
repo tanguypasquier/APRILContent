@@ -56,36 +56,46 @@ namespace arbor_content
 	{
 		auto& startingCluster = clusterVector.at(i);
 
-		std::vector<ArborCluster*> allClustersToMerge;
+		if(!startingCluster->IsRoot()) continue;
+
+		std::list<ArborCluster*> allClustersToMerge;
 		startingCluster->GetAllClustersToMerge(allClustersToMerge);
 	
 		std::cout << " --- clu: " << startingCluster << ", clusters to merge: " << allClustersToMerge.size() << std::endl;
 
-		for(int iClu = 0; iClu < allClustersToMerge.size(); ++iClu)
+		for(auto& cluToMerge : allClustersToMerge)
 		{
-			auto& cluToMerge = allClustersToMerge.at(iClu);
+			//auto& cluToMerge = allClustersToMerge.at(iClu);
 
 			if(cluToMerge != nullptr)
 			{
-	            const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
-	            auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-
-	            const pandora::Cluster* const pandoraClusterToMerge = dynamic_cast<const pandora::Cluster* const>(cluToMerge);
-	            auto pClusterToMergeMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraClusterToMerge);
-
-				//std::cout << "   ---> cluster: " << startingCluster << " merging cluster: " << cluToMerge << std::endl;
-	            std::vector<float> vars;
-	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
-	            vars.push_back( startingCluster->GetHadronicEnergy() );
-	            vars.push_back( cluToMerge->GetHadronicEnergy() );
-	            vars.push_back( float(pClusterMCParticle == pClusterToMergeMCParticle) );
-
-		        HistogramManager::CreateFill("ClustersMergingAlgorithm", "evtNum:clusterEnergy:mergeEnergy:isRight", vars);
-
-				if(pClusterMCParticle != pClusterToMergeMCParticle)
+				try
 				{
-					std::cout << "merging error!!! main cluster: " << startingCluster << ", E: " << startingCluster->GetHadronicEnergy()
-						      << " merging cluster: " << cluToMerge << ", E: " << cluToMerge->GetHadronicEnergy() << std::endl;
+#if 1
+					const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
+	                auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
+
+	                const pandora::Cluster* const pandoraClusterToMerge = dynamic_cast<const pandora::Cluster* const>(cluToMerge);
+	                auto pClusterToMergeMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraClusterToMerge);
+
+				    //std::cout << "   ---> cluster: " << startingCluster << " merging cluster: " << cluToMerge << std::endl;
+	                std::vector<float> vars;
+	                vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+	                vars.push_back( startingCluster->GetHadronicEnergy() );
+	                vars.push_back( cluToMerge->GetHadronicEnergy() );
+	                vars.push_back( float(pClusterMCParticle == pClusterToMergeMCParticle) );
+
+		            HistogramManager::CreateFill("ClustersMergingAlgorithm", "evtNum:clusterEnergy:mergeEnergy:isRight", vars);
+
+				    if(pClusterMCParticle != pClusterToMergeMCParticle)
+				    {
+				    	std::cout << "merging error!!! main cluster: " << startingCluster << ", E: " << startingCluster->GetHadronicEnergy()
+				    		      << " merging cluster: " << cluToMerge << ", E: " << cluToMerge->GetHadronicEnergy() << std::endl;
+				    }
+#endif
+				}
+				catch(pandora::StatusCodeException &)
+				{
 				}
 
 				ArborContentApi::MergeAndDeleteClusters(*this, startingCluster, cluToMerge);
