@@ -123,6 +123,7 @@ public:
     bool IsDaughter(ArborCluster* cluster);
 	bool IsPhoton();
 
+    void SetHasMotherAtSearch(bool hasMotherAtSearch = true);
 	void SetMotherAtSearch(ArborCluster* cluster);
 	void ResetMotherAtSearch();
 	void SetMotherCluster(ArborCluster* cluster);
@@ -142,8 +143,6 @@ public:
 
 	void SetPhoton(bool isPhoton);
 	void SetRoot();
-
-	static void ResetClusterMothersAtSearch();
 
 private:
 
@@ -167,12 +166,11 @@ protected:
 
 	bool m_isPhoton;
 	bool m_isRoot;
+	bool m_hasMotherAtSearch;
 
 	ArborCluster*              m_motherAtSearch;
 
 	std::map<ArborCluster*, ClustersOrderParameter> m_orderWithMotherClusters;
-
-	static std::vector<ArborCluster*> m_clusterHasMotherAtSearch;
 
     friend class ClusterFactory;
 };

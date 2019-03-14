@@ -29,13 +29,11 @@
 
 namespace arbor_content
 {
-  std::vector<ArborCluster*> ArborCluster::m_clusterHasMotherAtSearch;
-
   ArborCluster::ArborCluster(const PandoraContentApi::Cluster::Parameters &parameters) :
       pandora::Cluster(parameters),
 	  m_axis(0., 0., 0.), m_intercept(0., 0., 0.), m_centroid(0., 0., 0.),
 	  m_startingPoint(0., 0., 0.), m_endpoint(0., 0., 0.),
-	  m_isRoot(false), m_motherAtSearch(nullptr)
+	  m_isRoot(false), m_hasMotherAtSearch(false), m_motherAtSearch(nullptr)
   {
   }
 
@@ -86,6 +84,7 @@ namespace arbor_content
 				  std::cout << "   --- mother: " << mother << std::endl;
 			  }
 
+		      std::cout << "   GetAllClustersToMerge error!"  << std::endl;
 			  throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 		  }
 
@@ -134,9 +133,16 @@ namespace arbor_content
 	  return m_isRoot;
   }
 
+#if 0
   bool ArborCluster::HasMotherAtSearch()
   {
 	  return (m_motherAtSearch != nullptr);
+  }
+#endif
+
+  bool ArborCluster::HasMotherAtSearch()
+  {
+	  return m_hasMotherAtSearch;
   }
 
   bool ArborCluster::IsDaughter(ArborCluster* cluster)
@@ -169,10 +175,15 @@ namespace arbor_content
 	  return m_isPhoton;
   }
 
-  void ArborCluster::SetMotherAtSearch(ArborCluster* cluster)
+  void ArborCluster::SetHasMotherAtSearch(bool hasMotherAtSearch)
   {
-	  m_motherAtSearch = cluster;
-	  m_clusterHasMotherAtSearch.push_back(this);
+	  m_hasMotherAtSearch = hasMotherAtSearch;
+  }
+
+  void ArborCluster::SetMotherAtSearch(ArborCluster* motherCluster)
+  {
+	  if(HasMotherAtSearch()) return;
+	  m_motherAtSearch = motherCluster;
   }
 
   void ArborCluster::ResetMotherAtSearch()
@@ -206,7 +217,7 @@ namespace arbor_content
   void ArborCluster::RemoveFromClustersToMerge(ArborCluster* cluster)
   {
 	  m_clustersToMerge.remove(cluster);
-	  std::cout << " m_clustersToMerge size: " << m_clustersToMerge.size() << std::endl;
+	  //std::cout << " m_clustersToMerge size: " << m_clustersToMerge.size() << std::endl;
   }
 
   void ArborCluster::SetNearbyClusters(const std::vector<ArborCluster*>& clusterVector)
@@ -247,6 +258,7 @@ namespace arbor_content
 	  }
 	  else
 	  {
+		  std::cout << "   SetOrderParameterWithMother error!"  << std::endl;
 		  throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 	  }
   }
@@ -275,16 +287,5 @@ namespace arbor_content
   {
 	  m_isRoot = true;
   }
-	
-  void ArborCluster::ResetClusterMothersAtSearch()
-  {
-	  for(int i = 0; i < m_clusterHasMotherAtSearch.size(); ++i)
-	  {
-		  m_clusterHasMotherAtSearch.at(i)->ResetMotherAtSearch();
-	  }
-
-	  m_clusterHasMotherAtSearch.clear();
-  }
-
+  
 } 
-

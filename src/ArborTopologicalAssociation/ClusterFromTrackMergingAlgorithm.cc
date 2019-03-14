@@ -39,12 +39,15 @@
 #include "ArborApi/ArborContentApi.h"
 
 #include "ArborUtility/EventPreparationAlgorithm.h"
-#include "ArborUtility/ClusterShape.h"
 
 #include "ArborTools/TrackDrivenSeedingTool.h"
 #include "ArborObjects/CaloHit.h"
 
 #include <algorithm>
+
+#define __DEBUG__ 0
+//#define __DEBUG__ 1
+
 
 namespace arbor_content
 {
@@ -150,84 +153,43 @@ namespace arbor_content
     const pandora::TrackList *pTrackList = nullptr;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pTrackList));
 
-#if 1
-	int i = 0;
-
+	// set the cluster with track as root cluster
 	for(auto track : *pTrackList)
 	{
-	    arbor_content::ArborCluster::ResetClusterMothersAtSearch();
-
 		if( !(track->HasAssociatedCluster()) ) continue;
 
 		auto clu = track->GetAssociatedCluster();
 		auto associatedCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(clu));
 		associatedCluster->SetRoot();
+	}
 
+	for(auto track : *pTrackList)
+	{
+		// Reset the cluster for search
+	    for(int i = 0; i < clusterVector.size(); ++i)
+		{
+			auto clu = clusterVector.at(i);
+			clu->SetHasMotherAtSearch(false);
+		}
+
+		if( !(track->HasAssociatedCluster()) ) continue;
+
+		auto clu = track->GetAssociatedCluster();
+		auto associatedCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(clu));
+
+#if __DEBUG__
 		std::cout << "     ---> SearchProperClusters from starting cluster: " << clu << std::endl;
+#endif
+
 		std::vector<ArborCluster*> properClusters;
 		SearchProperClusters(track, associatedCluster, properClusters);
-
-		++i;
-		//if(i>1) break;
 	}
-#endif
 
 	// clean clusters
 	CleanClusterForMerging(clusterVector);
 	
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// merge clusters 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#if 0
-	for(auto track : *pTrackList)
-	{
-		if( !(track->HasAssociatedCluster()) ) continue;
-
-		auto clu = track->GetAssociatedCluster();
-		auto trackStartCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(clu));
-
-		std::vector<ArborCluster*> allClustersToMerge;
-		trackStartCluster->GetAllClustersToMerge(allClustersToMerge);
-
-		for(int iClu = 0; iClu < allClustersToMerge.size(); ++iClu)
-		{
-			auto& cluToMerge = allClustersToMerge.at(iClu);
-
-			if(cluToMerge != nullptr)
-			{
-	            const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(trackStartCluster);
-	            auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-
-	            const pandora::Cluster* const pandoraClusterToMerge = dynamic_cast<const pandora::Cluster* const>(cluToMerge);
-	            auto pClusterToMergeMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraClusterToMerge);
-
-				//std::cout << "   ---> cluster: " << trackStartCluster << " merging cluster: " << cluToMerge << std::endl;
-	            std::vector<float> vars;
-	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
-	            vars.push_back( trackStartCluster->GetHadronicEnergy() );
-	            vars.push_back( cluToMerge->GetHadronicEnergy() );
-	            vars.push_back( float(pClusterMCParticle == pClusterToMergeMCParticle) );
-
-		        HistogramManager::CreateFill("ClusterFromTrackMerging", "evtNum:clusterEnergy:mergeEnergy:isRight", vars);
-
-				if(pClusterMCParticle != pClusterToMergeMCParticle)
-				{
-					std::cout << "ClusterFromTrackMergingAlgorithm merging error!!! main cluster: " << trackStartCluster << ", E: " 
-						      << trackStartCluster->GetHadronicEnergy()
-						      << " merging cluster: " << cluToMerge << ", E: " << cluToMerge->GetHadronicEnergy() << std::endl;
-				}
-
-				ArborContentApi::MergeAndDeleteClusters(*this, trackStartCluster, cluToMerge);
-			}
-		}
-	}
-#endif
-
     return pandora::STATUS_CODE_SUCCESS;
   }
-
-//#define __DEBUG__ 0
-#define __DEBUG__ 1
 
   void ClusterFromTrackMergingAlgorithm::SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters)
@@ -250,8 +212,10 @@ namespace arbor_content
 	  {
 		  auto nearbyCluster = nearbyClusters.at(i);
 
-		  if(nearbyCluster == startingCluster) continue;
-		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster->IsRoot()) continue;
+		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot()) 
+		  {
+			  continue;
+		  }
 
 		  // angle selection
 		  pandora::CartesianVector trackPointAtCalo = pTrack->GetTrackStateAtCalorimeter().GetPosition();
@@ -265,11 +229,8 @@ namespace arbor_content
 		  if(clusterTrackAngle > m_maxClusterTrackAngle ) continue;
 
 #if __DEBUG__
-		  ClusterShape clusterShape(nearbyCluster);
-
 		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 
-			  << ", E: " << nearbyCluster->GetHadronicEnergy() 
-			  << ", form factor: " << clusterShape.CalcClusterShapeFactor() << ", angle: " << clusterTrackAngle << std::endl;
+			  << ", E: " << nearbyCluster->GetHadronicEnergy() << ", angle: " << clusterTrackAngle << std::endl;
 #endif
 
 		  try
@@ -332,16 +293,15 @@ namespace arbor_content
 		  if(pandora::STATUS_CODE_SUCCESS != helix.GetDistanceToPoint(nearbyClusterCOG, trackCluCentroidDistanceVec, genericTime))
 		  	continue;
 
-		  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
-		  ///
 
 #if __DEBUG__
-	          //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
-	          //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
-			  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
+		  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
+	      //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+	      //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
+		  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
 
-		        std::cout << " --- clu: " << nearbyCluster << ", E: " << nearbyCluEnergy
-		      			<< ", trackCluCentroidDistance: " << trackCluCentroidDistance << ", angle: " << angle << std::endl;
+		  std::cout << " --- clu: " << nearbyCluster << ", E: " << nearbyCluEnergy
+		   			<< ", trackCluCentroidDistance: " << trackCluCentroidDistance << ", angle: " << angle << std::endl;
 #endif
 
 #if 0
@@ -367,7 +327,7 @@ namespace arbor_content
 		  auto nearbyCluster = it->second;
 
 		  properClusters.push_back(nearbyCluster);
-		  nearbyCluster->SetMotherAtSearch(startingCluster);
+		  nearbyCluster->SetHasMotherAtSearch();
 	  }
 
 	  startingCluster->SetClustersToMerge(properClusters);
@@ -383,7 +343,9 @@ namespace arbor_content
 	  }
 #endif
 		  
+#if __DEBUG__
 	  std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
+#endif
   }
 
   void ClusterFromTrackMergingAlgorithm::GetNearbyClusters(pandora::Cluster* cluster, 
@@ -469,7 +431,9 @@ namespace arbor_content
 
 		auto& mothers = cluster->GetMotherCluster();
 
+#if __DEBUG__
 		std::cout << " --- cluster " << cluster << " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
+#endif
 
 		// find the best one
 		ClustersOrderParameter bestOrderParameter;
@@ -480,11 +444,13 @@ namespace arbor_content
 			auto mother = mothers.at(iMother);
 			ClustersOrderParameter orderParameter = cluster->GetOrderParameterWithMother(mother);
 
+#if __DEBUG__
 			std::cout << "    ---> cluster mother " << mother << ", para: " 
 				<< orderParameter.m_clusterTrackAngle << ", "
 				<< orderParameter.m_clustersAxisAngle << ", "
 	            << orderParameter.m_clustersAxisDistance << ", "
 				<< orderParameter.m_orderParameter << std::endl;
+#endif
 
 			if(orderParameter < bestOrderParameter)
 			{
@@ -493,7 +459,7 @@ namespace arbor_content
 			}
 		}
 
-		// simply take the first one
+		// take the best one
 		if(mothers.size() > 1)
 		{
 			for(int iMother = 0; iMother < mothers.size(); ++iMother)
@@ -502,7 +468,9 @@ namespace arbor_content
 
 				if(mother != bestCluster)
 				{
+#if __DEBUG__
 				    std::cout << " !!! cluster: " << mother << " remove cluster to merge: " << cluster << std::endl;
+#endif
 					mother->RemoveFromClustersToMerge(cluster);
 				}
 			}
