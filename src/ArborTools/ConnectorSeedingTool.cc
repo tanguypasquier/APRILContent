@@ -164,7 +164,8 @@ namespace arbor_content
               continue;
 
             // connect !
-            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION));
+            unsigned int creationStage = m_connectorCreationStage;
+            PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Connect(pCaloHitI, pCaloHitJ, FORWARD_DIRECTION, 1., creationStage));
           }
         }
       }
@@ -220,6 +221,10 @@ namespace arbor_content
     m_shouldDiscriminateConnectedHits = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ShouldDiscriminateConnectedHits", m_shouldDiscriminateConnectedHits));
+
+	m_connectorCreationStage = -1;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ConnectorCreationStage", m_connectorCreationStage));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

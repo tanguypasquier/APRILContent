@@ -79,6 +79,7 @@ private:
 	bool                        m_connectOnlyAvailable;
 	bool                        m_shouldUseIsolatedHits;
 	bool                        m_shouldDiscriminateConnectedHits;
+	unsigned int                m_connectorCreationStage;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
