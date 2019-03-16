@@ -47,6 +47,7 @@ public:
 	ConnectorOrderParameter()
 	: m_distance(std::numeric_limits<float>::max()),
 	  m_openingAngle(std::numeric_limits<float>::max()),
+	  m_nConnectons(0),
 	  m_creationStage(-1),
 	  m_orderParameter(std::numeric_limits<float>::max())
 	{
@@ -54,9 +55,10 @@ public:
 		//std::cout << " --- small angle range: " << m_smallAngleRange << std::endl;
 	}
 
-	ConnectorOrderParameter(float distance, float openingAngle, unsigned int creationStage) 
+	ConnectorOrderParameter(float distance, float openingAngle, unsigned int nConnections, unsigned int creationStage) 
 	: m_distance(distance), 
 	  m_openingAngle(openingAngle),
+	  m_nConnectons(nConnections),
 	  m_creationStage(creationStage)
 	{
         m_orderParameter = std::pow(m_openingAngle, m_orderParameterAnglePower) * 
@@ -78,11 +80,24 @@ public:
 			return m_distance < a.m_distance;
 		}
 
+		if(m_openingAngle == a.m_openingAngle && m_distance == a.m_distance)
+		{
+			if(m_nConnectons == a.m_nConnectons)
+			{
+				std::cout << " m_nConnectons == a.m_nConnectons " << std::endl;
+				throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+			}
+
+			// sure, hit with more connectors has small (good) order ...
+			return m_nConnectons > a.m_nConnectons;
+		}
+
 		return m_orderParameter < a.m_orderParameter;
 	}
 
 	float                     m_distance;
 	float                     m_openingAngle;
+	unsigned int              m_nConnectons;
 	unsigned int              m_creationStage;
 	float                     m_orderParameter;
 

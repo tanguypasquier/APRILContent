@@ -206,12 +206,14 @@ namespace arbor_content
 	  //std::cout << "  --- vector2 con: " << connectorVector.GetX() << ", " << connectorVector.GetY() << ", " 
 		      //  << connectorVector.GetZ() << "  *** angle: " << angle << std::endl;
 
-		const float creationStage = pConnector->GetCreationStage();
+		const unsigned int creationStage = pConnector->GetCreationStage();
 		//std::cout << "connector creation at stage: " << creationStage << std::endl;
 
-		ConnectorOrderParameter orderParameter(distance, angle, creationStage);
+		// different weights for fwd and bwd
+	    const unsigned int nConnectors = ArborContentApi::GetConnectorList(pFromCaloHit, FORWARD_DIRECTION).size() + 
+			5 * ArborContentApi::GetConnectorList(pFromCaloHit, BACKWARD_DIRECTION).size();
 
-		//std::cout << " angle: " << angle << ", distance: " << distance << ", order: " << orderParameter.m_orderParameter << std::endl;
+		ConnectorOrderParameter orderParameter(distance, angle, nConnectors, creationStage);
 
         if(orderParameter < bestOrderParameter)
         {
