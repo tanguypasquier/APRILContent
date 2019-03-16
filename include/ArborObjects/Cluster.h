@@ -107,8 +107,8 @@ public:
 
 	std::vector<ArborCluster*>& GetMotherCluster();
 
-	const std::list<ArborCluster*>& GetClustersToMerge() const;
-    void  GetAllClustersToMerge(std::list<ArborCluster*>& allClustersToMerge) const;
+	const std::set<ArborCluster*>& GetClustersToMerge() const;
+    void  GetAllClustersToMerge(std::set<ArborCluster*>& allClustersToMerge) const;
 	const std::vector<ArborCluster*>& GetNearbyClusters() const;
 	const ArborCluster* GetMotherAtSearch() const;
 
@@ -155,7 +155,7 @@ private:
 protected:
 	std::vector<ArborCluster*> m_motherCluster;
 
-	std::list<ArborCluster*> m_clustersToMerge;
+	std::set<ArborCluster*> m_clustersToMerge;
 	std::vector<ArborCluster*> m_nearbyClusters;
 
 	pandora::CartesianVector m_axis;

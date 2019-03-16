@@ -60,12 +60,12 @@ namespace arbor_content
 	  return m_motherCluster;
   }
 
-  const std::list<ArborCluster*>& ArborCluster::GetClustersToMerge() const
+  const std::set<ArborCluster*>& ArborCluster::GetClustersToMerge() const
   {
 	  return m_clustersToMerge;
   }
 
-  void ArborCluster::GetAllClustersToMerge(std::list<ArborCluster*>& allClustersToMerge) const
+  void ArborCluster::GetAllClustersToMerge(std::set<ArborCluster*>& allClustersToMerge) const
   {
 	  auto& clusters = GetClustersToMerge();
 
@@ -89,7 +89,7 @@ namespace arbor_content
 		  }
 
 		  clu->GetAllClustersToMerge(allClustersToMerge);
-		  allClustersToMerge.push_back(clu);
+		  allClustersToMerge.insert(clu);
 	  }
   }
 
@@ -198,7 +198,7 @@ namespace arbor_content
 
   void ArborCluster::SetClustersToMerge(const std::vector<ArborCluster*>& clusterVector)
   {
-	  std::list<ArborCluster*> clustersToMerge;
+	  std::set<ArborCluster*> clustersToMerge;
 
 	  for(int i = 0; i < clusterVector.size(); ++i)
 	  {
@@ -207,7 +207,7 @@ namespace arbor_content
 		  if(!cluster->IsDaughter(this))
 		  {
 			  cluster->SetMotherCluster(this);
-			  clustersToMerge.push_back(cluster);
+			  clustersToMerge.insert(cluster);
 		  }
 	  }
 
@@ -216,7 +216,7 @@ namespace arbor_content
 
   void ArborCluster::RemoveFromClustersToMerge(ArborCluster* cluster)
   {
-	  m_clustersToMerge.remove(cluster);
+	  m_clustersToMerge.erase(cluster);
 	  //std::cout << " m_clustersToMerge size: " << m_clustersToMerge.size() << std::endl;
   }
 

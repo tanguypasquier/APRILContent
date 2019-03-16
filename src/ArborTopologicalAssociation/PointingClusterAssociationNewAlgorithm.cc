@@ -253,7 +253,7 @@ namespace arbor_content
 	{
 		auto& trackStartCluster = trackStartingClusters.at(i);
 
-		std::list<ArborCluster*> allClustersToMerge;
+		std::set<ArborCluster*> allClustersToMerge;
 		trackStartCluster->GetAllClustersToMerge(allClustersToMerge);
 
 		//for(int iClu = 0; iClu < allClustersToMerge.size(); ++iClu)
