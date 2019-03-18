@@ -31,6 +31,8 @@
 
 #include "ArborTools/ConnectorAlgorithmTool.h"
 
+#include "Objects/CartesianVector.h"
+
 namespace arbor_content
 {
 
@@ -49,17 +51,19 @@ public:
 	  m_openingAngle(std::numeric_limits<float>::max()),
 	  m_nConnectons(0),
 	  m_creationStage(-1),
+	  m_fromHitPos(0., 0., 0.),
 	  m_orderParameter(std::numeric_limits<float>::max())
 	{
 		//std::cout << "best ConnectorOrderParameter: " << m_distance << ", " << m_openingAngle << ", " << m_orderParameter << std::endl;
 		//std::cout << " --- small angle range: " << m_smallAngleRange << std::endl;
 	}
 
-	ConnectorOrderParameter(float distance, float openingAngle, unsigned int nConnections, unsigned int creationStage) 
+	ConnectorOrderParameter(float distance, float openingAngle, unsigned int nConnections, unsigned int creationStage, pandora::CartesianVector formHitPos) 
 	: m_distance(distance), 
 	  m_openingAngle(openingAngle),
 	  m_nConnectons(nConnections),
-	  m_creationStage(creationStage)
+	  m_creationStage(creationStage),
+	  m_fromHitPos(formHitPos)
 	{
         m_orderParameter = std::pow(m_openingAngle, m_orderParameterAnglePower) * 
 			               std::pow(m_distance, m_orderParameterDistancePower);
@@ -74,22 +78,32 @@ public:
 			return m_creationStage < a.m_creationStage;
 		}
 
-		if(m_openingAngle < m_smallAngleRange && a.m_openingAngle < m_smallAngleRange)
+		if(m_openingAngle < m_smallAngleRange && a.m_openingAngle < m_smallAngleRange && m_distance != a.m_distance)
 		{
 			//std::cout << "small angle, distance: " << m_distance << ", " << a.m_distance << std::endl;
 			return m_distance < a.m_distance;
 		}
 
-		if(m_openingAngle == a.m_openingAngle && m_distance == a.m_distance)
+		if(m_openingAngle == a.m_openingAngle && m_distance == a.m_distance && m_nConnectons != a.m_nConnectons)
 		{
-			if(m_nConnectons == a.m_nConnectons)
-			{
-				std::cout << " m_nConnectons == a.m_nConnectons " << std::endl;
-				throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
-			}
-
 			// sure, hit with more connectors has small (good) order ...
 			return m_nConnectons > a.m_nConnectons;
+		}
+
+		// if all parameters but position are the same, just take position
+		if(m_nConnectons == a.m_nConnectons)
+		{
+			if(!(m_fromHitPos == a.m_fromHitPos))
+			{
+			    return ( m_fromHitPos.GetX() < a.m_fromHitPos.GetX() || 
+			    		 m_fromHitPos.GetY() < a.m_fromHitPos.GetY() ||
+			    	     m_fromHitPos.GetZ() < a.m_fromHitPos.GetZ() );
+			}
+			else
+			{
+				std::cout << "Connector are completely the same." << std::endl;
+				throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+			}
 		}
 
 		return m_orderParameter < a.m_orderParameter;
@@ -99,6 +113,7 @@ public:
 	float                     m_openingAngle;
 	unsigned int              m_nConnectons;
 	unsigned int              m_creationStage;
+	pandora::CartesianVector  m_fromHitPos;
 	float                     m_orderParameter;
 
 	static float              m_smallAngleRange;
@@ -175,11 +190,11 @@ private:
 	pandora::StatusCode CleanCaloHits(const pandora::OrderedCaloHitList &orderedCaloHitList) const;
 
 private:
-	unsigned int              m_strategy;
+	unsigned int               m_strategy;
 	float                      m_backwardConnectorWeight;
 	float                      m_forwardConnectorWeight;
-	unsigned int              m_backwardReferenceDirectionDepth;
-	unsigned int              m_forwardReferenceDirectionDepth;
+	unsigned int               m_backwardReferenceDirectionDepth;
+	unsigned int               m_forwardReferenceDirectionDepth;
 	float                      m_orderParameterAnglePower;
 	float                      m_orderParameterDistancePower;
 };

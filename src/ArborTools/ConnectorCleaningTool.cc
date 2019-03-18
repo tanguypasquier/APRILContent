@@ -34,6 +34,7 @@
 #include "ArborObjects/Connector.h"
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/HistogramHelper.h"
+#include "ArborHelpers/SortingHelper.h"
 #include "ArborClustering/ArborClusteringAlgorithm.h"
 
 #include "ArborUtility/EventPreparationAlgorithm.h"
@@ -124,67 +125,36 @@ namespace arbor_content
   {
     CaloHitCleaningMap caloHitCleaningMap;
 
-    for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
-        endIter != iter ; ++iter)
+	// sort the hits by their positions,
+	// the connector list will also be sorted.
+	pandora::CaloHitList aHitList(*pCaloHitList);
+	aHitList.sort(SortingHelper::SortHitsByPosition);
+    pandora::CaloHitVector caloHitVector(aHitList.begin(), aHitList.end());
+
+    for(auto caloHit : caloHitVector)
     {
-      const arbor_content::CaloHit *pCaloHit = dynamic_cast<const arbor_content::CaloHit *>(*iter);
+      const arbor_content::CaloHit *pCaloHit = dynamic_cast<const arbor_content::CaloHit *>(caloHit);
 
-      if(NULL == pCaloHit)
-        return pandora::STATUS_CODE_FAILURE;
+      if(NULL == pCaloHit) return pandora::STATUS_CODE_FAILURE;
 
-      const ConnectorList &backwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, BACKWARD_DIRECTION));
+      ConnectorList backwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, BACKWARD_DIRECTION));
+	  std::vector<const Connector*> backwardConnectorVector(backwardConnectorList.begin(), backwardConnectorList.end());
+	  std::sort(backwardConnectorVector.begin(), backwardConnectorVector.end(), SortingHelper::SortConnectorsByFromPosition);
 
-#if 0
-	  auto hitPos = pCaloHit->GetPositionVector();
-	  //std::cout << "---> calo hit: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() 
-		//  << ", backwardConnectorList.size: " << backwardConnectorList.size() << std::endl;
-
-	  pandora::CartesianVector testPos(-110, 90, -2790.4);
-
-	  if((testPos-hitPos).GetMagnitude() < 0.1)
-	  {
-		  std::cout << "  ===> print the forwardConnectorlist: " << std::endl;
-		  const ConnectorList &forwardConnectorList(ArborContentApi::GetConnectorList(pCaloHit, FORWARD_DIRECTION));
-		  for(auto& connector : forwardConnectorList)
-		  {
-			  auto fromHit = connector->GetFrom();
-			  auto toHit = connector->GetTo();
-			  auto fromHitPos = fromHit->GetPositionVector();
-			  auto toHitPos = toHit->GetPositionVector();
-	          std::cout << "            - connector: from " << fromHitPos.GetX() << ", " << fromHitPos.GetY() << ", " << fromHitPos.GetZ() 
-				  << " to " << toHitPos.GetX() << ", " << toHitPos.GetY() << ", " << toHitPos.GetZ() << std::endl;
-		  }
-
-		  std::cout << "  ===> print the backwardConnectorlist: " << std::endl;
-		  for(auto& connector : backwardConnectorList)
-		  {
-			  auto fromHit = connector->GetFrom();
-			  auto toHit = connector->GetTo();
-			  auto fromHitPos = fromHit->GetPositionVector();
-			  auto toHitPos = toHit->GetPositionVector();
-	          std::cout << "            - connector: from " << fromHitPos.GetX() << ", " << fromHitPos.GetY() << ", " << fromHitPos.GetZ() 
-				  << " to " << toHitPos.GetX() << ", " << toHitPos.GetY() << ", " << toHitPos.GetZ() << std::endl;
-		  }
-	  }
-#endif
-
-      if(backwardConnectorList.size() < 2)
-        continue;
+      if(backwardConnectorList.size() < 2) continue;
 
       pandora::CartesianVector referenceVector(this->GetReferenceVector(pCaloHit));
 
-      if(referenceVector == pandora::CartesianVector(0.f, 0.f, 0.f))
-        return pandora::STATUS_CODE_FAILURE;
+      if(referenceVector == pandora::CartesianVector(0.f, 0.f, 0.f)) return pandora::STATUS_CODE_FAILURE;
 
       const CaloHit *pBestCaloHit = NULL;
       ConnectorOrderParameter bestOrderParameter; 
       pandora::CaloHitList deleteConnectionCaloHitList;
 
       // find the best connector with the smallest order parameter
-      for(ConnectorList::const_iterator connectorIter = backwardConnectorList.begin(), connectorEndIter = backwardConnectorList.end() ;
-          connectorEndIter != connectorIter ; ++connectorIter)
+	  for(int iCon = 0; iCon < backwardConnectorVector.size(); ++iCon)
       {
-        const Connector *pConnector = *connectorIter;
+        const Connector *pConnector = backwardConnectorVector.at(iCon);
         const CaloHit *pFromCaloHit = pConnector->GetFrom();
         const pandora::CartesianVector connectorVector = pConnector->GetVector(FORWARD_DIRECTION);
         const float distance = pConnector->GetLength();
@@ -198,22 +168,15 @@ namespace arbor_content
         vars.push_back( distance );
 	
         HistogramManager::CreateFill("ConnectorProperties", "evtNumber:angle:distance", vars);
-        ///////////////////////////////
-
-		///////
-	  //std::cout << "  --- vector1 ref: " << referenceVector.GetX() << ", " << referenceVector.GetY() << ", " 
-		      //  << referenceVector.GetZ() << std::endl;
-	  //std::cout << "  --- vector2 con: " << connectorVector.GetX() << ", " << connectorVector.GetY() << ", " 
-		      //  << connectorVector.GetZ() << "  *** angle: " << angle << std::endl;
 
 		const unsigned int creationStage = pConnector->GetCreationStage();
 		//std::cout << "connector creation at stage: " << creationStage << std::endl;
 
 		// different weights for fwd and bwd
 	    const unsigned int nConnectors = ArborContentApi::GetConnectorList(pFromCaloHit, FORWARD_DIRECTION).size() + 
-			5 * ArborContentApi::GetConnectorList(pFromCaloHit, BACKWARD_DIRECTION).size();
+			100 * ArborContentApi::GetConnectorList(pFromCaloHit, BACKWARD_DIRECTION).size();
 
-		ConnectorOrderParameter orderParameter(distance, angle, nConnectors, creationStage);
+		ConnectorOrderParameter orderParameter(distance, angle, nConnectors, creationStage, pFromCaloHit->GetPositionVector());
 
         if(orderParameter < bestOrderParameter)
         {
