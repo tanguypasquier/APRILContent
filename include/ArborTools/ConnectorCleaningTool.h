@@ -69,6 +69,22 @@ public:
 			               std::pow(m_distance, m_orderParameterDistancePower);
 	}
 
+	bool operator==(ConnectorOrderParameter& a) const
+	{
+		if( m_creationStage == a.m_creationStage &&
+		    m_openingAngle == a.m_openingAngle &&
+			m_distance == a.m_distance &&
+			m_nConnectons == a.m_nConnectons &&
+			m_fromHitPos == a.m_fromHitPos )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 	bool operator<(const ConnectorOrderParameter& a) const
 	{
 		//std::cout << " ---+++ small angle range: " << m_smallAngleRange << std::endl;
@@ -90,9 +106,9 @@ public:
 			return m_nConnectons > a.m_nConnectons;
 		}
 
-		// if all parameters but position are the same, just take position
-		if(m_nConnectons == a.m_nConnectons)
+		if(m_nConnectons == a.m_nConnectons && m_orderParameter == a.m_orderParameter)
 		{
+		    // if all parameters but position are the same, just take position to sort the hit
 			if(!(m_fromHitPos == a.m_fromHitPos))
 			{
 			    return ( m_fromHitPos.GetX() < a.m_fromHitPos.GetX() || 
@@ -101,8 +117,11 @@ public:
 			}
 			else
 			{
-				std::cout << "Connector are completely the same." << std::endl;
-				throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+				//std::cout << "Connector are completely the same." << std::endl;
+				//std::cout << "m_fromHitPos1: " << m_fromHitPos.GetX() << ", " << m_fromHitPos.GetY() << ", " << m_fromHitPos.GetZ() << std::endl;
+				//std::cout << "m_fromHitPos2: " << a.m_fromHitPos.GetX() << ", " << a.m_fromHitPos.GetY() << ", " << a.m_fromHitPos.GetZ() << std::endl;
+				//throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+				return false;
 			}
 		}
 

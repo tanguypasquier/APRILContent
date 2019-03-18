@@ -176,7 +176,8 @@ namespace arbor_content
 	    const unsigned int nConnectors = ArborContentApi::GetConnectorList(pFromCaloHit, FORWARD_DIRECTION).size() + 
 			100 * ArborContentApi::GetConnectorList(pFromCaloHit, BACKWARD_DIRECTION).size();
 
-		ConnectorOrderParameter orderParameter(distance, angle, nConnectors, creationStage, pFromCaloHit->GetPositionVector());
+		auto& hitPos = pFromCaloHit->GetPositionVector();
+		ConnectorOrderParameter orderParameter(distance, angle, nConnectors, creationStage, hitPos);
 
         if(orderParameter < bestOrderParameter)
         {
