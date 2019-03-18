@@ -34,6 +34,9 @@
 #include "Pandora/StatusCodes.h"
 #include "Pandora/PandoraInternal.h"
 
+#include "ArborObjects/Connector.h"
+#include "ArborObjects/CaloHit.h"
+
 namespace pandora { class Cluster; class Track; class Pandora; }
 
 namespace arbor_content
@@ -72,6 +75,8 @@ namespace arbor_content
     static bool SortTracksByEnergy(const pandora::Track *const pLhs, const pandora::Track *const pRhs);
   
 	static bool SortTracksByMomentum(const pandora::Track* const pLhs, const pandora::Track* const pRhs);
+    static bool SortHitsByPosition(const pandora::CaloHit* const pLhs, const pandora::CaloHit *const pRhs);
+    static bool SortConnectorsByFromPosition(const arbor_content::Connector* const pLhs, const arbor_content::Connector* const pRhs);
 
     /**
      *  @brief  SortClusterByOmegaTracks class

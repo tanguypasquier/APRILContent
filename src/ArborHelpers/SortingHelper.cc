@@ -125,6 +125,46 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
+  bool SortingHelper::SortHitsByPosition(const pandora::CaloHit* const pLhs, const pandora::CaloHit *const pRhs)
+  {
+	  if(pLhs==nullptr || pRhs==nullptr) return pLhs < pRhs;
+
+	  auto& posL = pLhs->GetPositionVector();
+	  auto& posR = pRhs->GetPositionVector();
+
+	  if(posL.GetX() != posR.GetX())
+	  {
+		  return posL.GetX() < posR.GetX();
+	  }
+
+	  if(posL.GetY() != posR.GetY())
+	  {
+		  return posL.GetY() < posR.GetY();
+	  }
+
+	  return posL.GetZ() < posR.GetZ();
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  bool SortingHelper::SortConnectorsByFromPosition(const arbor_content::Connector* const pLhs, const arbor_content::Connector *const pRhs)
+  {
+	  if(pLhs==nullptr || pRhs==nullptr) return pLhs < pRhs;
+
+	  auto& posL = pLhs->GetFrom()->GetPositionVector();
+	  auto& posR = pRhs->GetFrom()->GetPositionVector();
+
+	  if(posL.GetX() != posR.GetX())
+	  {
+		  return posL.GetX() < posR.GetX();
+	  }
+
+	  if(posL.GetY() != posR.GetY())
+	  {
+		  return posL.GetY() < posR.GetY();
+	  }
+
+	  return posL.GetZ() < posR.GetZ();
+  }
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   SortingHelper::SortClusterByOmegaTracks::SortClusterByOmegaTracks(const pandora::Pandora *const pPandora) :
