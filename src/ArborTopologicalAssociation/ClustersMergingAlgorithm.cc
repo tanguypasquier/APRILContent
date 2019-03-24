@@ -67,16 +67,15 @@ namespace arbor_content
 
 		mergingMap[startingCluster] = allClustersToMerge;
 
-		std::cout << " --- clu " << i << ": " << startingCluster << ", clusters to merge: " << allClustersToMerge.size() << std::endl;
+		std::cout << " --- clu " << i << ": " << startingCluster << ", E: " << startingCluster->GetHadronicEnergy() 
+			      << ", clusters to merge: " << allClustersToMerge.size() << std::endl;
 
 #if 0
 		for(auto cluToMerge : allClustersToMerge)
 		{
-			//auto& cluToMerge = allClustersToMerge.at(iClu);
-
 			if(cluToMerge != nullptr)
 			{
-				//ArborContentApi::MergeAndDeleteClusters(*this, startingCluster, cluToMerge);
+				std::cout << "  ---> merge E: " << cluToMerge->GetHadronicEnergy() << std::endl;
 			}
 		}
 #endif

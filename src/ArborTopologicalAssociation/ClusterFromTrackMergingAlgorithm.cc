@@ -178,7 +178,8 @@ namespace arbor_content
 		auto associatedCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(clu));
 
 #if __DEBUG__
-		std::cout << "     ---> SearchProperClusters from starting cluster: " << clu << std::endl;
+		std::cout << "     ---> SearchProperClusters from starting cluster: " << clu 
+			<< ", track E: " << track->GetEnergyAtDca() << std::endl;
 #endif
 
 		std::vector<ArborCluster*> properClusters;

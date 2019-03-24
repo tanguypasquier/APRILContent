@@ -9,6 +9,8 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborCheating/CheatingTrackToClusterMatching.h"
+#include "ArborHelpers/HistogramHelper.h"
+#include "ArborUtility/EventPreparationAlgorithm.h"
 #include "ArborApi/ArborContentApi.h"
 
 #define __DEBUG__ 0
@@ -381,6 +383,14 @@ namespace arbor_content
 			std::cout << "cluster: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy() 
 				      << " - merge cluster: " << clu << ", E: " << clu->GetHadronicEnergy() << std::endl;
 #endif
+
+	        std::vector<float> vars;
+	        vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+	        vars.push_back( mainCluster->GetHadronicEnergy() );
+	        vars.push_back( clu->GetHadronicEnergy() );
+		        
+			HistogramManager::CreateFill("CheatingTrackToClusterMatching", "evtNum:clusterEnergy:mergeEnergy", vars);
+
 		    ArborContentApi::MergeAndDeleteClusters(*this, mainCluster, clu);
 		}
 	}
