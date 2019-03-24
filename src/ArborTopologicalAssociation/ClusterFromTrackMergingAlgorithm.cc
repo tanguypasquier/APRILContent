@@ -226,7 +226,7 @@ namespace arbor_content
 		  float clusterTrackAngle = trackPointAtCaloClusterDistance.GetOpeningAngle(trackMomentumAtCalo);
 
 		  float m_maxClusterTrackAngle = 0.3;
-		  if(clusterTrackAngle > m_maxClusterTrackAngle ) continue;
+		  if(clusterTrackAngle > m_maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
 
 #if __DEBUG__
 		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 

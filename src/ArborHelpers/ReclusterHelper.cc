@@ -42,6 +42,8 @@ namespace arbor_content
     for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
       trackEnergySum += (*trackIter)->GetEnergyAtDca();
 
+	// FIXME
+	// not the same for ECAL and HCAL
     const float hadronicEnergyResolution(pandora.GetSettings()->GetHadronicEnergyResolution());
 
     if ((trackEnergySum < std::numeric_limits<float>::epsilon()) || (hadronicEnergyResolution < std::numeric_limits<float>::epsilon()))

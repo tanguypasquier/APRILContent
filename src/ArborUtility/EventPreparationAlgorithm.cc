@@ -80,6 +80,7 @@ pandora::StatusCode EventPreparationAlgorithm::Run()
         else if(pandora::HCAL == (*hitIter)->GetHitType())
         {
 			// FIXME
+			//std::cout << "hit input: " << (*hitIter)->GetInputEnergy() << ", E: " << (*hitIter)->GetHadronicEnergy() << std::endl;
             hcalCaloHitList.push_back(*hitIter);
             //if (!hcalCaloHitList.push_back(*hitIter).second)
             //    return pandora::STATUS_CODE_ALREADY_PRESENT;
