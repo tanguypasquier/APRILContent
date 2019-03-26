@@ -134,6 +134,8 @@ public:
 	 */
 	static pandora::StatusCode GetCentroidDistance(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
 			float &centroidDistance);
+  
+	static float GetHadronicEnergyInECAL(const pandora::Cluster *const pCluster);
 
 	/**
 	 *  @brief  Get the closest distance approach between all the hits of the clusters
