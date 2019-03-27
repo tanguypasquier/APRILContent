@@ -10,10 +10,11 @@
 
 #include "ArborCheating/CheatingTrackToClusterMatching.h"
 #include "ArborHelpers/HistogramHelper.h"
+#include "ArborHelpers/ClusterHelper.h"
 #include "ArborUtility/EventPreparationAlgorithm.h"
 #include "ArborApi/ArborContentApi.h"
 
-#define __DEBUG__ 0
+//#define __DEBUG__ 1
 
 namespace arbor_content
 {
@@ -380,8 +381,14 @@ namespace arbor_content
 			auto clu = iter;
 
 #if __DEBUG__
+			float oldChi = -1.e6;
+			float newChi = -1.e6;
+
+			ClusterHelper::GetChiClusterMerging(this->GetPandora(), mainCluster, clu, oldChi, newChi);
+
 			std::cout << "cluster: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy() 
-				      << " - merge cluster: " << clu << ", E: " << clu->GetHadronicEnergy() << std::endl;
+				      << " - merge cluster: " << clu << ", E: " << clu->GetHadronicEnergy() 
+					  << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
 #endif
 
 	        std::vector<float> vars;

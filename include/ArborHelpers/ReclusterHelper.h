@@ -140,7 +140,9 @@ public:
      *  @return the chi value for the suitability of the track/cluster associations
      */
     static float GetTrackClusterCompatibility(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster,
-        const pandora::TrackList &trackList, float energyResolutionFactor = 1.f);
+        const pandora::TrackList &trackList);
+  
+	static float GetTrackClusterCompatibility(const pandora::Pandora &pandora, const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *const pClusterToMerge, const pandora::TrackList &trackList);
 
     /**
      *  @brief  Evaluate the compatibility of a cluster with its associated tracks. Reclustering can be used to split up a
@@ -153,8 +155,7 @@ public:
      *
      *  @return the chi value for the suitability of the track/cluster associations
      */
-    static float GetTrackClusterCompatibility(const pandora::Pandora &pandora, const float clusterEnergy, const float trackEnergy,
-    		float energyResolutionFactor = 1.f);
+    static float GetTrackClusterCompatibility(const pandora::Pandora &pandora, const float clusterEnergy, const float trackEnergy);
 
     /**
      *  @brief  Extract the recluster result

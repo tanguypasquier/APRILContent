@@ -27,6 +27,7 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborHelpers/ReclusterHelper.h"
+#include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/CaloHitHelper.h"
 
 //#define __DEBUG__
@@ -34,8 +35,7 @@
 namespace arbor_content
 {
 
-  float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::TrackList &trackList,
-      float energyResolutionFactor)
+  float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const pandora::TrackList &trackList)
   {
     float trackEnergySum(0.);
 
@@ -43,33 +43,36 @@ namespace arbor_content
       trackEnergySum += (*trackIter)->GetEnergyAtDca();
 
 	// FIXME
-	// not the same for ECAL and HCAL
-    const float hadronicEnergyResolution(pandora.GetSettings()->GetHadronicEnergyResolution());
+	// suppose resolutions are not the same for ECAL and HCAL; currently assume 0.3 for ECAL.
+    const float hadronicEnergyResolutionECAL = 0.3;
+    const float hadronicEnergyResolutionHCAL(pandora.GetSettings()->GetHadronicEnergyResolution());
 
-    if ((trackEnergySum < std::numeric_limits<float>::epsilon()) || (hadronicEnergyResolution < std::numeric_limits<float>::epsilon()))
+    if ((trackEnergySum < std::numeric_limits<float>::epsilon()) || (hadronicEnergyResolutionHCAL < std::numeric_limits<float>::epsilon()))
       throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
-	const pandora::ParticleId *const pParticleId(pandora.GetPlugins()->GetParticleId());
+	const float comparisonEnergy = pCluster->GetTrackComparisonEnergy(pandora);
 
-    float comparisonEnergy(0.);
+	float hadronicEnergyInECAL = ClusterHelper::GetHadronicEnergyInECAL(pCluster);
+	float hadronicEnergyInHCAL = trackEnergySum - hadronicEnergyInECAL;
 
-    if (pParticleId->IsEmShower(pCluster))
-    {   
-        comparisonEnergy = pCluster->GetElectromagneticEnergy();
-    }       
-    else
-    {   
-        comparisonEnergy = pCluster->GetHadronicEnergy();
-    }
+	float hadronicEnergyResolution;
 
-	//comparisonEnergy = pCluster->GetTrackComparisonEnergy(pandora);
-    const float sigmaE(hadronicEnergyResolution * trackEnergySum / std::sqrt(trackEnergySum));
-    const float chi((comparisonEnergy - trackEnergySum) / (energyResolutionFactor * sigmaE));
+	// FIXME
+	if(hadronicEnergyInECAL > 0.01 && hadronicEnergyInHCAL/hadronicEnergyInECAL < 0.4)
+	{
+		hadronicEnergyResolution = hadronicEnergyResolutionECAL;
+	}
+	else
+	{
+		hadronicEnergyResolution = hadronicEnergyResolutionHCAL;
+	}
+
+    const float sigmaE( hadronicEnergyResolution * std::sqrt(trackEnergySum));
+    const float chi((comparisonEnergy - trackEnergySum)/sigmaE);
 
 #ifdef __DEBUG__
-	std::cout << "Sigma_h: " << hadronicEnergyResolution << ", trackEnergySum: " << trackEnergySum  
-		      << ", Track_comp: " << comparisonEnergy << ", energyResolutionFactor: " << energyResolutionFactor
-		      << ", chi: " << chi << std::endl;
+	std::cout << "SigmaE: " << hadronicEnergyResolution << ", trackEnergySum: " << trackEnergySum  
+		      << ", comparisonEnergy: " << comparisonEnergy << ", chi: " << chi << std::endl;
 #endif
 
     return chi;
@@ -77,8 +80,55 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const float clusterEnergy, const float trackEnergy,
-      float energyResolutionFactor)
+  float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *const pClusterToMerge, const pandora::TrackList &trackList)
+  {
+    float trackEnergySum(0.);
+
+    for (pandora::TrackList::const_iterator trackIter = trackList.begin(), trackIterEnd = trackList.end(); trackIter != trackIterEnd; ++trackIter)
+      trackEnergySum += (*trackIter)->GetEnergyAtDca();
+
+	// FIXME
+	// suppose resolutions are not the same for ECAL and HCAL; currently assume 0.3 for ECAL.
+    const float hadronicEnergyResolutionECAL = 0.3;
+    const float hadronicEnergyResolutionHCAL(pandora.GetSettings()->GetHadronicEnergyResolution());
+
+    if ((trackEnergySum < std::numeric_limits<float>::epsilon()) || (hadronicEnergyResolutionHCAL < std::numeric_limits<float>::epsilon()))
+      throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+
+	const float comparisonEnergy = pClusterToEnlarge->GetTrackComparisonEnergy(pandora) + 
+		pClusterToMerge->GetTrackComparisonEnergy(pandora);
+
+	float hadronicEnergyInECAL = ClusterHelper::GetHadronicEnergyInECAL(pClusterToEnlarge) 
+		                         + ClusterHelper::GetHadronicEnergyInECAL(pClusterToMerge);
+
+	float hadronicEnergyInHCAL = trackEnergySum - hadronicEnergyInECAL;
+
+	float hadronicEnergyResolution;
+
+	// FIXME
+	if(hadronicEnergyInECAL > 0.01 && hadronicEnergyInHCAL/hadronicEnergyInECAL < 0.4)
+	{
+		hadronicEnergyResolution = hadronicEnergyResolutionECAL;
+	}
+	else
+	{
+		hadronicEnergyResolution = hadronicEnergyResolutionHCAL;
+	}
+
+    const float sigmaE( hadronicEnergyResolution * std::sqrt(trackEnergySum));
+    const float chi((comparisonEnergy - trackEnergySum)/sigmaE);
+
+#ifdef __DEBUG__
+	std::cout << "SigmaE: " << hadronicEnergyResolution << ", trackEnergySum: " << trackEnergySum  
+		      << ", comparisonEnergy: " << comparisonEnergy << ", chi: " << chi << std::endl;
+#endif
+
+    return chi;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float ReclusterHelper::GetTrackClusterCompatibility(const pandora::Pandora &pandora, const float clusterEnergy, const float trackEnergy)
   {
     const float hadronicEnergyResolution(pandora.GetSettings()->GetHadronicEnergyResolution());
 
@@ -86,7 +136,7 @@ namespace arbor_content
       throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 
     const float sigmaE(hadronicEnergyResolution * trackEnergy / std::sqrt(trackEnergy));
-    const float chi((clusterEnergy - trackEnergy) / (energyResolutionFactor * sigmaE));
+    const float chi((clusterEnergy - trackEnergy)/sigmaE);
 
     return chi;
   }

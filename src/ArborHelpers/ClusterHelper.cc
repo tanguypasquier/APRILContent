@@ -475,6 +475,7 @@ namespace arbor_content
     if(trackList.empty())
       return pandora::STATUS_CODE_INVALID_PARAMETER;
 
+#if 0
     float trackEnergySum(0.f);
     float trackEnergySumCombined(0.f);
 
@@ -489,6 +490,10 @@ namespace arbor_content
 
     oldChi = ReclusterHelper::GetTrackClusterCompatibility(pandora, clusterEnergy, trackEnergySum);
     newChi = ReclusterHelper::GetTrackClusterCompatibility(pandora, clusterEnergyCombined, trackEnergySumCombined);
+#endif
+
+    oldChi = ReclusterHelper::GetTrackClusterCompatibility(pandora, pClusterToEnlarge, trackList);
+    newChi = ReclusterHelper::GetTrackClusterCompatibility(pandora, pClusterToEnlarge, pClusterToMerge, trackListCombined);
 
     return pandora::STATUS_CODE_SUCCESS;
   }
