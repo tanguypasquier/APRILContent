@@ -138,20 +138,34 @@ namespace arbor_content
     pandora::CaloHitList clusterCaloHitList;
     pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
 
+	const pandora::CaloHitList& isolatedCaloHitList = pCluster->GetIsolatedCaloHitList();
+	clusterCaloHitList.insert(clusterCaloHitList.begin(), isolatedCaloHitList.begin(), isolatedCaloHitList.end());
+
 	unsigned int nHits = 0;
 
 	pandora::CartesianVector cluCentroid(0., 0., 0.);
+	pandora::CartesianVector cluCentroidWithConnector(0., 0., 0.);
 
 	for(auto caloHit : clusterCaloHitList)
 	{
 		const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(caloHit));
-		if(!ArborContentApi::HasAnyConnection(pCaloHit)) continue;
-
 		cluCentroid += pCaloHit->GetPositionVector();
-		++nHits;
+
+		if(ArborContentApi::HasAnyConnection(pCaloHit))
+		{
+			cluCentroidWithConnector += pCaloHit->GetPositionVector();
+			++nHits;
+		}
 	}
 
-	centroid = cluCentroid * (1./nHits);
+	if(nHits>=2)
+	{
+		centroid = cluCentroidWithConnector * (1./nHits);
+	}
+	else
+	{
+		centroid = cluCentroid * (1./clusterCaloHitList.size());
+	}
 
     return pandora::STATUS_CODE_SUCCESS;
   }

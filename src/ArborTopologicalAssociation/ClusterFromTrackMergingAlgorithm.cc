@@ -352,7 +352,7 @@ namespace arbor_content
   void ClusterFromTrackMergingAlgorithm::GetNearbyClusters(pandora::Cluster* cluster, 
 		  const std::vector<arbor_content::ArborCluster*>& clusterVector, std::vector<arbor_content::ArborCluster*>& clustersInRange)
   {
-      pandora::CartesianVector centroid(0., 0., 0);
+      pandora::CartesianVector centroid(0., 0., 0.);
 	  ClusterHelper::GetCentroid(cluster, centroid);
 
 	  const float distance = m_maxStartingClusterDistance;
