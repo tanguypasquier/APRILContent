@@ -116,7 +116,7 @@ namespace arbor_content
 				vars.push_back( oldChi );
 				vars.push_back( newChi );
 
-#if 1
+#if 0
 				if(pClusterMCParticle != pClusterToMergeMCParticle)
 				
 				//if(pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) == 0.)
@@ -129,7 +129,7 @@ namespace arbor_content
 #endif
 
 				// FIXME
-				//if(newChi>1.) continue;
+				if(newChi>1.) continue;
 
 		        HistogramManager::CreateFill("ClustersMergingAlgorithm", "evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
 

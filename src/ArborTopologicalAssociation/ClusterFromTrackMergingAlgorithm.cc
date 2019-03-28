@@ -318,7 +318,17 @@ namespace arbor_content
 		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
 		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
 
-		  ClustersOrderParameter orderParameter(clusterTrackAngle, angle, axisDistance);
+		  std::vector<float> clusterParameters;
+		  clusterParameters.push_back(clusterTrackAngle);
+		  clusterParameters.push_back(angle);
+		  clusterParameters.push_back(axisDistance);
+
+		  std::vector<float> parameterPowers;
+		  parameterPowers.push_back(5.);
+		  parameterPowers.push_back(1.);
+		  parameterPowers.push_back(0.);
+
+		  ClustersOrderParameter orderParameter(clusterParameters, parameterPowers);
 		  nearbyCluster->SetOrderParameterWithMother(startingCluster, orderParameter);
 
 		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
@@ -445,14 +455,6 @@ namespace arbor_content
 		{
 			auto mother = mothers.at(iMother);
 			ClustersOrderParameter orderParameter = cluster->GetOrderParameterWithMother(mother);
-
-#if __DEBUG__
-			std::cout << "    ---> cluster mother " << mother << ", para: " 
-				<< orderParameter.m_clusterTrackAngle << ", "
-				<< orderParameter.m_clustersAxisAngle << ", "
-	            << orderParameter.m_clustersAxisDistance << ", "
-				<< orderParameter.m_orderParameter << std::endl;
-#endif
 
 			if(orderParameter < bestOrderParameter)
 			{

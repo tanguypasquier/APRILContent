@@ -50,49 +50,34 @@ class ClustersOrderParameter
 {
 public:
 	ClustersOrderParameter()
-	: m_clusterTrackAngle(std::numeric_limits<float>::max()),
-	  m_clustersAxisAngle(std::numeric_limits<float>::max()),
-	  m_clustersAxisDistance(std::numeric_limits<float>::max()),
-	  m_creationStage(-1)
+	: m_orderParameter(std::numeric_limits<float>::max())
 	{
-		//std::cout << "best ClustersOrderParameter: " << m_distance << ", " << m_openingAngle << ", " << m_orderParameter << std::endl;
-		//std::cout << " --- small angle range: " << m_smallAngleRange << std::endl;
-		m_orderParameter = std::numeric_limits<float>::max();
 	}
 
-	ClustersOrderParameter(float clusterTrackAngle, float clustersAxisAngle, float clustersAxisDistance, unsigned int creationStage = -1) 
-	: m_clusterTrackAngle(clusterTrackAngle), 
-	  m_clustersAxisAngle(clustersAxisAngle),
-	  m_clustersAxisDistance(clustersAxisDistance),
-	  m_creationStage(creationStage)
+	ClustersOrderParameter(std::vector<float> parameters, std::vector<float> powers) 
+	: m_parameters(parameters), m_powers(powers)
 	{
-		const float orderParameterAnglePower = 5.;
-		const float orderParameterAxisAnglePower = 1.;
-		const float orderParameterAxisDistancePower = 0.; 
+		if(m_parameters.size() != m_powers.size())
+		{
+			std::cout << "parameters and powers length are not consistent!" << std::endl;
+            throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+		}
 
-        m_orderParameter = std::pow(m_clusterTrackAngle,    orderParameterAnglePower) * 
-			               std::pow(m_clustersAxisAngle,    orderParameterAxisAnglePower) * 
-			               std::pow(m_clustersAxisDistance, orderParameterAxisDistancePower);
+		m_orderParameter = 1.;
+
+		for(int i = 0; i < m_parameters.size(); ++i)
+		{
+			m_orderParameter *= std::pow(m_parameters.at(i), m_powers.at(i));
+		}
 	}
 
 	bool operator<(const ClustersOrderParameter& a) const
 	{
-		//std::cout << " ---+++ small angle range: " << m_smallAngleRange << std::endl;
-
-#if 0
-		if( m_creationStage != a.m_creationStage )
-		{
-			return m_creationStage < a.m_creationStage;
-		}
-#endif
-
 		return m_orderParameter < a.m_orderParameter;
 	}
 
-	float                     m_clusterTrackAngle;
-	float                     m_clustersAxisAngle;
-	float                     m_clustersAxisDistance;
-	unsigned int              m_creationStage;
+	std::vector<float>        m_parameters;        
+	std::vector<float>        m_powers;        
 
 	float                     m_orderParameter;
 };
