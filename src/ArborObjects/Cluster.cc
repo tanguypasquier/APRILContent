@@ -33,12 +33,27 @@ namespace arbor_content
       pandora::Cluster(parameters),
 	  m_axis(0., 0., 0.), m_intercept(0., 0., 0.), m_centroid(0., 0., 0.),
 	  m_startingPoint(0., 0., 0.), m_endpoint(0., 0., 0.),
-	  m_isRoot(false), m_hasMotherAtSearch(false), m_motherAtSearch(nullptr)
+	  m_isPhoton(false), m_isRoot(false), m_hasMotherAtSearch(false), m_motherAtSearch(nullptr)
   {
   }
 
   ArborCluster::~ArborCluster()
   {
+  }
+
+  void ArborCluster::Reset()
+  {
+	m_motherCluster.clear();
+
+	m_clustersToMerge.clear();
+	m_nearbyClusters.clear();
+
+	m_isPhoton = false;
+	m_isRoot = false;
+	m_hasMotherAtSearch = false;
+	m_motherAtSearch = nullptr;
+
+	m_orderWithMotherClusters.clear();
   }
 
   float ArborCluster::GetMergedHadronicEnergy()
@@ -60,9 +75,19 @@ namespace arbor_content
 	  return m_motherCluster;
   }
 
+  void ArborCluster::ClearMotherCluster()
+  {
+	  m_motherCluster.clear();
+  }
+
   const std::set<ArborCluster*>& ArborCluster::GetClustersToMerge() const
   {
 	  return m_clustersToMerge;
+  }
+
+  void ArborCluster::ClearClustersToMerge()
+  {
+	  m_clustersToMerge.clear();
   }
 
   void ArborCluster::GetAllClustersToMerge(std::set<ArborCluster*>& allClustersToMerge) const

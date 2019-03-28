@@ -133,6 +133,7 @@ private:
 	float                            m_minClusterFitCosOpeningAngle2;
 
 	float                            m_maxStartingClusterDistance;
+	float                            m_maxClusterTrackAngle;
 	float                            m_maxClusterDistanceToMerge;
 
 	arma::mat m_clusterCentroidsMatrix;

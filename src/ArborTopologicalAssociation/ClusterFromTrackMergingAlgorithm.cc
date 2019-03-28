@@ -61,11 +61,16 @@ namespace arbor_content
 	for(int i = 0; i < clusterVector.size(); ++i)
 	{
 		auto pCluster = clusterVector.at(i);
+		
+		pCluster->Reset();
 
-		//std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() << std::endl;
 		pandora::CartesianVector centroid(0., 0., 0);
 		ClusterHelper::GetCentroid(pCluster, centroid);
 		pCluster->SetCentroid(centroid);
+#if __DEBUG__
+		std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
+			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << std::endl;
+#endif
 		
 		const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
 		bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraClu);
@@ -226,8 +231,8 @@ namespace arbor_content
 
 		  float clusterTrackAngle = trackPointAtCaloClusterDistance.GetOpeningAngle(trackMomentumAtCalo);
 
-		  float m_maxClusterTrackAngle = 0.3;
-		  if(clusterTrackAngle > m_maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
+		  float maxClusterTrackAngle = m_maxClusterTrackAngle;
+		  if(clusterTrackAngle > maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
 
 #if __DEBUG__
 		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 
@@ -254,12 +259,6 @@ namespace arbor_content
 		  {
 			  std::cout << "GetClosestDistanceApproach failed" << std::endl;
 		  }
-
-		  ////////////////////////
-
-		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
-	  
-	      //------
 
 		  //GetClustersDirection
 		  auto& startingClusterAxis = startingCluster->GetAxis();
@@ -321,6 +320,8 @@ namespace arbor_content
 
 		  ClustersOrderParameter orderParameter(clusterTrackAngle, angle, axisDistance);
 		  nearbyCluster->SetOrderParameterWithMother(startingCluster, orderParameter);
+
+		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
       }
 		  
 	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
@@ -732,6 +733,10 @@ namespace arbor_content
     m_maxStartingClusterDistance = 1000.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxStartingClusterDistance", m_maxStartingClusterDistance));
+		  
+	m_maxClusterTrackAngle = 0.3;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxClusterTrackAngle", m_maxClusterTrackAngle));
 
 	m_maxClusterDistanceToMerge = 15.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

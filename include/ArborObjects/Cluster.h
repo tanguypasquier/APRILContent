@@ -107,7 +107,10 @@ public:
 
 	std::vector<ArborCluster*>& GetMotherCluster();
 
+    void  Reset();
+    void  ClearMotherCluster();
 	const std::set<ArborCluster*>& GetClustersToMerge() const;
+	void  ClearClustersToMerge();
     void  GetAllClustersToMerge(std::set<ArborCluster*>& allClustersToMerge) const;
 	const std::vector<ArborCluster*>& GetNearbyClusters() const;
 	const ArborCluster* GetMotherAtSearch() const;
