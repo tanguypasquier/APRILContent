@@ -128,8 +128,7 @@ namespace arbor_content
 				}
 #endif
 
-				// FIXME
-				if(newChi>1.) continue;
+				if(newChi > m_maxChi) continue;
 
 		        HistogramManager::CreateFill("ClustersMergingAlgorithm", "evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
 
@@ -184,8 +183,12 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode ClustersMergingAlgorithm::ReadSettings(const pandora::TiXmlHandle /* xmlHandle */)
+  pandora::StatusCode ClustersMergingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle )
   {
+	m_maxChi = 1.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxChi", m_maxChi));
+
     return pandora::STATUS_CODE_SUCCESS;
   }
 

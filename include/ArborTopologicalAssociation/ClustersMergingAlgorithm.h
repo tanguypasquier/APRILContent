@@ -61,6 +61,7 @@ private:
 	pandora::StatusCode GetEligibleClusters(std::vector<ArborCluster*>& clusterVector) const;
 
 private:
+	float               m_maxChi;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
