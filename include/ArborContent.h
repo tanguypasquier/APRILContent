@@ -112,6 +112,7 @@
 #include "ArborTopologicalAssociation/MatchTrackWithStartingClusterAlgorithm.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm2.h"
+#include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm3.h"
 #include "ArborTopologicalAssociation/ClosebySeedMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/ClusterFragmentMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/SurroundingHitsMergingAlgorithm.h"
@@ -190,6 +191,7 @@ public:
     d("MatchTrackWithStartingCluster",       arbor_content::MatchTrackWithStartingClusterAlgorithm::Factory) \
     d("ClusterFromTrackMerging",             arbor_content::ClusterFromTrackMergingAlgorithm::Factory) \
     d("ClusterFromTrackMerging2",            arbor_content::ClusterFromTrackMergingAlgorithm2::Factory) \
+    d("ClusterFromTrackMerging3",            arbor_content::ClusterFromTrackMergingAlgorithm3::Factory) \
     d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \
     d("ClusterFragmentMerging",              arbor_content::ClusterFragmentMergingAlgorithm::Factory) \
     d("SurroundingHitsMerging",              arbor_content::SurroundingHitsMergingAlgorithm::Factory) \
