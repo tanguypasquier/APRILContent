@@ -386,8 +386,13 @@ namespace arbor_content
 
 			ClusterHelper::GetChiClusterMerging(this->GetPandora(), mainCluster, clu, oldChi, newChi);
 
-			std::cout << "cluster: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy() 
-				      << " - merge cluster: " << clu << ", E: " << clu->GetHadronicEnergy() 
+			float meanDensityMain = 1.e6;
+			float meanDensity = 1.e6;;
+			ClusterHelper::GetMeanDensity(mainCluster, meanDensityMain);
+			ClusterHelper::GetMeanDensity(clu, meanDensity);
+
+			std::cout << "cluster: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy() << ", density: " << meanDensityMain
+				      << " - merge cluster: " << clu << ", E: " << clu->GetHadronicEnergy() << ", density: " << meanDensity
 					  << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
 #endif
 
