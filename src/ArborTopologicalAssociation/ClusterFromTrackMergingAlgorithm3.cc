@@ -26,6 +26,8 @@
  */
 
 #include "Pandora/AlgorithmHeaders.h"
+#include "PandoraMonitoringApi.h"
+#include "PandoraMonitoring.h"
 
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm3.h"
 
@@ -128,16 +130,27 @@ namespace arbor_content
 	}
 
 	m_clustersToMerge.clear();
+
+	pandora::ClusterVector photonCandidates;
 	
 	for(int i = 0; i < clusterVector.size(); ++i)
 	{
 		auto cluster = clusterVector.at(i);
 
-		if(cluster->GetAssociatedTrackList().size() == 0)
+		if( (cluster->GetAssociatedTrackList().size() == 0) && 
+			(cluster->IsPhoton() == false) )
 		{
 			m_clustersToMerge.push_back(cluster);
 		}
+
+		if(cluster->IsPhoton())
+		{
+			cluster->SetRoot();
+			photonCandidates.push_back(cluster);
+		}
 	}
+
+	std::sort(photonCandidates.begin(), photonCandidates.end(), pandora_monitoring::PandoraMonitoring::SortClustersByHadronicEnergy);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -191,15 +204,31 @@ namespace arbor_content
 		SearchProperClusters(track, associatedCluster, properClusters);
 	}
 
+	for(auto photonCandidate : photonCandidates)
+	{
+		// Reset the cluster for search
+	    for(int i = 0; i < clusterVector.size(); ++i)
+		{
+			auto clu = clusterVector.at(i);
+			clu->SetHasMotherAtSearch(false);
+		}
+
+		auto arborCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(photonCandidate));
+		std::vector<ArborCluster*> properClusters;
+		SearchProperClusters(arborCluster, properClusters);
+	}
+
 	// clean clusters
 	CleanClusterForMerging(clusterVector);
 	
     return pandora::STATUS_CODE_SUCCESS;
   }
 
-  void ClusterFromTrackMergingAlgorithm3::SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
+  void ClusterFromTrackMergingAlgorithm3::SearchProperClusters(ArborCluster* startingCluster, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters)
   {
+	  // This function is to merge em fragments
+
 #if __DEBUG__
 	  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
 	  float startCluEnergy = startingCluster->GetHadronicEnergy();
@@ -218,7 +247,7 @@ namespace arbor_content
 	  {
 		  auto nearbyCluster = nearbyClusters.at(i);
 
-		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot()) 
+		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot() || nearbyCluster->IsPhoton()) 
 		  {
 			  continue;
 		  }
@@ -240,21 +269,132 @@ namespace arbor_content
 			  << ", E: " << nearbyCluster->GetHadronicEnergy() << ", angle: " << clusterTrackAngle << std::endl;
 #endif
 
+		  // GetClustersDistance
+		  float closestDistance = 1.e6;
+
 		  try
 		  {
-			  if(nearbyCluster->IsPhoton()) continue;
+			  ClusterHelper::GetClosestDistanceApproach(startingCluster, nearbyCluster, closestDistance, false);
 		  }
           catch(pandora::StatusCodeException &)
 		  {
-			  std::cout << "IsPhoton failed" << std::endl;
+			  std::cout << "GetClosestDistanceApproach failed" << std::endl;
 		  }
+
+		  float emEnergyInECAL = ClusterHelper::GetElectromagneticEnergyInECAL(nearbyCluster);
+		  float emEnergyRatio  = emEnergyInECAL / nearbyCluster->GetElectromagneticEnergy();
+		  // Since it is for merging em fragments in ECAL
+		  if(emEnergyRatio < 0.9) continue;
+		  
+		  // FIXME
+		  // It should be compact
+		  const float m_maxClosestDistance = 30.;
+		  if(closestDistance > m_maxClosestDistance) continue;
+
+		  //GetClustersDirection
+		  auto& startingClusterAxis = startingCluster->GetAxis();
+
+		  //startingCluster->GetAxis();
+		  float angle = 1.e6;
+
+		  auto& nearbyClusterCOG = nearbyCluster->GetCentroid();
+		  auto& startingClusterCOG = startingCluster->GetCentroid();
+		  auto directionOfCentroids = nearbyClusterCOG - startingClusterCOG;
+
+		  if( directionOfCentroids.GetMagnitudeSquared() * startingClusterAxis.GetMagnitudeSquared() > std::numeric_limits<float>::epsilon() )
+		  {
+			  try
+			  {
+				  angle = directionOfCentroids.GetOpeningAngle(startingClusterAxis);
+			  }
+			  catch(pandora::StatusCodeException &)
+			  {
+				  std::cout << "GetOpeningAngle failed" << std::endl;
+			  }
+		  }
+
+		  auto& nearbyClusterAxis = nearbyCluster->GetAxis();
+		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
+		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
+
+		  std::vector<float> clusterParameters;
+		  clusterParameters.push_back(closestDistance);
+		  clusterParameters.push_back(angle); // axis angle
+		  clusterParameters.push_back(axisDistance);
+
+		  std::vector<float> parameterPowers;
+		  parameterPowers.push_back(5.);
+		  parameterPowers.push_back(3.);
+		  parameterPowers.push_back(1.);
+
+		  ClustersOrderParameter orderParameter(clusterParameters, parameterPowers);
+		  nearbyCluster->SetOrderParameterWithMother(startingCluster, orderParameter);
+
+		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
+      }
+		  
+	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
+	  {
+		  auto nearbyCluster = it->second;
+
+		  properClusters.push_back(nearbyCluster);
+		  nearbyCluster->SetHasMotherAtSearch();
+	  }
+
+	  startingCluster->SetClustersToMerge(properClusters);
+  }
+
+  void ClusterFromTrackMergingAlgorithm3::SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
+		  std::vector<arbor_content::ArborCluster*>& properClusters)
+  {
+	  
+#if __DEBUG__
+	  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
+	  float startCluEnergy = startingCluster->GetHadronicEnergy();
+
+	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
+	  std::cout << "cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+#endif
+
+	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
+	  GetNearbyClusters(startingCluster, m_clustersToMerge, nearbyClusters);
+
+	  // map for sorting all nearby clusters by closest distance
+	  std::multimap<float, ArborCluster*> clusterDistanceMap;
+
+	  for(int i = 0; i < nearbyClusters.size(); ++i)
+	  {
+		  auto nearbyCluster = nearbyClusters.at(i);
+
+		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot() || nearbyCluster->IsPhoton()) 
+		  {
+			  continue;
+		  }
+
+#if 0
+		  // angle selection
+		  pandora::CartesianVector trackPointAtCalo = pTrack->GetTrackStateAtCalorimeter().GetPosition();
+		  pandora::CartesianVector trackMomentumAtCalo = pTrack->GetTrackStateAtCalorimeter().GetMomentum();
+
+		  pandora::CartesianVector trackPointAtCaloClusterDistance = nearbyCluster->GetCentroid() - trackPointAtCalo;
+
+		  float clusterTrackAngle = trackPointAtCaloClusterDistance.GetOpeningAngle(trackMomentumAtCalo);
+		  float m_maxClusterTrackAngle = 0.3;
+		  if(clusterTrackAngle > m_maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
+#endif
+
+#if __DEBUG__
+		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 
+			  << ", E: " << nearbyCluster->GetHadronicEnergy() << ", angle: " << clusterTrackAngle << std::endl;
+#endif
+
 
 		  // GetClustersDistance
 		  float closestDistance = 1.e6;
 
 		  try
 		  {
-			  ClusterHelper::GetClosestDistanceApproach(startingCluster, nearbyCluster, closestDistance);
+			  ClusterHelper::GetClosestDistanceApproach(startingCluster, nearbyCluster, closestDistance, false);
 		  }
           catch(pandora::StatusCodeException &)
 		  {
@@ -262,7 +402,27 @@ namespace arbor_content
 		  }
 
 		  // FIXME
-		  const float m_maxClosestDistance = 30.;
+		  float emEnergyInECAL = ClusterHelper::GetElectromagneticEnergyInECAL(nearbyCluster);
+		  float emEnergyRatio  = emEnergyInECAL / nearbyCluster->GetElectromagneticEnergy();
+
+		  float m_maxClosestDistance = 1.e6;
+
+		  if(emEnergyRatio > 0.6) 
+		  {
+		      // mainly in ECAL 
+		      m_maxClosestDistance = 50.;
+
+			  float meanDensity = 1.;
+			  ClusterHelper::GetMeanDensity(nearbyCluster, meanDensity);
+
+			  // seems a fragment (but of charged or neutral ??? )
+			  if(meanDensity<0.1) m_maxClosestDistance = 100;
+		  }
+		  else
+		  {
+		      m_maxClosestDistance = 200.;
+		  }
+
 		  if(closestDistance > m_maxClosestDistance) continue;
 
 		  //GetClustersDirection
@@ -331,7 +491,7 @@ namespace arbor_content
 
 		  std::vector<float> parameterPowers;
 		  parameterPowers.push_back(5.);
-		  parameterPowers.push_back(2.);
+		  parameterPowers.push_back(3.);
 		  parameterPowers.push_back(1.);
 
 		  ClustersOrderParameter orderParameter(clusterParameters, parameterPowers);
