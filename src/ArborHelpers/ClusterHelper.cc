@@ -207,6 +207,26 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
+  float ClusterHelper::GetElectromagneticEnergyInECAL(const pandora::Cluster *const pCluster)
+  {
+	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+	  const pandora::CaloHitList& isolatedCaloHitList = pCluster->GetIsolatedCaloHitList();
+
+	  pandora::CaloHitList caloHitList;
+	  orderedCaloHitList.FillCaloHitList(caloHitList);
+	  caloHitList.insert(caloHitList.begin(), isolatedCaloHitList.begin(), isolatedCaloHitList.end());
+
+	  float emEnergyInECAL = 0.;
+
+	  for(auto iter = caloHitList.begin(); iter != caloHitList.end(); ++iter)
+	  {
+		  auto pCaloHit = *iter;
+		  if(pCaloHit->GetHitType() == pandora::ECAL) emEnergyInECAL += pCaloHit->GetElectromagneticEnergy();
+	  }
+
+	  return emEnergyInECAL;
+  }
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
       float &closestDistance)
