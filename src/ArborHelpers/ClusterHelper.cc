@@ -229,7 +229,7 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
-      float &closestDistance)
+      float &closestDistance, bool onlyUseConnectedHit)
   {
     closestDistance = std::numeric_limits<float>::max();
 
@@ -247,7 +247,7 @@ namespace arbor_content
         endIter != iter ; ++iter)
     {
       const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
-	  if(!ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+	  if(onlyUseConnectedHit && !ArborContentApi::HasAnyConnection(pCaloHit)) continue;
       const float distance = (pCaloHit->GetPositionVector() - point).GetMagnitude();
 
       if(closestDistance > distance)
@@ -282,7 +282,7 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
-      float &closestDistance)
+      float &closestDistance, bool onlyUseConnectedHit)
   {
     closestDistance = std::numeric_limits<float>::max();
 
@@ -299,7 +299,7 @@ namespace arbor_content
         endIter != iter ; ++iter)
     {
       const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
-	  if(!ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+	  if(onlyUseConnectedHit && !ArborContentApi::HasAnyConnection(pCaloHit)) continue;
 
       float closestHitDistanceApproach(std::numeric_limits<float>::max());
 

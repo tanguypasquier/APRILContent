@@ -123,7 +123,7 @@ public:
 	 *  @param  closestDistance the closest distance approach between the point and the cluster, unit mm
 	 */
 	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
-			float &closestDistance);
+			float &closestDistance, bool onlyUseConnectedHit = true);
 
 	/**
 	 *  @brief  Get the distance between the cluster centroid and the given position vector
@@ -147,7 +147,7 @@ public:
 	 *  @param  closestDistance the closest distance approach between the two clusters, unit mm
 	 */
 	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
-			float &closestDistance);
+			float &closestDistance, bool onlyUseConnectedHit = true);
 
 	/**
 	 *  @brief  Get the number of calo hit seeds in the cluster
