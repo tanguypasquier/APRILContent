@@ -90,8 +90,8 @@ namespace arbor_content
 
 		for(auto& clusterToMerge : clustersToMerge)
 		{
-			float oldChi = -1.e6;
-			float newChi = -1.e6;
+			float oldChi = 1.e6;
+			float newChi = 1.e6;
 
 			ClusterHelper::GetChiClusterMerging(this->GetPandora(), clusterToEnlarge, clusterToMerge, oldChi, newChi);
 
