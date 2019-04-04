@@ -119,6 +119,51 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode ClusterHelper::GetTrackClusterDistance(const pandora::TrackState *const pTrackState, const pandora::Cluster *const pCluster, const unsigned int maxSearchLayer, const float parallelDistanceCut, const float minTrackClusterCosAngle, float &trackClusterDistance)
+  {
+       if ((0 == pCluster->GetNCaloHits()) || (pCluster->GetInnerPseudoLayer() > maxSearchLayer))
+           return pandora::STATUS_CODE_NOT_FOUND;
+   
+       const pandora::CartesianVector &trackPosition(pTrackState->GetPosition());
+       const pandora::CartesianVector trackDirection(pTrackState->GetMomentum().GetUnitVector());
+   
+       if (trackDirection.GetCosOpeningAngle(pCluster->GetInitialDirection()) < minTrackClusterCosAngle)
+           return pandora::STATUS_CODE_NOT_FOUND;
+   
+       bool distanceFound(false);
+       float minDistanceSquared(std::numeric_limits<float>::max());
+       const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+   
+       for (pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.begin(), iterEnd = orderedCaloHitList.end(); iter != iterEnd; ++iter)
+       {   
+           if (iter->first > maxSearchLayer)
+               break;
+   
+           for (pandora::CaloHitList::const_iterator hitIter = iter->second->begin(), hitIterEnd = iter->second->end(); hitIter != hitIterEnd; ++hitIter)
+           {
+               const pandora::CartesianVector positionDifference((*hitIter)->GetPositionVector() - trackPosition);
+   
+               if (std::fabs(trackDirection.GetDotProduct(positionDifference)) > parallelDistanceCut)
+                   continue;
+   
+               const float perpendicularDistanceSquared((trackDirection.GetCrossProduct(positionDifference)).GetMagnitudeSquared());
+   
+               if (perpendicularDistanceSquared < minDistanceSquared)
+               {
+                   minDistanceSquared = perpendicularDistanceSquared;
+                   distanceFound = true;
+               }
+           }
+       }
+   
+       if (!distanceFound)
+           return pandora::STATUS_CODE_NOT_FOUND;
+   
+       trackClusterDistance = std::sqrt(minDistanceSquared);
+       return pandora::STATUS_CODE_SUCCESS;
+  }
+
+
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode ClusterHelper::GetCentroid(const pandora::Cluster *const pCluster, pandora::CartesianVector &centroid)
@@ -240,8 +285,10 @@ namespace arbor_content
       return pandora::STATUS_CODE_FAILURE;
 
     pandora::CaloHitList clusterCaloHitList;
-    // FIXME::IsoHit ...
     pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+	const pandora::CaloHitList& isolatedCaloHitList = pCluster->GetIsolatedCaloHitList();
+	clusterCaloHitList.insert(clusterCaloHitList.begin(), isolatedCaloHitList.begin(), isolatedCaloHitList.end());
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
         endIter != iter ; ++iter)
@@ -295,6 +342,9 @@ namespace arbor_content
     pandora::CaloHitList clusterCaloHitList1;
     pCluster1->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList1);
 
+	const pandora::CaloHitList& isolatedCaloHitList = pCluster1->GetIsolatedCaloHitList();
+	clusterCaloHitList1.insert(clusterCaloHitList1.begin(), isolatedCaloHitList.begin(), isolatedCaloHitList.end());
+
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList1.begin() , endIter = clusterCaloHitList1.end() ;
         endIter != iter ; ++iter)
     {
@@ -304,7 +354,7 @@ namespace arbor_content
       float closestHitDistanceApproach(std::numeric_limits<float>::max());
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster2,
-          pCaloHit->GetPositionVector(), closestHitDistanceApproach));
+          pCaloHit->GetPositionVector(), closestHitDistanceApproach, onlyUseConnectedHit));
 
       if(closestHitDistanceApproach < closestDistance)
         closestDistance = closestHitDistanceApproach;
@@ -331,6 +381,57 @@ namespace arbor_content
 
     return pandora::STATUS_CODE_SUCCESS;
   }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  bool ClusterHelper::ContainsHitInOuterSamplingLayer(const pandora::Cluster *const pCluster)
+  {
+	  return (0 != pCluster->GetNHitsInOuterLayer());
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+   bool ClusterHelper::IsClusterLeavingDetector(const pandora::Cluster *const pCluster, const unsigned int nOuterLayersToExamine,
+       const unsigned int nMipLikeOccupiedLayers, const unsigned int nShowerLikeOccupiedLayers, const float showerLikeEnergyInOuterLayers)
+   {
+       if (!ClusterHelper::ContainsHitInOuterSamplingLayer(pCluster))
+           return false;
+   
+       if (ClusterHelper::ContainsHitType(pCluster, pandora::MUON))
+           return true;
+   
+       // Examine occupancy and energy content of outer layers
+       const unsigned int outerLayer(pCluster->GetOuterPseudoLayer());
+       const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+   
+       if (nOuterLayersToExamine > outerLayer)
+           throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+   
+       unsigned int nOccupiedOuterLayers(0);
+       float hadronicEnergyInOuterLayers(0.f);
+   
+       for (unsigned int iLayer = outerLayer - nOuterLayersToExamine; iLayer <= outerLayer; ++iLayer)
+       {   
+   		pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.find(iLayer);
+   
+           if (orderedCaloHitList.end() != iter)
+           {
+               nOccupiedOuterLayers++;
+   
+               for (pandora::CaloHitList::const_iterator hitIter = iter->second->begin(), hitIterEnd = iter->second->end(); hitIter != hitIterEnd; ++hitIter)
+               {
+                   hadronicEnergyInOuterLayers += (*hitIter)->GetHadronicEnergy();
+               }   
+           }   
+       }   
+   
+       if ((nOccupiedOuterLayers >= nMipLikeOccupiedLayers) ||
+           ((nOccupiedOuterLayers == nShowerLikeOccupiedLayers) && (hadronicEnergyInOuterLayers > showerLikeEnergyInOuterLayers)))
+       {   
+           return true;
+       }   
+       
+       return false;
+   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -867,4 +968,3 @@ namespace arbor_content
   }
 
 } 
-

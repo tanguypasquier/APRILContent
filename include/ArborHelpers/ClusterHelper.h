@@ -149,6 +149,9 @@ public:
 	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
 			float &closestDistance, bool onlyUseConnectedHit = true);
 
+	static pandora::StatusCode GetTrackClusterDistance(const pandora::TrackState *const pTrackState, const pandora::Cluster *const pCluster,
+	const unsigned int maxSearchLayer, const float parallelDistanceCut, const float minTrackClusterCosAngle, float &trackClusterDistance);
+
 	/**
 	 *  @brief  Get the number of calo hit seeds in the cluster
 	 *
@@ -166,6 +169,13 @@ public:
 	 *  @param  maxDistanceToDetectorEdge the distance to the detector edge for a target calo hit
 	 *  @param  minNHitsNearEdges the minimum number of calo hit near the detector edge to consider the cluster as leaving the detector
 	 */
+
+	 static bool IsClusterLeavingDetector(const pandora::Cluster *const pCluster, const unsigned int nOuterLayersToExamine = 4, 
+			 const unsigned int nMipLikeOccupiedLayers = 4, const unsigned int nShowerLikeOccupiedLayers = 3, 
+			 const float showerLikeEnergyInOuterLayers = 1.f);
+
+	 static bool ContainsHitInOuterSamplingLayer(const pandora::Cluster *const pCluster);
+
 	static bool IsClusterLeavingDetector(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, unsigned int nOuterLayersToExamine = 3,
 			float maxDistanceToDetectorEdge = 50.f, unsigned int minNHitsNearEdges = 3);
 
