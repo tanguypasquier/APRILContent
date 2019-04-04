@@ -68,6 +68,7 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 		}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////
+#if 0
 	    std::vector<float> vars;
 	    vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	    vars.push_back( float(clu->GetNCaloHits()) );
@@ -76,6 +77,7 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 		HistogramManager::CreateFill("ClusterBeforeMerging", 
 		"evtNumber:nCaloHit:clusterEMEnergy:clusterHadEnergy", vars);
+#endif
 	}
 
 	for(auto it = mcpClusterListMap.begin(); it != mcpClusterListMap.end(); ++it)
@@ -96,6 +98,14 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 				if(cluIt == clusterList.begin()) continue;
 
 		        const pandora::Cluster* cluToMerge = *cluIt;
+
+	            std::vector<float> vars;
+	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+	            vars.push_back( float(firstCluster->GetHadronicEnergy()) );
+	            vars.push_back( float(cluToMerge->GetHadronicEnergy()) );
+
+		        HistogramManager::CreateFill("ClusterBeforeMerging", "evtNumber:mainClusterEnergy:clusterEnergy", vars);
+
 				ArborContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
 			}
 
