@@ -120,11 +120,15 @@
 #include "ArborTopologicalAssociation/MipFragmentMergingAlg.h"
 #include "ArborTopologicalAssociation/FragmentRemovalAlgorithm.h"
 #include "ArborTopologicalAssociation/ConeBasedMergingAlgorithm.h"
+#include "ArborTopologicalAssociation/MainFragmentRemovalAlgorithm.h"
 
-#include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/TrackClusterAssociationMVAAlgorithm.h"
 #include "ArborTrackClusterAssociation/UnassociatedTrackRecoveryAlg.h"
+#include "ArborTrackClusterAssociation/TrackClusterAssociationAlgorithm.h"
 #include "ArborTrackClusterAssociation/LoopingTrackAssociationAlgorithm.h"
+#include "ArborTrackClusterAssociation/TrackRecoveryAlgorithm.h"
+#include "ArborTrackClusterAssociation/TrackRecoveryHelixAlgorithm.h"
+#include "ArborTrackClusterAssociation/TrackRecoveryInteractionsAlgorithm.h"
 
 #include "ArborUtility/AlgorithmConfiguration.h"
 #include "ArborUtility/EventPreparationAlgorithm.h"
@@ -199,10 +203,14 @@ public:
     d("MipFragmentMerging",                  arbor_content::MipFragmentMergingAlg::Factory) \
     d("FragmentRemoval",                     arbor_content::FragmentRemovalAlgorithm::Factory) \
     d("ConeBasedMerging",                    arbor_content::ConeBasedMergingAlgorithm::Factory) \
-    d("TrackClusterAssociation",             arbor_content::TrackClusterAssociationAlgorithm::Factory) \
+    d("MainFragmentRemoval",                 arbor_content::MainFragmentRemovalAlgorithm::Factory) \
     d("TrackClusterAssociationMVA",          arbor_content::TrackClusterAssociationMVAAlgorithm::Factory) \
     d("UnassociatedTrackRecovery",           arbor_content::UnassociatedTrackRecoveryAlg::Factory) \
+    d("TrackClusterAssociation",             arbor_content::TrackClusterAssociationAlgorithm::Factory) \
     d("LoopingTrackAssociation",             arbor_content::LoopingTrackAssociationAlgorithm::Factory) \
+    d("TrackRecovery",                       arbor_content::TrackRecoveryAlgorithm::Factory) \
+    d("TrackRecoveryHelix",                  arbor_content::TrackRecoveryHelixAlgorithm::Factory) \
+    d("TrackRecoveryInteractions",           arbor_content::TrackRecoveryInteractionsAlgorithm::Factory) \
     d("EventPreparation",                    arbor_content::EventPreparationAlgorithm::Factory) \
     d("ClusterPreparation",                  arbor_content::ClusterPreparationAlgorithm::Factory) \
     d("TrackPreparation",                    arbor_content::TrackPreparationAlgorithm::Factory) \

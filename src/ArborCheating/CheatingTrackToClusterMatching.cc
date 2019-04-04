@@ -14,7 +14,7 @@
 #include "ArborUtility/EventPreparationAlgorithm.h"
 #include "ArborApi/ArborContentApi.h"
 
-//#define __DEBUG__ 1
+#define __DEBUG__ 1
 
 namespace arbor_content
 {
@@ -379,6 +379,8 @@ namespace arbor_content
 		for( auto iter : clusters)
 		{
 			auto clu = iter;
+		    bool isMainPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(mainCluster);
+		    bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(clu);
 
 #if __DEBUG__
 			float oldChi = -1.e6;
@@ -393,15 +395,19 @@ namespace arbor_content
 
 			std::cout << "cluster: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy() << ", density: " << meanDensityMain
 				      << " - merge cluster: " << clu << ", E: " << clu->GetHadronicEnergy() << ", density: " << meanDensity
+					  << ", isPhotonID: " << isPhoton
 					  << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+		
 #endif
 
 	        std::vector<float> vars;
 	        vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	        vars.push_back( mainCluster->GetHadronicEnergy() );
 	        vars.push_back( clu->GetHadronicEnergy() );
+	        vars.push_back( float(isMainPhoton) );
+	        vars.push_back( float(isPhoton) );
 		        
-			HistogramManager::CreateFill("CheatingTrackToClusterMatching", "evtNum:clusterEnergy:mergeEnergy", vars);
+			HistogramManager::CreateFill("CheatingTrackToClusterMatching", "evtNum:clusterEnergy:mergeEnergy:isMainPhoton:isPhoton", vars);
 
 		    ArborContentApi::MergeAndDeleteClusters(*this, mainCluster, clu);
 		}

@@ -46,7 +46,6 @@
 #include <algorithm>
 
 #define __DEBUG__ 0
-//#define __DEBUG__ 1
 
 
 namespace arbor_content
@@ -74,6 +73,18 @@ namespace arbor_content
 		
 		const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
 		bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraClu);
+
+		/// help by MC truth
+#if 0
+		try
+		{
+			isPhoton = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId() == 22;
+		}
+		catch(pandora::StatusCodeException &)
+		{
+		}
+#endif
+
 		pCluster->SetPhoton(isPhoton);
 
 		try
@@ -236,8 +247,7 @@ namespace arbor_content
 #endif
 
 #if __DEBUG__
-		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 
-			  << ", E: " << nearbyCluster->GetHadronicEnergy() << ", angle: " << clusterTrackAngle << std::endl;
+		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
 #endif
 
 		  try

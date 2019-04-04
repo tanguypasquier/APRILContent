@@ -48,7 +48,6 @@
 #include <algorithm>
 
 #define __DEBUG__ 0
-//#define __DEBUG__ 1
 
 
 namespace arbor_content
@@ -69,14 +68,28 @@ namespace arbor_content
 		pandora::CartesianVector centroid(0., 0., 0);
 		ClusterHelper::GetCentroid(pCluster, centroid);
 		pCluster->SetCentroid(centroid);
-#if __DEBUG__
-		std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
-			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << std::endl;
-#endif
 		
 		const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
 		bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraClu);
+
+		/// help by MC truth
+#if __USEMCP__
+		try
+		{
+			isPhoton = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId() == 22;
+		}
+		catch(pandora::StatusCodeException &)
+		{
+			std::cout << "MCP issue: " << pandoraClu << std::endl;
+		}
+#endif
+
 		pCluster->SetPhoton(isPhoton);
+
+#if __DEBUG__
+		std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
+			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << ", isPoton: " << isPhoton << std::endl;
+#endif
 
 		try
 		{
@@ -234,7 +247,7 @@ namespace arbor_content
 	  float startCluEnergy = startingCluster->GetHadronicEnergy();
 
 	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-	  std::cout << "cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+	  std::cout << " SearchProperClusters2: cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
 #endif
 
 	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
@@ -247,7 +260,7 @@ namespace arbor_content
 	  {
 		  auto nearbyCluster = nearbyClusters.at(i);
 
-		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot() || nearbyCluster->IsPhoton()) 
+		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot()) 
 		  {
 			  continue;
 		  }
@@ -265,8 +278,7 @@ namespace arbor_content
 #endif
 
 #if __DEBUG__
-		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 
-			  << ", E: " << nearbyCluster->GetHadronicEnergy() << ", angle: " << clusterTrackAngle << std::endl;
+		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
 #endif
 
 		  // GetClustersDistance
@@ -290,6 +302,24 @@ namespace arbor_content
 		  // It should be compact
 		  const float m_maxClosestDistance = 30.;
 		  if(closestDistance > m_maxClosestDistance) continue;
+
+#if __USEMCP__
+		  // help by MC truth
+		  try
+		  {
+			  const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+		      auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
+
+		      if( pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId()) == 0. && 
+		          nearbyCluster->GetHadronicEnergy() > 0. )
+		      {
+		        		continue;
+		      }
+		  }
+		  catch(pandora::StatusCodeException &)
+		  {
+		  }
+#endif
 
 		  //GetClustersDirection
 		  auto& startingClusterAxis = startingCluster->GetAxis();
@@ -353,7 +383,7 @@ namespace arbor_content
 	  float startCluEnergy = startingCluster->GetHadronicEnergy();
 
 	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-	  std::cout << "cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+	  std::cout << " SearchProperClusters1: cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
 #endif
 
 	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
@@ -384,8 +414,7 @@ namespace arbor_content
 #endif
 
 #if __DEBUG__
-		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 
-			  << ", E: " << nearbyCluster->GetHadronicEnergy() << ", angle: " << clusterTrackAngle << std::endl;
+		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
 #endif
 
 
@@ -406,24 +435,52 @@ namespace arbor_content
 		  float emEnergyRatio  = emEnergyInECAL / nearbyCluster->GetElectromagneticEnergy();
 
 		  float m_maxClosestDistance = 1.e6;
+		  float meanDensity = 1.;
 
 		  if(emEnergyRatio > 0.6) 
 		  {
 		      // mainly in ECAL 
-		      m_maxClosestDistance = 50.;
+		      m_maxClosestDistance = 200.;
 
-			  float meanDensity = 1.;
 			  ClusterHelper::GetMeanDensity(nearbyCluster, meanDensity);
 
 			  // seems a fragment (but of charged or neutral ??? )
-			  if(meanDensity<0.1) m_maxClosestDistance = 100;
+			  if(meanDensity<0.3) m_maxClosestDistance = 300;
 		  }
 		  else
 		  {
-		      m_maxClosestDistance = 200.;
+		      m_maxClosestDistance = 1000.;
 		  }
 
-		  if(closestDistance > m_maxClosestDistance) continue;
+		  //m_maxClosestDistance = 5000;
+
+		  if(closestDistance > m_maxClosestDistance) 
+		  {
+#if __DEBUG__
+			  std::cout << "emEnergyRatio: " << emEnergyRatio << ", m_maxClosestDistance: " << m_maxClosestDistance 
+				  << ", meanDensity: " << meanDensity << ", closestDistance: " << closestDistance << std::endl;
+#endif
+
+			  continue;
+		  }
+		
+#if __USEMCP__
+		  // help by MC truth
+		  try
+		  {
+			  const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+		      auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
+
+		      if( pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId()) == 0. && 
+		          nearbyCluster->GetHadronicEnergy() > 0. )
+		      {
+		        		continue;
+		      }
+		  }
+		  catch(pandora::StatusCodeException &)
+		  {
+		  }
+#endif
 
 		  //GetClustersDirection
 		  auto& startingClusterAxis = startingCluster->GetAxis();
@@ -456,7 +513,10 @@ namespace arbor_content
 		  float genericTime = 0.;
 
 		  if(pandora::STATUS_CODE_SUCCESS != helix.GetDistanceToPoint(nearbyClusterCOG, trackCluCentroidDistanceVec, genericTime))
+		  {
+			std::cout << "helix.GetDistanceToPoint failed" << std::endl;
 		  	continue;
+		  }
 
 
 #if __DEBUG__
@@ -898,7 +958,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinClusterFitCosOpeningAngle2", m_minClusterFitCosOpeningAngle2));
 
-    m_maxStartingClusterDistance = 1000.;
+    m_maxStartingClusterDistance = 2000.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxStartingClusterDistance", m_maxStartingClusterDistance));
 
