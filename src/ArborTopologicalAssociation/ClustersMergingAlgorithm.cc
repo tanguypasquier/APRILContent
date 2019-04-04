@@ -117,18 +117,15 @@ namespace arbor_content
 				vars.push_back( newChi );
 
 #if 0
-				if(pClusterMCParticle != pClusterToMergeMCParticle)
-				
-				//if(pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) == 0.)
-
-				//if( pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) == 0. && 
-				//	clusterToMerge->GetHadronicEnergy() < 1. )
+				if( pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) == 0. && 
+					clusterToMerge->GetHadronicEnergy() > 0. )
 				{
 					continue;
 				}
 #endif
 
 				if(newChi > m_maxChi) continue;
+				if(clusterToMerge->GetHadronicEnergy() > m_maxMergingEnergy) continue;
 
 		        HistogramManager::CreateFill("ClustersMergingAlgorithm", "evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
 
@@ -142,6 +139,7 @@ namespace arbor_content
 			}
 			catch(pandora::StatusCodeException &)
 			{
+				std::cout << "- MCP getting problem..." << std::endl;
 			}
 
 			ArborContentApi::MergeAndDeleteClusters(*this, clusterToEnlarge, clusterToMerge);
@@ -188,6 +186,10 @@ namespace arbor_content
 	m_maxChi = 1.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxChi", m_maxChi));
+
+	m_maxMergingEnergy = 100.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxMergingEnergy", m_maxMergingEnergy));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
