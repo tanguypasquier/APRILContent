@@ -218,6 +218,7 @@ namespace arbor_content
 
   void ArborCluster::SetMotherCluster(ArborCluster* cluster)
   {
+	  //std::cout << "The mother cluster of " << this << " is set to " << cluster << std::endl;
 	  m_motherCluster.push_back(cluster);
   }
 
@@ -283,8 +284,8 @@ namespace arbor_content
 	  }
 	  else
 	  {
-		  std::cout << "   SetOrderParameterWithMother error!"  << std::endl;
-		  throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
+		  //std::cout << "SetOrderParameterWithMother has the mother alreay!"  << std::endl; 
+		  //throw pandora::StatusCodeException(pandora::STATUS_CODE_FAILURE);
 	  }
   }
 
