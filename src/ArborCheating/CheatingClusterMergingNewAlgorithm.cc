@@ -85,7 +85,7 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 	{
 		// merge charged clusters
 		auto mcp = it->first;
-		if( pandora::PdgTable::GetParticleCharge(mcp->GetParticleId()) == 0 )
+		if( m_onlyMergeChargedCluster && pandora::PdgTable::GetParticleCharge(mcp->GetParticleId()) == 0 )
 		{
 			continue;
 		}
@@ -138,10 +138,14 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::StatusCode CheatingClusterMergingNewAlgorithm::ReadSettings(const pandora::TiXmlHandle /* xmlHandle */)
+pandora::StatusCode CheatingClusterMergingNewAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
     //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
     //    "ClusterListToTakeNewClusters", m_mergedClusterListName));
+	
+    m_onlyMergeChargedCluster = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "OnlyMergeChargedCluster", m_onlyMergeChargedCluster));
 
     return pandora::STATUS_CODE_SUCCESS;
 }

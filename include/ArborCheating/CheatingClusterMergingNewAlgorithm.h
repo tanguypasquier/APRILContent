@@ -39,6 +39,7 @@ private:
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
     std::string  m_mergedClusterListName;
+	bool m_onlyMergeChargedCluster;
 };
 
 inline pandora::Algorithm *CheatingClusterMergingNewAlgorithm::Factory::CreateAlgorithm() const
