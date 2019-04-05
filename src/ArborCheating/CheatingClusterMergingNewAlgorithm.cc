@@ -86,6 +86,7 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 		// merge charged clusters
 		auto mcp = it->first;
 		int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
+		bool isPhoton = mcp->GetParticleId() == 22; 
 
 		if( m_onlyMergeChargedCluster && clusterMCPCharge == 0 )
 		{
@@ -122,10 +123,11 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 	            vars.push_back( float(firstCluster->GetHadronicEnergy()) );
 	            vars.push_back( float(cluToMerge->GetHadronicEnergy()) );
 				vars.push_back( float(clusterMCPCharge));
+				vars.push_back( float(isPhoton));
 
 				//std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
 
-		        HistogramManager::CreateFill("CheatingClusterMerging", "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge", vars);
+		        HistogramManager::CreateFill("CheatingClusterMerging", "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isPhoton", vars);
 
 				ArborContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
 			}
