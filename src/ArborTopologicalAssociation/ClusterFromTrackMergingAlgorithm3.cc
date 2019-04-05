@@ -304,8 +304,7 @@ namespace arbor_content
 		  
 		  // FIXME
 		  // It should be compact
-		  const float m_maxClosestDistance = 80.;
-		  if(closestDistance > m_maxClosestDistance) continue;
+		  if(closestDistance > m_maxClosestPhotonDistance) continue;
 
 #if __USEMCP__
 		  // help by MC truth
@@ -967,6 +966,11 @@ namespace arbor_content
 	m_maxClusterDistanceToMerge = 15.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinClusterDistanceToMerge", m_maxClusterDistanceToMerge));
+		  
+	m_maxClosestPhotonDistance = 100.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxClosestPhotonDistance", m_maxClosestPhotonDistance));
+
 
     return pandora::STATUS_CODE_SUCCESS;
   }
