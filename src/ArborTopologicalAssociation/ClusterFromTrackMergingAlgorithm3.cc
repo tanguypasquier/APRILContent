@@ -194,6 +194,23 @@ namespace arbor_content
 		associatedCluster->SetRoot();
 	}
 
+	//
+	for(auto photonCandidate : photonCandidates)
+	{
+		// Reset the cluster for search
+	    for(int i = 0; i < clusterVector.size(); ++i)
+		{
+			auto clu = clusterVector.at(i);
+			clu->SetHasMotherAtSearch(false);
+		}
+
+		auto arborCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(photonCandidate));
+		std::vector<ArborCluster*> properClusters;
+		SearchProperClusters(arborCluster, properClusters);
+	}
+
+	//
+#if 0
 	for(auto track : *pTrackList)
 	{
 		// Reset the cluster for search
@@ -216,20 +233,7 @@ namespace arbor_content
 		std::vector<ArborCluster*> properClusters;
 		SearchProperClusters(track, associatedCluster, properClusters);
 	}
-
-	for(auto photonCandidate : photonCandidates)
-	{
-		// Reset the cluster for search
-	    for(int i = 0; i < clusterVector.size(); ++i)
-		{
-			auto clu = clusterVector.at(i);
-			clu->SetHasMotherAtSearch(false);
-		}
-
-		auto arborCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(photonCandidate));
-		std::vector<ArborCluster*> properClusters;
-		SearchProperClusters(arborCluster, properClusters);
-	}
+#endif
 
 	// clean clusters
 	CleanClusterForMerging(clusterVector);
@@ -300,7 +304,7 @@ namespace arbor_content
 		  
 		  // FIXME
 		  // It should be compact
-		  const float m_maxClosestDistance = 30.;
+		  const float m_maxClosestDistance = 80.;
 		  if(closestDistance > m_maxClosestDistance) continue;
 
 #if __USEMCP__
@@ -440,19 +444,17 @@ namespace arbor_content
 		  if(emEnergyRatio > 0.6) 
 		  {
 		      // mainly in ECAL 
-		      m_maxClosestDistance = 200.;
+		      m_maxClosestDistance = 100.;
 
 			  ClusterHelper::GetMeanDensity(nearbyCluster, meanDensity);
 
 			  // seems a fragment (but of charged or neutral ??? )
-			  if(meanDensity<0.3) m_maxClosestDistance = 300;
+			  if(meanDensity<0.3) m_maxClosestDistance = 200;
 		  }
 		  else
 		  {
-		      m_maxClosestDistance = 1000.;
+		      m_maxClosestDistance = 500.;
 		  }
-
-		  //m_maxClosestDistance = 5000;
 
 		  if(closestDistance > m_maxClosestDistance) 
 		  {
