@@ -83,8 +83,10 @@ namespace arbor_content
 
 	std::cout << "merging map size: " << mergingMap.size() << std::endl;
 
-	std::string tupleName("ClustersMergingAlgorithm_");
-	tupleName += GetInstanceName();
+	std::string tupleNameIssue("ClustersMergingAlgorithmIssue_");
+	std::string tupleNameError("ClustersMergingAlgorithmError_");
+	tupleNameIssue += GetInstanceName();
+	tupleNameError += GetInstanceName();
 
 	for(auto& mergingMapIter :  mergingMap)
 	{
@@ -145,14 +147,36 @@ namespace arbor_content
 					continue;
 				}
 
-		        HistogramManager::CreateFill(tupleName.c_str(), "evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
 
 			    if(pClusterMCParticle != pClusterToMergeMCParticle)
 			    {
-			    	std::cout << "merging error!!! main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
-			    		      << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
-							  << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
-							  << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+					if(pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId()) != 0 &&
+					   pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) != 0)
+					{
+						if(m_mergeIssue)
+						{
+			    	        std::cout << "merging issue, main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
+			    		        << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
+							    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
+							    << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+		        
+						    HistogramManager::CreateFill(tupleNameIssue.c_str(), 
+								"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
+						}
+					}
+					else
+					{
+						if(m_mergeError)
+						{
+			    	          std::cout << "merging ERROR!!! main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
+			    		        << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
+							    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
+							    << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+
+						      HistogramManager::CreateFill(tupleNameError.c_str(), 
+								"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
+						}
+					}
 			    }
 			}
 			catch(pandora::StatusCodeException &)
@@ -212,6 +236,14 @@ namespace arbor_content
 	m_useEnergyChi = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "UseEnergyChi", m_useEnergyChi));
+	
+	m_mergeIssue = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MergeIssue", m_mergeIssue));
+
+	m_mergeError = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MergeError", m_mergeError));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

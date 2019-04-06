@@ -64,6 +64,9 @@ private:
 	float               m_maxChi;
 	float               m_maxMergingEnergy;
 	bool                m_useEnergyChi;
+	bool                m_mergeIssue;
+	bool                m_mergeError;
+
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

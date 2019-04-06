@@ -390,7 +390,7 @@ namespace arbor_content
 	  float startCluEnergy = startingCluster->GetHadronicEnergy();
 
 	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-	  std::cout << " SearchProperClusters1: cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+	  std::cout << " SearchProperClusters for charged cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
 #endif
 
 	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
@@ -451,7 +451,7 @@ namespace arbor_content
 
 			  ClusterHelper::GetMeanDensity(nearbyCluster, meanDensity);
 
-			  // seems a fragment (but of charged or neutral ??? )
+			  // seems a hadronic fragment
 			  if(meanDensity<0.3) m_maxClosestDistance = 200;
 		  }
 		  else
