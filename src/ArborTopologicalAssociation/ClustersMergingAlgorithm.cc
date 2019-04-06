@@ -83,6 +83,9 @@ namespace arbor_content
 
 	std::cout << "merging map size: " << mergingMap.size() << std::endl;
 
+	std::string tupleName("ClustersMergingAlgorithm_");
+	tupleName += GetInstanceName();
+
 	for(auto& mergingMapIter :  mergingMap)
 	{
 		auto clusterToEnlarge = mergingMapIter.first;
@@ -142,7 +145,7 @@ namespace arbor_content
 					continue;
 				}
 
-		        HistogramManager::CreateFill("ClustersMergingAlgorithm", "evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
+		        HistogramManager::CreateFill(tupleName.c_str(), "evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
 
 			    if(pClusterMCParticle != pClusterToMergeMCParticle)
 			    {

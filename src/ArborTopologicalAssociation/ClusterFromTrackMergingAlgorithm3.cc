@@ -195,45 +195,49 @@ namespace arbor_content
 	}
 
 	//
-	for(auto photonCandidate : photonCandidates)
+	if(m_mergePhotonClusters)
 	{
-		// Reset the cluster for search
-	    for(int i = 0; i < clusterVector.size(); ++i)
-		{
-			auto clu = clusterVector.at(i);
-			clu->SetHasMotherAtSearch(false);
-		}
+		for(auto photonCandidate : photonCandidates)
+	    {
+	    	// Reset the cluster for search
+	        for(int i = 0; i < clusterVector.size(); ++i)
+	    	{
+	    		auto clu = clusterVector.at(i);
+	    		clu->SetHasMotherAtSearch(false);
+	    	}
 
-		auto arborCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(photonCandidate));
-		std::vector<ArborCluster*> properClusters;
-		SearchProperClusters(arborCluster, properClusters);
+	    	auto arborCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(photonCandidate));
+	    	std::vector<ArborCluster*> properClusters;
+	    	SearchProperClusters(arborCluster, properClusters);
+	    }
 	}
 
 	//
-#if 0
-	for(auto track : *pTrackList)
+    if(m_mergeChargedClusters)
 	{
-		// Reset the cluster for search
-	    for(int i = 0; i < clusterVector.size(); ++i)
-		{
-			auto clu = clusterVector.at(i);
-			clu->SetHasMotherAtSearch(false);
-		}
+		for(auto track : *pTrackList)
+	    {
+	    	// Reset the cluster for search
+	        for(int i = 0; i < clusterVector.size(); ++i)
+	    	{
+	    		auto clu = clusterVector.at(i);
+	    		clu->SetHasMotherAtSearch(false);
+	    	}
 
-		if( !(track->HasAssociatedCluster()) ) continue;
+	    	if( !(track->HasAssociatedCluster()) ) continue;
 
-		auto clu = track->GetAssociatedCluster();
-		auto associatedCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(clu));
+	    	auto clu = track->GetAssociatedCluster();
+	    	auto associatedCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(clu));
 
-#if __DEBUG__
-		std::cout << "     ---> SearchProperClusters from starting cluster: " << clu 
-			<< ", track E: " << track->GetEnergyAtDca() << std::endl;
+#if     __DEBUG__
+	    	std::cout << "     ---> SearchProperClusters from starting cluster: " << clu 
+	    		<< ", track E: " << track->GetEnergyAtDca() << std::endl;
 #endif
 
-		std::vector<ArborCluster*> properClusters;
-		SearchProperClusters(track, associatedCluster, properClusters);
+	    	std::vector<ArborCluster*> properClusters;
+	    	SearchProperClusters(track, associatedCluster, properClusters);
+	    }
 	}
-#endif
 
 	// clean clusters
 	CleanClusterForMerging(clusterVector);
@@ -967,10 +971,17 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinClusterDistanceToMerge", m_maxClusterDistanceToMerge));
 		  
-	m_maxClosestPhotonDistance = 100.;
+	m_maxClosestPhotonDistance = 80.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxClosestPhotonDistance", m_maxClosestPhotonDistance));
 
+	m_mergePhotonClusters = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MergePhotonClusters", m_mergePhotonClusters));
+
+	m_mergeChargedClusters = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MergeChargedClusters", m_mergeChargedClusters));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

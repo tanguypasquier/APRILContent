@@ -39,7 +39,11 @@ private:
     pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
 
     std::string  m_mergedClusterListName;
-	bool m_onlyMergeChargedCluster;
+
+	bool m_mergePhoton;
+   	bool m_mergeCharged;
+    bool m_mergeNeutral;
+	bool m_mergeNeutralHadron;
 };
 
 inline pandora::Algorithm *CheatingClusterMergingNewAlgorithm::Factory::CreateAlgorithm() const

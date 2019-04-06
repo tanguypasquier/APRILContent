@@ -139,6 +139,9 @@ private:
 	float                            m_maxClusterDistanceToMerge;
 	float                            m_maxClosestPhotonDistance;
 
+	bool                             m_mergePhotonClusters;
+	bool                             m_mergeChargedClusters;
+
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;
 };

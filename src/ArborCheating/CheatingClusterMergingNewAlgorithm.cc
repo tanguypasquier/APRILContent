@@ -40,6 +40,9 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 	std::cout << "cluster befor merging: " << pClusterList->size() << std::endl;
 
+	std::string tupleName("CheatingClusterMerging_");
+	tupleName += GetInstanceName();
+
 	std::map<const pandora::MCParticle* const, pandora::ClusterList> mcpClusterListMap;
 	
 	for(auto it = pClusterList->begin(); it != pClusterList->end(); ++it)
@@ -88,10 +91,10 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 		int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
 		bool isPhoton = mcp->GetParticleId() == 22; 
 
-		if( m_onlyMergeChargedCluster && clusterMCPCharge == 0 )
-		{
-			continue;
-		}
+		bool canMerge = (m_mergePhoton && isPhoton) || (m_mergeCharged && clusterMCPCharge != 0) || 
+		                (m_mergeNeutral && clusterMCPCharge == 0) || ( m_mergeNeutralHadron && (clusterMCPCharge == 0 && isPhoton == false) );
+
+	    if(!canMerge) continue;
 
 		auto clusterList = it->second;
 
@@ -127,7 +130,7 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 				//std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
 
-		        HistogramManager::CreateFill("CheatingClusterMerging", "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isPhoton", vars);
+		        HistogramManager::CreateFill(tupleName.c_str(), "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isPhoton", vars);
 
 				ArborContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
 			}
@@ -145,12 +148,21 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 pandora::StatusCode CheatingClusterMergingNewAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
-    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-    //    "ClusterListToTakeNewClusters", m_mergedClusterListName));
-	
-    m_onlyMergeChargedCluster = false;
+	m_mergePhoton        = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "OnlyMergeChargedCluster", m_onlyMergeChargedCluster));
+        "MergePhoton", m_mergePhoton));
+
+   	m_mergeCharged       = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MergeCharged", m_mergeCharged));
+
+    m_mergeNeutral       = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MergeNeutral", m_mergeNeutral));
+
+	m_mergeNeutralHadron = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MergeNeutralHadron", m_mergeNeutralHadron));
 
     return pandora::STATUS_CODE_SUCCESS;
 }
