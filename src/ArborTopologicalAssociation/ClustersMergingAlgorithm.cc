@@ -153,7 +153,7 @@ namespace arbor_content
 					if(pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId()) != 0 &&
 					   pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) != 0)
 					{
-						if(m_mergeIssue) continue;
+						if(!m_mergeIssue) continue;
 						
 			    	    std::cout << "merging issue, main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
 			    		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
@@ -165,7 +165,7 @@ namespace arbor_content
 					}
 					else
 					{
-						if(m_mergeError) continue;
+						if(!m_mergeError) continue;
 						
 			    	    std::cout << "merging ERROR!!! main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
 			    		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
