@@ -447,16 +447,16 @@ namespace arbor_content
 		  if(emEnergyRatio > 0.6) 
 		  {
 		      // mainly in ECAL 
-		      m_maxClosestDistance = 100.;
+		      m_maxClosestDistance = 50.;
 
 			  ClusterHelper::GetMeanDensity(nearbyCluster, meanDensity);
 
 			  // seems a hadronic fragment
-			  if(meanDensity<0.3) m_maxClosestDistance = 200;
+			  if(meanDensity<0.3) m_maxClosestDistance = 100;
 		  }
 		  else
 		  {
-		      m_maxClosestDistance = 500.;
+		      m_maxClosestDistance = 200.;
 		  }
 
 		  if(closestDistance > m_maxClosestDistance) 
