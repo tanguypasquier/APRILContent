@@ -139,7 +139,7 @@ private:
 
 	float                            m_maxStartingClusterDistance;
 	float                            m_maxClusterDistanceToMerge;
-	float                            m_maxClosestPhotonDistance;
+	float                            m_maxClosestFragmentDistance;
 
 	bool                             m_mergePhotonClusters;
 	bool                             m_mergeChargedClusters;

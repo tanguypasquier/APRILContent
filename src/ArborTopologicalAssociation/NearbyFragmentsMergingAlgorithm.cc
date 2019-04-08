@@ -48,6 +48,7 @@
 #include <algorithm>
 
 #define __DEBUG__ 0
+#define __DEBUG1__ 0
 #define __USEMCP__ 0
 
 namespace arbor_content
@@ -161,25 +162,25 @@ namespace arbor_content
 
 	std::cout << " === m_clusterCentroids size: " << m_clusterCentroids.size() << std::endl;
 	
-	MergeFragmentsByMC(m_clustersToMerge);
+	//MergeFragmentsByMC(m_clustersToMerge);
 
-#if 0
+#if 1
 	for(auto cluster : m_clustersToMerge)
 	{
-		// Reset the cluster for search
-	    for(int i = 0; i < m_clustersToMerge.size(); ++i)
-		{
-			auto clu = m_clustersToMerge.at(i);
-			clu->SetHasMotherAtSearch(false);
-		}
+		if(cluster->HasMotherAtSearch()) continue;
 
 		auto arborCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(cluster));
 		std::vector<ArborCluster*> properClusters;
 		SearchProperClusters(arborCluster, properClusters);
+
+		if(properClusters.size()>0)
+		{
+			arborCluster->SetRoot();
+		}
 	}
 
 	// clean clusters
-	CleanClusterForMerging(clusterVector);
+	CleanClusterForMerging(m_clustersToMerge);
 #endif
 	
     return pandora::STATUS_CODE_SUCCESS;
@@ -223,7 +224,10 @@ namespace arbor_content
 		bool isPhoton = mcp->GetParticleId() == 22; 
 		bool notMerge = isPhoton || clusterMCPCharge != 0;
 
-		//if(notMerge) continue;
+		if(notMerge) 
+		{
+			//continue;
+		}
 
 		auto clusterList = it->second;
 
@@ -251,7 +255,7 @@ namespace arbor_content
 		            std::cout << "GetClosestDistanceApproach failed" << std::endl;
 		        }
 
-				if(closestDistance>50.) continue;
+				if(closestDistance>40.) continue;
 
 #if 0
 				std::cout << " ======= Merge: " << firstCluster << ", E: " << firstCluster->GetHadronicEnergy()
@@ -286,7 +290,7 @@ namespace arbor_content
 	  {
 		  auto nearbyCluster = nearbyClusters.at(i);
 
-		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot()) 
+		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot())
 		  {
 			  continue;
 		  }
@@ -303,9 +307,6 @@ namespace arbor_content
 		  if(clusterTrackAngle > m_maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
 #endif
 
-#if __DEBUG__
-		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
-#endif
 
 		  // GetClustersDistance
 		  float closestDistance = 1.e6;
@@ -319,14 +320,11 @@ namespace arbor_content
 			  std::cout << "GetClosestDistanceApproach failed" << std::endl;
 		  }
 
-		  float emEnergyInECAL = ClusterHelper::GetElectromagneticEnergyInECAL(nearbyCluster);
-		  float emEnergyRatio  = emEnergyInECAL / nearbyCluster->GetElectromagneticEnergy();
-		  // Since it is for merging em fragments in ECAL
-		  if(emEnergyRatio < 0.9) continue;
-		  
-		  // FIXME
-		  // It should be compact
-		  if(closestDistance > m_maxClosestPhotonDistance) continue;
+		  if(closestDistance > m_maxClosestFragmentDistance) continue;
+
+#if __DEBUG__
+		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
+#endif
 
 #if __USEMCP__
 		  // help by MC truth
@@ -692,7 +690,7 @@ namespace arbor_content
 
 		auto& mothers = cluster->GetMotherCluster();
 
-#if __DEBUG__
+#if __DEBUG1__
 		std::cout << " --- cluster " << cluster << " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
 #endif
 
@@ -990,9 +988,9 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinClusterDistanceToMerge", m_maxClusterDistanceToMerge));
 		  
-	m_maxClosestPhotonDistance = 80.;
+	m_maxClosestFragmentDistance = 50.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MaxClosestPhotonDistance", m_maxClosestPhotonDistance));
+        "MaxClosestFragmentDistance", m_maxClosestFragmentDistance));
 
 	m_mergePhotonClusters = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
