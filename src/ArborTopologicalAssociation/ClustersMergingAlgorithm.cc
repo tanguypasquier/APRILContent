@@ -85,8 +85,10 @@ namespace arbor_content
 
 	std::string tupleNameIssue("ClustersMergingAlgorithmIssue_");
 	std::string tupleNameError("ClustersMergingAlgorithmError_");
+	std::string tupleNameGood("ClustersMergingAlgorithmGood_");
 	tupleNameIssue += GetInstanceName();
 	tupleNameError += GetInstanceName();
+	tupleNameGood  += GetInstanceName();
 
 	for(auto& mergingMapIter :  mergingMap)
 	{
@@ -121,8 +123,8 @@ namespace arbor_content
 	            vars.push_back( float(clusterToMerge->GetNCaloHits()) );
 	            vars.push_back( float(pClusterMCParticle == pClusterToMergeMCParticle) );
 	            vars.push_back( float(pClusterMCParticle->GetParticleId()) );
-	            vars.push_back( float(pClusterToMergeMCParticle->GetParticleId()) );
 				vars.push_back( float(pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId())) );
+	            vars.push_back( float(pClusterToMergeMCParticle->GetParticleId()) );
 				vars.push_back( float(pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())) );
 				vars.push_back( oldChi );
 				vars.push_back( newChi );
@@ -177,6 +179,11 @@ namespace arbor_content
 						
 					}
 			    }
+				else
+				{
+						HistogramManager::CreateFill(tupleNameGood.c_str(), 
+							"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
+				}
 			}
 			catch(pandora::StatusCodeException &)
 			{
