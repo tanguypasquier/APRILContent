@@ -110,6 +110,7 @@ public:
     bool HasMotherAtSearch();
     bool IsDaughter(ArborCluster* cluster);
 	bool IsPhoton();
+	bool IsFragment();
 
     void SetHasMotherAtSearch(bool hasMotherAtSearch = true);
 	void SetMotherAtSearch(ArborCluster* cluster);
@@ -131,6 +132,7 @@ public:
 
 	void SetPhoton(bool isPhoton);
 	void SetRoot();
+	void SetFragment();
 
 private:
 
@@ -155,6 +157,7 @@ protected:
 	bool m_isPhoton;
 	bool m_isRoot;
 	bool m_hasMotherAtSearch;
+	bool m_isFragment;
 
 	ArborCluster*              m_motherAtSearch;
 

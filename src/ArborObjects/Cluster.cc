@@ -158,6 +158,11 @@ namespace arbor_content
 	  return m_isRoot;
   }
 
+  bool ArborCluster::IsFragment()
+  {
+	  return m_isFragment;
+  }
+
 #if 0
   bool ArborCluster::HasMotherAtSearch()
   {
@@ -312,6 +317,11 @@ namespace arbor_content
   void ArborCluster::SetRoot()
   {
 	  m_isRoot = true;
+  }
+
+  void ArborCluster::SetFragment()
+  {
+	  m_isFragment = true;
   }
   
 } 
