@@ -121,6 +121,8 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 		        const pandora::Cluster* cluToMerge = clusterVector.at(i);
 
+                        if(firstCluster->GetAssociatedTrackList().size() > 0 && cluToMerge->GetAssociatedTrackList().size() > 0) continue;
+
 	            std::vector<float> vars;
 	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	            vars.push_back( float(firstCluster->GetHadronicEnergy()) );
