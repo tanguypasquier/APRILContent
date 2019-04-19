@@ -141,6 +141,8 @@ private:
 
 	bool                             m_mergePhotonClusters;
 	bool                             m_mergeChargedClusters;
+	bool                             m_debugOutput;
+	bool                             m_onlyUseConnectedHits;
 
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;

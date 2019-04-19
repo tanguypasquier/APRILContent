@@ -47,7 +47,6 @@
 
 #include <algorithm>
 
-#define __DEBUG__ 0
 #define __USEMCP__ 0
 
 namespace arbor_content
@@ -86,10 +85,11 @@ namespace arbor_content
 
 		pCluster->SetPhoton(isPhoton);
 
-#if __DEBUG__
-		std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
+		if(m_debugOutput)
+		{
+			std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
 			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << ", isPoton: " << isPhoton << std::endl;
-#endif
+		}
 
 		try
 		{
@@ -229,10 +229,11 @@ namespace arbor_content
 	    	auto clu = track->GetAssociatedCluster();
 	    	auto associatedCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(clu));
 
-#if     __DEBUG__
-	    	std::cout << "     ---> SearchProperClusters from starting cluster: " << clu 
-	    		<< ", track E: " << track->GetEnergyAtDca() << std::endl;
-#endif
+		    if(m_debugOutput)
+			{
+				std::cout << "     ---> SearchProperClusters from starting cluster: " << clu 
+	    		          << ", track E: " << track->GetEnergyAtDca() << std::endl;
+			}
 
 	    	std::vector<ArborCluster*> properClusters;
 	    	SearchProperClusters(track, associatedCluster, properClusters);
@@ -250,13 +251,14 @@ namespace arbor_content
   {
 	  // This function is to merge em fragments
 
-#if __DEBUG__
-	  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
-	  float startCluEnergy = startingCluster->GetHadronicEnergy();
+	  if(m_debugOutput)
+	  {
+		  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
+	      float startCluEnergy = startingCluster->GetHadronicEnergy();
 
-	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-	  std::cout << " SearchProperClusters2: cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
-#endif
+	      auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
+	      std::cout << " SearchProperClusters2: cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+	  }
 
 	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
 	  GetNearbyClusters(startingCluster, m_clustersToMerge, nearbyClusters);
@@ -285,9 +287,10 @@ namespace arbor_content
 		  if(clusterTrackAngle > m_maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
 #endif
 
-#if __DEBUG__
-		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
-#endif
+		  if(m_debugOutput)
+		  {
+			  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
+		  }
 
 		  // GetClustersDistance
 		  float closestDistance = 1.e6;
@@ -385,13 +388,14 @@ namespace arbor_content
 		  std::vector<arbor_content::ArborCluster*>& properClusters)
   {
 	  
-#if __DEBUG__
-	  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
-	  float startCluEnergy = startingCluster->GetHadronicEnergy();
+	  if(m_debugOutput)
+	  {
+		  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
+	      float startCluEnergy = startingCluster->GetHadronicEnergy();
 
-	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-	  std::cout << " SearchProperClusters for charged cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
-#endif
+	      auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
+	      std::cout << " SearchProperClusters for charged cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+	  }
 
 	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
 	  GetNearbyClusters(startingCluster, m_clustersToMerge, nearbyClusters);
@@ -420,17 +424,17 @@ namespace arbor_content
 		  if(clusterTrackAngle > m_maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
 #endif
 
-#if __DEBUG__
-		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
-#endif
-
+		  if(m_debugOutput)
+		  {
+			  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
+		  }
 
 		  // GetClustersDistance
 		  float closestDistance = 1.e6;
 
 		  try
 		  {
-			  ClusterHelper::GetClosestDistanceApproach(startingCluster, nearbyCluster, closestDistance, false);
+			  ClusterHelper::GetClosestDistanceApproach(startingCluster, nearbyCluster, closestDistance, m_onlyUseConnectedHits);
 		  }
           catch(pandora::StatusCodeException &)
 		  {
@@ -461,10 +465,11 @@ namespace arbor_content
 
 		  if(closestDistance > m_maxClosestDistance) 
 		  {
-#if __DEBUG__
-			  std::cout << "emEnergyRatio: " << emEnergyRatio << ", m_maxClosestDistance: " << m_maxClosestDistance 
-				  << ", meanDensity: " << meanDensity << ", closestDistance: " << closestDistance << std::endl;
-#endif
+		      if(m_debugOutput)
+			  {
+				  std::cout << "emEnergyRatio: " << emEnergyRatio << ", m_maxClosestDistance: " << m_maxClosestDistance 
+				            << ", meanDensity: " << meanDensity << ", closestDistance: " << closestDistance << std::endl;
+		      }
 
 			  continue;
 		  }
@@ -509,6 +514,8 @@ namespace arbor_content
 			  }
 		  }
 
+		  if(angle > 0.6) continue;
+
 		  const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField( pandora::CartesianVector(0.f, 0.f, 0.f)));
 
 		  const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
@@ -523,16 +530,16 @@ namespace arbor_content
 		  	continue;
 		  }
 
+		  if(m_debugOutput)
+		  {
+			  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
+	          //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+	          //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
+		      float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
 
-#if __DEBUG__
-		  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
-	      //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
-	      //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
-		  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
-
-		  std::cout << " --- clu: " << nearbyCluster << ", E: " << nearbyCluEnergy
-		   			<< ", trackCluCentroidDistance: " << trackCluCentroidDistance << ", angle: " << angle << std::endl;
-#endif
+		      std::cout << " --- clu: " << nearbyCluster << ", E: " << nearbyCluEnergy
+		       			<< ", trackCluCentroidDistance: " << trackCluCentroidDistance << ", angle: " << angle << std::endl;
+		  }
 
 #if 0
 		  bool isGoodAngle = (angle < 0.3) ;
@@ -586,9 +593,10 @@ namespace arbor_content
 	  }
 #endif
 		  
-#if __DEBUG__
-	  std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
-#endif
+	  if(m_debugOutput)
+	  {
+		  std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
+	  }
   }
 
   void ClusterFromTrackMergingAlgorithm3::GetNearbyClusters(pandora::Cluster* cluster, 
@@ -674,9 +682,10 @@ namespace arbor_content
 
 		auto& mothers = cluster->GetMotherCluster();
 
-#if __DEBUG__
-		std::cout << " --- cluster " << cluster << " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
-#endif
+		if(m_debugOutput)
+		{
+			std::cout << " --- cluster " << cluster << " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
+		}
 
 		// find the best one
 		ClustersOrderParameter bestOrderParameter;
@@ -703,9 +712,11 @@ namespace arbor_content
 
 				if(mother != bestCluster)
 				{
-#if __DEBUG__
-				    std::cout << " !!! cluster: " << mother << " remove cluster to merge: " << cluster << std::endl;
-#endif
+					if(m_debugOutput)
+					{
+						std::cout << " !!! cluster: " << mother << " remove cluster to merge: " << cluster << std::endl;
+					}
+
 					mother->RemoveFromClustersToMerge(cluster);
 				}
 			}
@@ -982,6 +993,16 @@ namespace arbor_content
 	m_mergeChargedClusters = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MergeChargedClusters", m_mergeChargedClusters));
+
+	m_debugOutput = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DebugOutput", m_debugOutput));
+
+	m_onlyUseConnectedHits = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "OnlyUseConnectedHits", m_onlyUseConnectedHits));
+
+
 
     return pandora::STATUS_CODE_SUCCESS;
   }
