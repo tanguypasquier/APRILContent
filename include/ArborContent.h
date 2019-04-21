@@ -113,6 +113,7 @@
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm2.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm3.h"
+#include "ArborTopologicalAssociation/ChargedFragmentsMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm4.h"
 #include "ArborTopologicalAssociation/NearbyFragmentsMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/ClosebySeedMergingAlgorithm.h"
@@ -121,6 +122,7 @@
 #include "ArborTopologicalAssociation/NearbyTrackPhotonRemovalAlg.h"
 #include "ArborTopologicalAssociation/MipFragmentMergingAlg.h"
 #include "ArborTopologicalAssociation/FragmentRemovalAlgorithm.h"
+#include "ArborTopologicalAssociation/FragmentsFindingAlgorithm.h"
 #include "ArborTopologicalAssociation/ConeBasedMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/MainFragmentRemovalAlgorithm.h"
 
@@ -198,6 +200,7 @@ public:
     d("ClusterFromTrackMerging",             arbor_content::ClusterFromTrackMergingAlgorithm::Factory) \
     d("ClusterFromTrackMerging2",            arbor_content::ClusterFromTrackMergingAlgorithm2::Factory) \
     d("ClusterFromTrackMerging3",            arbor_content::ClusterFromTrackMergingAlgorithm3::Factory) \
+    d("ChargedFragmentsMerging",             arbor_content::ChargedFragmentsMergingAlgorithm::Factory) \
     d("ClusterFromTrackMerging4",            arbor_content::ClusterFromTrackMergingAlgorithm4::Factory) \
     d("NearbyFragmentsMerging",              arbor_content::NearbyFragmentsMergingAlgorithm::Factory) \
     d("ClosebySeedMerging",                  arbor_content::ClosebySeedMergingAlgorithm::Factory) \
@@ -206,6 +209,7 @@ public:
     d("NearbyTrackPhotonRemoval",            arbor_content::NearbyTrackPhotonRemovalAlg::Factory) \
     d("MipFragmentMerging",                  arbor_content::MipFragmentMergingAlg::Factory) \
     d("FragmentRemoval",                     arbor_content::FragmentRemovalAlgorithm::Factory) \
+    d("FragmentsFinding",                    arbor_content::FragmentsFindingAlgorithm::Factory) \
     d("ConeBasedMerging",                    arbor_content::ConeBasedMergingAlgorithm::Factory) \
     d("MainFragmentRemoval",                 arbor_content::MainFragmentRemovalAlgorithm::Factory) \
     d("TrackClusterAssociationMVA",          arbor_content::TrackClusterAssociationMVAAlgorithm::Factory) \

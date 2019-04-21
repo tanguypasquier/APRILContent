@@ -33,7 +33,7 @@ namespace arbor_content
       pandora::Cluster(parameters),
 	  m_axis(0., 0., 0.), m_intercept(0., 0., 0.), m_centroid(0., 0., 0.),
 	  m_startingPoint(0., 0., 0.), m_endpoint(0., 0., 0.),
-	  m_isPhoton(false), m_isRoot(false), m_hasMotherAtSearch(false), m_motherAtSearch(nullptr)
+	  m_isPhoton(false), m_isRoot(false), m_hasMotherAtSearch(false), m_isFragment(false), m_motherAtSearch(nullptr)
   {
   }
 

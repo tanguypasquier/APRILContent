@@ -134,6 +134,14 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 		        HistogramManager::CreateFill(tupleName.c_str(), "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isPhoton", vars);
 
+				auto pArborFirstCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(firstCluster));
+				auto pArborCluToMerge = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(cluToMerge));
+
+				std::cout << " --- mainCluster " << firstCluster << ", frag: " << pArborFirstCluster->IsFragment() 
+					<< ", Ehad: " << firstCluster->GetHadronicEnergy() 
+					<< ", cluToMerge " << cluToMerge << ", frag: " << pArborCluToMerge->IsFragment() 
+					<< ", Ehad: " << cluToMerge->GetHadronicEnergy() << std::endl;
+
 				ArborContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
 			}
 
