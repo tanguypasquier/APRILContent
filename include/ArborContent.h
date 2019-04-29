@@ -123,6 +123,7 @@
 #include "ArborTopologicalAssociation/MipFragmentMergingAlg.h"
 #include "ArborTopologicalAssociation/FragmentRemovalAlgorithm.h"
 #include "ArborTopologicalAssociation/FragmentsFindingAlgorithm.h"
+#include "ArborTopologicalAssociation/PhotonCleanAlgorithm.h"
 #include "ArborTopologicalAssociation/ConeBasedMergingAlgorithm.h"
 #include "ArborTopologicalAssociation/MainFragmentRemovalAlgorithm.h"
 
@@ -210,6 +211,7 @@ public:
     d("MipFragmentMerging",                  arbor_content::MipFragmentMergingAlg::Factory) \
     d("FragmentRemoval",                     arbor_content::FragmentRemovalAlgorithm::Factory) \
     d("FragmentsFinding",                    arbor_content::FragmentsFindingAlgorithm::Factory) \
+    d("PhotonClean",                         arbor_content::PhotonCleanAlgorithm::Factory) \
     d("ConeBasedMerging",                    arbor_content::ConeBasedMergingAlgorithm::Factory) \
     d("MainFragmentRemoval",                 arbor_content::MainFragmentRemovalAlgorithm::Factory) \
     d("TrackClusterAssociationMVA",          arbor_content::TrackClusterAssociationMVAAlgorithm::Factory) \
