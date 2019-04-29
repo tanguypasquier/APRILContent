@@ -36,6 +36,7 @@
 #include "ArborHelpers/HistogramHelper.h"
 
 #include "ArborUtility/EventPreparationAlgorithm.h"
+#include "ArborHelpers/ClusterHelper.h"
 
 using namespace pandora;
 
@@ -63,17 +64,19 @@ namespace arbor_content
 
     	try
     	{
-			float hitPurity;
-			float energyPurity;
-			float ordClusterHit;
+			float hitPurity = -1.e6;
+			float energyPurity = -1.e6;
+			float ordClusterHit = -1e6;
 
-			PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GetPurity(cluster, hitPurity, energyPurity, ordClusterHit));
+			//PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GetPurity(cluster, hitPurity, energyPurity, ordClusterHit));
+			GetPurity(cluster, hitPurity, energyPurity, ordClusterHit);
 
 			if(energyPurity < 0.1) 
 			{
 				std::cout << "====== dumping cluster with low purity" << std::endl;
 			
-			    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GetPurity(cluster, hitPurity, energyPurity, ordClusterHit, true));
+			    //PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GetPurity(cluster, hitPurity, energyPurity, ordClusterHit, true));
+			    GetPurity(cluster, hitPurity, energyPurity, ordClusterHit, true);
 			}
 
 			float clusterSize = cluster->GetNCaloHits();
@@ -82,6 +85,7 @@ namespace arbor_content
             const pandora::MCParticle *const pCluMCParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
 			float pid = pCluMCParticle->GetParticleId();
 			float clusterCharge = pandora::PdgTable::GetParticleCharge(pCluMCParticle->GetParticleId());
+			float averageTime = ClusterHelper::GetAverageTime(cluster);
 	
 			std::vector<float> vars;
 	        vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
@@ -92,9 +96,10 @@ namespace arbor_content
 			vars.push_back( clusterEnergy );
 			vars.push_back( hitPurity );
 			vars.push_back( energyPurity );
+			vars.push_back( averageTime );
 
 			HistogramManager::CreateFill("ClusterPurity", 
-					"eventNumber:clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity", vars);
+					"eventNumber:clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity:averageTime", vars);
 
 			//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
 			//	      << std::endl;

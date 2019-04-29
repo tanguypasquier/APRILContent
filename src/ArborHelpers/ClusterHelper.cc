@@ -716,6 +716,31 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  float ClusterHelper::GetAverageTime(const pandora::Cluster *const pCluster)
+  {
+	  pandora::CaloHitList clusterCaloHitList;
+	  pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+	  float averageTime = 0.;
+	  float totalEnergy = 0.;
+
+	  for(auto hitIter = clusterCaloHitList.begin(); hitIter != clusterCaloHitList.end(); ++hitIter)
+	  {
+	  	auto pCaloHit = *hitIter;
+		float hitTime = pCaloHit->GetTime();
+		float hitEnergy = pCaloHit->GetHadronicEnergy();
+
+		averageTime += hitTime * hitEnergy;
+		totalEnergy += hitEnergy;
+	  }
+
+	  averageTime = averageTime / totalEnergy;
+
+	  return averageTime;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   bool ClusterHelper::DoesClusterCrossGapRegion(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const unsigned int startLayer,
       const unsigned int endLayer, const pandora::DetectorGap *&pDetectorGap, const unsigned int nSamplingPoints)
   {
