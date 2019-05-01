@@ -62,7 +62,15 @@ namespace arbor_content
 	     //int clusterPID = pClusterMCParticle->GetParticleId();
 	     //int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(clusterPID);
 
-		 bool isPhoton = pCluster->PassPhotonId(this->GetPandora()) && pCluster->GetAssociatedTrackList().empty();
+		 bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pCluster);
+#if 0
+                 bool isPhoton1 = pCluster->PassPhotonId(this->GetPandora()) && pCluster->GetAssociatedTrackList().empty();
+		 if(isPhoton != isPhoton1) 
+		 {
+			 std::cout << " --- cluster: " << pCluster << ", Ehad: " << pCluster->GetHadronicEnergy() 
+				       << ", isPhoton: " << isPhoton << ", isPhoton1: " << isPhoton1 << std::endl;
+		 }
+#endif
 	  
 		 if(isPhoton)
 		 {
