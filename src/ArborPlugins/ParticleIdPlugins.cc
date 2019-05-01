@@ -237,6 +237,13 @@ namespace arbor_content
       return false;
     }
 
+#if 0
+	bool canPrint = fabs(pCluster->GetHadronicEnergy() - 0.539404) < 1.e-5;
+
+	if(canPrint)
+	std::cout << "ArborParticleIdPlugins::ArborEmShowerId::IsMatch, cluster Ehad: " << pCluster->GetHadronicEnergy() << std::endl;
+#endif
+
     unsigned int endPseudoLayer(0);
 
     pandora::CaloHitList clusterCaloHitList;
@@ -289,12 +296,9 @@ namespace arbor_content
       return false;
     }
 
-    unsigned int startPseudoLayer(0);
+    unsigned int startPseudoLayer(1000);
 
-    if(pandora::STATUS_CODE_SUCCESS != ParticleIdHelper::GetStartingPseudoLayer(this->GetPandora(), pCluster, m_startingLayerSettings, startPseudoLayer))
-    {
-      return false;
-    }
+    startPseudoLayer = pCluster->GetShowerStartLayer(this->GetPandora());
 
     if(startPseudoLayer > m_maxStartPseudoLayer)
     {
@@ -344,6 +348,12 @@ namespace arbor_content
         {
           continue;
         }
+
+	const arbor_content::CaloHit *const pArborCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit));
+	if(!ArborContentApi::HasAnyConnection(pArborCaloHit))
+	{
+	   continue;
+	}
 
         photonFitPoints.push_back(pandora::ClusterFitPoint(pCaloHit));
       }
