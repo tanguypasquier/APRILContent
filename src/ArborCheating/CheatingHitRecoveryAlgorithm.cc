@@ -224,7 +224,7 @@ pandora::StatusCode CheatingHitRecoveryAlgorithm::AddHitsToNewClusters(MCPCaloHi
 		parameters.m_caloHitList = hitList;
 
 		const pandora::Cluster *pCluster = nullptr;
-        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::Create(*this, parameters, pCluster));
+        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ArborContentApi::CreateArborCluster(*this, parameters, pCluster));
 	}
 
 	std::cout << "newly created cluster: " << pNewClusterList->size() << std::endl;
