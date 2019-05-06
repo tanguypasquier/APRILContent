@@ -69,6 +69,8 @@ namespace arbor_content
      */
     static pandora::StatusCode GetStartingPseudoLayer(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster,
         const StartingLayerSettings &settings, unsigned int &startingPseudoLayer);
+  
+	static pandora::StatusCode GetClusterVolume(const pandora::Cluster *const pCluster, float& clusterVolume);
   };
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -100,6 +102,8 @@ public:
 	     */
 	    const pandora::CartesianVector GetEnergyWeightedCentroid(const pandora::Cluster *const pCluster, const unsigned int innerPseudoLayer,
 	        const unsigned int outerPseudoLayer) const;
+
+		static void SetRecord(bool canRecord);
 	
 	  private:
 	    ParticleIdHelper::StartingLayerSettings      m_startingLayerSettings;
@@ -109,6 +113,8 @@ public:
 	    float                                        m_maxHadronicEnergyFraction;
 	    unsigned int                                 m_minOuterEcalPseudoLayerEnergyCut;
 	    float                                        m_maxOuterEcalEnergyFraction;
+
+		static bool                                  m_canRecord;
 	  };
 	
 	  //------------------------------------------------------------------------------------------------------------------------------------------
@@ -119,10 +125,15 @@ public:
 	   */
 	  class ArborPhotonId : public pandora::ParticleIdPlugin
 	  {
-	  public:
-	    bool IsMatch(const pandora::Cluster *const pCluster) const;
-		bool IsMatch(const pandora::ParticleFlowObject *const pPfo) const;
-	    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+	    public:
+	       bool IsMatch(const pandora::Cluster *const pCluster) const;
+		   bool IsMatch(const pandora::ParticleFlowObject *const pPfo) const;
+
+		   static void SetRecord(bool canRecord);
+	       pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+	    private:
+		   static bool                               m_canRecord;
 	  };
 	
 	  //------------------------------------------------------------------------------------------------------------------------------------------
