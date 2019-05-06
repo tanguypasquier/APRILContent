@@ -57,6 +57,8 @@ private:
 
 private:
 	float                                      m_maxHitTimeForClean;
+	bool                                       m_recordPhotonIDInfo;
+	bool                                       m_recordPhotonIDResult;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

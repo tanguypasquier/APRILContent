@@ -36,6 +36,8 @@
 #include "ArborHelpers/ClusterHelper.h"
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborTools/CaloHitMergingTool.h"
+#include "ArborHelpers/HistogramHelper.h"
+#include "ArborPlugins/ParticleIdPlugins.h"
 
 namespace arbor_content
 {
@@ -50,6 +52,8 @@ namespace arbor_content
     if(pClusterList->empty())
       return pandora::STATUS_CODE_SUCCESS;
 
+	ArborParticleIdPlugins::ArborPhotonId::SetRecord(m_recordPhotonIDInfo);
+
     // loop over clusters
     for(auto clusterIter = pClusterList->begin(), clusterEndIter = pClusterList->end();
         clusterEndIter != clusterIter ; ++clusterIter)
@@ -58,13 +62,30 @@ namespace arbor_content
 
 	  try
 	  {
-		 //auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pCluster);
-	     //int clusterPID = pClusterMCParticle->GetParticleId();
-	     //int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(clusterPID);
-
 		 bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pCluster);
+
+		 if(m_recordPhotonIDResult)
+		 {
+			 auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pCluster);
+	         int clusterPID = pClusterMCParticle->GetParticleId();
+	         int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(clusterPID);
+		     float clusterEnergy = pCluster->GetElectromagneticEnergy();
+		     int clusterSize = pCluster->GetNCaloHits();
+
+
+	         std::vector<float> vars;
+	         vars.push_back( float(clusterPID) );
+	         vars.push_back( float(clusterMCPCharge) );
+	         vars.push_back( float(isPhoton) );
+	         vars.push_back( clusterEnergy );
+	         vars.push_back( float(clusterSize) );
+	         vars.push_back( float(pCluster->GetAssociatedTrackList().empty()) );
+		
+		     HistogramManager::CreateFill("PhotonID_PhotonCleanAlgorithm", "PID_MC:clusterChg_MC:isPhoton:clusterEnergy:clusterSize:noTrack", vars);
+		 }
+
 #if 0
-                 bool isPhoton1 = pCluster->PassPhotonId(this->GetPandora()) && pCluster->GetAssociatedTrackList().empty();
+         bool isPhoton1 = pCluster->PassPhotonId(this->GetPandora()) && pCluster->GetAssociatedTrackList().empty();
 		 if(isPhoton != isPhoton1) 
 		 {
 			 std::cout << " --- cluster: " << pCluster << ", Ehad: " << pCluster->GetHadronicEnergy() 
@@ -108,6 +129,8 @@ namespace arbor_content
 	  }
 	}
 
+	ArborParticleIdPlugins::ArborPhotonId::SetRecord(false);
+
     return pandora::STATUS_CODE_SUCCESS;
 
   }
@@ -119,6 +142,14 @@ namespace arbor_content
     m_maxHitTimeForClean = 11.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxHitTimeForClean", m_maxHitTimeForClean));
+
+	m_recordPhotonIDInfo = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "RecordPhotonIDInfo", m_recordPhotonIDInfo));
+
+	m_recordPhotonIDResult = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "RecordPhotonIDResult", m_recordPhotonIDResult));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
