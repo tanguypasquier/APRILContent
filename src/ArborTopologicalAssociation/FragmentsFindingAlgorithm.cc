@@ -91,7 +91,43 @@ namespace arbor_content
     {
       const pandora::Cluster *const pCluster(*clusterIter);
 
-	  std::cout << " --- cluster: " << pCluster << std::endl;
+	  try
+	  {
+		 auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pCluster);
+	     int clusterPID = pClusterMCParticle->GetParticleId();
+	     int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(clusterPID);
+
+		 bool isPhoton = pCluster->PassPhotonId(this->GetPandora()) && pCluster->GetAssociatedTrackList().empty();
+	  
+		 if(isPhoton && clusterPID == 22)
+		 {
+		 
+			 std::cout << " --- cluster: " << pCluster << ", Ehad: " << pCluster->GetHadronicEnergy() 
+				       << ", clusterPID: " << clusterPID << ", chg: " << clusterMCPCharge 
+			           << ", isPhoton :" <<  pCluster->PassPhotonId(this->GetPandora()) 
+					   << ", averageTime: " << ClusterHelper::GetAverageTime(pCluster) << std::endl;
+
+	         pandora::CaloHitList clusterCaloHitList;
+	         pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+		     pandora::CartesianVector centroid(0., 0., 0);
+		     ClusterHelper::GetCentroid(pCluster, centroid);
+
+	         for(auto hitIter = clusterCaloHitList.begin(); hitIter != clusterCaloHitList.end(); ++hitIter)
+	         {
+	         	auto pCaloHit = *hitIter;
+
+				pandora::CartesianVector hitPos = pCaloHit->GetPositionVector();
+
+				pandora::CartesianVector posDiff = hitPos - centroid;
+
+	            std::cout << "hit time: " << pCaloHit->GetTime() << ", ditanct to COG: " << posDiff.GetMagnitude() << std::endl;
+	         }
+		 }
+	  }
+	  catch (pandora::StatusCodeException &)
+	  {
+	  }
 
       // enough hits or energy for a real cluster
       if(pCluster->GetNCaloHits() > m_maxNHitsNonFragments || pCluster->GetHadronicEnergy() > m_maxEnergyNonFragments)
