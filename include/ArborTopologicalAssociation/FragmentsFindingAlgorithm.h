@@ -56,39 +56,12 @@ public:
 private:
 	pandora::StatusCode Run();
 	pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
-
-	/**
-	 *  @brief  Find cluster fragments in the event
-	 *
-	 *  @param  clusterVector the vector of cluster fragment to receive
-	 */
-	pandora::StatusCode FindClusterFragments(pandora::ClusterVector &clusterVector) const;
-
-	/**
-	 *  @brief  Remove cluster fragments and grab their calo hits
-	 *
-	 *  @param  clusterVector the vector of cluster fragment to remove
-	 *  @param  removalCaloHitList the cluster fragment calo hits to receive
-	 */
-	pandora::StatusCode RemoveClusterFragments(const pandora::ClusterVector &clusterVector, pandora::CaloHitList &removalCaloHitList) const;
-
-	/**
-	 *
-	 */
-	pandora::StatusCode GetMergingClusters(pandora::ClusterVector &clusterVector) const;
+    pandora::StatusCode FindClusterFragments(pandora::ClusterVector &removalClusterVector) const;
 
 private:
-	unsigned int                               m_maxNHitsForAutomaticRemoval;
-	float                                      m_maxEnergyForAutomaticRemoval;
-	float                                      m_maxHadronicEnergyForAutomaticRemoval;
 	unsigned int                               m_maxNHitsNonFragments;
 	float                                      m_maxEnergyNonFragments;
 	float                                      m_maxFragmentDensity;
-	float                                      m_maxProximityDistanceFine;
-	float                                      m_maxProximityDistanceCoarse;
-	unsigned int                               m_maxNHitsProximity;
-	pandora::StringVector                      m_additionalClusterMergingListNames;
-	CaloHitMergingTool                        *m_pCaloHitMergingTool;          ///< The calo hit merging tool
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
