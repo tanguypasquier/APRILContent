@@ -121,7 +121,8 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 		        const pandora::Cluster* cluToMerge = clusterVector.at(i);
 
-                        if(firstCluster->GetAssociatedTrackList().size() > 0 && cluToMerge->GetAssociatedTrackList().size() > 0) continue;
+                if(firstCluster->GetAssociatedTrackList().size() > 0 && cluToMerge->GetAssociatedTrackList().size() > 0) continue;
+				if(cluToMerge->GetHadronicEnergy() < m_minClusterEnergyToMerge) continue;
 
 	            std::vector<float> vars;
 	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
@@ -132,7 +133,7 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 
 				//std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
 
-		        HistogramManager::CreateFill(tupleName.c_str(), "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isPhoton", vars);
+		        HistogramManager::CreateFill(tupleName.c_str(), "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isMCPPhoton", vars);
 
 				auto pArborFirstCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(firstCluster));
 				auto pArborCluToMerge = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(cluToMerge));
@@ -173,6 +174,10 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::ReadSettings(const pando
 	m_mergeNeutralHadron = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MergeNeutralHadron", m_mergeNeutralHadron));
+
+	m_minClusterEnergyToMerge = 0.0;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MinClusterEnergyToMerge", m_minClusterEnergyToMerge));
 
     return pandora::STATUS_CODE_SUCCESS;
 }

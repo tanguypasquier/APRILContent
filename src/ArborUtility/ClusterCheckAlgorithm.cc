@@ -98,8 +98,10 @@ namespace arbor_content
 
 		//std::cout << "PFO : " << pfo << ", PID: " << pfoPID << ", charge: " << pfoCharge << std::endl;
 
-		const pandora::TrackList& pfoTrackList = pfo->GetTrackList();
 		const pandora::ClusterList& pfoClusterList = pfo->GetClusterList();
+
+#if 0
+		const pandora::TrackList& pfoTrackList = pfo->GetTrackList();
 
 		//float clustersEnergy = 0.;
 		float tracksEnergy = 0.;
@@ -111,30 +113,30 @@ namespace arbor_content
 
 			tracksEnergy += trackEnergy;
 
-	    std::vector<float> vars;
+	        std::vector<float> vars;
 
-		float energy = track->GetEnergyAtDca();
-		float charge = track->GetCharge();
-		float reachesCalorimeter = track->ReachesCalorimeter();
-		float isProjectedToEndCap = track->IsProjectedToEndCap();
-		float canFormPfo = track->CanFormPfo();
-		float canFormClusterlessPfo = track->CanFormClusterlessPfo();
-		float hasAssociatedCluster = track->HasAssociatedCluster();
-		float siblingTrack = pfoTrackList.size() - 1;
+		    float energy = track->GetEnergyAtDca();
+		    float charge = track->GetCharge();
+		    float reachesCalorimeter = track->ReachesCalorimeter();
+		    float isProjectedToEndCap = track->IsProjectedToEndCap();
+		    float canFormPfo = track->CanFormPfo();
+		    float canFormClusterlessPfo = track->CanFormClusterlessPfo();
+		    float hasAssociatedCluster = track->HasAssociatedCluster();
+		    float siblingTrack = pfoTrackList.size() - 1;
 
-	    vars.push_back( energy );
-	    vars.push_back( charge );
-	    vars.push_back( reachesCalorimeter );
-	    vars.push_back( isProjectedToEndCap );
-	    vars.push_back( canFormPfo );
-	    vars.push_back( canFormClusterlessPfo );
-	    vars.push_back( hasAssociatedCluster );
-	    vars.push_back( siblingTrack );
+	        vars.push_back( energy );
+	        vars.push_back( charge );
+	        vars.push_back( reachesCalorimeter );
+	        vars.push_back( isProjectedToEndCap );
+	        vars.push_back( canFormPfo );
+	        vars.push_back( canFormClusterlessPfo );
+	        vars.push_back( hasAssociatedCluster );
+	        vars.push_back( siblingTrack );
 	
-		HistogramManager::CreateFill("PFOTrack", 
+		    HistogramManager::CreateFill("PFOTrack", 
 				"energy:charge:reachesCalorimeter:isProjectedToEndCap:canFormPfo:canFormClusterlessPfo:hasAssociatedCluster:siblingTrack", vars);
-
 		}
+#endif
 
      	checkClusters(pfoClusterList);
 	}
@@ -146,6 +148,7 @@ namespace arbor_content
 		checkClusters(*pClusterList);
 	}
 
+#if 0
 	{
 	    ///// check hit
 	    double totHitEnergy = 0.;
@@ -189,6 +192,7 @@ namespace arbor_content
 
 	    std::cout << "total hit energy available: " << totAvailableHitEnergy << ", total hit energy: " << totHitEnergy << std::endl;
 	}
+#endif
 
 #if 0
 	{
@@ -221,7 +225,27 @@ namespace arbor_content
      for(pandora::ClusterList::const_iterator clusterIter = pfoClusterList.begin(); clusterIter != pfoClusterList.end(); ++clusterIter)
      {
     		const pandora::Cluster* cluster = *clusterIter;
+		    float energy = cluster->GetHadronicEnergy();
+
+			int clusterMCPID = -1e6;
+
+
+    		try
+    		{
+    			const pandora::MCParticle *const pMCClusterParticle(pandora::MCParticleHelper::GetMainMCParticle(cluster));
+    		    clusterMCPID = pMCClusterParticle->GetParticleId();
+    		}
+    		catch (pandora::StatusCodeException &)
+    		{
+    		}
+
+	        std::vector<float> vars;
+			vars.push_back( float(clusterMCPID) );
+			vars.push_back( energy );
+		    HistogramManager::CreateFill("PFOCluster", "clusterPID:energy", vars);
     
+#if 0
+
 #if 0
     		try
     		{
@@ -302,6 +326,7 @@ namespace arbor_content
     			{
     			}
     		}
+		#endif
     	}
   }
 

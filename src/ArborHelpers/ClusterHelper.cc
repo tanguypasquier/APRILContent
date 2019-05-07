@@ -576,7 +576,7 @@ namespace arbor_content
     if(NULL == pCluster || 0 == pCluster->GetNCaloHits())
       return pandora::STATUS_CODE_INVALID_PARAMETER;
 
-    meanDensity = 0.f;
+    meanDensity = 0.;
 
     const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
 

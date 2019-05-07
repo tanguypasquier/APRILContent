@@ -44,6 +44,8 @@ private:
    	bool m_mergeCharged;
     bool m_mergeNeutral;
 	bool m_mergeNeutralHadron;
+
+	float m_minClusterEnergyToMerge;
 };
 
 inline pandora::Algorithm *CheatingClusterMergingNewAlgorithm::Factory::CreateAlgorithm() const
