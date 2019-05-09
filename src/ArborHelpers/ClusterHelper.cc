@@ -571,26 +571,82 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  pandora::StatusCode ClusterHelper::GetClusterVolume(const pandora::Cluster *const pCluster, float& clusterVolume)
+  {
+    pandora::CartesianVector centroid(0.f, 0.f, 0.f);
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, centroid));
+
+    float clusterEnergy(0.);
+
+	clusterVolume = 0.;
+
+    pandora::CaloHitList clusterCaloHitList;
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+    for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
+        endIter != iter ; ++iter)
+    {
+      const pandora::CaloHit *const pCaloHit(*iter);
+
+      float hitEnergy(0.);
+
+      if(pCaloHit->GetHitType() == pandora::ECAL)
+      {
+        hitEnergy = pCaloHit->GetElectromagneticEnergy();
+      }
+	  else
+      {
+        hitEnergy = pCaloHit->GetHadronicEnergy();
+      }
+
+	  clusterEnergy += hitEnergy;
+
+	  pandora::CartesianVector hitPosition = pCaloHit->GetPositionVector();
+	  pandora::CartesianVector relativePosition = hitPosition - centroid;
+
+      float deltaVol = hitEnergy * relativePosition.GetMagnitude();
+      clusterVolume += deltaVol;
+    }
+
+	// FIXME:: clusterEnergy should not be zero
+	if(clusterEnergy < 0.0001) 
+	{
+		clusterVolume = 0.;
+	}
+	else
+	{
+		clusterVolume = clusterVolume/clusterEnergy;
+	}
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   pandora::StatusCode ClusterHelper::GetMeanDensity(const pandora::Cluster *const pCluster, float &meanDensity)
   {
-    if(NULL == pCluster || 0 == pCluster->GetNCaloHits())
+    if(nullptr == pCluster || 0 == pCluster->GetNCaloHits())
       return pandora::STATUS_CODE_INVALID_PARAMETER;
 
     meanDensity = 0.;
 
-    const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+    pandora::CaloHitList clusterCaloHitList;
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+	pandora::CaloHitList isoCaloHitList = pCluster->GetIsolatedCaloHitList();
+	clusterCaloHitList.insert(clusterCaloHitList.begin(), isoCaloHitList.begin(), isoCaloHitList.end());
 
-    for (pandora::OrderedCaloHitList::const_reverse_iterator iter = orderedCaloHitList.rbegin(), iterEnd = orderedCaloHitList.rend(); iter != iterEnd; ++iter)
+	for(auto& caloHit : clusterCaloHitList)
     {
-      for (pandora::CaloHitList::const_iterator hIter = iter->second->begin(), hIterEnd = iter->second->end(); hIter != hIterEnd; ++hIter)
-      {
-        const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*hIter));
+        const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(caloHit));
 
-        if(NULL == pCaloHit)
-          return pandora::STATUS_CODE_INVALID_PARAMETER;
+        if(nullptr == pCaloHit)
+		{
+		  std::cout << "--- ClusterHelper::GetMeanDensity error: calo hit nullptr" << std::endl;
+		  continue;
+          //return pandora::STATUS_CODE_INVALID_PARAMETER;
+		}
 
         meanDensity += pCaloHit->GetDensity();
-      }
     }
 
     meanDensity /= pCluster->GetNCaloHits();
@@ -728,6 +784,9 @@ namespace arbor_content
 	  {
 	  	auto pCaloHit = *hitIter;
 		float hitTime = pCaloHit->GetTime();
+
+		if(hitTime<1.e-2) continue;
+
 		float hitEnergy = pCaloHit->GetHadronicEnergy();
 
 		averageTime += hitTime * hitEnergy;

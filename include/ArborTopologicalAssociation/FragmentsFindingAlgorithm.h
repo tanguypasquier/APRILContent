@@ -62,6 +62,7 @@ private:
 	unsigned int                               m_maxNHitsNonFragments;
 	float                                      m_maxEnergyNonFragments;
 	float                                      m_maxFragmentDensity;
+    float                                      m_minFragmentClusterEnergy;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

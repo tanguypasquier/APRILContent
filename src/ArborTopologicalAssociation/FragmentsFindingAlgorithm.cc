@@ -29,6 +29,7 @@
 #include "ArborTopologicalAssociation/FragmentsFindingAlgorithm.h"
 
 #include "Pandora/AlgorithmHeaders.h"
+#include "ArborUtility/EventPreparationAlgorithm.h"
 
 #include "ArborHelpers/SortingHelper.h"
 #include "ArborHelpers/GeometryHelper.h"
@@ -46,15 +47,15 @@ namespace arbor_content
 	std::cout << "======= FragmentsFindingAlgorithm ====== " << std::endl;
 
     // find fragments 
-    pandora::ClusterVector removalClusterVector;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindClusterFragments(removalClusterVector));
+    pandora::ClusterVector fragmentClusterVector;
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->FindClusterFragments(fragmentClusterVector));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode FragmentsFindingAlgorithm::FindClusterFragments(pandora::ClusterVector &removalClusterVector) const
+  pandora::StatusCode FragmentsFindingAlgorithm::FindClusterFragments(pandora::ClusterVector &fragmentClusterVector) const
   {
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
@@ -63,8 +64,7 @@ namespace arbor_content
       return pandora::STATUS_CODE_SUCCESS;
 
     pandora::ClusterVector clusterVector(pClusterList->begin(), pClusterList->end());
-    pandora::ClusterVector nonFragmentsClusterVector;
-    pandora::ClusterVector potentialFragmentsClusterVector;
+    fragmentClusterVector.clear();
 
     // loop over clusters and identify fragments
     for(pandora::ClusterVector::iterator clusterIter = clusterVector.begin(), clusterEndIter = clusterVector.end() ;
@@ -76,8 +76,7 @@ namespace arbor_content
 	  int clusterMCPCharge = -1000;
 	  float averageTime = -1.;
 
-	  // FIXME
-	  if(hadEnergy < 0.2) continue;
+	  if(hadEnergy < m_minFragmentClusterEnergy || hadEnergy > m_maxEnergyNonFragments) continue;
 
 	  try
 	  {
@@ -90,17 +89,68 @@ namespace arbor_content
 	  {
 	  }
 
-      // enough hits or energy for a real cluster
-      //if(pCluster->GetNCaloHits() > m_maxNHitsNonFragments || pCluster->GetHadronicEnergy() > m_maxEnergyNonFragments)
 	  int nHit = pCluster->GetNCaloHits();
 	  bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pCluster);
       bool hasTrack = !(pCluster->GetAssociatedTrackList().empty());
 
       float meanDensity = -1.;
       ClusterHelper::GetMeanDensity(pCluster, meanDensity);
+	  
+	  ///////////////////// check at endcap
+	  unsigned int nHitAtEndacp = 0;
+      pandora::CaloHitList clusterCaloHitList;
+      pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+	  float totalHcalEnergy = 0.;
+
+	  for(auto iter = clusterCaloHitList.begin(); iter != clusterCaloHitList.end(); ++iter)
+	  {
+		  auto pCaloHit = *iter;
+
+		  if(pCaloHit->GetHitRegion() == pandora::ENDCAP)
+		  {
+			  ++nHitAtEndacp;
+		  }
+
+          if(pCaloHit->GetHitType() == pandora::HCAL)
+          {
+            totalHcalEnergy += pCaloHit->GetHadronicEnergy();
+          }
+	  }
+
+	  bool isClusterAtEndcap = false;
+	  if((float)nHitAtEndacp/clusterCaloHitList.size() > 0.5) isClusterAtEndcap = true;
+
+	  float hadronicEnergyFraction = totalHcalEnergy / pCluster->GetHadronicEnergy();
+
+      unsigned int startPseudoLayer(1000);
+      startPseudoLayer = pCluster->GetShowerStartLayer(this->GetPandora());
+
+	  float clusterVolume = -1.;
+	  ClusterHelper::GetClusterVolume(pCluster, clusterVolume);
+
+#if 0
+	  if(averageTime<5.) 
+	  {
+		  std::cout << "cluster energy: " << hadEnergy << ", averageTime: " << averageTime << std::endl;
+
+	      pandora::CaloHitList clusterCaloHits;
+	      pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHits);
+
+	      for(auto hitIter = clusterCaloHits.begin(); hitIter != clusterCaloHits.end(); ++hitIter)
+	      {
+	      	auto pCaloHit = *hitIter;
+	        float hitTime = pCaloHit->GetTime();
+	        float hitEnergy = pCaloHit->GetHadronicEnergy();
+
+			std::cout << " -- hit time: " << hitTime << ", hitEnergy: " << hitEnergy << std::endl;
+	      }
+	  }
+#endif
 
 	  /////////////////////
 	  std::vector<float> vars;
+	  vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	  vars.push_back( float(clusterPID) );
 	  vars.push_back( float(clusterMCPCharge) );
 	  vars.push_back( float(averageTime) );
@@ -109,24 +159,18 @@ namespace arbor_content
 	  vars.push_back( float(isPhoton) );
 	  vars.push_back( float(hasTrack) );
 	  vars.push_back( meanDensity );
-	  HistogramManager::CreateFill("FragmentsFindingAlgorithm", "clusterPID:clusterMCPCharge:averageTime:nHit:clusterEnergy:isPhoton:hasTrack:meanDensity", vars);
+	  vars.push_back( isClusterAtEndcap );
+	  vars.push_back( hadronicEnergyFraction );
+	  vars.push_back( float(startPseudoLayer) );
+	  vars.push_back( clusterVolume );
+	  HistogramManager::CreateFill("FragmentsFindingAlgorithm", "eventNum:clusterPID:clusterMCPCharge:averageTime:nHit:clusterEnergy:isPhoton:hasTrack:meanDensity:isClusterAtEndcap:hadronicEnergyFraction:startPseudoLayer:clusterVolume", vars);
+	  /////////////////////
         
-	  //std::cout << " ------ potentialFragments" << std::endl;
-	  potentialFragmentsClusterVector.push_back(pCluster);
+	  fragmentClusterVector.push_back(pCluster);
     }
 
-	removalClusterVector = potentialFragmentsClusterVector;
+	std::cout << " ------ fragmentClusterVector size: " << fragmentClusterVector.size() << std::endl;
 
-	//std::cout << " --- removalClusterVector: " << removalClusterVector.size() << std::endl;
-
-    for(pandora::ClusterVector::const_iterator fragIter = potentialFragmentsClusterVector.begin(); 
-	    fragIter != potentialFragmentsClusterVector.end(); ++fragIter)
-	{
-		const pandora::Cluster *const pFragment(*fragIter);
-		auto pArborFragment = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(pFragment));
-		pArborFragment->SetFragment();
-	}
-		
     return pandora::STATUS_CODE_SUCCESS;
   }
 
@@ -138,7 +182,11 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxNHitsNonFragments", m_maxNHitsNonFragments));
 
-    m_maxEnergyNonFragments = 5.f;
+	m_minFragmentClusterEnergy = 0.2;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MinFragmentClusterEnergy", m_minFragmentClusterEnergy));
+
+    m_maxEnergyNonFragments = 3.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxEnergyNonFragments", m_maxEnergyNonFragments));
 
@@ -149,5 +197,4 @@ namespace arbor_content
     return pandora::STATUS_CODE_SUCCESS;
   }
 
-} 
-
+}

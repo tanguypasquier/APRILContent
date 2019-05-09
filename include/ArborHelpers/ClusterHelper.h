@@ -138,6 +138,8 @@ public:
 	static float GetHadronicEnergyInECAL(const pandora::Cluster *const pCluster);
   
 	static float GetElectromagneticEnergyInECAL(const pandora::Cluster *const pCluster);
+  
+	static pandora::StatusCode GetClusterVolume(const pandora::Cluster *const pCluster, float& clusterVolume);
 
 	/**
 	 *  @brief  Get the closest distance approach between all the hits of the clusters

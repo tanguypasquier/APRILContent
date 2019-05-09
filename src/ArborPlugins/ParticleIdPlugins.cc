@@ -339,7 +339,7 @@ namespace arbor_content
     const unsigned int pseudoLayerExtension(endPseudoLayer-startPseudoLayer);
 
 	float clusterVolume = -1.;
-	ParticleIdHelper::GetClusterVolume(pCluster, clusterVolume);
+	ClusterHelper::GetClusterVolume(pCluster, clusterVolume);
 
 	float clusterTime = 0.;
 	clusterTime = ClusterHelper::GetAverageTime(pCluster);
