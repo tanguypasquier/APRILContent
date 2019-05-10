@@ -75,6 +75,8 @@ private:
     float          m_maxStartingClusterDistance;
 	float          m_maxClosestPhotonDistance;
 	bool           m_mergeChargedClusters;
+	bool           m_useMCForPhotonID;
+	bool           m_useMCForChargeID;
 
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;
