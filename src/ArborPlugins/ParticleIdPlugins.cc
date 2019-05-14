@@ -292,6 +292,11 @@ namespace arbor_content
 
   bool ArborParticleIdPlugins::ArborEmShowerId::IsMatch(const pandora::Cluster *const pCluster) const
   {
+    if(!ClusterHelper::ContainsHitType(pCluster, pandora::ECAL))
+    {
+      return false;
+    }
+
     unsigned int endPseudoLayer(0);
 
     pandora::CaloHitList clusterCaloHitList;
@@ -333,64 +338,6 @@ namespace arbor_content
     const float hadronicEnergyFraction(totalHcalEnergy / (totalEcalEnergy+totalHcalEnergy));
     const float outerEmEnergyFraction(totalOuterEmEnergy / (totalEcalEnergy));
 
-    unsigned int startPseudoLayer(1000);
-    startPseudoLayer = pCluster->GetShowerStartLayer(this->GetPandora());
-
-    const unsigned int pseudoLayerExtension(endPseudoLayer-startPseudoLayer);
-
-	float clusterVolume = -1.;
-	ClusterHelper::GetClusterVolume(pCluster, clusterVolume);
-
-	float clusterTime = 0.;
-	clusterTime = ClusterHelper::GetAverageTime(pCluster);
-
-	bool hasTrack = !(pCluster->GetAssociatedTrackList().empty());
-
-	int clusterPID = -1e6;
-	int clusterMCPCharge = -1e6;
-
-	try
-	{
-		auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pCluster);
-	    clusterPID = pClusterMCParticle->GetParticleId();
-	    clusterMCPCharge = pandora::PdgTable::GetParticleCharge(clusterPID);
-	}
-	catch (pandora::StatusCodeException &)
-	{
-	}
-
-	float clusterEnergy = pCluster->GetElectromagneticEnergy();
-	int clusterSize = pCluster->GetNCaloHits();
-
-	// For cluster with track ...
-	bool centroidOK       = true;
-	bool clusterFitOK     = true;
-	float angleWithOrigin = 0.;
-
-	///////////////////////////////////
-	if(hasTrack && m_canRecord)
-	{
-		std::vector<float> vars;
-	    vars.push_back( float(clusterPID) );
-	    vars.push_back( float(clusterMCPCharge) );
-	    vars.push_back( clusterEnergy );
-	    vars.push_back( float(clusterSize) );
-	    vars.push_back( float(pCluster->GetAssociatedTrackList().empty()) );
-	    vars.push_back( hadronicEnergyFraction );
-	    vars.push_back( outerEmEnergyFraction );
-	    vars.push_back( float(startPseudoLayer) );
-	    vars.push_back( float(endPseudoLayer) );
-	    vars.push_back( float(pseudoLayerExtension) );
-	    vars.push_back( float(centroidOK) );
-	    vars.push_back( float(clusterFitOK) );
-	    vars.push_back( float(angleWithOrigin) );
-	    vars.push_back( float(clusterVolume) );
-	    vars.push_back( float(clusterTime) );
-	    
-	    HistogramManager::CreateFill("ArborEmShowerId_IsMatch", "PID_MC:clusterChg_MC:clusterEnergy:clusterSize:noTrack:hadronicEnergyFraction:outerEmEnergyFraction:startPseudoLayer:endPseudoLayer:pseudoLayerExtension:centroidOK:clusterFitOK:angleWithOrigin:clusterVolume:clusterTime", vars);
-	}
-
-	////////////////
     // cut on hadronic energy fraction
     if(hadronicEnergyFraction > m_maxHadronicEnergyFraction)
     {
@@ -402,133 +349,79 @@ namespace arbor_content
       return false;
     }
 
-    if(startPseudoLayer > m_maxStartPseudoLayer)
+    unsigned int startPseudoLayer(0);
+
+    if(pandora::STATUS_CODE_SUCCESS != ParticleIdHelper::GetStartingPseudoLayer(this->GetPandora(), pCluster, m_startingLayerSettings, startPseudoLayer))
     {
       return false;
     }
 
-	// FIXME
-	if(endPseudoLayer > 30)
-	{
-		return false;
-	}
-
-	if(clusterVolume > 100. )
-	{
-		return false;
-	}
-
-	if(clusterTime > 12. )
-	{
-		return false;
-	}
+    if(startPseudoLayer > m_maxStartPseudoLayer)
+    {
+      return false;
+    }
 
     if(startPseudoLayer >= endPseudoLayer)
     {
       return false;
     }
 
+    const unsigned int pseudoLayerExtension(endPseudoLayer-startPseudoLayer);
+
     if(pseudoLayerExtension > m_maxPseudoLayerExtension)
     {
       return false;
     }
-	///////////////////////////////////
 
-    if(!hasTrack)
+    // TODO add piece of code to cut on transverse ratio
+
+    if(pCluster->GetAssociatedTrackList().empty())
     {
       pandora::CartesianVector centroid(0.f, 0.f, 0.f);
 
       try
       {
-		  centroid = this->GetEnergyWeightedCentroid(pCluster, startPseudoLayer, endPseudoLayer);
+        centroid = this->GetEnergyWeightedCentroid(pCluster, startPseudoLayer, endPseudoLayer);
       }
       catch(...)
       {
-		  centroidOK = false;
+        return false;
+      }
+
+      pandora::ClusterFitPointList photonFitPoints;
+
+      for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
+          endIter != iter ; ++iter)
+      {
+        const pandora::CaloHit *const pCaloHit(*iter);
+
+        if(pCaloHit->IsIsolated() || pCaloHit->GetHitType() != pandora::ECAL)
+        {
+          continue;
+        }
+
+        if(pCaloHit->GetPseudoLayer() < startPseudoLayer || pCaloHit->GetPseudoLayer() > endPseudoLayer)
+        {
+          continue;
+        }
+
+        photonFitPoints.push_back(pandora::ClusterFitPoint(pCaloHit));
       }
 
       pandora::ClusterFitResult clusterFitResult;
 
-	  if(centroidOK)
-	  {
-		  pandora::ClusterFitPointList photonFitPoints;
+      if(pandora::STATUS_CODE_SUCCESS != pandora::ClusterFitHelper::FitPoints(photonFitPoints, clusterFitResult))
+        return false;
 
-          for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
-              endIter != iter ; ++iter)
-          {
-            const pandora::CaloHit *const pCaloHit(*iter);
+      if(!clusterFitResult.IsFitSuccessful())
+        return false;
 
-            if(pCaloHit->IsIsolated() || pCaloHit->GetHitType() != pandora::ECAL)
-            {
-              continue;
-            }
+      const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
 
-            if(pCaloHit->GetPseudoLayer() < startPseudoLayer || pCaloHit->GetPseudoLayer() > endPseudoLayer)
-            {
-              continue;
-            }
-
-	        const arbor_content::CaloHit *const pArborCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit));
-	        if(!ArborContentApi::HasAnyConnection(pArborCaloHit))
-	        {
-	           continue;
-	        }
-
-            photonFitPoints.push_back(pandora::ClusterFitPoint(pCaloHit));
-          }
-
-          if(pandora::STATUS_CODE_SUCCESS != pandora::ClusterFitHelper::FitPoints(photonFitPoints, clusterFitResult))
-		  {
-			  clusterFitOK = false;
-		  }
-
-		  if(clusterFitOK && clusterFitResult.IsFitSuccessful())
-		  {
-			  const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
-			  angleWithOrigin = clusterDirection.GetOpeningAngle(centroid);
-		  }
-		  else
-		  {
-			  clusterFitOK = false;
-		  }
-	  }
-
-	  if(m_canRecord)
-	  {
-	    std::vector<float> vars;
-	    vars.push_back( float(clusterPID) );
-	    vars.push_back( float(clusterMCPCharge) );
-	    vars.push_back( clusterEnergy );
-	    vars.push_back( float(clusterSize) );
-	    vars.push_back( float(pCluster->GetAssociatedTrackList().empty()) );
-	    vars.push_back( hadronicEnergyFraction );
-	    vars.push_back( outerEmEnergyFraction );
-	    vars.push_back( float(startPseudoLayer) );
-	    vars.push_back( float(endPseudoLayer) );
-	    vars.push_back( float(pseudoLayerExtension) );
-	    vars.push_back( float(centroidOK) );
-	    vars.push_back( float(clusterFitOK) );
-	    vars.push_back( float(angleWithOrigin) );
-	    vars.push_back( float(clusterVolume) );
-	    vars.push_back( float(clusterTime) );
-	    
-	    HistogramManager::CreateFill("ArborEmShowerId_IsMatch", "PID_MC:clusterChg_MC:clusterEnergy:clusterSize:noTrack:hadronicEnergyFraction:outerEmEnergyFraction:startPseudoLayer:endPseudoLayer:pseudoLayerExtension:centroidOK:clusterFitOK:angleWithOrigin:clusterVolume:clusterTime", vars);
-	  }
-
-	  if(!centroidOK)
-	  {
-	  	return false;
-	  }
-
-	  if(!clusterFitOK)
-	  {
-	  	return false;
-	  }
-
-	  if(angleWithOrigin > m_maxAngleWithOrigin)
-	  {
-	  	return false;
-	  }
+      if(clusterDirection.GetOpeningAngle(centroid) > m_maxAngleWithOrigin)
+      {
+        return false;
+      }
     }
 
     return true;
@@ -646,9 +539,7 @@ namespace arbor_content
     }
 #endif
 
-	ArborEmShowerId::SetRecord(m_canRecord);
     bool isEmShower = this->GetPandora().GetPlugins()->GetParticleId()->IsEmShower(pCluster);
-	ArborEmShowerId::SetRecord(false);
 
     if(isEmShower)
     {
