@@ -584,7 +584,6 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
         if (PandoraContentApi::IsAvailable(*this, pCaloHit))
 		{
 		   ++nUnclusteredHits;
-		   const pandora::MCParticle* pMCHitParticle = nullptr;
 
 		   pandora::CartesianVector testPosition = pCaloHit->GetPositionVector();
 		   
@@ -616,6 +615,17 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 
 		   if(clusterToAdd != nullptr && hitsDistance < m_maxHitsDistance)
 		   {
+		      if(clusterCaloHitListMap.find( clusterToAdd ) == clusterCaloHitListMap.end())
+		      {
+		          pandora::CaloHitList hitList;
+		          hitList.push_back( pCaloHit );
+		          clusterCaloHitListMap[clusterToAdd] = hitList;
+		      }
+		      else
+		      {
+		          clusterCaloHitListMap[clusterToAdd].push_back( pCaloHit );
+		      }
+
 		      const pandora::MCParticle* pClusterMCParticle  = nullptr;
 		   
 			  //float mvaValue = DeterminMergingByMVA(clusterToAdd, pCaloHit);
@@ -624,22 +634,12 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
               {
               	 pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(clusterToAdd);
            	  
+		         const pandora::MCParticle* pMCHitParticle = nullptr;
 				 pMCHitParticle = pandora::MCParticleHelper::GetMainMCParticle(pCaloHit);
 
 		         //std::cout << "  ====== hit: " << pCaloHit << ", mcp: " << pMCHitParticle 
 		   	     // << ", the cluster which may merge the hit: " << clusterToAdd << ", mcp :" << pClusterMCParticle << endl;
 
-		         if(clusterCaloHitListMap.find( clusterToAdd ) == clusterCaloHitListMap.end())
-		         {
-		             pandora::CaloHitList hitList;
-		             hitList.push_back( pCaloHit );
-		             clusterCaloHitListMap[clusterToAdd] = hitList;
-		         }
-		         else
-		         {
-		             clusterCaloHitListMap[clusterToAdd].push_back( pCaloHit );
-		         }
-    	
 			     int hitMCPCharge = pandora::PdgTable::GetParticleCharge(pMCHitParticle->GetParticleId());
 			     int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId());
 
@@ -659,7 +659,6 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 			  }
               catch (pandora::StatusCodeException &)
               {
-		          continue;
 		      }
 		   }
 		}
