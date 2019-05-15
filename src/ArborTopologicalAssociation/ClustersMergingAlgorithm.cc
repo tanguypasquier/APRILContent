@@ -110,25 +110,6 @@ namespace arbor_content
 
 			try
 			{
-				const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(clusterToEnlarge);
-	            auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-
-	            const pandora::Cluster* const pandoraClusterToMerge = dynamic_cast<const pandora::Cluster* const>(clusterToMerge);
-	            auto pClusterToMergeMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraClusterToMerge);
-
-	            std::vector<float> vars;
-	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
-	            vars.push_back( clusterToEnlarge->GetHadronicEnergy() );
-	            vars.push_back( clusterToMerge->GetHadronicEnergy() );
-	            vars.push_back( float(clusterToMerge->GetNCaloHits()) );
-	            vars.push_back( float(pClusterMCParticle == pClusterToMergeMCParticle) );
-	            vars.push_back( float(pClusterMCParticle->GetParticleId()) );
-				vars.push_back( float(pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId())) );
-	            vars.push_back( float(pClusterToMergeMCParticle->GetParticleId()) );
-				vars.push_back( float(pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())) );
-				vars.push_back( oldChi );
-				vars.push_back( newChi );
-
 #if 0
 				if( pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) == 0. && 
 					clusterToMerge->GetHadronicEnergy() > 0. )
@@ -149,40 +130,61 @@ namespace arbor_content
 					continue;
 				}
 
-
-			    if(pClusterMCParticle != pClusterToMergeMCParticle)
-			    {
-					if(pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId()) != 0 &&
-					   pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) != 0)
-					{
-						if(!m_mergeIssue) continue;
-						
-			    	    std::cout << "merging issue, main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
-			    		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
-						    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
-						    << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
-		        
-						HistogramManager::CreateFill(tupleNameIssue.c_str(), 
-							"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
-					}
-					else
-					{
-						if(!m_mergeError) continue;
-						
-			    	    std::cout << "merging ERROR!!! main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
-			    		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
-						    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
-						    << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
-
-						HistogramManager::CreateFill(tupleNameError.c_str(), 
-							"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
-						
-					}
-			    }
-				else
+				if(m_useMCTruth)
 				{
-						HistogramManager::CreateFill(tupleNameGood.c_str(), 
-							"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
+					const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(clusterToEnlarge);
+	                auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
+
+	                const pandora::Cluster* const pandoraClusterToMerge = dynamic_cast<const pandora::Cluster* const>(clusterToMerge);
+	                auto pClusterToMergeMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraClusterToMerge);
+
+	                std::vector<float> vars;
+	                vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+	                vars.push_back( clusterToEnlarge->GetHadronicEnergy() );
+	                vars.push_back( clusterToMerge->GetHadronicEnergy() );
+	                vars.push_back( float(clusterToMerge->GetNCaloHits()) );
+	                vars.push_back( float(pClusterMCParticle == pClusterToMergeMCParticle) );
+	                vars.push_back( float(pClusterMCParticle->GetParticleId()) );
+				    vars.push_back( float(pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId())) );
+	                vars.push_back( float(pClusterToMergeMCParticle->GetParticleId()) );
+				    vars.push_back( float(pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())) );
+				    vars.push_back( oldChi );
+				    vars.push_back( newChi );
+
+					if(pClusterMCParticle != pClusterToMergeMCParticle)
+			        {
+				    	if(pandora::PdgTable::GetParticleCharge(pClusterMCParticle->GetParticleId()) != 0 &&
+				    	   pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) != 0)
+				    	{
+				    		if(!m_mergeIssue) continue;
+				    		
+			        	    std::cout << "merging issue, main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
+			        		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
+				    		    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
+				    		    << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+		            
+				    		HistogramManager::CreateFill(tupleNameIssue.c_str(), 
+				    			"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
+				    	}
+				    	else
+				    	{
+				    		if(!m_mergeError) continue;
+				    		
+			        	    std::cout << "merging ERROR!!! main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
+			        		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
+				    		    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
+				    		    << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+
+				    		HistogramManager::CreateFill(tupleNameError.c_str(), 
+				    			"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
+				    		
+				    	}
+			        }
+				    else
+				    {
+				    		HistogramManager::CreateFill(tupleNameGood.c_str(), 
+				    			"evtNum:clusterEnergy:mergeEnergy:nCaloHits:isRight:pidMain:chgMain:pidMerge:chgMerge:oldChi:newChi", vars);
+				    }
 				}
 			}
 			catch(pandora::StatusCodeException &)
@@ -243,6 +245,10 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "UseEnergyChi", m_useEnergyChi));
 	
+	m_useMCTruth = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "UseMCTruth", m_useMCTruth));
+
 	m_mergeIssue = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MergeIssue", m_mergeIssue));

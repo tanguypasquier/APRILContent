@@ -88,9 +88,8 @@ namespace arbor_content
 		trackStartingClusters.push_back(mainCluster);
 
 		// ---------- make the record of track-cluster association
-		bool makeRecord = true;
 
-		if(makeRecord)
+		if(m_makeRecord)
 		{
 			const pandora::MCParticle *pTrackMCParticle = nullptr;
             const pandora::MCParticle *pClusterMCParticle = nullptr;
@@ -211,8 +210,12 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode MatchTrackWithStartingClusterAlgorithm::ReadSettings(const pandora::TiXmlHandle /* xmlHandle */)
+  pandora::StatusCode MatchTrackWithStartingClusterAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+    m_makeRecord = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MakeRecord", m_makeRecord));
+
     return pandora::STATUS_CODE_SUCCESS;
   }
 

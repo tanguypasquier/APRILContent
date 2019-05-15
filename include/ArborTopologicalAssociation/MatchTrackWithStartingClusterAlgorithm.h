@@ -63,6 +63,7 @@ private:
 	pandora::StatusCode GetEligibleClusters(std::vector<ArborCluster*>& clusterVector) const;
 
 private:
+    bool            m_makeRecord;
 
 };
 
