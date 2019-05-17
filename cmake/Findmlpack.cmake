@@ -1,11 +1,16 @@
 IF(NOT DEFINED MLPACK_DIR)
-   MESSAGE(STATUS "It is mandorary to sepecify mlpack directory.")
+   MESSAGE(STATUS "Warning: it is mandorary to sepecify mlpack directory.")
 ENDIF()
 
-FIND_PATH(MLPACK_INCLUDE_DIRS core.hpp HINTS ${MLPACK_DIR}/include/*)
+SET(MLPACK_INCLUDE_DIRS ${MLPACK_DIR}/include)
+
+# Check mlpack core header file
+FIND_PATH(MLPACK_CORE_HPP_DIR NAMES core.hpp HINTS ${MLPACK_INCLUDE_DIRS}/mlpack)
+
+# Check mlpack library
 FIND_LIBRARY(MLPACK_LIBRARIES NAMES mlpack HINTS ${MLPACK_DIR}/*)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(mlpack DEFAULT_MSG MLPACK_LIBRARIES MLPACK_INCLUDE_DIRS)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(mlpack DEFAULT_MSG MLPACK_CORE_HPP_DIR MLPACK_LIBRARIES)
 
 IF(NOT MLPACK_FOUND)
-  MESSAGE(FATAL_ERROR "mlpack not found")
+  MESSAGE(FATAL_ERROR "The mlpack package not found.")
 ENDIF()
