@@ -119,14 +119,11 @@ IF( ARBOR_PARALLEL )
 ENDIF()
 
 # mlpack
-INCLUDE_DIRECTORIES( SYSTEM "/projects/soft/mlpack-3.0.3/include" )
-LINK_LIBRARIES( "/projects/soft/mlpack-3.0.3/lib/libmlpack.so" )
+FIND_PACKAGE( mlpack REQUIRED )
+INCLUDE_DIRECTORIES( SYSTEM ${MLPACK_INCLUDE_DIRS} )
+LINK_LIBRARIES( ${MLPACK_LIBRARIES} )
 
-# dlib
-INCLUDE_DIRECTORIES( SYSTEM "/projects/soft/dlib-19.16/include" )
-LINK_LIBRARIES( "/projects/soft/dlib-19.16/lib/libdlib.so" )
-
-
+# doc
 IF( INSTALL_DOC AND EXISTS "${PROJECT_SOURCE_DIR}/doc/CMakeLists.txt" )
     ADD_SUBDIRECTORY( ./doc )
 ELSE()
