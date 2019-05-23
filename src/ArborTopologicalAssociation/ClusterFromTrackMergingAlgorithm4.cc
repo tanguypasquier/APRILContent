@@ -72,17 +72,20 @@ namespace arbor_content
 		const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
 		bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraClu);
 
-		/// help by MC truth
-#if __USEMCP__
-		try
+		/// PID help by MC truth
+		bool m_PIDByMCTruth = true;
+
+	    if(m_PIDByMCTruth)
 		{
-			isPhoton = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId() == 22;
+			try
+		    {
+		    	isPhoton = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId() == 22;
+		    }
+		    catch(pandora::StatusCodeException &)
+		    {
+		    	std::cout << "MCP issue: " << pandoraClu << std::endl;
+		    }
 		}
-		catch(pandora::StatusCodeException &)
-		{
-			std::cout << "MCP issue: " << pandoraClu << std::endl;
-		}
-#endif
 
 		pCluster->SetPhoton(isPhoton);
 
@@ -300,24 +303,29 @@ namespace arbor_content
 		  {
 		      m_maxClosestDistance = 200.;
 		  }
-		      
-#if __USEMCP__
-		  // help by MC truth
-		  try
-		  {
-			  const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
-		      auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
 
-		      if( pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId()) == 0. && 
-		          nearbyCluster->GetHadronicEnergy() > 0. )
+		  m_maxClosestDistance = 1.e6;
+		      
+		  // help by MC truth
+		  bool m_mergingByMCTruth = true;
+
+		  if(m_mergingByMCTruth)
+		  {
+			  try
 		      {
-		        		continue;
+		          const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+		          auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
+
+		          if( pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId()) == 0. && 
+		              nearbyCluster->GetHadronicEnergy() > 0. )
+		          {
+		            		continue;
+		          }
+		      }
+		      catch(pandora::StatusCodeException &)
+		      {
 		      }
 		  }
-		  catch(pandora::StatusCodeException &)
-		  {
-		  }
-#endif
 
 		  //GetClustersDirection
 		  auto& startingClusterAxis = startingCluster->GetAxis();
@@ -379,8 +387,8 @@ namespace arbor_content
 		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
 		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
 
-		  bool canMerge = (closestDistance < m_maxClosestDistance) || (angle < 1. && closestDistance < m_maxClosestDistance * 3.) ||
-			              (axisDistance < 100. && closestDistance < m_maxClosestDistance * 4.) ;
+		  bool canMerge = (closestDistance < m_maxClosestDistance) || (angle < 1000. && closestDistance < m_maxClosestDistance * 3.) ||
+			              (axisDistance < 100000. && closestDistance < m_maxClosestDistance * 4.) ;
 				  
 
 		  if(!canMerge) 
