@@ -45,6 +45,8 @@
 
 #include <algorithm>
 
+#define __DEBUG__ 0
+
 namespace arbor_content
 {
   pandora::StatusCode ClustersMergingAlgorithm::Run()
@@ -63,6 +65,9 @@ namespace arbor_content
 		std::set<ArborCluster*> allClustersToMerge;
 		startingCluster->GetAllClustersToMerge(allClustersToMerge);
 
+#if __DEBUG__
+		std::cout << "cluster: " << startingCluster << ", allClustersToMerge.size: " << allClustersToMerge.size() << std::endl;
+#endif
 		if(allClustersToMerge.empty()) continue;
 
 		mergingMap[startingCluster] = allClustersToMerge;
@@ -90,15 +95,26 @@ namespace arbor_content
 	tupleNameError += GetInstanceName();
 	tupleNameGood  += GetInstanceName();
 
+#if __DEBUG__
+	std::cout << "==========================================" << std::endl;
+#endif
+
 	for(auto& mergingMapIter :  mergingMap)
 	{
 		auto clusterToEnlarge = mergingMapIter.first;
 		auto& clustersToMerge = mergingMapIter.second;
 
+#if __DEBUG__		
+                std::cout << std::endl;
+#endif
+
 		for(auto& clusterToMerge : clustersToMerge)
 		{
 			float oldChi = 1.e6;
 			float newChi = 1.e6;
+#if __DEBUG__	
+			std::cout << " --- clusterToEnlarge:" << clusterToEnlarge << ", clusterToMerge: " << clusterToMerge << std::endl;
+#endif
 
 			if(m_useEnergyChi &&
 			   pandora::STATUS_CODE_SUCCESS != 
