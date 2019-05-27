@@ -13,6 +13,7 @@
 #include "ArborApi/ArborContentApi.h"
 #include "ArborUtility/EventPreparationAlgorithm.h"
 #include "ArborHelpers/HistogramHelper.h"
+#include "ArborHelpers/ClusterHelper.h"
 
 //#include "ArborHelpers/ClusterHelper.h"
 //#include "ArborUtility/EventPreparationAlgorithm.h"
@@ -124,16 +125,29 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
                 if(firstCluster->GetAssociatedTrackList().size() > 0 && cluToMerge->GetAssociatedTrackList().size() > 0) continue;
 				if(cluToMerge->GetHadronicEnergy() < m_minClusterEnergyToMerge) continue;
 
+				///
+		        float closestDistance = -1.e6;
+
+		        try
+		        {
+		            ClusterHelper::GetClosestDistanceApproach(firstCluster, cluToMerge, closestDistance, false);
+		        }
+                catch(pandora::StatusCodeException &)
+		        {
+		            std::cout << "GetClosestDistanceApproach failed" << std::endl;
+		        }
+
 	            std::vector<float> vars;
 	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	            vars.push_back( float(firstCluster->GetHadronicEnergy()) );
 	            vars.push_back( float(cluToMerge->GetHadronicEnergy()) );
 				vars.push_back( float(clusterMCPCharge));
 				vars.push_back( float(isPhoton));
+				vars.push_back( closestDistance );
 
 				//std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
 
-		        HistogramManager::CreateFill(tupleName.c_str(), "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isMCPPhoton", vars);
+		        HistogramManager::CreateFill(tupleName.c_str(), "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isMCPPhoton:closestDistance", vars);
 
 				auto pArborFirstCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(firstCluster));
 				auto pArborCluToMerge = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(cluToMerge));
@@ -142,6 +156,14 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 					<< ", Ehad: " << firstCluster->GetHadronicEnergy() 
 					<< ", cluToMerge " << cluToMerge << ", frag: " << pArborCluToMerge->IsFragment() 
 					<< ", Ehad: " << cluToMerge->GetHadronicEnergy() << std::endl;
+#if __DEBUG__
+				if(clusterMCPCharge != 0)
+				{
+					std::cout << "    >>>=== merge two CHARGED clusters: " << firstCluster << ", E: " << firstCluster->GetHadronicEnergy() 
+						      << " --- " << cluToMerge << ", E: " << cluToMerge->GetHadronicEnergy() 
+							  << ", distance: " << closestDistance << std::endl;
+				}
+#endif
 
 				ArborContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
 			}
