@@ -115,6 +115,8 @@ namespace arbor_content
 
 		  clu->GetAllClustersToMerge(allClustersToMerge);
 		  allClustersToMerge.insert(clu);
+
+		  clu->ClearClustersToMerge();
 	  }
   }
 
@@ -242,7 +244,7 @@ namespace arbor_content
 		  }
 	  }
 
-	  m_clustersToMerge = clustersToMerge;
+	  m_clustersToMerge.insert(clustersToMerge.begin(), clustersToMerge.end());
   }
 
   void ArborCluster::RemoveFromClustersToMerge(ArborCluster* cluster)
