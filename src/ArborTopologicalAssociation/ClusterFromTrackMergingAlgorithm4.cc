@@ -48,7 +48,6 @@
 #include <algorithm>
 
 #define __DEBUG__ 0
-#define __USEMCP__ 0
 
 namespace arbor_content
 {
@@ -73,7 +72,7 @@ namespace arbor_content
 		bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraClu);
 
 		/// PID help by MC truth
-		bool m_PIDByMCTruth = true;
+		bool m_PIDByMCTruth = false;
 
 	    if(m_PIDByMCTruth)
 		{
@@ -216,8 +215,7 @@ namespace arbor_content
 			<< ", track E: " << track->GetEnergyAtDca() << std::endl;
 #endif
 
-		std::vector<ArborCluster*> properClusters;
-		SearchProperClusters(track, associatedCluster, properClusters);
+		SearchProperClusters(track, associatedCluster);
 	}
 
 	// clean clusters
@@ -226,16 +224,11 @@ namespace arbor_content
     return pandora::STATUS_CODE_SUCCESS;
   }
 
-  void ClusterFromTrackMergingAlgorithm4::SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
-		  std::vector<arbor_content::ArborCluster*>& properClusters)
+  void ClusterFromTrackMergingAlgorithm4::SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster)
   {
-	  
 #if __DEBUG__
-	  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
 	  float startCluEnergy = startingCluster->GetHadronicEnergy();
-
-	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-	  std::cout << " SearchProperClusters for charged cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
+	  std::cout << " SearchProperClusters for charged cluster: " << startingCluster << ", Ehad: " << startCluEnergy << std::endl;
 #endif
 
 	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
@@ -304,10 +297,10 @@ namespace arbor_content
 		      m_maxClosestDistance = 200.;
 		  }
 
-		  m_maxClosestDistance = 1.e6;
+		  //m_maxClosestDistance = 1.e6;
 		      
 		  // help by MC truth
-		  bool m_mergingByMCTruth = true;
+		  bool m_mergingByMCTruth = false;
 
 		  if(m_mergingByMCTruth)
 		  {
@@ -354,6 +347,7 @@ namespace arbor_content
 		  const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
 		    	  pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
 		
+#if __DEBUG1__
 		  pandora::CartesianVector trackCluCentroidDistanceVec(0., 0., 0.);
 		  float genericTime = 0.;
 
@@ -363,7 +357,6 @@ namespace arbor_content
 		  	continue;
 		  }
 
-#if __DEBUG__
 		  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
 	      //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
 	      //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
@@ -387,8 +380,8 @@ namespace arbor_content
 		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
 		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
 
-		  bool canMerge = (closestDistance < m_maxClosestDistance) || (angle < 1000. && closestDistance < m_maxClosestDistance * 3.) ||
-			              (axisDistance < 100000. && closestDistance < m_maxClosestDistance * 4.) ;
+		  bool canMerge = (closestDistance < m_maxClosestDistance) || (angle < 1. && closestDistance < m_maxClosestDistance * 3.) ||
+			              (axisDistance < 100. && closestDistance < m_maxClosestDistance * 4.) ;
 				  
 
 		  if(!canMerge) 
@@ -417,6 +410,9 @@ namespace arbor_content
 
 		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
       }
+
+	  ///////////
+	  std::vector<arbor_content::ArborCluster*> properClusters;
 		  
 	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
 	  {
@@ -491,17 +487,57 @@ namespace arbor_content
 		auto& mothers = cluster->GetMotherCluster();
 
 #if __DEBUG__
-		std::cout << " --- cluster " << cluster << " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
+		std::cout << " --- cluster " << cluster << " initial mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
 #endif
 
 		// find the best one
 		ClustersOrderParameter bestOrderParameter;
 		ArborCluster* bestCluster;
 
+		//---> help by MC
+		const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(cluster);
+		const pandora::MCParticle* clusterMCP = nullptr;
+
+		try
+		{
+			clusterMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
+		}
+		catch(pandora::StatusCodeException &)
+		{
+			std::cout << "MCP issue: " << pandoraClu << std::endl;
+		}
+		//---> help by MC
+
+
 		for(int iMother = 0; iMother < mothers.size(); ++iMother)
 		{
 			auto mother = mothers.at(iMother);
 			ClustersOrderParameter orderParameter = cluster->GetOrderParameterWithMother(mother);
+		
+		    //---> help by MC
+		    const pandora::Cluster* const pandoraMotherClu = dynamic_cast<const pandora::Cluster* const>(mother);
+			const pandora::MCParticle* motherClusterMCP = nullptr;
+
+		    try
+		    {
+		    	motherClusterMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraMotherClu);
+		    }
+		    catch(pandora::StatusCodeException &)
+		    {
+		    	std::cout << "MCP issue: " << pandoraClu << std::endl;
+		    }
+
+		    bool m_CleanByMCTruth = false;
+
+			if(m_CleanByMCTruth)
+			{
+				if(motherClusterMCP != nullptr && clusterMCP == motherClusterMCP)
+			    {
+			    	bestCluster = mother;
+			    	break;
+			    }
+			}
+		    //---> help by MC
 
 			if(orderParameter < bestOrderParameter)
 			{
@@ -529,6 +565,18 @@ namespace arbor_content
 			mothers.clear();
 			mothers.push_back(bestCluster);
 		}
+
+#if __DEBUG__
+		std::cout << " --- cluster " << cluster << " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
+
+		for(int iMother = 0; iMother < mothers.size(); ++iMother)
+		{
+			auto mother = mothers.at(iMother);
+
+			std::cout << "   -> mother " << iMother << ": " << mother << ", clustersToMerge: " 
+				      << mother->GetClustersToMerge().size() << std::endl;
+		}
+#endif
 	}
 
     return pandora::STATUS_CODE_SUCCESS;
