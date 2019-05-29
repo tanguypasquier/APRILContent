@@ -221,7 +221,10 @@ namespace arbor_content
 	}
 
 	// clean clusters
-	CleanClusterForMerging(clusterVector);
+	if(m_cleanClusterConnection)
+	{
+		CleanClusterForMerging(clusterVector);
+	}
 	
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -665,6 +668,10 @@ namespace arbor_content
     m_maxStartingClusterDistance = 2000.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxStartingClusterDistance", m_maxStartingClusterDistance));
+
+	m_cleanClusterConnection = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "CleanClusterConnection", m_cleanClusterConnection));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

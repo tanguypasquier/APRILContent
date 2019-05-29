@@ -78,7 +78,8 @@ private:
 	pandora::StatusCode GetEligibleClusters(std::vector<ArborCluster*>& clusterVector) const;
 
 private:
-	float                            m_maxStartingClusterDistance;
+	float m_maxStartingClusterDistance;
+	bool m_cleanClusterConnection;
 
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;
