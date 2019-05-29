@@ -48,6 +48,8 @@
 #include <algorithm>
 
 #define __DEBUG__ 0
+#define __DEBUG1__ 0
+#define __DEBUG2__ 1
 
 namespace arbor_content
 {
@@ -88,7 +90,7 @@ namespace arbor_content
 
 		pCluster->SetPhoton(isPhoton);
 
-#if __DEBUG__
+#if __DEBUG2__
 		std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
 			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << ", isPoton: " << isPhoton << std::endl;
 #endif
@@ -382,6 +384,8 @@ namespace arbor_content
 
 		  bool canMerge = (closestDistance < m_maxClosestDistance) || (angle < 1. && closestDistance < m_maxClosestDistance * 3.) ||
 			              (axisDistance < 100. && closestDistance < m_maxClosestDistance * 4.) ;
+
+		  //canMerge = true;
 				  
 
 		  if(!canMerge) 
@@ -393,6 +397,47 @@ namespace arbor_content
 
 			  continue;
 		  }
+
+		  ///////
+		  int shouldMerge = 0;
+		  try
+		  {
+		      const pandora::Cluster* const pandoraStatingClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
+		      auto pandoraStartingCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraStatingClu);
+
+		      const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+		      auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
+
+			  if(pandoraStartingCluMCP == pandoraCluMCP)
+			  {
+				  shouldMerge = 1;
+			  }
+			  else
+			  {
+				  shouldMerge = 0;
+
+				  std::cout << " ======> ORDER: statingCluster: " << pandoraStatingClu << ", E: " << pandoraStatingClu->GetHadronicEnergy()
+					  << ", mergingCluster: " << pandoraClu << ", E: " << pandoraClu->GetHadronicEnergy()
+					  << ", closestDistance: " << closestDistance << ", angle: " << angle
+					  << ", axisDistance: " << axisDistance << ", shouldMerge: " << shouldMerge << std::endl;
+			  }
+
+		  }
+		  catch(pandora::StatusCodeException &)
+		  {
+			  shouldMerge = -1;
+		  }
+
+	      std::vector<float> vars;
+	      vars.push_back( float(closestDistance) );
+		  vars.push_back( float(angle) );
+		  vars.push_back( float(axisDistance) );
+		  vars.push_back( float(shouldMerge) );
+
+		  //std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
+
+		  HistogramManager::CreateFill(GetInstanceName().c_str(), "closestDistance:angle:axisDistance:shouldMerge", vars);
+		  ///////
 
 		  std::vector<float> clusterParameters;
 
