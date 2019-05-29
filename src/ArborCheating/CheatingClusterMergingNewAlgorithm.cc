@@ -137,6 +137,9 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 		            std::cout << "GetClosestDistanceApproach failed" << std::endl;
 		        }
 
+				bool firstClusterHasTrack = !(firstCluster->GetAssociatedTrackList().empty());
+				bool cluToMergeHasTrack = !(cluToMerge->GetAssociatedTrackList().empty());
+
 	            std::vector<float> vars;
 	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	            vars.push_back( float(firstCluster->GetHadronicEnergy()) );
@@ -144,10 +147,12 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 				vars.push_back( float(clusterMCPCharge));
 				vars.push_back( float(isPhoton));
 				vars.push_back( closestDistance );
+				vars.push_back( float(firstClusterHasTrack) );
+				vars.push_back( float(cluToMergeHasTrack) );
 
 				//std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
 
-		        HistogramManager::CreateFill(tupleName.c_str(), "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isMCPPhoton:closestDistance", vars);
+		        HistogramManager::CreateFill(tupleName.c_str(), "evtNumber:mainClusterEnergy:clusterEnergy:clusterMCPCharge:isMCPPhoton:closestDistance:firstClusterHasTrack:cluToMergeHasTrack", vars);
 
 				auto pArborFirstCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(firstCluster));
 				auto pArborCluToMerge = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(cluToMerge));
@@ -155,7 +160,7 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 				std::cout << " --- mainCluster " << firstCluster << ", frag: " << pArborFirstCluster->IsFragment() 
 					<< ", Ehad: " << firstCluster->GetHadronicEnergy() 
 					<< ", cluToMerge " << cluToMerge << ", frag: " << pArborCluToMerge->IsFragment() 
-					<< ", Ehad: " << cluToMerge->GetHadronicEnergy() << std::endl;
+					<< ", Ehad: " << cluToMerge->GetHadronicEnergy() << ", cluster charge: " << clusterMCPCharge << std::endl;
 #if __DEBUG__
 				if(clusterMCPCharge != 0)
 				{
