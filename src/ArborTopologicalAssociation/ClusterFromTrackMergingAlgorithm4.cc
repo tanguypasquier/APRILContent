@@ -49,7 +49,7 @@
 
 #define __DEBUG__ 0
 #define __DEBUG1__ 0
-#define __DEBUG2__ 1
+#define __DEBUG2__ 0
 
 namespace arbor_content
 {
@@ -416,10 +416,12 @@ namespace arbor_content
 			  {
 				  shouldMerge = 0;
 
+#if __DEBUG2__ 
 				  std::cout << " ======> ORDER: statingCluster: " << pandoraStatingClu << ", E: " << pandoraStatingClu->GetHadronicEnergy()
 					  << ", mergingCluster: " << pandoraClu << ", E: " << pandoraClu->GetHadronicEnergy()
 					  << ", closestDistance: " << closestDistance << ", angle: " << angle
 					  << ", axisDistance: " << axisDistance << ", shouldMerge: " << shouldMerge << std::endl;
+#endif
 			  }
 
 		  }

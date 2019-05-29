@@ -46,7 +46,7 @@
 #include <algorithm>
 
 #define __DEBUG__ 0
-#define __DEBUG1__ 1
+#define __DEBUG1__ 0
 
 namespace arbor_content
 {
@@ -221,7 +221,9 @@ namespace arbor_content
 				std::cout << "- MCP getting problem..." << std::endl;
 			}
 
+#if __DEBUG1__	
 			std::cout << " ===> merge: " << clusterToEnlarge << ", " << clusterToMerge << std::endl;
+#endif
 			ArborContentApi::MergeAndDeleteClusters(*this, clusterToEnlarge, clusterToMerge);
 		}
 	}
