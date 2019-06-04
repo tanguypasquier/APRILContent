@@ -623,6 +623,40 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  pandora::HitRegion ClusterHelper::GetRegion(const pandora::Cluster *const pCluster)
+  {
+	  std::vector<pandora::HitRegion> hitRegion;
+
+      pandora::CaloHitList clusterCaloHitList;
+      pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+	  pandora::CaloHitList isoCaloHitList = pCluster->GetIsolatedCaloHitList();
+	  clusterCaloHitList.insert(clusterCaloHitList.begin(), isoCaloHitList.begin(), isoCaloHitList.end());
+
+	  for(auto& caloHit : clusterCaloHitList)
+	  {
+		  hitRegion.push_back(caloHit->GetHitRegion());
+	  }
+
+	  pandora::HitRegion region = pandora::HitRegion::SINGLE_REGION;
+
+	  int maxCountRegion = 0;
+
+	  for (int regionInt = pandora::HitRegion::BARREL; regionInt <= pandora::HitRegion::SINGLE_REGION; ++regionInt)
+	  {
+		  int countRegion = std::count(hitRegion.begin(), hitRegion.end(), regionInt);
+
+		  if(countRegion > maxCountRegion)
+		  {
+			  maxCountRegion = countRegion;
+			  region = static_cast<pandora::HitRegion>(regionInt);
+		  }
+	  }
+
+	  return region;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   pandora::StatusCode ClusterHelper::GetMeanDensity(const pandora::Cluster *const pCluster, float &meanDensity)
   {
     if(nullptr == pCluster || 0 == pCluster->GetNCaloHits())

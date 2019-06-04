@@ -136,6 +136,8 @@ public:
 			float &centroidDistance);
   
 	static float GetHadronicEnergyInECAL(const pandora::Cluster *const pCluster);
+
+    static pandora::HitRegion GetRegion(const pandora::Cluster *const pCluster);
   
 	static float GetElectromagneticEnergyInECAL(const pandora::Cluster *const pCluster);
   
