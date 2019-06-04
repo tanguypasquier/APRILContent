@@ -125,7 +125,7 @@ namespace arbor_content
 			   pandora::STATUS_CODE_SUCCESS != 
 			        ClusterHelper::GetChiClusterMerging(this->GetPandora(), clusterToEnlarge, clusterToMerge, oldChi, newChi))
 			{
-				std::cout << " - GetChiClusterMerging issue..." << std::endl;
+				std::cout << "      ===> GetChiClusterMerging issue..." << std::endl;
 				continue;
 			}
 
@@ -142,7 +142,7 @@ namespace arbor_content
 				if( m_useEnergyChi && newChi > m_maxChi) 
 				{
 #if __DEBUG__	
-					std::cout << " - newChi: " << newChi << ", m_maxChi: " << m_maxChi << std::endl;
+					std::cout << "      ===> no merging, newChi: " << newChi << ", m_maxChi: " << m_maxChi << std::endl;
 #endif
 					continue;
 				}
@@ -150,7 +150,7 @@ namespace arbor_content
 				if(clusterToMerge->GetHadronicEnergy() > m_maxMergingEnergy) 
 				{
 #if __DEBUG__	
-					std::cout << " - E: " << clusterToMerge->GetHadronicEnergy() << ", m_maxMergingEnergy: " << m_maxMergingEnergy << std::endl;
+					std::cout << "      ===> no merging, " << clusterToMerge->GetHadronicEnergy() << ", m_maxMergingEnergy: " << m_maxMergingEnergy << std::endl;
 #endif
 					continue;
 				}
