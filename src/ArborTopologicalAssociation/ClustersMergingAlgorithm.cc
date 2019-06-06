@@ -46,7 +46,7 @@
 #include <algorithm>
 
 #define __DEBUG__ 0
-#define __DEBUG1__ 0
+#define __DEBUG1__ 1
 
 namespace arbor_content
 {
@@ -222,7 +222,11 @@ namespace arbor_content
 			}
 
 #if __DEBUG1__	
-			std::cout << " ===> merge: " << clusterToEnlarge << ", " << clusterToMerge << std::endl;
+			std::cout << " @@@@@@ merge: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy() 
+				<< ", isPhoton: " << clusterToEnlarge->IsPhoton()
+				<< " ---> " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy()
+				<< ", isPhoton: " << clusterToMerge->IsPhoton()
+				<< std::endl;
 #endif
 			ArborContentApi::MergeAndDeleteClusters(*this, clusterToEnlarge, clusterToMerge);
 		}
