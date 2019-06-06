@@ -65,9 +65,6 @@ private:
     void GetNearbyClusters(pandora::Cluster* cluster, const std::vector<arbor_content::ArborCluster*>& clusterVector, 
 			std::vector<arbor_content::ArborCluster*>& clustersInRange);
 
-    void SearchProperClusters(ArborCluster* startingCluster, 
-		  std::vector<arbor_content::ArborCluster*>& properClusters);
-
     void SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters);
 
@@ -137,7 +134,7 @@ private:
 
 	float                            m_maxStartingClusterDistance;
 	float                            m_maxClusterDistanceToMerge;
-	float                            m_maxClosestPhotonDistance;
+	float                            m_maxClosestClusterDistance;
 
 	bool                             m_mergePhotonClusters;
 	bool                             m_mergeChargedClusters;
