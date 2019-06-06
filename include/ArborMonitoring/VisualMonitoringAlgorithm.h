@@ -109,6 +109,8 @@ private:
 
 	TEveElement* VisualizeClusterListWithConnectors(const pandora::ClusterList *const pClusterList, 
 		  const std::string &name, TEveElement *parent, const Color color, bool showAssociatedTracks) const;
+  
+	void VisualizeClusterDirection(const pandora::Cluster* const pCluster, std::string name, TEveElement* parent, ::Color color) const;
 
 #ifdef MONITORING
     /**

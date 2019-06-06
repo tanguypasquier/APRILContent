@@ -507,6 +507,8 @@ namespace arbor_content
 
           this->VisualizeConnectors(&caloHitList, "Connectors", pCaloHitsElement, MAGENTA);
 
+          this->VisualizeClusterDirection(pCluster, "Direction", pCaloHitsElement, GREEN);
+
           if (showAssociatedTracks && !pCluster->GetAssociatedTrackList().empty())
           {
               TEveElement *pTrackParentElement = pCaloHitsElement;
@@ -729,6 +731,59 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  void VisualMonitoringAlgorithm::VisualizeClusterDirection(const pandora::Cluster* const pCluster, std::string /* name */, TEveElement* parent, ::Color color) const
+  {
+    if(this->GetPandora().GetSettings()->IsMonitoringEnabled())
+    {
+      if(NULL == parent)
+        return;
+	
+	  const arbor_content::ArborCluster* const pArborCluster = dynamic_cast<const arbor_content::ArborCluster *const>(pCluster);
+
+	  pandora::CartesianVector clusterCOG = pArborCluster->GetIntercept();
+	  pandora::CartesianVector clusterAxis = pArborCluster->GetAxis();
+
+	  //std::cout << "=================================== pArborCluster: " << pArborCluster << ", " << clusterCOG.GetX()
+		//  << ", " << clusterAxis.GetX() << std::endl;
+
+	  //if(clusterConnectorList.empty()) return;
+
+      //const std::string connectorListTitle(name.empty() ? "Connectors" : name);
+
+      //pConnectorListElement->SetElementNameTitle( connectorListTitle.c_str(), connectorListTitle.c_str() );
+      //pConnectorListElement->SetRnrSelf(false);
+      //pConnectorListElement->SetRnrChildren(false);
+      //pConnectorListElement->SetMainColor(GetROOTColor(color));
+
+      pandora::CartesianVector fromPosition(clusterCOG);
+      pandora::CartesianVector differenceVector(clusterAxis);
+
+      const float scalingFactor(0.1f);
+      const float scalingFactorDir(10.f);
+
+      TEveArrow *pConnectorArrow = new TEveArrow (
+          differenceVector.GetX()*scalingFactorDir,
+          differenceVector.GetY()*scalingFactorDir,
+          differenceVector.GetZ()*scalingFactorDir,
+          fromPosition.GetX()*scalingFactor,
+          fromPosition.GetY()*scalingFactor,
+          fromPosition.GetZ()*scalingFactor);
+
+      std::stringstream sstr;
+	  sstr << "Direction of cluster, Ehad=" << pCluster->GetHadronicEnergy();
+
+	  std::string directionTitle(sstr.str());
+
+      pConnectorArrow->SetMainColor(GetROOTColor(color));
+	  pConnectorArrow->SetElementNameTitle("Direction", directionTitle.c_str());
+      pConnectorArrow->SetPickable(true);
+
+      parent->AddElement(pConnectorArrow);
+      gEve->Redraw3D();
+    }
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
   EColor VisualMonitoringAlgorithm::GetROOTColor(::Color color) const
   {
     switch (color)
