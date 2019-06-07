@@ -64,56 +64,6 @@ namespace arbor_content
 	{
 		auto pCluster = clusterVector.at(i);
 
-		//pCluster->Reset();
-		//auto clusterAxis = pCluster->GetAxis();
-
-		if(pCluster->IsRoot() == false && pCluster->GetMotherCluster().size() == 0)
-		{
-		    //////
-		    int mcpCharge = -1e6;
-
-		    try
-		    {
-		        const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
-		        auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
-
-		        mcpCharge = pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId());
-		    }
-		    catch(pandora::StatusCodeException &)
-		    {
-		    }
-
-		    auto clusterRegion = ClusterHelper::GetRegion(pCluster);
-
-		    //////
-	        std::vector<float> vars;
-	        vars.push_back( float(pCluster->IsRoot()) );
-		    vars.push_back( float(pCluster->IsPhoton()) );
-		    vars.push_back( float(pCluster->GetMotherCluster().size()) );
-		    vars.push_back( float(pCluster->GetInnerPseudoLayer()) );
-		    vars.push_back( float(pCluster->GetInnerLayerHitType()) );
-		    vars.push_back( float(pCluster->GetOuterLayerHitType()) );
-		    vars.push_back( float(clusterRegion) );
-		    vars.push_back( float(mcpCharge) );
-
-
-		    HistogramManager::CreateFill("ChargeOfClusters", 
-		  		  "IsRoot:IsPhoton:MotherSize:Layer:InnerLayerHitType:OuterLayerHitType:clusterRegion:MCPCharge", vars);
-
-			//////
-			std::cout << "  --- check cluster: " << pCluster << ", isRoot: " << pCluster->IsRoot() 
-			          << ", isPhoton: " << pCluster->IsPhoton() 
-					  //<< ", HasMotherAtSearch: " << pCluster->HasMotherAtSearch() 
-		              //<< ", axis: " << clusterAxis.GetX() << ", " << clusterAxis.GetY() << ", " << clusterAxis.GetZ() << std::endl;
-		              //<< ", mother size: " << pCluster->GetMotherCluster().size() 
-					  << ", layer: " << pCluster->GetInnerPseudoLayer()
-					  << ", E: " << pCluster->GetHadronicEnergy() 
-					  << ", clusterRegion: " << clusterRegion 
-					  << ", q: " << mcpCharge << std::endl;
-		}
-		
-		continue;
-
 		// reset cluster
 		pCluster->Reset();
 
@@ -211,11 +161,6 @@ namespace arbor_content
 		if( cluster->GetAssociatedTrackList().size() == 0 )
 		{
 			m_clustersToMerge.push_back(cluster);
-		}
-
-		if(cluster->IsPhoton())
-		{
-			cluster->SetRoot();
 		}
 	}
 
