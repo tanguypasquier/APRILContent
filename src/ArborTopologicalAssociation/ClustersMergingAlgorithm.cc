@@ -46,7 +46,8 @@
 #include <algorithm>
 
 #define __DEBUG__ 0
-#define __DEBUG1__ 1
+#define __DEBUG1__ 0
+#define __DEBUG2__ 1
 
 namespace arbor_content
 {
@@ -183,7 +184,7 @@ namespace arbor_content
 				    	{
 				    		if(!m_mergeIssue) continue;
 				    		
-#if __DEBUG1__	
+#if __DEBUG2__	
 			        	    std::cout << "merging issue, main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
 			        		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
 				    		    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
@@ -197,7 +198,7 @@ namespace arbor_content
 				    	{
 				    		if(!m_mergeError) continue;
 				    		
-#if __DEBUG1__	
+#if __DEBUG2__	
 			        	    std::cout << "merging ERROR!!! main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
 			        		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
 				    		    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
@@ -222,10 +223,15 @@ namespace arbor_content
 			}
 
 #if __DEBUG1__	
+		    const pandora::Cluster* const pandoraCluEnlarge = dynamic_cast<const pandora::Cluster* const>(clusterToEnlarge);
+		    const pandora::Cluster* const pandoraCluMerge = dynamic_cast<const pandora::Cluster* const>(clusterToMerge);
+		    bool isPhotonClusterToEnlarge = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraCluEnlarge);
+		    bool isPhotonClusterToMerge = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraCluMerge);
+
 			std::cout << " @@@@@@ merge: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy() 
-				<< ", isPhoton: " << clusterToEnlarge->IsPhoton()
+				<< ", isPhoton: " << isPhotonClusterToEnlarge
 				<< " ---> " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy()
-				<< ", isPhoton: " << clusterToMerge->IsPhoton()
+				<< ", isPhoton: " << isPhotonClusterToMerge
 				<< std::endl;
 #endif
 			ArborContentApi::MergeAndDeleteClusters(*this, clusterToEnlarge, clusterToMerge);
