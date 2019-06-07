@@ -758,6 +758,11 @@ namespace arbor_content
       pandora::CartesianVector fromPosition(clusterCOG);
       pandora::CartesianVector differenceVector(clusterAxis);
 
+	  if( !(differenceVector.GetMagnitude() > 1.e-3 && fromPosition.GetMagnitude() > 0) )
+	  {
+		  return;
+	  }
+
       const float scalingFactor(0.1f);
       const float scalingFactorDir(10.f);
 
