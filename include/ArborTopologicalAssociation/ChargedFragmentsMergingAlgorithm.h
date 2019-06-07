@@ -113,6 +113,10 @@ private:
 	 */
 	pandora::StatusCode GetClusterBackwardDirection(const pandora::Cluster *const pCluster, pandora::CartesianVector &backwardDirection, pandora::CartesianVector &innerPosition) const;
 
+	float GetClusterAxisStartingPointAngle(const ArborCluster* pCluster);
+
+	float GetClusterAxesDistance(const ArborCluster* pCluster1, const ArborCluster* pCluster2);
+
 private:
 	bool                             m_discriminatePhotonPid;            ///< Whether to discriminate photons
 	bool                             m_allowNeutralParentMerging;
