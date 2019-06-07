@@ -142,6 +142,12 @@ public:
 	static float GetElectromagneticEnergyInECAL(const pandora::Cluster *const pCluster);
   
 	static pandora::StatusCode GetClusterVolume(const pandora::Cluster *const pCluster, float& clusterVolume);
+  
+	static pandora::StatusCode FitStart(const pandora::Cluster *const pCluster, const unsigned int maxOccupiedLayers, pandora::ClusterFitResult &clusterFitResult);
+  
+	static pandora::StatusCode FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult);
+  
+	static pandora::OrderedCaloHitList GetOrderedConnectedCaloHitList(const pandora::Cluster *const pCluster);
 
 	/**
 	 *  @brief  Get the closest distance approach between all the hits of the clusters

@@ -231,6 +231,111 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
+  pandora::OrderedCaloHitList ClusterHelper::GetOrderedConnectedCaloHitList(const pandora::Cluster *const pCluster)
+  {
+	  pandora::OrderedCaloHitList orderedConnectedCaloHitList;
+
+	  const pandora::OrderedCaloHitList &orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+
+	  pandora::CaloHitList caloHitList;
+	  orderedCaloHitList.FillCaloHitList(caloHitList);
+
+	  for(auto& pCaloHit : caloHitList)
+	  {
+		  const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit);
+		  if(!ArborContentApi::HasAnyConnection(pArborCaloHit)) continue;
+
+		  orderedConnectedCaloHitList.Add(pCaloHit);
+	  }
+
+	  return orderedConnectedCaloHitList;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode ClusterHelper::FitStart(const pandora::Cluster *const pCluster, const unsigned int maxOccupiedLayers, pandora::ClusterFitResult &clusterFitResult)
+  {
+      if (maxOccupiedLayers < 2)
+          return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+	  const pandora::OrderedCaloHitList orderedCaloHitList = GetOrderedConnectedCaloHitList(pCluster);
+      const unsigned int listSize(orderedCaloHitList.size());
+  
+      if (0 == listSize)
+	  {
+          return pandora::STATUS_CODE_NOT_INITIALIZED;
+	  }
+  
+      if (listSize < 2)
+          return pandora::STATUS_CODE_OUT_OF_RANGE;
+  
+      unsigned int occupiedLayerCount(0);
+  
+	  pandora::ClusterFitPointList clusterFitPointList;
+      for (const pandora::OrderedCaloHitList::value_type &layerIter : orderedCaloHitList)
+      {
+          if (++occupiedLayerCount > maxOccupiedLayers)
+              break;
+  
+          for (const pandora::CaloHit *const pCaloHit : *layerIter.second)
+          {
+              const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit);
+			  if(!ArborContentApi::HasAnyConnection(pArborCaloHit)) continue;
+
+              clusterFitPointList.push_back(pandora::ClusterFitPoint(pCaloHit));
+          }
+      }
+  
+      if(pandora::ClusterFitHelper::FitPoints(clusterFitPointList, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+		  return pandora::STATUS_CODE_FAILURE;
+
+	  bool fitSuccessful = clusterFitResult.IsFitSuccessful() && clusterFitResult.GetDirection().GetMagnitude() > 0.
+		  && clusterFitResult.GetIntercept().GetMagnitude() > 0.;
+
+	  if(fitSuccessful)
+		  return pandora::STATUS_CODE_SUCCESS;
+	  else
+		  return pandora::STATUS_CODE_FAILURE;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode ClusterHelper::FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult)
+  {
+	  const pandora::OrderedCaloHitList orderedCaloHitList = GetOrderedConnectedCaloHitList(pCluster);
+      const unsigned int listSize(orderedCaloHitList.size());
+  
+      if (0 == listSize)
+	  {
+          return pandora::STATUS_CODE_NOT_INITIALIZED;
+	  }
+
+      if (listSize < 2)
+          return pandora::STATUS_CODE_OUT_OF_RANGE;
+  
+	  pandora::ClusterFitPointList clusterFitPointList;
+      for (const pandora::OrderedCaloHitList::value_type &layerIter : orderedCaloHitList)
+      {
+          for (const pandora::CaloHit *const pCaloHit : *layerIter.second)
+          {
+              const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit);
+			  if(!ArborContentApi::HasAnyConnection(pArborCaloHit)) continue;
+
+              clusterFitPointList.push_back(pandora::ClusterFitPoint(pCaloHit));
+          }
+      }
+
+      if(pandora::ClusterFitHelper::FitPoints(clusterFitPointList, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+		  return pandora::STATUS_CODE_FAILURE;
+
+	  bool fitSuccessful = clusterFitResult.GetDirection().GetMagnitude() > 0.
+		  && clusterFitResult.GetIntercept().GetMagnitude() > 0.;
+
+	  if(fitSuccessful)
+		  return pandora::STATUS_CODE_SUCCESS;
+	  else
+		  return pandora::STATUS_CODE_FAILURE;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
   float ClusterHelper::GetHadronicEnergyInECAL(const pandora::Cluster *const pCluster)
   {
 	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
