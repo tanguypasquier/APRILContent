@@ -158,9 +158,10 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 				auto pArborCluToMerge = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(cluToMerge));
 
 				std::cout << " --- mainCluster " << firstCluster << ", frag: " << pArborFirstCluster->IsFragment() 
-					<< ", Ehad: " << firstCluster->GetHadronicEnergy() 
+					<< ", Ehad: " << firstCluster->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(firstCluster)
 					<< ", cluToMerge " << cluToMerge << ", frag: " << pArborCluToMerge->IsFragment() 
-					<< ", Ehad: " << cluToMerge->GetHadronicEnergy() << ", cluster charge: " << clusterMCPCharge << std::endl;
+					<< ", Ehad: " << cluToMerge->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(cluToMerge)
+					<< ", cluster charge: " << clusterMCPCharge << std::endl;
 #if __DEBUG__
 				if(clusterMCPCharge != 0)
 				{
