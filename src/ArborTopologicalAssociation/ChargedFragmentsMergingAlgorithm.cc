@@ -98,6 +98,7 @@ namespace arbor_content
 			// fit with only connected calo hits; if not successful, with all calo hits.
 			if(ClusterHelper::FitFullCluster(pCluster, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
 			{
+				std::cout << " ---> fit all hits for cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
 				pandora::ClusterFitHelper::FitFullCluster(pCluster, clusterFitResult);
 			}
 
@@ -266,18 +267,6 @@ namespace arbor_content
 			  continue;
 		  }
 
-#if 0
-		  // angle selection
-		  pandora::CartesianVector trackPointAtCalo = pTrack->GetTrackStateAtCalorimeter().GetPosition();
-		  pandora::CartesianVector trackMomentumAtCalo = pTrack->GetTrackStateAtCalorimeter().GetMomentum();
-
-		  pandora::CartesianVector trackPointAtCaloClusterDistance = nearbyCluster->GetCentroid() - trackPointAtCalo;
-
-		  float clusterTrackAngle = trackPointAtCaloClusterDistance.GetOpeningAngle(trackMomentumAtCalo);
-		  float m_maxClusterTrackAngle = 0.3;
-		  if(clusterTrackAngle > m_maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
-#endif
-
 		  if(m_debugOutput)
 		  {
 			  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
@@ -331,24 +320,38 @@ namespace arbor_content
 				  closestDistance < m_maxClosestClusterDistance ||  // very close cluster
 			      ( angle > 0.8 && axisDistance < 100. );           // clusters with compatible axes
 
-		  if(!isMergingCandidate) continue;
+		  std::cout << " @_@ Check clusters @_@: " << std::endl
+		      << "  startingCluster: " << startingCluster << ", E: " << startingCluster->GetHadronicEnergy() << std::endl
+		      << "  nearbyCluster: " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl
+		      << "  closestDistance: " << closestDistance << ", angle: " << angle << ", axisDistance: " << axisDistance << std::endl;
+
+		  if(isMergingCandidate) 
+		  {
 
 
-		  std::vector<float> clusterParameters;
 
-		  clusterParameters.push_back(closestDistance);
-		  clusterParameters.push_back(angle); // axis angle
-		  clusterParameters.push_back(axisDistance);
+		      std::vector<float> clusterParameters;
 
-		  std::vector<float> parameterPowers;
-		  parameterPowers.push_back(5.);
-		  parameterPowers.push_back(3.);
-		  parameterPowers.push_back(1.);
+		      clusterParameters.push_back(closestDistance);
+		      clusterParameters.push_back(angle); // axis angle
+		      clusterParameters.push_back(axisDistance);
 
-		  ClustersOrderParameter orderParameter(clusterParameters, parameterPowers);
-		  nearbyCluster->SetOrderParameterWithMother(startingCluster, orderParameter);
+		      std::vector<float> parameterPowers;
+		      parameterPowers.push_back(5.);
+		      parameterPowers.push_back(3.);
+		      parameterPowers.push_back(1.);
 
-		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
+		      ClustersOrderParameter orderParameter(clusterParameters, parameterPowers);
+		      nearbyCluster->SetOrderParameterWithMother(startingCluster, orderParameter);
+
+		      clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
+		  }
+		  else
+		  {
+			  std::cout << "    --- Not a merging cadidate" << std::endl;
+		  }
+
+		  std::cout << "-----------------------------------------------------------------------------------------" << std::endl;
       }
 		  
 	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
@@ -397,9 +400,47 @@ namespace arbor_content
 	  auto& cluster1Axis = pCluster1->GetAxis();
 	  auto& cluster2Axis = pCluster2->GetAxis();
 
+	  // FIXME: intercept or starting point ?
 	  auto& cog1 = pCluster1->GetCentroid();
 	  auto& cog2 = pCluster2->GetCentroid();
 	  auto directionOfCentroids = cog1 - cog2;
+
+	  // redefition
+	  auto d1 = cluster1Axis;
+	  auto d2 = cluster2Axis;
+
+	  auto x1 = cog1;
+	  auto x2 = cog2;
+	
+	  // 
+	  auto n1 = d1.GetCrossProduct(d2.GetCrossProduct(d1));
+	  auto n2 = d2.GetCrossProduct(d1.GetCrossProduct(d2));
+
+	  // the nearest points
+	  //auto Np1 = x1 + ( (x2-x1).GetDotProduct(n2)/(d1.GetDotProduct(n2)) )*d1;
+	  auto Np1 = d1;
+	  Np1 *= (x2-x1).GetDotProduct(n2)/(d1.GetDotProduct(n2));
+	  Np1 += x1;
+
+	  //auto Np2 = x2 + (x1-x2).GetDotProduct(n1)/(d2.GetDotProduct(n1))*d2;
+	  auto Np2 = d2;
+	  Np2 *= (x1-x2).GetDotProduct(n1)/(d2.GetDotProduct(n1));
+	  Np2 += x2;
+
+	  float distCOGNp1 = (x1 - Np1).GetMagnitude();
+	  float distCOGNp2 = (x2 - Np2).GetMagnitude();
+
+	  std::cout << "       === GetClusterAxesDistance === " << std::endl
+		        << " E1: " << pCluster1->GetHadronicEnergy() << ", E2: " << pCluster2->GetHadronicEnergy() << std::endl
+		        << " cluster1Axis: " << cluster1Axis.GetX() << ", " << cluster1Axis.GetY() << ", " << cluster1Axis.GetZ() << std::endl
+		        << " cluster2Axis: " << cluster2Axis.GetX() << ", " << cluster2Axis.GetY() << ", " << cluster2Axis.GetZ() << std::endl
+				<< " COG1: " << cog1.GetX() << ", " << cog1.GetY() << ", " << cog1.GetZ() << std::endl
+				<< " COG2: " << cog2.GetX() << ", " << cog2.GetY() << ", " << cog2.GetZ() << std::endl
+				<< " d_cog: " << directionOfCentroids.GetMagnitude() << std::endl
+				<< " Np1: " << Np1.GetX() << ", " << Np1.GetY() << ", " << Np1.GetZ() << ", distToCOG: " << distCOGNp1 << std::endl
+				<< " Np2: " << Np2.GetX() << ", " << Np2.GetY() << ", " << Np2.GetZ() << ", distToCOG: " << distCOGNp2 << std::endl
+				<< std::endl;
+
 
 #if 0
 	  if( directionOfCentroids.GetMagnitudeSquared() * pCluster1->GetMagnitudeSquared() > std::numeric_limits<float>::epsilon() )
