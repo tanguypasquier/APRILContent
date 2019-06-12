@@ -128,22 +128,37 @@ namespace arbor_content
 
 			// if cluster has connected with track, the intercept is taken as starting point and
 			// the direction is computed from the hits in first 6 layers.
-		    if( (pCluster->GetAssociatedTrackList().size() != 0) )
+			const pandora::TrackList& associatedTrackList = pCluster->GetAssociatedTrackList();
+		    int nAssociatedTracks = associatedTrackList.size();
+
+			// re-compute axis and starting point for charged cluster
+			if(nAssociatedTracks > 0)
 			{
 				pCluster->SetIntercept(startingPoint);
 
-				if(pCluster->GetOrderedCaloHitList().size()>6)
+				if(nAssociatedTracks == 1)
 				{
-					pandora::ClusterFitResult clusterFitResultChg;
+					const pandora::Track* associatedTrack = *( associatedTrackList.begin() );
+					const pandora::CartesianVector trackDirectionAtCalo = 
+						                           associatedTrack->GetTrackStateAtCalorimeter().GetMomentum().GetUnitVector();
 
-					if(pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
-					{
-						pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg);
-					}
+					pCluster->SetAxis(trackDirectionAtCalo);
+				}
+				else
+				{
+				    if(pCluster->GetOrderedCaloHitList().size()>6)
+				    {
+				    	pandora::ClusterFitResult clusterFitResultChg;
 
-		            const pandora::CartesianVector& axis = clusterFitResultChg.GetDirection();
+				    	if(pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
+				    	{
+				    		pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg);
+				    	}
+
+		                const pandora::CartesianVector& axis = clusterFitResultChg.GetDirection();
 			
-					pCluster->SetAxis(axis);
+				    	pCluster->SetAxis(axis);
+				    }
 				}
 			}
 		}
@@ -327,9 +342,6 @@ namespace arbor_content
 
 		  if(isMergingCandidate) 
 		  {
-
-
-
 		      std::vector<float> clusterParameters;
 
 		      clusterParameters.push_back(closestDistance);
@@ -620,25 +632,6 @@ namespace arbor_content
 
     // sort them by inner layer
     std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortClustersByInnerLayer);
-
-    return pandora::STATUS_CODE_SUCCESS;
-  }
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
-  pandora::StatusCode ChargedFragmentsMergingAlgorithm::GetClusterBackwardDirection(const pandora::Cluster *const pCluster, pandora::CartesianVector &backwardDirection, pandora::CartesianVector &innerPosition) const
-  {
-    pandora::CartesianVector centroid(0.f, 0.f, 0.f);
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, centroid));
-
-    const pandora::CartesianVector innerCentroid(pCluster->GetCentroid(pCluster->GetInnerPseudoLayer()));
-
-    pandora::ClusterFitResult clusterFitResult;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitStart(pCluster, m_nBackwardLayersFit, clusterFitResult));
-    const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
-
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnLine(centroid, clusterDirection, innerCentroid, innerPosition));
-    backwardDirection = clusterDirection * -1.f;
 
     return pandora::STATUS_CODE_SUCCESS;
   }
