@@ -322,7 +322,7 @@ namespace arbor_content
 
 		  try
 		  {
-			  angle = GetClusterAxisStartingPointAngle(nearbyCluster);
+			  angle = ClusterHelper::GetClusterAxisStartingPointAngle(nearbyCluster);
 			  axisDistance = GetClusterAxesDistance(startingCluster, nearbyCluster); 
 		  }
 		  catch(...)
@@ -382,33 +382,8 @@ namespace arbor_content
 	  }
   }
 
-  float ChargedFragmentsMergingAlgorithm::GetClusterAxisStartingPointAngle(const ArborCluster* pCluster)
-  {
-	  auto& clusterAxis = pCluster->GetAxis();
-	  auto& clusterStartingPoint = pCluster->GetStartingPoint();
-	  float angleAxisStartingPoint = clusterAxis.GetOpeningAngle(clusterStartingPoint);
-
-	  return angleAxisStartingPoint;
-  }
-
   float ChargedFragmentsMergingAlgorithm::GetClusterAxesDistance(const ArborCluster* pCluster1, const ArborCluster* pCluster2)
   {
-#if 0
-	  const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField( pandora::CartesianVector(0.f, 0.f, 0.f)));
-
-	  const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
-	    	  pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
-	
-	  pandora::CartesianVector trackCluCentroidDistanceVec(0., 0., 0.);
-	  float genericTime = 0.;
-
-	  if(pandora::STATUS_CODE_SUCCESS != helix.GetDistanceToPoint(nearbyClusterCOG, trackCluCentroidDistanceVec, genericTime))
-	  {
-		std::cout << "helix.GetDistanceToPoint failed" << std::endl;
-	  	continue;
-	  }
-#endif
-
 	  auto& cluster1Axis = pCluster1->GetAxis();
 	  auto& cluster2Axis = pCluster2->GetAxis();
 
@@ -429,12 +404,10 @@ namespace arbor_content
 	  auto n2 = d2.GetCrossProduct(d1.GetCrossProduct(d2));
 
 	  // the nearest points
-	  //auto Np1 = x1 + ( (x2-x1).GetDotProduct(n2)/(d1.GetDotProduct(n2)) )*d1;
 	  auto Np1 = d1;
 	  Np1 *= (x2-x1).GetDotProduct(n2)/(d1.GetDotProduct(n2));
 	  Np1 += x1;
 
-	  //auto Np2 = x2 + (x1-x2).GetDotProduct(n1)/(d2.GetDotProduct(n1))*d2;
 	  auto Np2 = d2;
 	  Np2 *= (x1-x2).GetDotProduct(n1)/(d2.GetDotProduct(n1));
 	  Np2 += x2;
@@ -526,32 +499,6 @@ namespace arbor_content
 		  auto clu = mapIter.second;
 		  clustersInRange.push_back(clu);
 	  }
-
-	  ///////////////////////////////////////////////////////////////////////////////////////////////
-		
-#if 0
-	  auto pClusterMCP = pandora::MCParticleHelper::GetMainMCParticle(cluster);
-
-	  std::cout << "------------ cluster: " << cluster << ", energy: " << cluster->GetHadronicEnergy() 
-		  << ", MCP: " << pClusterMCP << ", nearby clusters: " << clustersInRange.size() << std::endl;
-
-	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
-	  {
-		  //auto pCluster = clustersInRange.at(i);
-		  auto distance = it->first;
-		  auto pCluster = it->second;
-
-
-		  const pandora::Cluster* const clu = dynamic_cast<const pandora::Cluster* const>(pCluster);
-		  bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(clu);
-		  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(clu);
-
-		  std::cout << " *clu: " << clu << ", dist: " << distance << ", nhits: " << 
-			 pCluster->GetNCaloHits() << ", Ehad: " << pCluster->GetHadronicEnergy() 
-			 << ", iL: " << pCluster->GetInnerPseudoLayer() << ": isPhoton: " << pCluster->IsPhoton() 
-			 << ": MCP: " << pClusterMCParticle << std::endl;
-	  }
-#endif
   }
 
   pandora::StatusCode ChargedFragmentsMergingAlgorithm::CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector)

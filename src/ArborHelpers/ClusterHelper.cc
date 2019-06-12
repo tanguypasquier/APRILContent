@@ -163,6 +163,26 @@ namespace arbor_content
        return pandora::STATUS_CODE_SUCCESS;
   }
 
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float ClusterHelper::GetClusterAxisStartingPointAngle(const pandora::Cluster *const pCluster)
+  {
+	  float angleAxisStartingPoint = 1.e6;
+
+	  const ArborCluster* pArborCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(pCluster));
+
+	  if(pArborCluster == nullptr) return angleAxisStartingPoint;
+
+	  auto& clusterAxis = pArborCluster->GetAxis();
+	  auto& clusterStartingPoint = pArborCluster->GetStartingPoint();
+
+	  if(clusterAxis.GetMagnitude() > 1.e-3 && clusterStartingPoint.GetMagnitude() > 1.e-3)
+	  {
+		  angleAxisStartingPoint = clusterAxis.GetOpeningAngle(clusterStartingPoint);
+	  }
+
+	  return angleAxisStartingPoint;
+  }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 

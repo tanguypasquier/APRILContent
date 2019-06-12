@@ -148,6 +148,8 @@ public:
 	static pandora::StatusCode FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult);
   
 	static pandora::OrderedCaloHitList GetOrderedConnectedCaloHitList(const pandora::Cluster *const pCluster);
+	
+    static float GetClusterAxisStartingPointAngle(const pandora::Cluster *const pCluster);
 
 	/**
 	 *  @brief  Get the closest distance approach between all the hits of the clusters

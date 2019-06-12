@@ -157,11 +157,14 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 				auto pArborFirstCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(firstCluster));
 				auto pArborCluToMerge = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(cluToMerge));
 
-				std::cout << " --- mainCluster " << firstCluster << ", frag: " << pArborFirstCluster->IsFragment() 
-					<< ", Ehad: " << firstCluster->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(firstCluster)
-					<< ", cluToMerge " << cluToMerge << ", frag: " << pArborCluToMerge->IsFragment() 
-					<< ", Ehad: " << cluToMerge->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(cluToMerge)
-					<< ", cluster charge: " << clusterMCPCharge << std::endl;
+				float clusterAngle1 = ClusterHelper::GetClusterAxisStartingPointAngle(pArborFirstCluster);
+				float clusterAngle2 = ClusterHelper::GetClusterAxisStartingPointAngle(pArborCluToMerge);
+
+				std::cout << "     === Cluster to merge: " << std::endl
+					      << "         mainCluster " << firstCluster << ", Ehad: " << firstCluster->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(firstCluster) << ", angle: " << clusterAngle1 << std::endl
+					      << "         cluToMerge " << cluToMerge    << ", Ehad: " << cluToMerge->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(cluToMerge) << ", angle: " << clusterAngle2 << std::endl
+					      << "         cluster charge: " << clusterMCPCharge << std::endl;
+
 #if __DEBUG__
 				if(clusterMCPCharge != 0)
 				{
