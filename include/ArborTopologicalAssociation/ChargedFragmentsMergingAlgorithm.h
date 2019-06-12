@@ -118,29 +118,11 @@ private:
 	float GetClusterAxesDistance(const ArborCluster* pCluster1, const ArborCluster* pCluster2);
 
 private:
-	bool                             m_discriminatePhotonPid;            ///< Whether to discriminate photons
-	bool                             m_allowNeutralParentMerging;
-	unsigned int                     m_minNCaloHits;
-	unsigned int                     m_maxNCaloHits;
-	unsigned int                     m_minNPseudoLayers;
-	unsigned int                     m_maxNPseudoLayers;
-	float                            m_chi2AssociationCut;
-	unsigned int                     m_nBackwardLayersFit;
-	float                            m_maxBackwardAngle;
-	float                            m_maxBackwardDistanceFine;
-	float                            m_maxBackwardDistanceCoarse;
-	unsigned int                     m_maxBackwardPseudoLayer;
-	unsigned int                     m_minParentClusterBackwardNHits;
-	float                            m_maxClusterFitDca;
-	float                            m_minClusterCosOpeningAngle;
-	float                            m_minClusterFitCosOpeningAngle;
-	float                            m_minClusterFitCosOpeningAngle2;
-
 	float                            m_maxStartingClusterDistance;
-	float                            m_maxClusterDistanceToMerge;
 	float                            m_maxClosestClusterDistance;
+	float                            m_maxClusterPosAxisAngle;
+	float                            m_maxClusterAxesDistance;
 
-	bool                             m_mergePhotonClusters;
 	bool                             m_mergeChargedClusters;
 	bool                             m_debugOutput;
 	bool                             m_onlyUseConnectedHits;

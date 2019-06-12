@@ -333,7 +333,7 @@ namespace arbor_content
 		  // FIXME
 		  bool isMergingCandidate = 
 				  closestDistance < m_maxClosestClusterDistance ||  // very close cluster
-			      ( angle > 0.8 && axisDistance < 100. );           // clusters with compatible axes
+			      ( angle > m_maxClusterPosAxisAngle && axisDistance < m_maxClusterAxesDistance );           // clusters with compatible axes
 
 		  std::cout << " @_@ Check clusters @_@: " << std::endl
 		      << "  startingCluster: " << startingCluster << ", E: " << startingCluster->GetHadronicEnergy() << std::endl
@@ -442,6 +442,9 @@ namespace arbor_content
 	  float distCOGNp1 = (x1 - Np1).GetMagnitude();
 	  float distCOGNp2 = (x2 - Np2).GetMagnitude();
 
+	  auto cluster1StartingPoint = pCluster1->GetStartingPoint();
+	  auto cluster2StartingPoint = pCluster2->GetStartingPoint();
+
 	  std::cout << "       === GetClusterAxesDistance === " << std::endl
 		        << " E1: " << pCluster1->GetHadronicEnergy() << ", E2: " << pCluster2->GetHadronicEnergy() << std::endl
 		        << " cluster1Axis: " << cluster1Axis.GetX() << ", " << cluster1Axis.GetY() << ", " << cluster1Axis.GetZ() << std::endl
@@ -451,6 +454,8 @@ namespace arbor_content
 				<< " d_cog: " << directionOfCentroids.GetMagnitude() << std::endl
 				<< " Np1: " << Np1.GetX() << ", " << Np1.GetY() << ", " << Np1.GetZ() << ", distToCOG: " << distCOGNp1 << std::endl
 				<< " Np2: " << Np2.GetX() << ", " << Np2.GetY() << ", " << Np2.GetZ() << ", distToCOG: " << distCOGNp2 << std::endl
+				<< " Cluster1 starting point: " << cluster1StartingPoint.GetX() << ", " << cluster1StartingPoint.GetY() << ", " << cluster1StartingPoint.GetZ() << std::endl
+				<< " Cluster2 starting point: " << cluster2StartingPoint.GetX() << ", " << cluster2StartingPoint.GetY() << ", " << cluster2StartingPoint.GetZ() << std::endl
 				<< std::endl;
 
 
@@ -648,13 +653,25 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxClosestClusterDistance", m_maxClosestClusterDistance));
 
-	m_mergeChargedClusters = true ;
+	m_maxClusterPosAxisAngle = 0.4;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxClusterPosAxisAngle", m_maxClusterPosAxisAngle));
+
+	m_maxClusterAxesDistance = 100.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "MaxClusterAxesDistance", m_maxClusterAxesDistance));
+
+	m_mergeChargedClusters = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MergeChargedClusters", m_mergeChargedClusters));
 
 	m_debugOutput = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DebugOutput", m_debugOutput));
+
+	m_onlyUseConnectedHits = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "OnlyUseConnectedHits", m_onlyUseConnectedHits));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
