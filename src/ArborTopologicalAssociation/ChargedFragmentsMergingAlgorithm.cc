@@ -116,7 +116,7 @@ namespace arbor_content
 		{
 		    pandora::ClusterFitResult clusterFitResult;
 
-			if(pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			if(ClusterHelper::FitStart(pCluster, 3, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
 			{
 				pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult);
 			}
