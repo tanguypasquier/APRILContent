@@ -110,6 +110,7 @@ namespace arbor_content
 		}
 		catch(pandora::StatusCodeException &)
 		{
+			std::cout << " ---> fitting cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << " failed." << std::endl;
 		}
 
 		try

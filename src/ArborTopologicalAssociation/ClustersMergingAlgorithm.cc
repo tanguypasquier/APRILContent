@@ -185,10 +185,14 @@ namespace arbor_content
 				    		if(!m_mergeIssue) continue;
 				    		
 #if __DEBUG2__	
-			        	    std::cout << "merging issue, main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
-			        		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
-				    		    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
-				    		    << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+					        auto clusterRegion = ClusterHelper::GetRegion(clusterToMerge);
+
+			        	    std::cout << "   === merging issue" << std::endl
+							          << "       main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy() << std::endl
+			        		          << "       merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << std::endl
+									  << "       MC charge: " << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) << std::endl
+									  << "       cluster region: " << clusterRegion << std::endl
+				    		          << "       oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
 #endif
 		            
 				    		HistogramManager::CreateFill(tupleNameIssue.c_str(), 
@@ -199,10 +203,14 @@ namespace arbor_content
 				    		if(!m_mergeError) continue;
 				    		
 #if __DEBUG2__	
-			        	    std::cout << "merging ERROR!!! main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy()
-			        		    << " merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", chg: " 
-				    		    << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId())
-				    		    << ", oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+					        auto clusterRegion = ClusterHelper::GetRegion(clusterToMerge);
+
+			        	    std::cout << "   === merging ERROR" << std::endl
+							   	      << "       main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy() << std::endl
+			        		          << "       merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << std::endl
+									  << "       MC charge: " << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) << std::endl
+									  << "       cluster region: " << clusterRegion << std::endl
+				    		          << "       oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
 #endif
 
 				    		HistogramManager::CreateFill(tupleNameError.c_str(), 
