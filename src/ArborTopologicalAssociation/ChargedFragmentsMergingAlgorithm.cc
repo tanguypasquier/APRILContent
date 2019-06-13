@@ -319,12 +319,13 @@ namespace arbor_content
 #endif
 
 		  float angle = 1.e6;
-		  float axisDistance = 1.e6;
+		  float axesDistance = 1.e6;
+		  bool isAxesCompatible = false;
 
 		  try
 		  {
 			  angle = ClusterHelper::GetClusterAxisStartingPointAngle(nearbyCluster);
-			  axisDistance = GetClusterAxesDistance(startingCluster, nearbyCluster); 
+			  isAxesCompatible = IsClusterAxesCompatible(startingCluster, nearbyCluster, axesDistance); 
 		  }
 		  catch(...)
 		  {
@@ -334,12 +335,13 @@ namespace arbor_content
 		  // FIXME
 		  bool isMergingCandidate = 
 				  closestDistance < m_maxClosestClusterDistance ||  // very close cluster
-			      ( angle > m_maxClusterPosAxisAngle && axisDistance < m_maxClusterAxesDistance );           // clusters with compatible axes
+			      ( angle > m_maxClusterPosAxisAngle && isAxesCompatible );           // clusters with compatible axes
 
 		  std::cout << " @_@ Check clusters @_@: " << std::endl
 		      << "  startingCluster: " << startingCluster << ", E: " << startingCluster->GetHadronicEnergy() << std::endl
 		      << "  nearbyCluster: " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl
-		      << "  closestDistance: " << closestDistance << ", angle: " << angle << ", axisDistance: " << axisDistance << std::endl;
+		      << "  closestDistance: " << closestDistance << ", angle: " << angle 
+			  << ", axesDistance: " << axesDistance << ", isAxesCompatible: " << isAxesCompatible << std::endl;
 
 		  if(isMergingCandidate) 
 		  {
@@ -347,7 +349,7 @@ namespace arbor_content
 
 		      clusterParameters.push_back(closestDistance);
 		      clusterParameters.push_back(angle); // axis angle
-		      clusterParameters.push_back(axisDistance);
+		      clusterParameters.push_back(axesDistance);
 
 		      std::vector<float> parameterPowers;
 		      parameterPowers.push_back(5.);
@@ -383,14 +385,16 @@ namespace arbor_content
 	  }
   }
 
-  float ChargedFragmentsMergingAlgorithm::GetClusterAxesDistance(const ArborCluster* pCluster1, const ArborCluster* pCluster2)
+  bool ChargedFragmentsMergingAlgorithm::IsClusterAxesCompatible(const ArborCluster* startingCluster, const ArborCluster* nearbyCluster, float& axesDistance)
   {
-	  auto& cluster1Axis = pCluster1->GetAxis();
-	  auto& cluster2Axis = pCluster2->GetAxis();
+	  bool isAxesCompatible = true;
+
+	  auto& cluster1Axis = startingCluster->GetAxis();
+	  auto& cluster2Axis = nearbyCluster->GetAxis();
 
 	  // FIXME: intercept or starting point ?
-	  auto& cog1 = pCluster1->GetCentroid();
-	  auto& cog2 = pCluster2->GetCentroid();
+	  auto& cog1 = startingCluster->GetCentroid();
+	  auto& cog2 = nearbyCluster->GetCentroid();
 	  auto directionOfCentroids = cog1 - cog2;
 
 	  // redefition
@@ -416,11 +420,11 @@ namespace arbor_content
 	  float distCOGNp1 = (x1 - Np1).GetMagnitude();
 	  float distCOGNp2 = (x2 - Np2).GetMagnitude();
 
-	  auto cluster1StartingPoint = pCluster1->GetStartingPoint();
-	  auto cluster2StartingPoint = pCluster2->GetStartingPoint();
+	  auto cluster1StartingPoint = startingCluster->GetStartingPoint();
+	  auto cluster2StartingPoint = nearbyCluster->GetStartingPoint();
 
-	  std::cout << "       === GetClusterAxesDistance === " << std::endl
-		        << " E1: " << pCluster1->GetHadronicEnergy() << ", E2: " << pCluster2->GetHadronicEnergy() << std::endl
+	  std::cout << "       === ClusterAxesDistance === " << std::endl
+		        << " E1: " << startingCluster->GetHadronicEnergy() << ", E2: " << nearbyCluster->GetHadronicEnergy() << std::endl
 		        << " cluster1Axis: " << cluster1Axis.GetX() << ", " << cluster1Axis.GetY() << ", " << cluster1Axis.GetZ() << std::endl
 		        << " cluster2Axis: " << cluster2Axis.GetX() << ", " << cluster2Axis.GetY() << ", " << cluster2Axis.GetZ() << std::endl
 				<< " COG1: " << cog1.GetX() << ", " << cog1.GetY() << ", " << cog1.GetZ() << std::endl
@@ -432,25 +436,53 @@ namespace arbor_content
 				<< " Cluster2 starting point: " << cluster2StartingPoint.GetX() << ", " << cluster2StartingPoint.GetY() << ", " << cluster2StartingPoint.GetZ() << std::endl
 				<< std::endl;
 
-
-#if 0
-	  if( directionOfCentroids.GetMagnitudeSquared() * pCluster1->GetMagnitudeSquared() > std::numeric_limits<float>::epsilon() )
-	  {
-		  try
-		  {
-			  angle = directionOfCentroids.GetOpeningAngle(startingClusterAxis);
-		  }
-		  catch(pandora::StatusCodeException &)
-		  {
-			  std::cout << "GetOpeningAngle failed" << std::endl;
-		  }
-	  }
-#endif
-
 	  auto directionsCrossProd = cluster2Axis.GetCrossProduct(cluster1Axis);
-	  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
+	  axesDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
 
-	  return axisDistance;
+	  // 
+	  if(std::isnan(axesDistance))
+	  {
+		  isAxesCompatible = false;
+	      return isAxesCompatible;
+	  }
+
+	  if( axesDistance > m_maxClusterAxesDistance)
+	  {
+		  isAxesCompatible = false;
+	      return isAxesCompatible;
+	  }
+
+	  if(distCOGNp1 > 800. && distCOGNp2 > 800.) // nearest points maybe outside the clusters
+	  {
+		  isAxesCompatible = false;
+	      return isAxesCompatible;
+	  }
+
+	  pandora::HitRegion startingClusterRegion = ClusterHelper::GetRegion(startingCluster);
+	  pandora::HitRegion nearbyClusterRegion = ClusterHelper::GetRegion(nearbyCluster);
+
+	  if(startingClusterRegion == pandora::BARREL && nearbyClusterRegion == pandora::BARREL)
+	  {
+		  pandora::CartesianVector startingClusterPoint = startingCluster->GetStartingPoint();
+
+		  float startingPointRadius;
+		  float startingPointPhi;
+		  float startingPointZ;
+		  startingClusterPoint.GetCylindricalCoordinates(startingPointRadius, startingPointPhi, startingPointZ);
+
+		  float nearestPointRadius;
+		  float nearestPointPhi;
+		  float nearestPointZ;
+		  Np1.GetCylindricalCoordinates(nearestPointRadius, nearestPointPhi, nearestPointZ);
+
+		  if(nearestPointRadius < startingPointRadius - 100.) isAxesCompatible = false;
+
+		  // TODO
+		  // get the maximum radius of connected hits
+		  //if(nearestPointRadius > startingPointRadius + 100.) isAxesCompatible = false;
+	  }
+
+	  return isAxesCompatible;
   }
 
   void ChargedFragmentsMergingAlgorithm::GetNearbyClusters(pandora::Cluster* cluster, 

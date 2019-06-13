@@ -113,7 +113,7 @@ private:
 	 */
 	pandora::StatusCode GetClusterBackwardDirection(const pandora::Cluster *const pCluster, pandora::CartesianVector &backwardDirection, pandora::CartesianVector &innerPosition) const;
 
-	float GetClusterAxesDistance(const ArborCluster* pCluster1, const ArborCluster* pCluster2);
+    bool IsClusterAxesCompatible(const ArborCluster* startingCluster, const ArborCluster* nearbyCluster, float& axesDistance);
 
 private:
 	float                            m_maxStartingClusterDistance;
