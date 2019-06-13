@@ -473,7 +473,7 @@ namespace arbor_content
 	      return isAxesCompatible;
 	  }
 
-	  if(distCOGNp1 > 800. && distCOGNp2 > 800.) // nearest points maybe outside the clusters
+	  if(distCOGNp1 > 400. && distCOGNp2 > 400.) // nearest points maybe outside the clusters
 	  {
 		  isAxesCompatible = false;
 	      return isAxesCompatible;
