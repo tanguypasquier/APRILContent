@@ -634,8 +634,9 @@ namespace arbor_content
       if(possibleAssociation)
       {
         float oldChi(0.f), newChi(0.f);
+		float trackEnergy = 0.;
 
-        if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetChiClusterMerging(this->GetPandora(), pCluster, pDaughterCluster, oldChi, newChi))
+        if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetChiClusterMerging(this->GetPandora(), pCluster, pDaughterCluster, trackEnergy, oldChi, newChi))
           continue;
 
         const bool angleTightened(clusterCosineAngle > bestClusterCosineAngle);

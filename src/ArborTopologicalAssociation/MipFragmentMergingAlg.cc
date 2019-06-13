@@ -313,8 +313,9 @@ namespace arbor_content
           continue;
 
         float oldChi(0.f), newChi(0.f);
+		float trackEnergy(0.f);
 
-        if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetChiClusterMerging(this->GetPandora(), pParentCluster, pDaughterCluster, oldChi, newChi))
+        if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetChiClusterMerging(this->GetPandora(), pParentCluster, pDaughterCluster, trackEnergy, oldChi, newChi))
           continue;
 
         // check for track cluster E-p compatibility improvement

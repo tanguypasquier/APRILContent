@@ -224,7 +224,7 @@ public:
 	 *  @param  oldChi the chi of the cluster to enlarge
 	 *  @param  newChi the chi of the clusters after a potential merging
 	 */
-	static pandora::StatusCode GetChiClusterMerging(const pandora::Pandora &pandora, const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *const pClusterToMerge, float &oldChi, float &newChi);
+	static pandora::StatusCode GetChiClusterMerging(const pandora::Pandora &pandora, const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *const pClusterToMerge, float& trackEnergy, float &oldChi, float &newChi);
 
 	/**
 	 *  @brief  Perform intelligent merging of clusters (daughter <-> parent relationship management)

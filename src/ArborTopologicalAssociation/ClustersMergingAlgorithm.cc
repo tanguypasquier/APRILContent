@@ -118,13 +118,14 @@ namespace arbor_content
 		{
 			float oldChi = 1.e6;
 			float newChi = 1.e6;
+			float trackEnergy = 0.;
 #if __DEBUG__	
 			std::cout << " --- clusterToEnlarge:" << clusterToEnlarge << ", clusterToMerge: " << clusterToMerge << std::endl;
 #endif
 
 			if(m_useEnergyChi &&
 			   pandora::STATUS_CODE_SUCCESS != 
-			        ClusterHelper::GetChiClusterMerging(this->GetPandora(), clusterToEnlarge, clusterToMerge, oldChi, newChi))
+			        ClusterHelper::GetChiClusterMerging(this->GetPandora(), clusterToEnlarge, clusterToMerge, trackEnergy, oldChi, newChi))
 			{
 				std::cout << "      ===> GetChiClusterMerging issue..." << std::endl;
 				continue;
@@ -140,7 +141,18 @@ namespace arbor_content
 				}
 #endif
 
-				if( m_useEnergyChi && newChi > m_maxChi) 
+				float maxChi = -1.e6;
+				
+				if(trackEnergy < 4. )
+				{
+					maxChi = m_lowEnergyMaxChi;
+				}
+				else
+				{
+					maxChi = m_maxChi;
+				}
+
+				if( m_useEnergyChi && newChi > maxChi ) 
 				{
 #if __DEBUG__	
 					std::cout << "      ===> no merging, newChi: " << newChi << ", m_maxChi: " << m_maxChi << std::endl;
@@ -286,6 +298,10 @@ namespace arbor_content
 	m_maxChi = 1.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxChi", m_maxChi));
+
+	m_lowEnergyMaxChi = 1.;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "LowEnergyMaxChi", m_lowEnergyMaxChi));
 
 	m_maxMergingEnergy = 100.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

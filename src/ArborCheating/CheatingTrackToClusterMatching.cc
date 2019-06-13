@@ -385,8 +385,9 @@ namespace arbor_content
 #if __DEBUG__
 			float oldChi = -1.e6;
 			float newChi = -1.e6;
+			float trackEnergy = 0.;
 
-			ClusterHelper::GetChiClusterMerging(this->GetPandora(), mainCluster, clu, oldChi, newChi);
+			ClusterHelper::GetChiClusterMerging(this->GetPandora(), mainCluster, clu, trackEnergy, oldChi, newChi);
 
 			float meanDensityMain = 1.e6;
 			float meanDensity = 1.e6;;

@@ -62,6 +62,7 @@ private:
 
 private:
 	float               m_maxChi;
+	float               m_lowEnergyMaxChi;
 	float               m_maxMergingEnergy;
 	bool                m_useEnergyChi;
 	bool                m_useMCTruth;

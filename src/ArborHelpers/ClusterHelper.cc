@@ -815,7 +815,7 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode ClusterHelper::GetChiClusterMerging(const pandora::Pandora &pandora, const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *const pClusterToMerge, float &oldChi, float &newChi)
+  pandora::StatusCode ClusterHelper::GetChiClusterMerging(const pandora::Pandora &pandora, const pandora::Cluster *const pClusterToEnlarge, const pandora::Cluster *const pClusterToMerge, float& trackEnergy, float &oldChi, float &newChi)
   {
     const pandora::TrackList trackList(pClusterToEnlarge->GetAssociatedTrackList());
 
@@ -844,6 +844,13 @@ namespace arbor_content
 
     oldChi = ReclusterHelper::GetTrackClusterCompatibility(pandora, pClusterToEnlarge, trackList);
     newChi = ReclusterHelper::GetTrackClusterCompatibility(pandora, pClusterToEnlarge, pClusterToMerge, trackListCombined);
+
+    trackEnergy = 0.;
+
+    for (auto track : trackListCombined)
+	{
+		trackEnergy += track->GetEnergyAtDca();
+	}
 
     return pandora::STATUS_CODE_SUCCESS;
   }
