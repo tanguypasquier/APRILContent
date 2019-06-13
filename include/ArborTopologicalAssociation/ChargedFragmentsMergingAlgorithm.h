@@ -123,6 +123,7 @@ private:
 
 	bool                             m_mergeChargedClusters;
 	bool                             m_debugOutput;
+	bool                             m_debugOutput2;
 	bool                             m_onlyUseConnectedHits;
 
 	arma::mat m_clusterCentroidsMatrix;

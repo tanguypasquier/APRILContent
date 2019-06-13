@@ -98,7 +98,10 @@ namespace arbor_content
 			// fit with only connected calo hits; if not successful, with all calo hits.
 			if(ClusterHelper::FitFullCluster(pCluster, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
 			{
-				std::cout << " ---> fit all hits for cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+	            if(m_debugOutput2)
+				{
+					std::cout << " ---> fit all hits for cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+				}
 				pandora::ClusterFitHelper::FitFullCluster(pCluster, clusterFitResult);
 			}
 
@@ -110,7 +113,10 @@ namespace arbor_content
 		}
 		catch(pandora::StatusCodeException &)
 		{
-			std::cout << " ---> fitting cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << " failed." << std::endl;
+	        if(m_debugOutput2)
+			{
+				std::cout << " ---> fitting cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << " failed." << std::endl;
+			}
 		}
 
 		try
@@ -329,7 +335,10 @@ namespace arbor_content
 		  }
 		  catch(...)
 		  {
-			  std::cout << "    === Axis error, cluster " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
+			  if(m_debugOutput2)
+			  {
+				  std::cout << "    === Axis error, cluster " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
+			  }
 		  }
 
 		  // FIXME
@@ -337,11 +346,14 @@ namespace arbor_content
 				  closestDistance < m_maxClosestClusterDistance ||  // very close cluster
 			      ( angle > m_maxClusterPosAxisAngle && isAxesCompatible );           // clusters with compatible axes
 
-		  std::cout << " @_@ Check clusters @_@: " << std::endl
+	      if(m_debugOutput2)
+		  {
+			  std::cout << " @_@ Check clusters @_@: " << std::endl
 		      << "  startingCluster: " << startingCluster << ", E: " << startingCluster->GetHadronicEnergy() << std::endl
 		      << "  nearbyCluster: " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl
 		      << "  closestDistance: " << closestDistance << ", angle: " << angle 
 			  << ", axesDistance: " << axesDistance << ", isAxesCompatible: " << isAxesCompatible << std::endl;
+		  }
 
 		  if(isMergingCandidate) 
 		  {
@@ -363,10 +375,16 @@ namespace arbor_content
 		  }
 		  else
 		  {
-			  std::cout << "    --- Not a merging cadidate" << std::endl;
+	          if(m_debugOutput2) 
+			  {
+				  std::cout << "    --- Not a merging cadidate" << std::endl;
+			  }
 		  }
 
-		  std::cout << "-----------------------------------------------------------------------------------------" << std::endl;
+	      if(m_debugOutput2)
+		  {
+			  std::cout << "-----------------------------------------------------------------------------------------" << std::endl;
+		  }
       }
 		  
 	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
@@ -423,7 +441,9 @@ namespace arbor_content
 	  auto cluster1StartingPoint = startingCluster->GetStartingPoint();
 	  auto cluster2StartingPoint = nearbyCluster->GetStartingPoint();
 
-	  std::cout << "       === ClusterAxesDistance === " << std::endl
+	  if(m_debugOutput2)
+	  {
+		  std::cout << "       === ClusterAxesDistance === " << std::endl
 		        << " E1: " << startingCluster->GetHadronicEnergy() << ", E2: " << nearbyCluster->GetHadronicEnergy() << std::endl
 		        << " cluster1Axis: " << cluster1Axis.GetX() << ", " << cluster1Axis.GetY() << ", " << cluster1Axis.GetZ() << std::endl
 		        << " cluster2Axis: " << cluster2Axis.GetX() << ", " << cluster2Axis.GetY() << ", " << cluster2Axis.GetZ() << std::endl
@@ -435,6 +455,7 @@ namespace arbor_content
 				<< " Cluster1 starting point: " << cluster1StartingPoint.GetX() << ", " << cluster1StartingPoint.GetY() << ", " << cluster1StartingPoint.GetZ() << std::endl
 				<< " Cluster2 starting point: " << cluster2StartingPoint.GetX() << ", " << cluster2StartingPoint.GetY() << ", " << cluster2StartingPoint.GetZ() << std::endl
 				<< std::endl;
+	  }
 
 	  auto directionsCrossProd = cluster2Axis.GetCrossProduct(cluster1Axis);
 	  axesDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
@@ -648,6 +669,10 @@ namespace arbor_content
 	m_debugOutput = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DebugOutput", m_debugOutput));
+
+	m_debugOutput2 = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DebugOutput2", m_debugOutput2));
 
 	m_onlyUseConnectedHits = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

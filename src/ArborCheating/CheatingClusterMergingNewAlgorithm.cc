@@ -160,9 +160,12 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 				float clusterAngle1 = ClusterHelper::GetClusterAxisStartingPointAngle(pArborFirstCluster);
 				float clusterAngle2 = ClusterHelper::GetClusterAxisStartingPointAngle(pArborCluToMerge);
 
+				float cluster1Time = ClusterHelper::GetAverageTime(pArborFirstCluster);
+				float cluster2Time = ClusterHelper::GetAverageTime(pArborCluToMerge);
+
 				std::cout << "     === Cluster to merge: " << std::endl
-					      << "         mainCluster " << firstCluster << ", Ehad: " << firstCluster->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(firstCluster) << ", angle: " << clusterAngle1 << std::endl
-					      << "         cluToMerge " << cluToMerge    << ", Ehad: " << cluToMerge->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(cluToMerge) << ", angle: " << clusterAngle2 << std::endl
+					      << "         mainCluster " << firstCluster << ", Ehad: " << firstCluster->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(firstCluster) << ", angle: " << clusterAngle1 << ", time: " << cluster1Time << std::endl
+					      << "         cluToMerge " << cluToMerge    << ", Ehad: " << cluToMerge->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(cluToMerge) << ", angle: " << clusterAngle2 << ", time: " << cluster2Time << std::endl
 					      << "         cluster charge: " << clusterMCPCharge << std::endl;
 
 #if __DEBUG__
