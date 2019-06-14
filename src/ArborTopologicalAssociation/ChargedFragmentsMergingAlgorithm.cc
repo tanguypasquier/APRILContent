@@ -47,8 +47,6 @@
 
 #include <algorithm>
 
-#define __USEMCP__ 1
-
 namespace arbor_content
 {
   pandora::StatusCode ChargedFragmentsMergingAlgorithm::Run()
@@ -71,17 +69,17 @@ namespace arbor_content
 		const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
 		bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraClu);
 
-		/// help by MC truth
-#if __USEMCP__
-		try
+		if(m_useMCPForPID)
 		{
-			isPhoton = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId() == 22;
+			try
+		    {
+		    	isPhoton = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId() == 22;
+		    }
+		    catch(pandora::StatusCodeException &)
+		    {
+		    	std::cout << "MCP issue: " << pandoraClu << std::endl;
+		    }
 		}
-		catch(pandora::StatusCodeException &)
-		{
-			std::cout << "MCP issue: " << pandoraClu << std::endl;
-		}
-#endif
 
 		pCluster->SetPhoton(isPhoton);
 
@@ -306,23 +304,23 @@ namespace arbor_content
 			  std::cout << "GetClosestDistanceApproach failed" << std::endl;
 		  }
 
-#if __USEMCP__
-		  // help by MC truth
-		  try
+		  if(m_useMCPToRejectNeutralCluster)
 		  {
-			  const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
-		      auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
-
-		      if( pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId()) == 0. && 
-		          nearbyCluster->GetHadronicEnergy() > 0. )
+			  try
 		      {
-		        		continue;
+		          const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
+		          auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
+
+		          if( pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId()) == 0. && 
+		              nearbyCluster->GetHadronicEnergy() > 0. )
+		          {
+		            		continue;
+		          }
+		      }
+		      catch(pandora::StatusCodeException &)
+		      {
 		      }
 		  }
-		  catch(pandora::StatusCodeException &)
-		  {
-		  }
-#endif
 
 		  float angle = 1.e6;
 		  float axesDistance = 1.e6;
@@ -677,6 +675,14 @@ namespace arbor_content
 	m_onlyUseConnectedHits = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "OnlyUseConnectedHits", m_onlyUseConnectedHits));
+
+	m_useMCPForPID = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "UseMCPForPID", m_useMCPForPID));
+
+	m_useMCPToRejectNeutralCluster = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "UseMCPToRejectNeutralCluster", m_useMCPToRejectNeutralCluster));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

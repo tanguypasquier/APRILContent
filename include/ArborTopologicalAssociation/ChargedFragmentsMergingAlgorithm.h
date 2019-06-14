@@ -125,6 +125,8 @@ private:
 	bool                             m_debugOutput;
 	bool                             m_debugOutput2;
 	bool                             m_onlyUseConnectedHits;
+	bool                             m_useMCPForPID;
+	bool                             m_useMCPToRejectNeutralCluster;
 
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;
