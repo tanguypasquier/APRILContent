@@ -240,6 +240,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "UseAsIndependent", m_useAsIndependent));
       
+    m_allowSingleHitClusters = false;
 
     return pandora::STATUS_CODE_SUCCESS;
   }
