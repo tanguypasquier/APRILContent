@@ -86,7 +86,8 @@ namespace arbor_content
 		if(m_debugOutput)
 		{
 			std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
-			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << ", isPoton: " << isPhoton << std::endl;
+			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << ", isPoton: " << isPhoton 
+				  << ", associatedTrackList size: " << pCluster->GetAssociatedTrackList().size() << std::endl;
 		}
 
 		try
@@ -94,7 +95,20 @@ namespace arbor_content
 		    pandora::ClusterFitResult clusterFitResult;
 
 			// fit with only connected calo hits; if not successful, with all calo hits.
-			if(ClusterHelper::FitFullCluster(pCluster, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			pandora::StatusCode fitStatus;
+
+			if(isPhoton)
+			{
+				// fit all connected calo hits
+				fitStatus = ClusterHelper::FitFullCluster(pCluster, clusterFitResult);
+			}
+			else
+			{
+				// fit the main connected calo hits
+				fitStatus = ClusterHelper::FitFullCluster(pCluster, clusterFitResult, true);
+			}
+
+			if(fitStatus)
 			{
 	            if(m_debugOutput2)
 				{
@@ -341,7 +355,7 @@ namespace arbor_content
 
 		  // FIXME
 		  bool isMergingCandidate = 
-				  closestDistance < m_maxClosestClusterDistance ||  // very close cluster
+//				  closestDistance < m_maxClosestClusterDistance ||  // very close cluster
 			      ( angle > m_maxClusterPosAxisAngle && isAxesCompatible );           // clusters with compatible axes
 
 	      if(m_debugOutput2)
@@ -493,8 +507,10 @@ namespace arbor_content
 		  float nearestPointPhi;
 		  float nearestPointZ;
 		  Np1.GetCylindricalCoordinates(nearestPointRadius, nearestPointPhi, nearestPointZ);
+		  //std::cout << "         ----startingClusterPoint: " << startingClusterPoint.GetX() << ", " << startingClusterPoint.GetY() << ", " << ", " << startingClusterPoint.GetZ() << ", R: " << startingPointRadius << std::endl;
+		  //std::cout << "         ----Np1: " << Np1.GetX() << ", " << Np1.GetY() << ", " << ", " << Np1.GetZ() << ", R: " << nearestPointRadius << std::endl;
 
-		  if(nearestPointRadius < startingPointRadius - 100.) isAxesCompatible = false;
+		  if(nearestPointRadius < startingPointRadius - 10.) isAxesCompatible = false;
 
 		  // TODO
 		  // get the maximum radius of connected hits
