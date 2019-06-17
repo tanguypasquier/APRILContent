@@ -217,12 +217,12 @@ namespace arbor_content
 #if __DEBUG2__	
 					        auto clusterRegion = ClusterHelper::GetRegion(clusterToMerge);
 
-			        	    std::cout << "   === merging ERROR" << std::endl
+			        	    std::cout << "   \033[1;31m === merging ERROR" << std::endl
 							   	      << "       main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy() << std::endl
 			        		          << "       merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << std::endl
 									  << "       MC charge: " << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) << std::endl
 									  << "       cluster region: " << clusterRegion << std::endl
-				    		          << "       oldChi: " << oldChi << ", newChi: " << newChi << std::endl;
+				    		          << "       oldChi: " << oldChi << ", newChi: " << newChi << "\033[0m" << std::endl;
 #endif
 
 				    		HistogramManager::CreateFill(tupleNameError.c_str(), 
