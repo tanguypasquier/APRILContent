@@ -318,7 +318,7 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
-  pandora::StatusCode ClusterHelper::FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult)
+  pandora::StatusCode ClusterHelper::FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult, bool useMainCluster)
   {
 	  const pandora::OrderedCaloHitList orderedCaloHitList = GetOrderedConnectedCaloHitList(pCluster);
       const unsigned int listSize(orderedCaloHitList.size());
@@ -332,16 +332,30 @@ namespace arbor_content
           return pandora::STATUS_CODE_OUT_OF_RANGE;
   
 	  pandora::ClusterFitPointList clusterFitPointList;
-      for (const pandora::OrderedCaloHitList::value_type &layerIter : orderedCaloHitList)
-      {
-          for (const pandora::CaloHit *const pCaloHit : *layerIter.second)
-          {
-              const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit);
-			  if(!ArborContentApi::HasAnyConnection(pArborCaloHit)) continue;
+	
+	  if(useMainCluster)
+	  {
+		  pandora::CaloHitList mainClusterHits;
+	      ClusterHelper::GetMainClusterHits(pCluster, mainClusterHits);
 
-              clusterFitPointList.push_back(pandora::ClusterFitPoint(pCaloHit));
+	      for(auto& pCaloHit : mainClusterHits)
+	      {
+	          clusterFitPointList.push_back(pandora::ClusterFitPoint(pCaloHit));
+	      }
+	  }
+	  else
+	  {
+		  for (const pandora::OrderedCaloHitList::value_type &layerIter : orderedCaloHitList)
+          {
+              for (const pandora::CaloHit *const pCaloHit : *layerIter.second)
+              {
+                  const arbor_content::CaloHit *const pArborCaloHit = dynamic_cast<const arbor_content::CaloHit *const>(pCaloHit);
+	        	  if(!ArborContentApi::HasAnyConnection(pArborCaloHit)) continue;
+
+                  clusterFitPointList.push_back(pandora::ClusterFitPoint(pCaloHit));
+              }
           }
-      }
+	  }
 
       if(pandora::ClusterFitHelper::FitPoints(clusterFitPointList, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
 		  return pandora::STATUS_CODE_FAILURE;
@@ -353,6 +367,84 @@ namespace arbor_content
 		  return pandora::STATUS_CODE_SUCCESS;
 	  else
 		  return pandora::STATUS_CODE_FAILURE;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode ClusterHelper::GetMainClusterHits(const pandora::Cluster *const pCluster, pandora::CaloHitList& mainClusterHits)
+  {
+	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+	  const pandora::CaloHitList& isolatedCaloHitList = pCluster->GetIsolatedCaloHitList();
+
+	  pandora::CaloHitList caloHitList;
+	  orderedCaloHitList.FillCaloHitList(caloHitList);
+	  caloHitList.insert(caloHitList.begin(), isolatedCaloHitList.begin(), isolatedCaloHitList.end());
+
+	  pandora::CaloHitList connectedHits;
+
+	  for(auto& caloHit : caloHitList)
+	  {
+		  const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(caloHit));
+		  if(!ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+
+		  connectedHits.push_back(caloHit);
+	  }
+    
+	  ////
+	  bool allowSingleHitClusters = false;
+
+	  pandora::CaloHitList seedCaloHitList;
+	  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
+			  CaloHitHelper::ExtractSeedCaloHitList(&connectedHits, seedCaloHitList, allowSingleHitClusters));
+
+	  std::vector<pandora::CaloHitList> hitListVec;
+
+	  for(auto& caloHit: seedCaloHitList)
+	  {
+		  const arbor_content::CaloHit *const seed(dynamic_cast<const arbor_content::CaloHit *const>(caloHit));
+
+		  if(seed == nullptr) continue;
+		  
+          pandora::CaloHitList clusterCaloHitList;
+          clusterCaloHitList.push_back(seed);
+
+		  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, 
+				  CaloHitHelper::BuildCaloHitList(seed, FORWARD_DIRECTION, clusterCaloHitList));
+
+		  hitListVec.push_back(clusterCaloHitList);
+	  }
+
+	  ////
+	  unsigned int totalHit = 0;
+
+	  mainClusterHits.clear();
+
+#if 0
+	  std::cout << "       === GetMainClusterHit, cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
+		  << ", hitListVec: " << hitListVec.size() << ", seedCaloHitList: " << seedCaloHitList.size() << std::endl;
+#endif
+
+	  for(unsigned int i = 0; i < hitListVec.size(); ++i)
+	  {
+		  auto& hitList = hitListVec.at(i);
+		  totalHit += hitListVec.at(i).size();
+
+		  for(auto& hit : hitList)
+		  {
+			  mainClusterHits.push_back(hit);
+		  }
+	  }
+
+	  for(unsigned int i = 0; i < hitListVec.size(); ++i)
+	  {
+		  unsigned int hitsNum = hitListVec.at(i).size();
+
+		  if(float(hitsNum)/totalHit > 0.55) 
+		  {
+			  mainClusterHits = hitListVec.at(i);
+		  }
+	  }
+	  
+	  return pandora::STATUS_CODE_FAILURE;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -765,6 +857,7 @@ namespace arbor_content
 	  pandora::HitRegion region = pandora::HitRegion::SINGLE_REGION;
 
 	  int maxCountRegion = 0;
+
 
 	  for (int regionInt = pandora::HitRegion::BARREL; regionInt <= pandora::HitRegion::SINGLE_REGION; ++regionInt)
 	  {

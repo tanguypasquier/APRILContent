@@ -145,7 +145,9 @@ public:
   
 	static pandora::StatusCode FitStart(const pandora::Cluster *const pCluster, const unsigned int maxOccupiedLayers, pandora::ClusterFitResult &clusterFitResult);
   
-	static pandora::StatusCode FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult);
+	static pandora::StatusCode FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult, bool useMainCluster = false);
+  
+	static pandora::StatusCode GetMainClusterHits(const pandora::Cluster *const pCluster, pandora::CaloHitList& mainClusterHits);
   
 	static pandora::OrderedCaloHitList GetOrderedConnectedCaloHitList(const pandora::Cluster *const pCluster);
 	
