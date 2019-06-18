@@ -168,14 +168,12 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 					      << "         cluToMerge " << cluToMerge    << ", Ehad: " << cluToMerge->GetHadronicEnergy() << ", region: " << ClusterHelper::GetRegion(cluToMerge) << ", angle: " << clusterAngle2 << ", time: " << cluster2Time << std::endl
 					      << "         cluster charge: " << clusterMCPCharge << std::endl;
 
-#if __DEBUG__
 				if(clusterMCPCharge != 0)
 				{
-					std::cout << "    >>>=== merge two CHARGED clusters: " << firstCluster << ", E: " << firstCluster->GetHadronicEnergy() 
+					std::cout << "     \033[1;31m=== merge two CHARGED clusters: " << firstCluster << ", E: " << firstCluster->GetHadronicEnergy() 
 						      << " --- " << cluToMerge << ", E: " << cluToMerge->GetHadronicEnergy() 
-							  << ", distance: " << closestDistance << std::endl;
+							  << ", distance: " << closestDistance << "\033[0m" << std::endl;
 				}
-#endif
 
 				ArborContentApi::MergeAndDeleteClusters(*this, firstCluster, cluToMerge);
 			}
