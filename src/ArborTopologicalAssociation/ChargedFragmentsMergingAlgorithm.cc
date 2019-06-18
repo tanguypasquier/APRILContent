@@ -45,6 +45,8 @@
 #include "ArborTools/TrackDrivenSeedingTool.h"
 #include "ArborObjects/CaloHit.h"
 
+#include "TMath.h"
+
 #include <algorithm>
 
 namespace arbor_content
@@ -453,6 +455,10 @@ namespace arbor_content
 	  auto cluster1StartingPoint = startingCluster->GetStartingPoint();
 	  auto cluster2StartingPoint = nearbyCluster->GetStartingPoint();
 
+	  auto pStart = cluster2StartingPoint - Np2;
+
+	  int pSign = TMath::Sign(1, pStart.GetDotProduct(d2));
+
 	  if(m_debugOutput2)
 	  {
 		  std::cout << "       === ClusterAxesDistance === " << std::endl
@@ -466,6 +472,7 @@ namespace arbor_content
 				<< " Np2: " << Np2.GetX() << ", " << Np2.GetY() << ", " << Np2.GetZ() << ", distToCOG: " << distCOGNp2 << std::endl
 				<< " Cluster1 starting point: " << cluster1StartingPoint.GetX() << ", " << cluster1StartingPoint.GetY() << ", " << cluster1StartingPoint.GetZ() << std::endl
 				<< " Cluster2 starting point: " << cluster2StartingPoint.GetX() << ", " << cluster2StartingPoint.GetY() << ", " << cluster2StartingPoint.GetZ() << std::endl
+				<< " Angle sign: " << pSign 
 				<< std::endl;
 	  }
 
@@ -480,6 +487,12 @@ namespace arbor_content
 	  }
 
 	  if( axesDistance > m_maxClusterAxesDistance)
+	  {
+		  isAxesCompatible = false;
+	      return isAxesCompatible;
+	  }
+
+	  if( pSign == -1)
 	  {
 		  isAxesCompatible = false;
 	      return isAxesCompatible;
