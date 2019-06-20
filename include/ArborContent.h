@@ -114,6 +114,7 @@
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm2.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm3.h"
 #include "ArborTopologicalAssociation/ChargedFragmentsMergingAlgorithm.h"
+#include "ArborTopologicalAssociation/ChargedFragmentsMergingAlgorithm2.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm4.h"
 #include "ArborTopologicalAssociation/ClusterFromTrackMergingAlgorithm5.h"
 #include "ArborTopologicalAssociation/NeutralFragmentMergingAlgorithm.h"
@@ -204,6 +205,7 @@ public:
     d("ClusterFromTrackMerging2",            arbor_content::ClusterFromTrackMergingAlgorithm2::Factory) \
     d("ClusterFromTrackMerging3",            arbor_content::ClusterFromTrackMergingAlgorithm3::Factory) \
     d("ChargedFragmentsMerging",             arbor_content::ChargedFragmentsMergingAlgorithm::Factory) \
+    d("ChargedFragmentsMerging2",            arbor_content::ChargedFragmentsMergingAlgorithm2::Factory) \
     d("ClusterFromTrackMerging4",            arbor_content::ClusterFromTrackMergingAlgorithm4::Factory) \
     d("ClusterFromTrackMerging5",            arbor_content::ClusterFromTrackMergingAlgorithm5::Factory) \
     d("NeutralFragmentMerging",              arbor_content::NeutralFragmentMergingAlgorithm::Factory) \
