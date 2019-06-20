@@ -65,8 +65,9 @@ private:
     void GetNearbyClusters(pandora::Cluster* cluster, const std::vector<arbor_content::ArborCluster*>& clusterVector, 
 			std::vector<arbor_content::ArborCluster*>& clustersInRange);
 
-    void SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
-		  std::vector<arbor_content::ArborCluster*>& properClusters);
+    void SearchProperClusters(ArborCluster* startingCluster, 
+		    std::vector<arbor_content::ArborCluster*>& allClusters,
+			std::vector<arbor_content::ArborCluster*>& properClusters);
 
     pandora::StatusCode CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector);
 
@@ -103,17 +104,6 @@ private:
 	 */
 	pandora::StatusCode FindBestParentCluster(const pandora::Cluster *const pDaughterCluster, const pandora::ClusterVector &clusterVector,
 			const pandora::Cluster *&pBestParentCluster) const;
-
-	/**
-	 *  @brief  Get the cluster backward direction and the inner cluster position using a cluster fit of the n first layers
-	 *
-	 *  @param  pCluster the input cluster address
-	 *  @param  backwardDirection the backward direction cartesian vector to receive
-	 *  @param  innerPosition the inner cluster position to receive
-	 */
-	pandora::StatusCode GetClusterBackwardDirection(const pandora::Cluster *const pCluster, pandora::CartesianVector &backwardDirection, pandora::CartesianVector &innerPosition) const;
-
-    bool IsClusterAxesCompatible(const ArborCluster* startingCluster, const ArborCluster* nearbyCluster, float& axesDistance);
 
 private:
 	float                            m_maxStartingClusterDistance;
