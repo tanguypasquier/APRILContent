@@ -197,33 +197,102 @@ namespace arbor_content
 		unsigned int innerLayer = pCluster->GetInnerPseudoLayer();
 		unsigned int outerLayer = pCluster->GetOuterPseudoLayer();
 	    
-		std::vector<arbor_content::ArborCluster*> properClusters;
+		std::vector<arbor_content::ArborCluster*> nearbyClusters;
 
 		try
 		{
-			//GetNearbyClusters(pCluster, clusterVector, nearbyClusters);
-			SearchProperClusters(pCluster, clusterVector, properClusters);
+			SearchProperClusters(pCluster, clusterVector, nearbyClusters);
 		}
 		catch(...)
 		{
 			std::cout << " GetNearbyClusters error!" << std::endl;
 		}
 
-		std::cout << "    === cluster === " << std::endl
-			      << "    cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  << std::endl
-				  << "    isPhoton: " << isPhoton << std::endl
-				  << "    clusterRegion: " << clusterRegion << " clusterIPAngle: " << clusterIPAngle << " clusterTime: " << clusterTime << std::endl
-				  << "    hadEnergyInEcal: " << hadEnergyInEcal << " energyRatio: " << energyRatio << std::endl
-				  << "    innerLayer: " << innerLayer << " outerLayer: " << outerLayer << std::endl
-				  << "    nearby cluster: " << properClusters.size() << std::endl;
-
-	    for(int iClu = 0; iClu < properClusters.size(); ++iClu)
+		if(m_debugOutput)
 		{
-			std::cout << "       ---> cluster: " << properClusters.at(iClu) << ", E: " << properClusters.at(iClu)->GetHadronicEnergy() << std::endl;
+			std::cout << "    === cluster === " << std::endl
+	        	      << "    cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  << ", nhit: " << pCluster->GetNCaloHits() << std::endl
+	        		  << "    nPossibleMipHits: " << pCluster->GetNPossibleMipHits() << ", mipFraction: " << pCluster->GetMipFraction() << std::endl
+	        		  << "    isPhoton: " << isPhoton << std::endl
+	        		  << "    clusterRegion: " << clusterRegion << " clusterIPAngle: " << clusterIPAngle << " clusterTime: " << clusterTime << std::endl
+	        		  << "    hadEnergyInEcal: " << hadEnergyInEcal << " energyRatio: " << energyRatio << std::endl
+	        		  << "    innerLayer: " << innerLayer << " outerLayer: " << outerLayer << std::endl
+	        		  << "    nearby cluster: " << nearbyClusters.size() << std::endl;
+
+	            for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
+	        	{
+	        		std::cout << "       ---> cluster: " << nearbyClusters.at(iClu) << ", E: " << nearbyClusters.at(iClu)->GetHadronicEnergy() 
+	        			<< ", associatedTrack: " << nearbyClusters.at(iClu)->GetAssociatedTrackList().size() << std::endl;
+	        	}
+
+	        	std::cout << std::endl << std::endl << std::endl;
+	        	std::cout << "    clusterMCPID: " << clusterPID << ", clusterMCCharge: " << clusterCharge << std::endl;
 		}
 
-		std::cout << std::endl << std::endl << std::endl;
-		std::cout << "    clusterMCPID: " << clusterPID << ", clusterMCCharge: " << clusterCharge << std::endl;
+		// photon
+		if(energyRatio > 0.7 && clusterTime < 12.)
+		{
+			if(clusterIPAngle<0.8 && innerLayer < 12)
+			{
+				std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
+				          << " maybe a photon. \033[0m" << std::endl;
+
+				// check nearby charged cluster
+				for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
+				{
+					float closestDistance = 1.e6;
+
+					auto nearbyCluster = nearbyClusters.at(iClu);
+
+		            try
+		            {
+		                ClusterHelper::GetClosestDistanceApproach(pCluster, nearbyCluster, closestDistance, m_onlyUseConnectedHits);
+		            }
+                    catch(pandora::StatusCodeException &)
+		            {
+		                std::cout << "GetClosestDistanceApproach failed" << std::endl;
+		            }
+
+					if(closestDistance != 1.e6 && closestDistance > 100.) break;
+
+					if(nearbyCluster->GetAssociatedTrackList().size() > 0) 
+					{
+						std::cout << "  \033[1;31m near a charged cluster, further computation to validate this is a photon cluster ... \033[0m"  << std::endl;
+					}
+				}
+			}
+			else
+			{
+				// if there is a nearby photon cluster
+				for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
+				{
+					float closestDistance = 1.e6;
+
+					auto nearbyCluster = nearbyClusters.at(iClu);
+
+		            try
+		            {
+		                ClusterHelper::GetClosestDistanceApproach(pCluster, nearbyCluster, closestDistance, m_onlyUseConnectedHits);
+		            }
+                    catch(pandora::StatusCodeException &)
+		            {
+		                std::cout << "GetClosestDistanceApproach failed" << std::endl;
+		            }
+
+					if(closestDistance != 1.e6 && closestDistance > 100.) break;
+
+					if(nearbyCluster->IsPhoton()) 
+					{
+						std::cout << "  \033[1;31m near a photon, further computationi to validate this is a photon fragment ... \033[0m"  << std::endl;
+					}
+				}
+			}
+		}
+		
+		// charged cluster
+		// neutral cluster
+
+		//IsFromNearbyCluster();
 	}
 
 
@@ -362,61 +431,6 @@ namespace arbor_content
 		  auto clu = mapIter.second;
 		  clustersInRange.push_back(clu);
 	  }
-  }
-
-  pandora::StatusCode ChargedFragmentsMergingAlgorithm2::CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector)
-  {
-	for(int i = 0; i < clusterVector.size(); ++i)
-	{
-		auto& cluster = clusterVector.at(i);
-
-		auto& mothers = cluster->GetMotherCluster();
-
-		if(m_debugOutput)
-		{
-			std::cout << " --- cluster " << cluster << " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
-		}
-
-		// find the best one
-		ClustersOrderParameter bestOrderParameter;
-		ArborCluster* bestCluster;
-
-		for(int iMother = 0; iMother < mothers.size(); ++iMother)
-		{
-			auto mother = mothers.at(iMother);
-			ClustersOrderParameter orderParameter = cluster->GetOrderParameterWithMother(mother);
-
-			if(orderParameter < bestOrderParameter)
-			{
-				bestOrderParameter = orderParameter;
-				bestCluster = mother;
-			}
-		}
-
-		// take the best one
-		if(mothers.size() > 1)
-		{
-			for(int iMother = 0; iMother < mothers.size(); ++iMother)
-			{
-				auto mother = mothers.at(iMother);
-
-				if(mother != bestCluster)
-				{
-					if(m_debugOutput)
-					{
-						std::cout << " !!! cluster: " << mother << " remove cluster to merge: " << cluster << std::endl;
-					}
-
-					mother->RemoveFromClustersToMerge(cluster);
-				}
-			}
-
-			mothers.clear();
-			mothers.push_back(bestCluster);
-		}
-	}
-
-    return pandora::STATUS_CODE_SUCCESS;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
