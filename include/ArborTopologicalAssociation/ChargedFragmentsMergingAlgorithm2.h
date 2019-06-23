@@ -65,6 +65,8 @@ private:
     void GetNearbyClusters(pandora::Cluster* cluster, const std::vector<arbor_content::ArborCluster*>& clusterVector, 
 			std::vector<arbor_content::ArborCluster*>& clustersInRange);
 
+    void CheckNearbyClusterWithCharge(const arbor_content::ArborCluster* pCluster, std::vector<arbor_content::ArborCluster*>& nearbyClusters, int charge);
+
     void SearchProperClusters(ArborCluster* startingCluster, 
 		    std::vector<arbor_content::ArborCluster*>& allClusters,
 			std::vector<arbor_content::ArborCluster*>& properClusters);

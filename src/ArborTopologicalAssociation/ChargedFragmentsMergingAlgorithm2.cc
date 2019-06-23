@@ -190,6 +190,7 @@ namespace arbor_content
 
 		float clusterIPAngle = ClusterHelper::GetClusterAxisStartingPointAngle(pCluster);
 		float clusterTime = ClusterHelper::GetAverageTime(pCluster);
+		float clusterTimeECal = ClusterHelper::GetAverageTime(pCluster, true);
 		float hadEnergyInEcal = ClusterHelper::GetHadronicEnergyInECAL(pCluster);
 
 		float energyRatio = hadEnergyInEcal / pCluster->GetHadronicEnergy();
@@ -214,7 +215,7 @@ namespace arbor_content
 	        	      << "    cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  << ", nhit: " << pCluster->GetNCaloHits() << std::endl
 	        		  << "    nPossibleMipHits: " << pCluster->GetNPossibleMipHits() << ", mipFraction: " << pCluster->GetMipFraction() << std::endl
 	        		  << "    isPhoton: " << isPhoton << std::endl
-	        		  << "    clusterRegion: " << clusterRegion << " clusterIPAngle: " << clusterIPAngle << " clusterTime: " << clusterTime << std::endl
+	        		  << "    clusterRegion: " << clusterRegion << " clusterIPAngle: " << clusterIPAngle << " clusterTime: " << clusterTime << " clusterTimeECal: " << clusterTimeECal << std::endl
 	        		  << "    hadEnergyInEcal: " << hadEnergyInEcal << " energyRatio: " << energyRatio << std::endl
 	        		  << "    innerLayer: " << innerLayer << " outerLayer: " << outerLayer << std::endl
 	        		  << "    nearby cluster: " << nearbyClusters.size() << std::endl;
@@ -229,63 +230,22 @@ namespace arbor_content
 	        	std::cout << "    clusterMCPID: " << clusterPID << ", clusterMCCharge: " << clusterCharge << std::endl;
 		}
 
+
 		// photon
-		if(energyRatio > 0.7 && clusterTime < 12.)
+		if(energyRatio > 0.75 && (clusterTime < 12. || clusterTimeECal < 12.))
 		{
 			if(clusterIPAngle<0.8 && innerLayer < 12)
 			{
 				std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
 				          << " maybe a photon. \033[0m" << std::endl;
 
-				// check nearby charged cluster
-				for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
-				{
-					float closestDistance = 1.e6;
-
-					auto nearbyCluster = nearbyClusters.at(iClu);
-
-		            try
-		            {
-		                ClusterHelper::GetClosestDistanceApproach(pCluster, nearbyCluster, closestDistance, m_onlyUseConnectedHits);
-		            }
-                    catch(pandora::StatusCodeException &)
-		            {
-		                std::cout << "GetClosestDistanceApproach failed" << std::endl;
-		            }
-
-					if(closestDistance != 1.e6 && closestDistance > 100.) break;
-
-					if(nearbyCluster->GetAssociatedTrackList().size() > 0) 
-					{
-						std::cout << "  \033[1;31m near a charged cluster, further computation to validate this is a photon cluster ... \033[0m"  << std::endl;
-					}
-				}
+				// check if it is a segment of charged cluster
+				CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 1);
 			}
 			else
 			{
-				// if there is a nearby photon cluster
-				for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
-				{
-					float closestDistance = 1.e6;
-
-					auto nearbyCluster = nearbyClusters.at(iClu);
-
-		            try
-		            {
-		                ClusterHelper::GetClosestDistanceApproach(pCluster, nearbyCluster, closestDistance, m_onlyUseConnectedHits);
-		            }
-                    catch(pandora::StatusCodeException &)
-		            {
-		                std::cout << "GetClosestDistanceApproach failed" << std::endl;
-		            }
-
-					if(closestDistance != 1.e6 && closestDistance > 100.) break;
-
-					if(nearbyCluster->IsPhoton()) 
-					{
-						std::cout << "  \033[1;31m near a photon, further computationi to validate this is a photon fragment ... \033[0m"  << std::endl;
-					}
-				}
+				// check if it is a segment of photon
+				CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 0);
 			}
 		}
 		
@@ -295,8 +255,43 @@ namespace arbor_content
 		//IsFromNearbyCluster();
 	}
 
-
     return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  void ChargedFragmentsMergingAlgorithm2::CheckNearbyClusterWithCharge(const arbor_content::ArborCluster* pCluster, std::vector<arbor_content::ArborCluster*>& nearbyClusters, int charge)
+  {
+	  for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
+	  {
+		  float closestDistance = 1.e6;
+
+	  	  auto nearbyCluster = nearbyClusters.at(iClu);
+
+	      try
+	      {
+	          ClusterHelper::GetClosestDistanceApproach(pCluster, nearbyCluster, closestDistance, m_onlyUseConnectedHits);
+	      }
+          catch(pandora::StatusCodeException &)
+	      {
+	          std::cout << "GetClosestDistanceApproach failed" << std::endl;
+	      }
+
+	  	  if(closestDistance != 1.e6 && closestDistance > 100.) break;
+
+		  if(charge == 1)
+		  {
+			  if(nearbyCluster->GetAssociatedTrackList().size() > 0)
+	  	      {
+	  	      	std::cout << "  \033[1;31m near a charged cluster, further computation to validate this is a photon cluster ... \033[0m"  << std::endl;
+	  	      }
+		  }
+		  else
+		  {
+			  if(nearbyCluster->IsPhoton()) 
+		      {
+		      	std::cout << "  \033[1;31m near a photon, further computation to validate this is a photon fragment ... \033[0m"  << std::endl;
+		      }
+		  }
+	  }
   }
 
   void ChargedFragmentsMergingAlgorithm2::SearchProperClusters(ArborCluster* startingCluster, 
