@@ -1031,7 +1031,7 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  float ClusterHelper::GetAverageTime(const pandora::Cluster *const pCluster)
+  float ClusterHelper::GetAverageTime(const pandora::Cluster *const pCluster, bool onlyForECALHit)
   {
 	  pandora::CaloHitList clusterCaloHitList;
 	  pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
@@ -1042,6 +1042,12 @@ namespace arbor_content
 	  for(auto hitIter = clusterCaloHitList.begin(); hitIter != clusterCaloHitList.end(); ++hitIter)
 	  {
 	  	auto pCaloHit = *hitIter;
+
+		if(onlyForECALHit)
+		{
+			if(pCaloHit->GetHitType() != pandora::ECAL) continue;
+		}
+
 		float hitTime = pCaloHit->GetTime();
 
 		if(hitTime<1.e-2) continue;

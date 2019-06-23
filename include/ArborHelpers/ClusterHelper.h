@@ -327,7 +327,7 @@ public:
 		static bool CanMergeCluster(const pandora::Pandora &pandora, const pandora::Cluster *const pCluster, const float minMipFraction, 
 				const float maxAllHitsFitRms);
   
-		static float GetAverageTime(const pandora::Cluster *const pCluster);
+		static float GetAverageTime(const pandora::Cluster *const pCluster, bool onlyForECALHit = false);
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
