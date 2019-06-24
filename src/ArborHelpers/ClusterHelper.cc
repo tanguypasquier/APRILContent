@@ -31,10 +31,15 @@
 #include "ArborHelpers/CaloHitHelper.h"
 #include "ArborHelpers/GeometryHelper.h"
 #include "ArborHelpers/ReclusterHelper.h"
+#include "ArborHelpers/CaloHitNeighborSearchHelper.h"
 
 #include "TMatrixT.h"
 #include "TMatrixDEigen.h"
 #include "TVectorD.h"
+
+#include "TVector3.h"
+#include "TRotation.h"
+#include "TH2F.h"
 
 namespace arbor_content
 {
@@ -367,6 +372,127 @@ namespace arbor_content
 		  return pandora::STATUS_CODE_SUCCESS;
 	  else
 		  return pandora::STATUS_CODE_FAILURE;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  float ClusterHelper::GetRMS(const pandora::CaloHitList& clusterHits, pandora::CartesianVector cog, pandora::CartesianVector axis)
+  {
+	  TVector3 clusterAxis(axis.GetX(), axis.GetY(), axis.GetZ());
+
+	  float theta = clusterAxis.Theta(); 
+	  float phi = clusterAxis.Phi();
+
+	  TRotation rotationMatrix;
+	  rotationMatrix.RotateZ(-phi);
+	  rotationMatrix.RotateY(-theta);
+	  //rotationMatrix.RotateZ(phi);
+
+	  TH2F hist2("hist2", "hist2", 100, -1000, 1000, 100, -1000, 1000);
+
+
+	  TVector3 clusterCOG(cog.GetX(), cog.GetY(), cog.GetZ());
+
+	  for(auto& clusterHit : clusterHits)
+	  {
+		  pandora::CartesianVector pos = clusterHit->GetPositionVector();
+		  //std::cout << "   --- pos: " << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << std::endl;
+		  TVector3 hitPos(pos.GetX(), pos.GetY(), pos.GetZ());
+
+		  TVector3 newHitPos = rotationMatrix * (hitPos - clusterCOG);
+		  hist2.Fill(newHitPos.X(), newHitPos.Y());
+	  }
+
+	  std::cout << "     --- RMS: " << hist2.GetRMS(1) << ", " << hist2.GetRMS(2) << std::endl;
+
+	  return 1.;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  float ClusterHelper::GetRMS(const pandora::Cluster *const pCluster, pandora::CartesianVector cog, pandora::CartesianVector axis)
+  {
+	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+	  pandora::CaloHitList caloHitList;
+	  orderedCaloHitList.FillCaloHitList(caloHitList);
+  
+	  GetRMS(caloHitList, cog, axis);
+
+	  return 1.;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode ClusterHelper::GetMainClusterHits(const pandora::Cluster *const pCluster, pandora::CaloHitList& mainClusterHits, float eps)
+  {
+	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+	  pandora::CaloHitList caloHitList;
+	  orderedCaloHitList.FillCaloHitList(caloHitList);
+
+	  pandora::CaloHitVector caloHitVector;
+	  caloHitVector.insert(caloHitVector.begin(), caloHitList.begin(), caloHitList.end());
+	  std::vector<pandora::CaloHitVector> hitsForCluster;
+
+	  CaloHitNeighborSearchHelper::ClusteringByDBSCAN(caloHitVector, hitsForCluster, eps, 2);
+
+	  std::cout << "  --- ClusteringInCluster size: " << hitsForCluster.size() << std::endl;
+
+	  int maxHitVector = 0;
+	  int maxHit = 0;
+
+	  for(int i = 0; i < hitsForCluster.size(); ++i)
+	  {
+		  std::cout << "    -> " << hitsForCluster.at(i).size() << std::endl;
+
+		  if(maxHit < hitsForCluster.at(i).size())
+		  {
+			  maxHitVector = i;
+			  maxHit = hitsForCluster.at(i).size();
+		  }
+	  }
+
+	  if( (float)maxHit/caloHitVector.size() > 0.6 )
+	  {
+		  pandora::CaloHitList maxCaloHitList;
+
+		  auto maxCaloHits = hitsForCluster.at(maxHitVector);
+
+		  for(int i = 0; i < maxCaloHits.size(); ++i)
+		  {
+			  maxCaloHitList.push_back( maxCaloHits.at(i) );
+		  }
+
+		  mainClusterHits = maxCaloHitList;
+	  }
+	  else
+	  {
+		  mainClusterHits = caloHitList;
+	  }
+
+	  return pandora::STATUS_CODE_FAILURE;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  float ClusterHelper::GetMeanHitPerLayer(const pandora::Cluster *const pCluster)
+  {
+	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+
+	  unsigned int layerHasHit = 0;
+	  unsigned int totalHit = 0;
+
+	  //std::cout << "     cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+
+	  for(auto& layer : orderedCaloHitList)
+	  {
+		  //std::cout << "        --- layer: " << layer.first << ", hit size: " << layer.second->size() << std::endl;
+
+		  if(layer.second->size() > 0) 
+		  {
+			  ++layerHasHit;
+			  totalHit += layer.second->size();
+		  }
+	  }
+
+	  //std::cout << "     MeanHitPerLayer: " << (float)totalHit/layerHasHit << std::endl;
+
+	  return (float)totalHit/layerHasHit;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

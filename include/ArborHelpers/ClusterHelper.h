@@ -328,6 +328,12 @@ public:
 				const float maxAllHitsFitRms);
   
 		static float GetAverageTime(const pandora::Cluster *const pCluster, bool onlyForECALHit = false);
+        static float GetMeanHitPerLayer(const pandora::Cluster *const pCluster);
+
+        static pandora::StatusCode GetMainClusterHits(const pandora::Cluster *const pCluster, pandora::CaloHitList& mainClusterHits, float eps);
+
+        static float GetRMS(const pandora::Cluster *const pCluster, pandora::CartesianVector cog, pandora::CartesianVector axis);
+		static float GetRMS(const pandora::CaloHitList& clusterHits, pandora::CartesianVector cog, pandora::CartesianVector axis);
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

@@ -247,6 +247,16 @@ namespace arbor_content
 				// check if it is a segment of photon
 				CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 0);
 			}
+
+			float meanHitPerLayer = ClusterHelper::GetMeanHitPerLayer(pCluster);
+			std::cout << " meanHitPerLayer: " << meanHitPerLayer << std::endl;
+			ClusterHelper::GetRMS(pCluster, pCluster->GetCentroid(), pCluster->GetAxis());
+
+			pandora::CaloHitList mainClusterHits;
+			const float maxLength = 50.;
+			ClusterHelper::GetMainClusterHits(pCluster, mainClusterHits, maxLength);
+			std::cout << "    --- mainClusterHits: " << mainClusterHits.size() << std::endl;
+			ClusterHelper::GetRMS(mainClusterHits, pCluster->GetCentroid(), pCluster->GetAxis());
 		}
 		
 		// charged cluster
