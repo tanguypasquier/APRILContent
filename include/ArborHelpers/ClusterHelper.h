@@ -335,6 +335,8 @@ public:
 
         static pandora::StatusCode GetRMS(const pandora::Cluster *const pCluster, pandora::CartesianVector cog, pandora::CartesianVector axis, float& rms1, float& rms2);
 		static pandora::StatusCode GetRMS(const pandora::CaloHitList& clusterHits, pandora::CartesianVector cog, pandora::CartesianVector axis, float& rms1, float& rms2);
+  
+		static unsigned int GetClusterConnectorNumber(const pandora::Cluster *const pCluster);
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

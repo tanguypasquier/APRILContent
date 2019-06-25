@@ -499,6 +499,27 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
+  unsigned int ClusterHelper::GetClusterConnectorNumber(const pandora::Cluster *const pCluster)
+  {
+	  pandora::CaloHitList caloHitList;
+	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+	  orderedCaloHitList.FillCaloHitList(caloHitList);
+
+	  unsigned int nConnectors = 0;
+
+	  for(auto& caloHit : caloHitList)
+	  {
+		  const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(caloHit));
+		  const arbor_content::ConnectorList& forwardConnectorList = 
+			  ArborContentApi::GetConnectorList(pCaloHit, arbor_content::FORWARD_DIRECTION);
+
+		  nConnectors += forwardConnectorList.size();
+	  }
+
+	  return nConnectors;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
   pandora::StatusCode ClusterHelper::GetMainClusterHits(const pandora::Cluster *const pCluster, pandora::CaloHitList& mainClusterHits)
   {
 	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
