@@ -198,6 +198,9 @@ namespace arbor_content
 
 		unsigned int innerLayer = pCluster->GetInnerPseudoLayer();
 		unsigned int outerLayer = pCluster->GetOuterPseudoLayer();
+
+		unsigned int nConnectors = ClusterHelper::GetClusterConnectorNumber(pCluster);
+		float connectorHitRatio = (float)nConnectors/pCluster->GetNCaloHits();
 	    
 		std::vector<arbor_content::ArborCluster*> nearbyClusters;
 
@@ -218,7 +221,7 @@ namespace arbor_content
 	        		  << "    isPhoton: " << isPhoton << std::endl
 	        		  << "    clusterRegion: " << clusterRegion << " clusterIPAngle: " << clusterIPAngle << " clusterTime: " << clusterTime << " clusterTimeECal: " << clusterTimeECal << std::endl
 	        		  << "    hadEnergyInEcal: " << hadEnergyInEcal << " energyRatio: " << energyRatio << std::endl
-	        		  << "    density: " << density << std::endl
+	        		  << "    density: " << density << ", connectorHitRatio: " << connectorHitRatio << std::endl
 	        		  << "    innerLayer: " << innerLayer << " outerLayer: " << outerLayer << std::endl
 	        		  << "    nearby cluster: " << nearbyClusters.size() << std::endl;
 
@@ -234,11 +237,16 @@ namespace arbor_content
 
 
 		// photon
-		if(energyRatio > 0.75 && (clusterTime < 12. || ( !isnan(clusterTimeECal) && clusterTimeECal < 12.) ) )
+		const float maxPhotonClusterTime = 30.;
+		const float minPhotonClusterDensity = 0.02;
+		const float minECALEnergyRatio = 0.6;
+
+		if(energyRatio > minECALEnergyRatio && (clusterTime < maxPhotonClusterTime 
+		  || ( !isnan(clusterTimeECal) && clusterTimeECal < maxPhotonClusterTime ) ) )
 		{
 			bool fakePhoton = false;
 
-			if(pCluster->GetNCaloHits() > 6 && density < 0.1 ) 
+			if(pCluster->GetNCaloHits() > 4 && density < minPhotonClusterDensity) 
 			{
 				std::cout << " --- fake photon, density : " << density << std::endl;
 				fakePhoton = true;
@@ -250,6 +258,11 @@ namespace arbor_content
 			if(pCluster->GetNCaloHits() > 10 && meanHitPerLayer < 1.2)
 			{
 				std::cout << " --- fake photon, meanHitPerLayer: " << meanHitPerLayer << std::endl;
+				fakePhoton = true;
+			}
+
+			if(!fakePhoton && pCluster->GetNCaloHits() > 10 && connectorHitRatio < 0.3)
+			{
 				fakePhoton = true;
 			}
 
@@ -272,9 +285,10 @@ namespace arbor_content
 				}
 			}
 
+
 			if(!fakePhoton)
 			{
-				if(clusterIPAngle < 0.8 && innerLayer < 12)
+				if(clusterIPAngle < 1. && innerLayer < 12)
 			    {
 			    	std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
 			    	          << " maybe a photon. \033[0m" << std::endl;
@@ -287,6 +301,15 @@ namespace arbor_content
 			    	// check if it is a segment of photon
 			    	CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 0);
 			    }
+
+				if(clusterRegion == pandora::ENDCAP)
+				{
+					if((meanHitPerLayer < 3. && clusterIPAngle > 0.7) || clusterTimeECal > maxPhotonClusterTime/2.)
+					{
+						std::cout << "    === \033[1;31m endcap cluster with angle: " << clusterIPAngle  
+							<< " clusterTimeECal: " << clusterTimeECal << " \033[0m" << std::endl;
+					}
+				}
 			}
 
 		}
@@ -328,7 +351,57 @@ namespace arbor_content
 				unsigned int innerLayer = pCluster->GetInnerPseudoLayer();
 				unsigned int outerLayer = pCluster->GetOuterPseudoLayer();
 
-				if(innerLayer==1 && outerLayer < 30) std::cout << " innerLayer == 1, OK." << std::endl;
+				bool passCheck = true;
+
+				// check hit on the 1st layer
+				if(innerLayer==1 && outerLayer < 30) 
+				{
+	                const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+					auto& hitsAtFirstLayer = *(orderedCaloHitList.begin()->second);
+
+					if(hitsAtFirstLayer.size() > 5) passCheck = false;
+
+					if(passCheck)
+					{
+						bool seedOnFirstLayer = false;
+
+					    for(auto& hit : hitsAtFirstLayer)
+					    {
+					    	const arbor_content::CaloHit *const pArborCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(hit));
+							const arbor_content::ConnectorList& backwardConnectorList = 
+								ArborContentApi::GetConnectorList(pArborCaloHit, arbor_content::BACKWARD_DIRECTION);
+							const arbor_content::ConnectorList& forwardConnectorList = 
+								ArborContentApi::GetConnectorList(pArborCaloHit, arbor_content::FORWARD_DIRECTION);
+
+							std::cout << "  hit on 1st layer: " << pArborCaloHit << ", bakConnector: " << backwardConnectorList.size() 
+								<< ", fwdConnector: " << forwardConnectorList.size() << std::endl;
+
+							bool isSeed = (backwardConnectorList.size() == 0) && (forwardConnectorList.size() > 0);
+
+					    	if(isSeed) 
+					    	{
+					    		seedOnFirstLayer = true;
+					    		break;
+					    	}
+					    }
+
+						if(!seedOnFirstLayer) passCheck = false;
+					}
+				}
+
+				if(passCheck)
+				{
+					unsigned int nConnectors = ClusterHelper::GetClusterConnectorNumber(pCluster);
+
+					std::cout << "     nConnectors : " << nConnectors << ", nhit: " << pCluster->GetNCaloHits() << std::endl;
+
+					if((float)nConnectors/pCluster->GetNCaloHits() < 0.6) 
+					{
+						passCheck = false;
+					}
+				}
+				
+				if(passCheck) std::cout << " \033[1;31m OK. \033[0m " << std::endl;
 
 				// TODO::
 				// check axes distance, track positon on ECAL (if between two seeds ?)
@@ -336,9 +409,9 @@ namespace arbor_content
 		  }
 		  else
 		  {
-			  if(nearbyCluster->IsPhoton()) 
+			  if(nearbyCluster->IsPhoton() || nearbyCluster->GetAssociatedTrackList().size() == 0) 
 		      {
-		      	std::cout << "  \033[1;31m near a photon, further computation to validate this is a photon fragment ... \033[0m"  << std::endl;
+		      	std::cout << "  \033[1;31m near neutral cluster, further computation to validate this fragment ... \033[0m"  << std::endl;
 		      }
 		  }
 	  }
