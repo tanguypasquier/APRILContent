@@ -277,7 +277,7 @@ namespace arbor_content
 			    float rms1, rms2;
 			    ClusterHelper::GetRMS(mainClusterHits, pCluster->GetCentroid(), pCluster->GetAxis(), rms1, rms2);
 
-				if(pCluster->GetNCaloHits() > 10 && 
+				if(pCluster->GetNCaloHits() > 30 && 
 				   fabs(rms1-rms2) > 3 * std::min(rms1, rms2) ) 
 				{
 				    std::cout << " --- fake photon, rms1: " << rms1 << ", rms2: " << rms2 << std::endl;
