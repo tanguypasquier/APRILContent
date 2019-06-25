@@ -192,6 +192,7 @@ namespace arbor_content
 		float clusterTime = ClusterHelper::GetAverageTime(pCluster);
 		float clusterTimeECal = ClusterHelper::GetAverageTime(pCluster, true);
 		float hadEnergyInEcal = ClusterHelper::GetHadronicEnergyInECAL(pCluster);
+		float density = ClusterHelper::GetMeanDensity(pCluster);
 
 		float energyRatio = hadEnergyInEcal / pCluster->GetHadronicEnergy();
 
@@ -217,6 +218,7 @@ namespace arbor_content
 	        		  << "    isPhoton: " << isPhoton << std::endl
 	        		  << "    clusterRegion: " << clusterRegion << " clusterIPAngle: " << clusterIPAngle << " clusterTime: " << clusterTime << " clusterTimeECal: " << clusterTimeECal << std::endl
 	        		  << "    hadEnergyInEcal: " << hadEnergyInEcal << " energyRatio: " << energyRatio << std::endl
+	        		  << "    density: " << density << std::endl
 	        		  << "    innerLayer: " << innerLayer << " outerLayer: " << outerLayer << std::endl
 	        		  << "    nearby cluster: " << nearbyClusters.size() << std::endl;
 
@@ -232,31 +234,61 @@ namespace arbor_content
 
 
 		// photon
-		if(energyRatio > 0.75 && (clusterTime < 12. || clusterTimeECal < 12.))
+		if(energyRatio > 0.75 && (clusterTime < 12. || ( !isnan(clusterTimeECal) && clusterTimeECal < 12.) ) )
 		{
-			if(clusterIPAngle<0.8 && innerLayer < 12)
-			{
-				std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
-				          << " maybe a photon. \033[0m" << std::endl;
+			bool fakePhoton = false;
 
-				// check if it is a segment of charged cluster
-				CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 1);
-			}
-			else
+			if(pCluster->GetNCaloHits() > 6 && density < 0.1 ) 
 			{
-				// check if it is a segment of photon
-				CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 0);
+				std::cout << " --- fake photon, density : " << density << std::endl;
+				fakePhoton = true;
 			}
 
 			float meanHitPerLayer = ClusterHelper::GetMeanHitPerLayer(pCluster);
 			std::cout << " meanHitPerLayer: " << meanHitPerLayer << std::endl;
-			ClusterHelper::GetRMS(pCluster, pCluster->GetCentroid(), pCluster->GetAxis());
 
-			pandora::CaloHitList mainClusterHits;
-			const float maxLength = 50.;
-			ClusterHelper::GetMainClusterHits(pCluster, mainClusterHits, maxLength);
-			std::cout << "    --- mainClusterHits: " << mainClusterHits.size() << std::endl;
-			ClusterHelper::GetRMS(mainClusterHits, pCluster->GetCentroid(), pCluster->GetAxis());
+			if(pCluster->GetNCaloHits() > 10 && meanHitPerLayer < 1.2)
+			{
+				std::cout << " --- fake photon, meanHitPerLayer: " << meanHitPerLayer << std::endl;
+				fakePhoton = true;
+			}
+
+			if(!fakePhoton)
+			{
+				pandora::CaloHitList mainClusterHits;
+
+			    const float maxLength = 50.;
+			    ClusterHelper::GetMainClusterHits(pCluster, mainClusterHits, maxLength);
+			    //std::cout << "    --- mainClusterHits: " << mainClusterHits.size() << std::endl;
+
+			    float rms1, rms2;
+			    ClusterHelper::GetRMS(mainClusterHits, pCluster->GetCentroid(), pCluster->GetAxis(), rms1, rms2);
+
+				if(pCluster->GetNCaloHits() > 10 && 
+				   fabs(rms1-rms2) > 3 * std::min(rms1, rms2) ) 
+				{
+				    std::cout << " --- fake photon, rms1: " << rms1 << ", rms2: " << rms2 << std::endl;
+					fakePhoton = true;
+				}
+			}
+
+			if(!fakePhoton)
+			{
+				if(clusterIPAngle < 0.8 && innerLayer < 12)
+			    {
+			    	std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
+			    	          << " maybe a photon. \033[0m" << std::endl;
+
+			    	// check if it is a segment of charged cluster
+			    	CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 1);
+			    }
+			    else
+			    {
+			    	// check if it is a segment of photon
+			    	CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 0);
+			    }
+			}
+
 		}
 		
 		// charged cluster
@@ -292,6 +324,14 @@ namespace arbor_content
 			  if(nearbyCluster->GetAssociatedTrackList().size() > 0)
 	  	      {
 	  	      	std::cout << "  \033[1;31m near a charged cluster, further computation to validate this is a photon cluster ... \033[0m"  << std::endl;
+
+				unsigned int innerLayer = pCluster->GetInnerPseudoLayer();
+				unsigned int outerLayer = pCluster->GetOuterPseudoLayer();
+
+				if(innerLayer==1 && outerLayer < 30) std::cout << " innerLayer == 1, OK." << std::endl;
+
+				// TODO::
+				// check axes distance, track positon on ECAL (if between two seeds ?)
 	  	      }
 		  }
 		  else

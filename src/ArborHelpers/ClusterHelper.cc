@@ -375,7 +375,8 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
-  float ClusterHelper::GetRMS(const pandora::CaloHitList& clusterHits, pandora::CartesianVector cog, pandora::CartesianVector axis)
+  pandora::StatusCode ClusterHelper::GetRMS(const pandora::CaloHitList& clusterHits, pandora::CartesianVector cog, pandora::CartesianVector axis,
+		  float& rms1, float& rms2)
   {
 	  TVector3 clusterAxis(axis.GetX(), axis.GetY(), axis.GetZ());
 
@@ -389,7 +390,6 @@ namespace arbor_content
 
 	  TH2F hist2("hist2", "hist2", 100, -1000, 1000, 100, -1000, 1000);
 
-
 	  TVector3 clusterCOG(cog.GetX(), cog.GetY(), cog.GetZ());
 
 	  for(auto& clusterHit : clusterHits)
@@ -402,21 +402,24 @@ namespace arbor_content
 		  hist2.Fill(newHitPos.X(), newHitPos.Y());
 	  }
 
-	  std::cout << "     --- RMS: " << hist2.GetRMS(1) << ", " << hist2.GetRMS(2) << std::endl;
+	  //std::cout << "     --- RMS: " << hist2.GetRMS(1) << ", " << hist2.GetRMS(2) << std::endl;
+	  rms1 = hist2.GetRMS(1);
+	  rms2 = hist2.GetRMS(2);
 
-	  return 1.;
+	  return pandora::STATUS_CODE_FAILURE;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
-  float ClusterHelper::GetRMS(const pandora::Cluster *const pCluster, pandora::CartesianVector cog, pandora::CartesianVector axis)
+  pandora::StatusCode ClusterHelper::GetRMS(const pandora::Cluster *const pCluster, pandora::CartesianVector cog, pandora::CartesianVector axis,
+		  float& rms1, float& rms2)
   {
 	  const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
 	  pandora::CaloHitList caloHitList;
 	  orderedCaloHitList.FillCaloHitList(caloHitList);
   
-	  GetRMS(caloHitList, cog, axis);
+	  GetRMS(caloHitList, cog, axis, rms1, rms2);
 
-	  return 1.;
+	  return pandora::STATUS_CODE_FAILURE;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -432,14 +435,14 @@ namespace arbor_content
 
 	  CaloHitNeighborSearchHelper::ClusteringByDBSCAN(caloHitVector, hitsForCluster, eps, 2);
 
-	  std::cout << "  --- ClusteringInCluster size: " << hitsForCluster.size() << std::endl;
+	  //std::cout << "  --- ClusteringInCluster size: " << hitsForCluster.size() << std::endl;
 
 	  int maxHitVector = 0;
 	  int maxHit = 0;
 
 	  for(int i = 0; i < hitsForCluster.size(); ++i)
 	  {
-		  std::cout << "    -> " << hitsForCluster.at(i).size() << std::endl;
+		  //std::cout << "    -> " << hitsForCluster.at(i).size() << std::endl;
 
 		  if(maxHit < hitsForCluster.at(i).size())
 		  {
@@ -997,6 +1000,16 @@ namespace arbor_content
 	  }
 
 	  return region;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float ClusterHelper::GetMeanDensity(const pandora::Cluster *const pCluster)
+  {
+	  float density = 0.;
+
+	  GetMeanDensity(pCluster, density);
+	  return density;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

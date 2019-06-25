@@ -216,6 +216,7 @@ public:
 	 *  @param  meanDensity the mean density to receive
 	 */
 	static pandora::StatusCode GetMeanDensity(const pandora::Cluster *const pCluster, float &meanDensity);
+    static float GetMeanDensity(const pandora::Cluster *const pCluster);
 
 	/**
 	 *  @brief  Evaluate the chi before and after to merge the two clusters
@@ -332,8 +333,8 @@ public:
 
         static pandora::StatusCode GetMainClusterHits(const pandora::Cluster *const pCluster, pandora::CaloHitList& mainClusterHits, float eps);
 
-        static float GetRMS(const pandora::Cluster *const pCluster, pandora::CartesianVector cog, pandora::CartesianVector axis);
-		static float GetRMS(const pandora::CaloHitList& clusterHits, pandora::CartesianVector cog, pandora::CartesianVector axis);
+        static pandora::StatusCode GetRMS(const pandora::Cluster *const pCluster, pandora::CartesianVector cog, pandora::CartesianVector axis, float& rms1, float& rms2);
+		static pandora::StatusCode GetRMS(const pandora::CaloHitList& clusterHits, pandora::CartesianVector cog, pandora::CartesianVector axis, float& rms1, float& rms2);
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
