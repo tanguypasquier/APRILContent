@@ -323,7 +323,7 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
-  pandora::StatusCode ClusterHelper::FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult, bool useMainCluster)
+  pandora::StatusCode ClusterHelper::FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult, bool useMainCluster, float eps)
   {
 	  const pandora::OrderedCaloHitList orderedCaloHitList = GetOrderedConnectedCaloHitList(pCluster);
       const unsigned int listSize(orderedCaloHitList.size());
@@ -341,7 +341,7 @@ namespace arbor_content
 	  if(useMainCluster)
 	  {
 		  pandora::CaloHitList mainClusterHits;
-	      ClusterHelper::GetMainClusterHits(pCluster, mainClusterHits);
+	      ClusterHelper::GetMainClusterHits(pCluster, mainClusterHits, eps);
 
 	      for(auto& pCaloHit : mainClusterHits)
 	      {
@@ -616,6 +616,28 @@ namespace arbor_content
 	  }
 
 	  return hadronicEnergyInECAL;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  float ClusterHelper::GetEnergyRatio(const pandora::OrderedCaloHitList& orderedCaloHitList)
+  {
+	  pandora::CaloHitList caloHitList;
+	  orderedCaloHitList.FillCaloHitList(caloHitList);
+
+	  float hadronicEnergyInECAL = 0.;
+	  float totalEnergy = 0.;
+
+	  for(auto iter = caloHitList.begin(); iter != caloHitList.end(); ++iter)
+	  {
+		  auto pCaloHit = *iter;
+		  float hitEnergy = pCaloHit->GetHadronicEnergy();
+
+		  totalEnergy += hitEnergy;
+
+		  if(pCaloHit->GetHitType() == pandora::ECAL) hadronicEnergyInECAL += hitEnergy;
+	  }
+
+	  return hadronicEnergyInECAL/totalEnergy;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

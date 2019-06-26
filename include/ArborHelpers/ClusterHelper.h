@@ -136,6 +136,7 @@ public:
 			float &centroidDistance);
   
 	static float GetHadronicEnergyInECAL(const pandora::Cluster *const pCluster);
+    static float GetEnergyRatio(const pandora::OrderedCaloHitList& orderedCaloHitList);
 
     static pandora::HitRegion GetRegion(const pandora::Cluster *const pCluster);
   
@@ -145,7 +146,7 @@ public:
   
 	static pandora::StatusCode FitStart(const pandora::Cluster *const pCluster, const unsigned int maxOccupiedLayers, pandora::ClusterFitResult &clusterFitResult);
   
-	static pandora::StatusCode FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult, bool useMainCluster = false);
+	static pandora::StatusCode FitFullCluster(const pandora::Cluster *const pCluster, pandora::ClusterFitResult &clusterFitResult, bool useMainCluster = false, float eps = 50.);
   
 	static pandora::StatusCode GetMainClusterHits(const pandora::Cluster *const pCluster, pandora::CaloHitList& mainClusterHits);
   
