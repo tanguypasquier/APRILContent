@@ -197,11 +197,24 @@ namespace arbor_content
 
 		float energyRatio = hadEnergyInEcal / pCluster->GetHadronicEnergy();
 
+		///////
+		const float maxLength = 50.;
+		pandora::CaloHitList mainHits;
+		ClusterHelper::GetMainClusterHits(pCluster, mainHits, maxLength);
+
+		pandora::OrderedCaloHitList mainClusterHits;
+		mainClusterHits.Add(mainHits);
+
+		pCluster->SetMainClusterHits(mainClusterHits);
+		float energyRatioOfMainHits = ClusterHelper::GetEnergyRatio(mainClusterHits);
+		///////
+
 		unsigned int innerLayer = pCluster->GetInnerPseudoLayer();
 		unsigned int outerLayer = pCluster->GetOuterPseudoLayer();
 
 		unsigned int nConnectors = ClusterHelper::GetClusterConnectorNumber(pCluster);
-		float connectorHitRatio = (float)nConnectors/pCluster->GetNCaloHits();
+		//float connectorHitRatio = (float)nConnectors/pCluster->GetNCaloHits();
+		float connectorHitRatio = (float)nConnectors/mainHits.size();
 	    
 		std::vector<arbor_content::ArborCluster*> nearbyClusters;
 
@@ -217,10 +230,12 @@ namespace arbor_content
 		if(m_debugOutput)
 		{
 			std::cout << "    === cluster === " << std::endl
-	        	      << "    cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  << ", nhit: " << pCluster->GetNCaloHits() << std::endl
+	        	      << "    cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  << ", nhit: " 
+					  << pCluster->GetNCaloHits() << std::endl
 	        		  << "    nPossibleMipHits: " << pCluster->GetNPossibleMipHits() << ", mipFraction: " << pCluster->GetMipFraction() << std::endl
 	        		  << "    isPhoton: " << isPhoton << std::endl
-	        		  << "    clusterRegion: " << clusterRegion << " clusterIPAngle: " << clusterIPAngle << " clusterTime: " << clusterTime << " clusterTimeECal: " << clusterTimeECal << std::endl
+	        		  << "    clusterRegion: " << clusterRegion << " clusterIPAngle: " << clusterIPAngle << " clusterTime: " 
+					  << clusterTime << " clusterTimeECal: " << clusterTimeECal << std::endl
 	        		  << "    hadEnergyInEcal: " << hadEnergyInEcal << " energyRatio: " << energyRatio << std::endl
 	        		  << "    density: " << density << ", connectorHitRatio: " << connectorHitRatio << std::endl
 	        		  << "    innerLayer: " << innerLayer << " outerLayer: " << outerLayer << std::endl
@@ -237,46 +252,40 @@ namespace arbor_content
 
 
 		// photon
-		const float maxPhotonClusterTime = 30.;
+		const float maxPhotonClusterTime = 40.;
+		const float maxPhotonClusterTimeEndcap = 25.;
 		const float minPhotonClusterDensity = 0.02;
 		const float minECALEnergyRatio = 0.55;
 
-		if(energyRatio > minECALEnergyRatio && (clusterTime < maxPhotonClusterTime 
-		  || ( !isnan(clusterTimeECal) && clusterTimeECal < maxPhotonClusterTime ) ) )
-		{
-			bool fakePhoton = false;
+		bool fakePhoton = false;
 
-			if(pCluster->GetNCaloHits() > 4 && density < minPhotonClusterDensity) 
+		if( (energyRatio > minECALEnergyRatio || energyRatioOfMainHits > minECALEnergyRatio )   && 
+		    (clusterTime < maxPhotonClusterTime || ( !isnan(clusterTimeECal) && clusterTimeECal < maxPhotonClusterTime ) ) )
+		{
+			if(pCluster->GetNCaloHits() >= 4 && density < minPhotonClusterDensity) 
 			{
-				std::cout << " --- fake photon, density : " << density << std::endl;
+				//std::cout << " --- fake photon, density : " << density << std::endl;
 				fakePhoton = true;
 			}
 
 			float meanHitPerLayer = ClusterHelper::GetMeanHitPerLayer(pCluster);
-			std::cout << " meanHitPerLayer: " << meanHitPerLayer << std::endl;
+			//std::cout << " meanHitPerLayer: " << meanHitPerLayer << std::endl;
 
 			if(pCluster->GetNCaloHits() > 10 && meanHitPerLayer < 1.2)
 			{
-				std::cout << " --- fake photon, meanHitPerLayer: " << meanHitPerLayer << std::endl;
+				//std::cout << " --- fake photon, meanHitPerLayer: " << meanHitPerLayer << std::endl;
 				fakePhoton = true;
 			}
 
 			if( (!fakePhoton) && (pCluster->GetNCaloHits() > 10) && (connectorHitRatio < 0.3 && density < 0.2) )
 			{
+				//std::cout << " --- fake photon, connectorHitRatio: " << connectorHitRatio << std::endl;
 				fakePhoton = true;
 			}
 
-			pandora::CaloHitList mainHits;
 
 			if(!fakePhoton)
 			{
-			    const float maxLength = 50.;
-			    ClusterHelper::GetMainClusterHits(pCluster, mainHits, maxLength);
-
-				pandora::OrderedCaloHitList mainClusterHits;
-				mainClusterHits.Add(mainHits);
-
-				pCluster->SetMainClusterHits(mainClusterHits);
 			    //std::cout << "    --- mainClusterHits: " << mainClusterHits.size() << std::endl;
 
 			    float rms1, rms2;
@@ -285,7 +294,7 @@ namespace arbor_content
 				if(pCluster->GetNCaloHits() > 30 && 
 				   fabs(rms1-rms2) > 3 * std::min(rms1, rms2) ) 
 				{
-				    std::cout << " --- fake photon, rms1: " << rms1 << ", rms2: " << rms2 << std::endl;
+				    //std::cout << " --- fake photon, rms1: " << rms1 << ", rms2: " << rms2 << std::endl;
 					fakePhoton = true;
 				}
 			}
@@ -293,29 +302,40 @@ namespace arbor_content
 
 			if(!fakePhoton)
 			{
-				if(clusterIPAngle < 1. && innerLayer <= 6)
+				if(clusterIPAngle < 1. && innerLayer <= 5)
 			    {
-			    	std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
-			    	          << " maybe a photon. \033[0m" << std::endl;
+			    	//std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
+			    	  //        << " a photon candidate ... \033[0m" << std::endl;
 
 			    	// check if it is a segment of charged cluster
-			    	CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 1);
+			    	fakePhoton = !CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 1);
 			    }
 			    else
 			    {
-			    	// check if it is a segment of photon
-			    	CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 0);
+			    	// check if it is a segment of photon cluster
+			    	fakePhoton = !CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 0);
 			    }
 
 				if(clusterRegion == pandora::ENDCAP)
 				{
-					if((meanHitPerLayer < 3. && clusterIPAngle > 0.7) || clusterTimeECal > maxPhotonClusterTime/2.)
+					if((meanHitPerLayer < 3. && clusterIPAngle > 0.7) || clusterTimeECal > maxPhotonClusterTimeEndcap)
 					{
-						std::cout << "    === \033[1;31m endcap cluster with angle: " << clusterIPAngle  
-							<< " clusterTimeECal: " << clusterTimeECal << " \033[0m" << std::endl;
+						fakePhoton = true;
+						std::cout << "    === endcap cluster with angle: " << clusterIPAngle  
+							<< " clusterTimeECal: " << clusterTimeECal << std::endl;
 					}
 				}
 			}
+		}
+		else
+		{
+			fakePhoton = true;
+		}
+		
+		if(!fakePhoton) 
+		{
+			std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
+				<< " maybe a photon. \033[0m" << std::endl;
 		}
 		
 		// charged cluster
@@ -327,8 +347,10 @@ namespace arbor_content
     return pandora::STATUS_CODE_SUCCESS;
   }
 
-  void ChargedFragmentsMergingAlgorithm2::CheckNearbyClusterWithCharge(const arbor_content::ArborCluster* pCluster, std::vector<arbor_content::ArborCluster*>& nearbyClusters, int charge)
+  bool ChargedFragmentsMergingAlgorithm2::CheckNearbyClusterWithCharge(const arbor_content::ArborCluster* pCluster, std::vector<arbor_content::ArborCluster*>& nearbyClusters, int charge)
   {
+	  bool isValidated = true;
+
 	  for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
 	  {
 		  float closestDistance = 1.e6;
@@ -344,13 +366,11 @@ namespace arbor_content
 	          std::cout << "GetClosestDistanceApproach failed" << std::endl;
 	      }
 
-	  	  if(closestDistance != 1.e6 && closestDistance > 100.) break;
-
 		  if(charge == 1)
 		  {
 			  if(nearbyCluster->GetAssociatedTrackList().size() > 0)
 	  	      {
-	  	      	std::cout << "  \033[1;31m near a charged cluster, further computation to validate this is a photon cluster ... \033[0m"  << std::endl;
+				std::cout << "  near a charged cluster, closestDistance: "  << closestDistance << std::endl;
 
 				unsigned int innerLayer = pCluster->GetInnerPseudoLayer();
 				unsigned int outerLayer = pCluster->GetOuterPseudoLayer();
@@ -422,31 +442,51 @@ namespace arbor_content
 				{
 					unsigned int nConnectors = ClusterHelper::GetClusterConnectorNumber(pCluster);
 
-					std::cout << "     nConnectors : " << nConnectors << ", nhit: " << pCluster->GetNCaloHits() << std::endl;
+					const pandora::OrderedCaloHitList& mainClusterHits = pCluster->GetMainClusterHits();
+					pandora::CaloHitList caloHitList;
+					mainClusterHits.FillCaloHitList(caloHitList);
 
-					if((float)nConnectors/pCluster->GetNCaloHits() < 0.6) 
+					if(caloHitList.size() > 8 && (float)nConnectors/caloHitList.size() < 0.55) 
 					{
 						passCheck = false;
+					    std::cout << "     nConnectors : " << nConnectors << std::endl;
 					}
 				}
-				
-				if(passCheck) std::cout << " \033[1;31m OK. \033[0m " << std::endl;
-
-				// 
-				break;
 
 				// TODO::
 				// check axes distance, track positon on ECAL (if between two seeds ?)
+				 
+				if(passCheck) 
+				{
+					std::cout << "     OK." << std::endl;
+				}
+				else
+				{
+					isValidated = false;
+				}
+
+				break;
 	  	      }
 		  }
 		  else
 		  {
-			  if(nearbyCluster->IsPhoton() || nearbyCluster->GetAssociatedTrackList().size() == 0) 
+			  if( (nearbyCluster->IsPhoton() || nearbyCluster->GetAssociatedTrackList().size() == 0) &&
+				  closestDistance < 50. ) 
 		      {
-		      	std::cout << "  \033[1;31m near neutral cluster, further computation to validate this fragment ... \033[0m"  << std::endl;
+				  //std::cout << "  \033[1;31m near neutral cluster, it maye be a neutral fragment. \033[0m"  << std::endl;
+
+				  break;
 		      }
+			  else
+			  {
+				  isValidated = false;
+			  }
 		  }
+
+	  	  if(closestDistance != 1.e6 && closestDistance > 100.) break;
 	  }
+
+	  return isValidated;
   }
 
   void ChargedFragmentsMergingAlgorithm2::SearchProperClusters(ArborCluster* startingCluster, 
