@@ -110,6 +110,7 @@ namespace arbor_content
 
 		if(m_debugOutput)
 		{
+			std::cout << "-----------------------------------------------------------------------------------------" << std::endl;
 			std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
 			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << ", isPoton: " << isPhoton 
 				  << ", associatedTrackList size: " << pCluster->GetAssociatedTrackList().size() << std::endl;
@@ -231,7 +232,6 @@ namespace arbor_content
 	        			<< ", associatedTrack: " << nearbyClusters.at(iClu)->GetAssociatedTrackList().size() << std::endl;
 	        	}
 
-	        	std::cout << std::endl << std::endl << std::endl;
 	        	std::cout << "    clusterMCPID: " << clusterPID << ", clusterMCCharge: " << clusterCharge << std::endl;
 		}
 
@@ -239,7 +239,7 @@ namespace arbor_content
 		// photon
 		const float maxPhotonClusterTime = 30.;
 		const float minPhotonClusterDensity = 0.02;
-		const float minECALEnergyRatio = 0.6;
+		const float minECALEnergyRatio = 0.55;
 
 		if(energyRatio > minECALEnergyRatio && (clusterTime < maxPhotonClusterTime 
 		  || ( !isnan(clusterTimeECal) && clusterTimeECal < maxPhotonClusterTime ) ) )
@@ -261,7 +261,7 @@ namespace arbor_content
 				fakePhoton = true;
 			}
 
-			if(!fakePhoton && pCluster->GetNCaloHits() > 10 && connectorHitRatio < 0.3)
+			if( (!fakePhoton) && (pCluster->GetNCaloHits() > 10) && (connectorHitRatio < 0.3 && density < 0.2) )
 			{
 				fakePhoton = true;
 			}
@@ -288,7 +288,7 @@ namespace arbor_content
 
 			if(!fakePhoton)
 			{
-				if(clusterIPAngle < 1. && innerLayer < 12)
+				if(clusterIPAngle < 1. && innerLayer <= 6)
 			    {
 			    	std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
 			    	          << " maybe a photon. \033[0m" << std::endl;
@@ -311,7 +311,6 @@ namespace arbor_content
 					}
 				}
 			}
-
 		}
 		
 		// charged cluster
@@ -354,7 +353,7 @@ namespace arbor_content
 				bool passCheck = true;
 
 				// check hit on the 1st layer
-				if(innerLayer==1 && outerLayer < 30) 
+				if(innerLayer==1 && outerLayer < 40) 
 				{
 	                const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
 					auto& hitsAtFirstLayer = *(orderedCaloHitList.begin()->second);
@@ -363,7 +362,7 @@ namespace arbor_content
 
 					if(passCheck)
 					{
-						bool seedOnFirstLayer = false;
+						pandora::CaloHitVector seedVec;
 
 					    for(auto& hit : hitsAtFirstLayer)
 					    {
@@ -380,12 +379,37 @@ namespace arbor_content
 
 					    	if(isSeed) 
 					    	{
-					    		seedOnFirstLayer = true;
-					    		break;
+							    seedVec.push_back(hit);
 					    	}
+
 					    }
 
-						if(!seedOnFirstLayer) passCheck = false;
+						float seedsDistance = 0;
+						const float maxSeedDistance = 15.; // ECAL cell size 10 mm
+
+						// if cluster has more than one seed on 1st layer, get the maximum seed distance
+						if(seedVec.size() > 1)
+						{
+							for(int iSeed = 0; iSeed < seedVec.size(); ++iSeed)
+							{
+								for(int jSeed = iSeed + 1; jSeed < seedVec.size(); ++jSeed)
+								{
+									float distance = 
+										(seedVec.at(iSeed)->GetPositionVector() - seedVec.at(jSeed)->GetPositionVector()).GetMagnitude();
+
+									if(seedsDistance < distance)
+									{
+										seedsDistance = distance;
+									}
+								}
+							}
+						}
+
+						if(seedVec.empty() || seedsDistance > maxSeedDistance) 
+						{
+							std::cout << "     seed size: " << seedVec.size() << ", seedsDistance: " << seedsDistance << std::endl;
+							passCheck = false;
+						}
 					}
 				}
 
