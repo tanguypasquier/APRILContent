@@ -266,16 +266,21 @@ namespace arbor_content
 				fakePhoton = true;
 			}
 
+			pandora::CaloHitList mainHits;
+
 			if(!fakePhoton)
 			{
-				pandora::CaloHitList mainClusterHits;
-
 			    const float maxLength = 50.;
-			    ClusterHelper::GetMainClusterHits(pCluster, mainClusterHits, maxLength);
+			    ClusterHelper::GetMainClusterHits(pCluster, mainHits, maxLength);
+
+				pandora::OrderedCaloHitList mainClusterHits;
+				mainClusterHits.Add(mainHits);
+
+				pCluster->SetMainClusterHits(mainClusterHits);
 			    //std::cout << "    --- mainClusterHits: " << mainClusterHits.size() << std::endl;
 
 			    float rms1, rms2;
-			    ClusterHelper::GetRMS(mainClusterHits, pCluster->GetCentroid(), pCluster->GetAxis(), rms1, rms2);
+			    ClusterHelper::GetRMS(mainHits, pCluster->GetCentroid(), pCluster->GetAxis(), rms1, rms2);
 
 				if(pCluster->GetNCaloHits() > 30 && 
 				   fabs(rms1-rms2) > 3 * std::min(rms1, rms2) ) 
@@ -355,7 +360,7 @@ namespace arbor_content
 				// check hit on the 1st layer
 				if(innerLayer==1 && outerLayer < 40) 
 				{
-	                const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetOrderedCaloHitList();
+	                const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetMainClusterHits();
 					auto& hitsAtFirstLayer = *(orderedCaloHitList.begin()->second);
 
 					if(hitsAtFirstLayer.size() > 5) passCheck = false;
@@ -426,6 +431,9 @@ namespace arbor_content
 				}
 				
 				if(passCheck) std::cout << " \033[1;31m OK. \033[0m " << std::endl;
+
+				// 
+				break;
 
 				// TODO::
 				// check axes distance, track positon on ECAL (if between two seeds ?)

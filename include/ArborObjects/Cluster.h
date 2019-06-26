@@ -106,6 +106,8 @@ public:
 	const pandora::CartesianVector& GetStartingPoint() const;
 	const pandora::CartesianVector& GetEndpoint() const;
 
+	const pandora::OrderedCaloHitList& GetMainClusterHits() const;
+
     bool IsRoot();
     bool HasMotherAtSearch();
     bool IsDaughter(ArborCluster* cluster);
@@ -125,6 +127,8 @@ public:
 	void SetCentroid(pandora::CartesianVector centrod);
 	void SetStartingPoint(pandora::CartesianVector startingPoint);
 	void SetEndpoint(pandora::CartesianVector endpoint);
+
+	void SetMainClusterHits(pandora::OrderedCaloHitList mainClusterHits);
 
 	void SetOrderParameterWithMother(ArborCluster* motherCluster, ClustersOrderParameter& clustersOrderParameter);
 
@@ -162,6 +166,8 @@ protected:
 	ArborCluster*              m_motherAtSearch;
 
 	std::map<ArborCluster*, ClustersOrderParameter> m_orderWithMotherClusters;
+
+	pandora::OrderedCaloHitList m_mainClusterHits;
 
     friend class ClusterFactory;
 };

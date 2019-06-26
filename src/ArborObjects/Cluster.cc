@@ -162,6 +162,11 @@ namespace arbor_content
 	  return m_endpoint;
   }
 
+  const pandora::OrderedCaloHitList& ArborCluster::GetMainClusterHits() const
+  {
+	  return m_mainClusterHits;
+  }
+
   bool ArborCluster::IsRoot()
   {
 	  return m_isRoot;
@@ -288,6 +293,11 @@ namespace arbor_content
   void ArborCluster::SetEndpoint(pandora::CartesianVector endpoint)
   {
 	  m_endpoint = endpoint;
+  }
+	
+  void ArborCluster::SetMainClusterHits(pandora::OrderedCaloHitList mainClusterHits)
+  {
+	  m_mainClusterHits = mainClusterHits;
   }
 	
   void ArborCluster::SetOrderParameterWithMother(ArborCluster* motherCluster, ClustersOrderParameter& clustersOrderParameter)
