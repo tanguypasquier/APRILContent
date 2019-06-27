@@ -336,6 +336,20 @@ namespace arbor_content
 		{
 			std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
 				<< " maybe a photon. \033[0m" << std::endl;
+
+			pCluster->SetPhoton(true);
+		}
+
+		if(m_makeRecord)
+		{
+			// For efficiency and purity
+		    std::vector<float> vars;
+	        vars.push_back( float(hadEnergyInEcal) );
+	        vars.push_back( float(clusterCharge) );
+	        vars.push_back( float(clusterPID) );
+	        vars.push_back( float(!fakePhoton) );
+		    	    		
+		    HistogramManager::CreateFill("NewPhotonID_eff", "hadEnergyInEcal:mcCharge:mcPID:isPhoton", vars);
 		}
 		
 		// charged cluster
@@ -666,18 +680,6 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxClosestClusterDistance", m_maxClosestClusterDistance));
 
-	m_maxClusterPosAxisAngle = 0.4;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MaxClusterPosAxisAngle", m_maxClusterPosAxisAngle));
-
-	m_maxClusterAxesDistance = 100.;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MaxClusterAxesDistance", m_maxClusterAxesDistance));
-
-	m_mergeChargedClusters = true;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "MergeChargedClusters", m_mergeChargedClusters));
-
 	m_debugOutput = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DebugOutput", m_debugOutput));
@@ -694,9 +696,9 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "UseMCPForPID", m_useMCPForPID));
 
-	m_useMCPToRejectNeutralCluster = false;
+	m_makeRecord = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "UseMCPToRejectNeutralCluster", m_useMCPToRejectNeutralCluster));
+        "MakeRecord", m_makeRecord));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

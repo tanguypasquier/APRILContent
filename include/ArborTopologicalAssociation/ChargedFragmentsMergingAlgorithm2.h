@@ -110,15 +110,12 @@ private:
 private:
 	float                            m_maxStartingClusterDistance;
 	float                            m_maxClosestClusterDistance;
-	float                            m_maxClusterPosAxisAngle;
-	float                            m_maxClusterAxesDistance;
 
-	bool                             m_mergeChargedClusters;
 	bool                             m_debugOutput;
 	bool                             m_debugOutput2;
 	bool                             m_onlyUseConnectedHits;
 	bool                             m_useMCPForPID;
-	bool                             m_useMCPToRejectNeutralCluster;
+	bool                             m_makeRecord;
 
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;
