@@ -88,6 +88,7 @@ namespace arbor_content
 		const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
 
 		bool isPhoton = PandoraContentApi::GetPlugins(*this)->GetParticleId()->IsPhoton(pandoraClu);
+		pCluster->SetPhoton(isPhoton);
 
 		if(isPhoton) continue;
 
@@ -106,7 +107,6 @@ namespace arbor_content
 			std::cout << "MCP issue: " << pandoraClu << std::endl;
 		}
 
-		pCluster->SetPhoton(isPhoton);
 
 		if(m_debugOutput)
 		{
