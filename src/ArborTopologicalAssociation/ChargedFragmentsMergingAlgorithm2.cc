@@ -321,8 +321,12 @@ namespace arbor_content
 					if((meanHitPerLayer < 3. && clusterIPAngle > 0.7) || clusterTimeECal > maxPhotonClusterTimeEndcap)
 					{
 						fakePhoton = true;
-						std::cout << "    === endcap cluster with angle: " << clusterIPAngle  
-							<< " clusterTimeECal: " << clusterTimeECal << std::endl;
+		
+						if(m_debugOutput)
+						{
+							std::cout << "    === endcap cluster with angle: " << clusterIPAngle  
+								<< " clusterTimeECal: " << clusterTimeECal << std::endl;
+						}
 					}
 				}
 			}
@@ -335,7 +339,7 @@ namespace arbor_content
 		if(!fakePhoton) 
 		{
 			std::cout << "    === \033[1;31m cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy()  
-				<< " maybe a photon. \033[0m" << std::endl;
+				<< " is tagged as a photon. \033[0m" << std::endl;
 
 			pCluster->SetPhoton(true);
 		}
