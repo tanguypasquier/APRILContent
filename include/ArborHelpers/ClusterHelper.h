@@ -137,6 +137,7 @@ public:
   
 	static float GetHadronicEnergyInECAL(const pandora::Cluster *const pCluster);
     static float GetEnergyRatio(const pandora::OrderedCaloHitList& orderedCaloHitList);
+    static pandora::StatusCode GetEnergyRatio(const pandora::OrderedCaloHitList& orderedCaloHitList, float& energyRatio, unsigned int& nHits);
 
     static pandora::HitRegion GetRegion(const pandora::Cluster *const pCluster);
   

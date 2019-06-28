@@ -621,14 +621,29 @@ namespace arbor_content
   //------------------------------------------------------------------------------------------------------------------------------------------
   float ClusterHelper::GetEnergyRatio(const pandora::OrderedCaloHitList& orderedCaloHitList)
   {
+	  float energyRatio;
+	  unsigned int nHits;
+
+	  GetEnergyRatio(orderedCaloHitList, energyRatio, nHits);
+
+	  return energyRatio;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  pandora::StatusCode ClusterHelper::GetEnergyRatio(const pandora::OrderedCaloHitList& orderedCaloHitList, float& energyRatio, unsigned int& nHits)
+  {
 	  pandora::CaloHitList caloHitList;
 	  orderedCaloHitList.FillCaloHitList(caloHitList);
 
 	  float hadronicEnergyInECAL = 0.;
 	  float totalEnergy = 0.;
 
+	  nHits = 0;
+
 	  for(auto iter = caloHitList.begin(); iter != caloHitList.end(); ++iter)
 	  {
+		  ++nHits;
+
 		  auto pCaloHit = *iter;
 		  float hitEnergy = pCaloHit->GetHadronicEnergy();
 
@@ -637,7 +652,9 @@ namespace arbor_content
 		  if(pCaloHit->GetHitType() == pandora::ECAL) hadronicEnergyInECAL += hitEnergy;
 	  }
 
-	  return hadronicEnergyInECAL/totalEnergy;
+	  energyRatio = hadronicEnergyInECAL/totalEnergy;
+    
+	  return pandora::STATUS_CODE_SUCCESS;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
