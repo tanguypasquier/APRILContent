@@ -69,7 +69,8 @@ private:
 
     void SearchProperClusters(ArborCluster* startingCluster, 
 		    std::vector<arbor_content::ArborCluster*>& allClusters,
-			std::vector<arbor_content::ArborCluster*>& properClusters);
+			std::vector<arbor_content::ArborCluster*>& properClusters,
+			std::vector<float>& distances);
 
     pandora::StatusCode CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector);
 
