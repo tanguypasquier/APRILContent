@@ -162,7 +162,12 @@ namespace arbor_content
 	  return m_endpoint;
   }
 
-  const pandora::OrderedCaloHitList& ArborCluster::GetMainClusterHits() const
+  const pandora::OrderedCaloHitList& ArborCluster::GetMainOrderedClusterHits() const
+  {
+	  return m_mainOrderedClusterHits;
+  }
+
+  const pandora::CaloHitList& ArborCluster::GetMainClusterHits() const
   {
 	  return m_mainClusterHits;
   }
@@ -295,7 +300,12 @@ namespace arbor_content
 	  m_endpoint = endpoint;
   }
 	
-  void ArborCluster::SetMainClusterHits(pandora::OrderedCaloHitList mainClusterHits)
+  void ArborCluster::SetMainOrderedClusterHits(pandora::OrderedCaloHitList mainOrderedClusterHits)
+  {
+	  m_mainOrderedClusterHits = mainOrderedClusterHits;
+  }
+
+  void ArborCluster::SetMainClusterHits(pandora::CaloHitList mainClusterHits)
   {
 	  m_mainClusterHits = mainClusterHits;
   }
