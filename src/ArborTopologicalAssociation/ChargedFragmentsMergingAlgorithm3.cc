@@ -82,9 +82,25 @@ namespace arbor_content
 			continue;
 		}
 
-		if(pCluster->GetHadronicEnergy() > 5.0 ) continue;
-		
 		bool isPhoton = pCluster->IsPhoton();
+
+#if 0
+		bool useMCPForPID = false;
+		if(useMCPForPID)
+		{
+			const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
+
+			try
+		    {
+		    	isPhoton = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId() == 22;
+		    }
+		    catch(pandora::StatusCodeException &)
+		    {
+		    	std::cout << "MCP issue: " << pandoraClu << std::endl;
+		    }
+		}
+#endif
+		
 		if(isPhoton) continue;
 
 		int clusterPID = -1e8;
@@ -149,6 +165,27 @@ namespace arbor_content
 			std::cout << " GetNearbyClusters error!" << std::endl;
 		}
 
+		/////////////////////////////////////////////////////////////////
+		bool nearClusterHasTrack = false;
+
+	    for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
+	    {
+	    	//std::cout << "       ---> cluster: " << nearbyClusters.at(iClu) << ", E: " << nearbyClusters.at(iClu)->GetHadronicEnergy() 
+	    	//	<< ", associatedTrack: " << nearbyClusters.at(iClu)->GetAssociatedTrackList().size() << std::endl;
+
+			if(nearbyClusters.at(iClu)->GetAssociatedTrackList().size() > 0)
+			{
+				nearClusterHasTrack = true;
+			}
+	    }
+
+		if(nearClusterHasTrack)
+		{
+			clustersForMerging.push_back(pCluster);
+			continue;
+		}
+		/////////////////////////////////////////////////////////////////
+
 		if(m_debugOutput)
 		{
 			std::cout << "    === cluster === " << std::endl
@@ -164,10 +201,10 @@ namespace arbor_content
 	        		  << "    nearby cluster: " << nearbyClusters.size() << std::endl;
 
 	            for(int iClu = 0; iClu < nearbyClusters.size(); ++iClu)
-	        	{
-	        		std::cout << "       ---> cluster: " << nearbyClusters.at(iClu) << ", E: " << nearbyClusters.at(iClu)->GetHadronicEnergy() 
-	        			<< ", associatedTrack: " << nearbyClusters.at(iClu)->GetAssociatedTrackList().size() << std::endl;
-	        	}
+	            {
+	            	std::cout << "       ---> cluster: " << nearbyClusters.at(iClu) << ", E: " << nearbyClusters.at(iClu)->GetHadronicEnergy() 
+	            		<< ", associatedTrack: " << nearbyClusters.at(iClu)->GetAssociatedTrackList().size() << std::endl;
+	            }
 
 	        	std::cout << "    clusterMCPID: " << clusterPID << ", clusterMCCharge: " << clusterCharge << std::endl;
 		}
@@ -178,6 +215,7 @@ namespace arbor_content
 		{
 			//std::cout << "    \033[1;31m ---> innerLayer: " << innerLayer << ", energyRatio: " << energyRatio << " \033[0m " << std::endl;
 			clustersForMerging.push_back(pCluster);
+			continue;
 		}
 
 		//fakePhoton = !CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 1);
@@ -230,13 +268,35 @@ namespace arbor_content
 	for(auto it = mcpClusterListMap.begin(); it != mcpClusterListMap.end(); ++it)
 	{
 		// merge charged clusters
-		//auto mcp = it->first;
-		//int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
+		auto mcp = it->first;
+		int clusterMCPCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
 
 		auto clusterList = it->second;
-
 		pandora::ClusterVector clusterVectorForMerging;
 		clusterVectorForMerging.insert(clusterVectorForMerging.begin(), clusterList.begin(), clusterList.end());
+
+		if(clusterMCPCharge == 0) 
+		{
+			std::cout << "      \033[1;32m Neutral cluster(s): \033[0m" << std::endl;
+
+			for(int i = 0; i < clusterVectorForMerging.size(); ++i)
+			{
+				auto& cluster = clusterVectorForMerging.at(i);
+				std::cout << "             ---> cluster: " << cluster << ", E: " << cluster->GetHadronicEnergy() << std::endl;
+			}
+
+			continue;
+		}
+		else
+		{
+			std::cout << "      \033[1;31m Charged cluster(s): \033[0m" << std::endl;
+
+			for(int i = 0; i < clusterVectorForMerging.size(); ++i)
+			{
+				auto& cluster = clusterVectorForMerging.at(i);
+				std::cout << "             ---> cluster: " << cluster << ", E: " << cluster->GetHadronicEnergy() << std::endl;
+			}
+		}
 	
 		std::sort(clusterVectorForMerging.begin(), clusterVectorForMerging.end(), pandora_monitoring::PandoraMonitoring::SortClustersByHadronicEnergy);
 
@@ -477,7 +537,7 @@ namespace arbor_content
 	  {
 		  auto nearbyCluster = nearbyClusters.at(i);
 
-		  if(nearbyCluster == startingCluster) 
+		  if(nearbyCluster == startingCluster || nearbyCluster->IsPhoton()) 
 		  {
 			  continue;
 		  }
@@ -627,7 +687,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxStartingClusterDistance", m_maxStartingClusterDistance));
 
-	m_maxClosestClusterDistance = 400.;
+	m_maxClosestClusterDistance = 300.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxClosestClusterDistance", m_maxClosestClusterDistance));
 
