@@ -124,6 +124,9 @@ public:
 	 */
 	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
 			float &closestDistance, bool onlyUseConnectedHit = true);
+  
+	static pandora::StatusCode GetClosestDistanceApproach(const pandora::CaloHitList& caloHitList, const pandora::CartesianVector &point,
+      float &closestDistance, bool onlyUseConnectedHit = true);
 
 	/**
 	 *  @brief  Get the distance between the cluster centroid and the given position vector
@@ -164,6 +167,9 @@ public:
 	 */
 	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
 			float &closestDistance, bool onlyUseConnectedHit = true);
+
+	static pandora::StatusCode GetClosestDistanceApproach(const pandora::CaloHitList& caloHitList1, 
+			const pandora::CaloHitList& caloHitList2, float &closestDistance, bool onlyUseConnectedHit = true);
 
 	static pandora::StatusCode GetTrackClusterDistance(const pandora::TrackState *const pTrackState, const pandora::Cluster *const pCluster,
 	const unsigned int maxSearchLayer, const float parallelDistanceCut, const float minTrackClusterCosAngle, float &trackClusterDistance);

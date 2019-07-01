@@ -712,6 +712,30 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::CaloHitList& caloHitList, const pandora::CartesianVector &point,
+      float &closestDistance, bool onlyUseConnectedHit)
+  {
+    closestDistance = std::numeric_limits<float>::max();
+
+    if(caloHitList.empty())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    for(pandora::CaloHitList::const_iterator iter = caloHitList.begin() , endIter = caloHitList.end() ;
+        endIter != iter ; ++iter)
+    {
+      const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
+	  if(onlyUseConnectedHit && !ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+      const float distance = (pCaloHit->GetPositionVector() - point).GetMagnitude();
+
+      if(closestDistance > distance)
+        closestDistance = distance;
+    }
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   pandora::StatusCode ClusterHelper::GetCentroidDistance(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
       float &centroidDistance)
   {
@@ -760,6 +784,34 @@ namespace arbor_content
       float closestHitDistanceApproach(std::numeric_limits<float>::max());
 
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster2,
+          pCaloHit->GetPositionVector(), closestHitDistanceApproach, onlyUseConnectedHit));
+
+      if(closestHitDistanceApproach < closestDistance)
+        closestDistance = closestHitDistanceApproach;
+    }
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::CaloHitList& caloHitList1, 
+			const pandora::CaloHitList& caloHitList2, float &closestDistance, bool onlyUseConnectedHit)
+  {
+    closestDistance = std::numeric_limits<float>::max();
+
+    if(caloHitList1.empty() || caloHitList2.empty())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    for(pandora::CaloHitList::const_iterator iter = caloHitList1.begin() , endIter = caloHitList1.end() ;
+        endIter != iter ; ++iter)
+    {
+      const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
+	  if(onlyUseConnectedHit && !ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+
+      float closestHitDistanceApproach(std::numeric_limits<float>::max());
+
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(caloHitList2,
           pCaloHit->GetPositionVector(), closestHitDistanceApproach, onlyUseConnectedHit));
 
       if(closestHitDistanceApproach < closestDistance)
