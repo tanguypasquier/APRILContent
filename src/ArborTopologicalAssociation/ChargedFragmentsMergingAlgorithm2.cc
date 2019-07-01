@@ -199,22 +199,23 @@ namespace arbor_content
 
 		///////
 		const float maxLength = 50.;
-		pandora::CaloHitList mainHits;
-		ClusterHelper::GetMainClusterHits(pCluster, mainHits, maxLength);
+		pandora::CaloHitList mainClusterHits;
+		ClusterHelper::GetMainClusterHits(pCluster, mainClusterHits, maxLength);
 
-		pandora::OrderedCaloHitList mainClusterHits;
-		mainClusterHits.Add(mainHits);
+		pandora::OrderedCaloHitList mainOrderedClusterHits;
+		mainOrderedClusterHits.Add(mainClusterHits);
 
 		pCluster->SetMainClusterHits(mainClusterHits);
-		float energyRatioOfMainHits = ClusterHelper::GetEnergyRatio(mainClusterHits);
+		pCluster->SetMainOrderedClusterHits(mainOrderedClusterHits);
+
+		float energyRatioOfMainHits = ClusterHelper::GetEnergyRatio(mainOrderedClusterHits);
 		///////
 
 		unsigned int innerLayer = pCluster->GetInnerPseudoLayer();
 		unsigned int outerLayer = pCluster->GetOuterPseudoLayer();
 
 		unsigned int nConnectors = ClusterHelper::GetClusterConnectorNumber(pCluster);
-		//float connectorHitRatio = (float)nConnectors/pCluster->GetNCaloHits();
-		float connectorHitRatio = (float)nConnectors/mainHits.size();
+		float connectorHitRatio = (float)nConnectors/mainClusterHits.size();
 	    
 		std::vector<arbor_content::ArborCluster*> nearbyClusters;
 
@@ -289,7 +290,7 @@ namespace arbor_content
 			    //std::cout << "    --- mainClusterHits: " << mainClusterHits.size() << std::endl;
 
 			    float rms1, rms2;
-			    ClusterHelper::GetRMS(mainHits, pCluster->GetCentroid(), pCluster->GetAxis(), rms1, rms2);
+			    ClusterHelper::GetRMS(mainClusterHits, pCluster->GetCentroid(), pCluster->GetAxis(), rms1, rms2);
 
 				if(pCluster->GetNCaloHits() > 30 && 
 				   fabs(rms1-rms2) > 3 * std::min(rms1, rms2) ) 
@@ -398,7 +399,7 @@ namespace arbor_content
 				// check hit on the 1st layer
 				if(innerLayer==1 && outerLayer < 40) 
 				{
-	                const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetMainClusterHits();
+	                const pandora::OrderedCaloHitList& orderedCaloHitList = pCluster->GetMainOrderedClusterHits();
 					auto& hitsAtFirstLayer = *(orderedCaloHitList.begin()->second);
 
 					if(hitsAtFirstLayer.size() > 5) passCheck = false;
@@ -460,7 +461,7 @@ namespace arbor_content
 				{
 					unsigned int nConnectors = ClusterHelper::GetClusterConnectorNumber(pCluster);
 
-					const pandora::OrderedCaloHitList& mainClusterHits = pCluster->GetMainClusterHits();
+					const pandora::OrderedCaloHitList& mainClusterHits = pCluster->GetMainOrderedClusterHits();
 					pandora::CaloHitList caloHitList;
 					mainClusterHits.FillCaloHitList(caloHitList);
 
