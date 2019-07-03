@@ -61,6 +61,9 @@ namespace arbor_content
 	m_centroid.SetValues(0., 0., 0.);
 	m_startingPoint.SetValues(0., 0., 0.);
 	m_endpoint.SetValues(0., 0., 0.);
+
+	m_mainOrderedClusterHits.Reset();
+	m_mainClusterHits.clear();
   }
 
   float ArborCluster::GetMergedHadronicEnergy()
