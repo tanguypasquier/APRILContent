@@ -165,6 +165,12 @@ public:
 	 *  @param  pCluster the second cluster
 	 *  @param  closestDistance the closest distance approach between the two clusters, unit mm
 	 */
+    static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
+      float &closestDistance, pandora::CartesianVector& distanceVector, bool onlyUseConnectedHit = true);
+
+    static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
+      float &closestDistance, pandora::CartesianVector& distanceVector, bool onlyUseConnectedHit = true);
+
 	static pandora::StatusCode GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
 			float &closestDistance, bool onlyUseConnectedHit = true);
 

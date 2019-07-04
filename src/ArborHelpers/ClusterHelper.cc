@@ -712,6 +712,44 @@ namespace arbor_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster, const pandora::CartesianVector &point,
+      float &closestDistance, pandora::CartesianVector& distanceVector, bool onlyUseConnectedHit)
+  {
+    closestDistance = std::numeric_limits<float>::max();
+
+    if(NULL == pCluster)
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    if(0 == pCluster->GetNCaloHits())
+      return pandora::STATUS_CODE_FAILURE;
+
+    pandora::CaloHitList clusterCaloHitList;
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+	const pandora::CaloHitList& isolatedCaloHitList = pCluster->GetIsolatedCaloHitList();
+	clusterCaloHitList.insert(clusterCaloHitList.begin(), isolatedCaloHitList.begin(), isolatedCaloHitList.end());
+
+    for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin() , endIter = clusterCaloHitList.end() ;
+        endIter != iter ; ++iter)
+    {
+      const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
+	  if(onlyUseConnectedHit && !ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+
+	  pandora::CartesianVector dv = pCaloHit->GetPositionVector() - point;
+      const float distance = dv.GetMagnitude();
+
+      if(closestDistance > distance)
+	  {
+        closestDistance = distance;
+		distanceVector = dv;
+	  }
+    }
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::CaloHitList& caloHitList, const pandora::CartesianVector &point,
       float &closestDistance, bool onlyUseConnectedHit)
   {
@@ -788,6 +826,50 @@ namespace arbor_content
 
       if(closestHitDistanceApproach < closestDistance)
         closestDistance = closestHitDistanceApproach;
+    }
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  
+  pandora::StatusCode ClusterHelper::GetClosestDistanceApproach(const pandora::Cluster *const pCluster1, const pandora::Cluster *const pCluster2,
+      float &closestDistance, pandora::CartesianVector& distanceVector, bool onlyUseConnectedHit)
+  {
+    closestDistance = std::numeric_limits<float>::max();
+
+    if(NULL == pCluster1 || NULL == pCluster2)
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    if(0 == pCluster1->GetNCaloHits() || 0 == pCluster2->GetNCaloHits())
+      return pandora::STATUS_CODE_FAILURE;
+
+    pandora::CaloHitList clusterCaloHitList1;
+    pCluster1->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList1);
+
+	const pandora::CaloHitList& isolatedCaloHitList = pCluster1->GetIsolatedCaloHitList();
+	clusterCaloHitList1.insert(clusterCaloHitList1.begin(), isolatedCaloHitList.begin(), isolatedCaloHitList.end());
+
+    for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList1.begin() , endIter = clusterCaloHitList1.end() ;
+        endIter != iter ; ++iter)
+    {
+      const arbor_content::CaloHit *const pCaloHit(dynamic_cast<const arbor_content::CaloHit *const>(*iter));
+	  if(onlyUseConnectedHit && !ArborContentApi::HasAnyConnection(pCaloHit)) continue;
+
+      float closestHitDistanceApproach(std::numeric_limits<float>::max());
+
+	  pandora::CartesianVector dv(0., 0., 0.);
+
+#if 1
+      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetClosestDistanceApproach(pCluster2,
+          pCaloHit->GetPositionVector(), closestHitDistanceApproach, dv, onlyUseConnectedHit));
+#endif
+
+      if(closestHitDistanceApproach < closestDistance)
+	  {
+        closestDistance = closestHitDistanceApproach;
+		distanceVector = dv;
+	  }
     }
 
     return pandora::STATUS_CODE_SUCCESS;
