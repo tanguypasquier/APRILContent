@@ -58,10 +58,14 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetEligibleClusters(clusterVector));
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// update cluster properties
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
 	std::vector<pandora::CartesianVector> m_clusterCentroids;
-
-	for(auto pCluster: clusterVector)
+	for(int i = 0; i < clusterVector.size(); ++i)
 	{
+		auto pCluster = clusterVector.at(i);
+
 		// compute main cluster hits
 		const float maxLength = 50.;
 		pandora::CaloHitList mainClusterHits;
@@ -72,21 +76,131 @@ namespace arbor_content
 
 		pCluster->SetMainClusterHits(mainClusterHits);
 		pCluster->SetMainOrderedClusterHits(mainOrderedClusterHits);
-		
-		// setup COG array for search
-		auto& centroid = pCluster->GetCentroid();
+			
+		///////
+		pandora::CartesianVector centroid(0., 0., 0);
+		ClusterHelper::GetCentroid(pCluster, centroid);
+		pCluster->SetCentroid(centroid);
 		m_clusterCentroids.push_back(centroid);
+		
+		try
+		{
+		    pandora::ClusterFitResult clusterFitResult;
+
+			// fit with only connected calo hits; if not successful, with all calo hits.
+			pandora::StatusCode fitStatus;
+
+			if(pCluster->IsPhoton())
+			{
+				// fit all connected calo hits
+				fitStatus = ClusterHelper::FitFullCluster(pCluster, clusterFitResult);
+			}
+			else
+			{
+				// fit the main connected calo hits
+				fitStatus = ClusterHelper::FitFullCluster(pCluster, clusterFitResult, true);
+			}
+
+			if(fitStatus)
+			{
+	            if(m_debugOutput2)
+				{
+					std::cout << " ---> fit all hits for cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+				}
+				pandora::ClusterFitHelper::FitFullCluster(pCluster, clusterFitResult);
+			}
+
+		    const pandora::CartesianVector& cluDirection = clusterFitResult.GetDirection();
+		    const pandora::CartesianVector& cluIntercept = clusterFitResult.GetIntercept();
+			
+			pCluster->SetAxis(cluDirection);
+			pCluster->SetIntercept(cluIntercept);
+		}
+		catch(pandora::StatusCodeException &)
+		{
+	        if(m_debugOutput2)
+			{
+				std::cout << " ---> fitting cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << " failed." << std::endl;
+			}
+		}
+
+		try
+		{
+		    pandora::ClusterFitResult clusterFitResult;
+
+			if(ClusterHelper::FitStart(pCluster, 3, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			{
+				pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult);
+			}
+			
+			const pandora::CartesianVector& startingPoint = clusterFitResult.GetIntercept();
+
+			pCluster->SetStartingPoint(startingPoint);
+
+
+			// if cluster has connected with track, the intercept is taken as starting point and
+			// the direction is computed from the hits in first 6 layers.
+			const pandora::TrackList& associatedTrackList = pCluster->GetAssociatedTrackList();
+		    int nAssociatedTracks = associatedTrackList.size();
+
+			// re-compute axis and starting point for charged cluster
+			if(nAssociatedTracks > 0)
+			{
+				pCluster->SetIntercept(startingPoint);
+
+				if(nAssociatedTracks == 1)
+				{
+					const pandora::Track* associatedTrack = *( associatedTrackList.begin() );
+					const pandora::CartesianVector trackDirectionAtCalo = 
+						                           associatedTrack->GetTrackStateAtCalorimeter().GetMomentum().GetUnitVector();
+
+					pCluster->SetAxis(trackDirectionAtCalo);
+				}
+				else
+				{
+				    if(pCluster->GetOrderedCaloHitList().size()>6)
+				    {
+				    	pandora::ClusterFitResult clusterFitResultChg;
+
+				    	if(pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
+				    	{
+				    		pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg);
+				    	}
+
+		                const pandora::CartesianVector& axis = clusterFitResultChg.GetDirection();
+			
+				    	pCluster->SetAxis(axis);
+				    }
+				}
+			}
+		}
+		catch(pandora::StatusCodeException &)
+		{
+		}
+
+		try
+		{
+		    pandora::ClusterFitResult clusterFitResult;
+			pandora::ClusterFitHelper::FitEnd(pCluster, 3, clusterFitResult);
+		    const pandora::CartesianVector& endpoint = clusterFitResult.GetIntercept();
+
+			pCluster->SetEndpoint(endpoint);
+		}
+		catch(pandora::StatusCodeException &)
+		{
+		}
 	}
 
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	CaloHitRangeSearchHelper::FillMatixByPoints(m_clusterCentroids, m_clusterCentroidsMatrix);
 
-	// For test based on MC truth
+	// For test based on MC truth, which contains the charged clusters, the nearby clusters around
+	// a charged cluster, and clusters in the HCAL.
 	pandora::ClusterList clustersForMerging;
 
 	// candidates to merge, drop the charged hadronic clusters and photon clusters
 	std::vector<ArborCluster*> clustersToMerge;
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	for(int i = 0; i < clusterVector.size(); ++i)
 	{
 		auto pCluster = clusterVector.at(i);
@@ -99,24 +213,6 @@ namespace arbor_content
 		}
 
 		bool isPhoton = pCluster->IsPhoton();
-
-#if 0
-		bool useMCPForPID = false;
-		if(useMCPForPID)
-		{
-			const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
-
-			try
-		    {
-		    	isPhoton = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId() == 22;
-		    }
-		    catch(pandora::StatusCodeException &)
-		    {
-		    	std::cout << "MCP issue: " << pandoraClu << std::endl;
-		    }
-		}
-#endif
-		
 		if(isPhoton) continue;
 
 		clustersToMerge.push_back(pCluster);
@@ -228,8 +324,6 @@ namespace arbor_content
 	        	std::cout << "    clusterMCPID: " << clusterPID << ", clusterMCCharge: " << clusterCharge << std::endl;
 		}
 
-		//bool isChargedCluster = false;
-
 		if(innerLayer > 30 || energyRatio < 0.3)
 		{
 			//std::cout << "    \033[1;31m ---> innerLayer: " << innerLayer << ", energyRatio: " << energyRatio << " \033[0m " << std::endl;
@@ -237,8 +331,7 @@ namespace arbor_content
 			continue;
 		}
 
-		//fakePhoton = !CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 1);
-		//fakePhoton = !CheckNearbyClusterWithCharge(pCluster, nearbyClusters, 0);
+		//clustersForMerging.push_back(pCluster);
 
 		if(m_makeRecord)
 		{
@@ -255,7 +348,7 @@ namespace arbor_content
 	}
 
 
-#if 0
+#if 1
 	std::cout << " clusters to merge: " << clustersToMerge.size() << std::endl;
 	for(auto& pCluster : clustersToMerge)
 	{
@@ -276,6 +369,7 @@ namespace arbor_content
 
 		float maxDistance = 100.;
 		std::vector<arbor_content::ArborCluster*> veryCloseClusters;
+		std::vector<arbor_content::ArborCluster*> otherClusters;
 
 		for(int i = 0; i < nearbyClusters.size(); ++i)
 		{
@@ -291,6 +385,10 @@ namespace arbor_content
 			{
 				veryCloseClusters.push_back(nearbyCluster);
 			}
+			else
+			{
+				otherClusters.push_back(nearbyCluster);
+			}
 		}
 
 		int chargedCluster = 0;
@@ -303,7 +401,7 @@ namespace arbor_content
 			}
 		}
 
-		
+	
 		if(veryCloseClusters.size() > 0 && chargedCluster == veryCloseClusters.size()) // if all the close clusters are charged
 		{
 			std::cout << "     ======> merge: " << pCluster << ", and " << veryCloseClusters.at(0) << std::endl;
@@ -327,7 +425,14 @@ namespace arbor_content
 				const pandora::CaloHitList&  nearbyClusterMainHits = nearbyCloseCluster->GetMainClusterHits();
 
 				float closestDistanceOfMainHits;
-				ClusterHelper::GetClosestDistanceApproach(clusterMainHits, nearbyClusterMainHits, closestDistanceOfMainHits);
+
+				try
+				{
+					ClusterHelper::GetClosestDistanceApproach(clusterMainHits, nearbyClusterMainHits, closestDistanceOfMainHits);
+				}
+				catch (pandora::StatusCodeException &)
+				{
+				}
 
 				// check direction (axes, COG)
 				auto axis = pCluster->GetAxis();
@@ -349,12 +454,39 @@ namespace arbor_content
 				// seed on first layer
 			}
 		}
+
+		for(int i = 0; i < otherClusters.size(); ++i)
+		{
+			auto& cluster = otherClusters.at(i);
+			std::cout << "         --- check track of cluster: " << cluster 
+				<< ", E: " << cluster->GetHadronicEnergy() << std::endl;
+				
+			float closestDistance = 1.e6;
+			float angle = 1.e6;
+			pandora::CartesianVector dv(0., 0., 0.);
+
+			try
+			{
+				// use collected calo hits
+				ClusterHelper::GetClosestDistanceApproach(pCluster, cluster, closestDistance, dv);
+				angle = dv.GetOpeningAngle(pCluster->GetAxis());
+			}
+			catch (...)
+			{
+				// use all calo hits
+				ClusterHelper::GetClosestDistanceApproach(pCluster, cluster, closestDistance, dv, false);
+				angle = dv.GetOpeningAngle(pCluster->GetCentroid());
+			}
+
+			std::cout << "            === closestDistance: " << closestDistance << ", testClosestDistance: " << closestDistance
+				<< ", dv: " << dv.GetMagnitude() << ", angle: " << angle << std::endl;
+		}
 	}
 #endif
 
 
-#if 1
-	// cluster merging test
+#if 0
+	// Cluster merging test based on MC truth
 	std::map<const pandora::MCParticle* const, pandora::ClusterList> mcpClusterListMap;
 	
 	for(auto it = clustersForMerging.begin(); it != clustersForMerging.end(); ++it)
@@ -394,6 +526,8 @@ namespace arbor_content
 		pandora::ClusterVector clusterVectorForMerging;
 		clusterVectorForMerging.insert(clusterVectorForMerging.begin(), clusterList.begin(), clusterList.end());
 
+		bool onlyMergeChargedClusters = true;
+
 		if(clusterMCPCharge == 0) 
 		{
 			if(m_debugOutput)
@@ -411,7 +545,7 @@ namespace arbor_content
 				}
 			}
 
-			continue;
+			if(onlyMergeChargedClusters) continue;
 		}
 		else
 		{
