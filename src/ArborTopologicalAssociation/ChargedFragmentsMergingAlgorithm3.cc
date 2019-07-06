@@ -348,8 +348,9 @@ namespace arbor_content
 	}
 
 
-#if 1
-	std::cout << " clusters to merge: " << clustersToMerge.size() << std::endl;
+	//std::cout << " clusters to merge: " << clustersToMerge.size() << std::endl;
+	std::map<const pandora::Cluster*, pandora::ClusterList> clustersMergingMap;
+	
 	for(auto& pCluster : clustersToMerge)
 	{
 		std::vector<arbor_content::ArborCluster*> nearbyClusters;
@@ -364,8 +365,10 @@ namespace arbor_content
 			std::cout << " GetNearbyClusters error!" << std::endl;
 		}
 
+#if 1
 		std::cout << " === cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
 			<< ", layer: " << pCluster->GetInnerPseudoLayer() << std::endl;
+#endif
 
 		float maxDistance = 100.;
 		std::vector<arbor_content::ArborCluster*> veryCloseClusters;
@@ -376,10 +379,12 @@ namespace arbor_content
 			auto& nearbyCluster = nearbyClusters.at(i);
 			float distance = distances.at(i);
 
+#if 1
 			std::cout << "     -> nearby cluster " << i << ": " << nearbyCluster
 				<< ", E: " << nearbyCluster->GetHadronicEnergy() 
 				<< ", track: " << nearbyCluster->GetAssociatedTrackList().size()
 				<< ", distance: " << distance << std::endl;
+#endif
 
 			if(distance < maxDistance)
 			{
@@ -401,60 +406,32 @@ namespace arbor_content
 			}
 		}
 
-	
 		if(veryCloseClusters.size() > 0 && chargedCluster == veryCloseClusters.size()) // if all the close clusters are charged
 		{
-			std::cout << "     ======> merge: " << pCluster << ", and " << veryCloseClusters.at(0) << std::endl;
+			auto cluster = veryCloseClusters.at(0);
+			std::cout << "     \033[1;32m ======> merge charged clusters: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
+				<< " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << "\033[0m" << std::endl;
 
-			// TODO
+			FillClusters(clustersMergingMap, cluster, pCluster);
+
 			// further check ?
 		}
 		else if(veryCloseClusters.size() > 0 && chargedCluster == 0) // if all the close clusters are neutral
 		{
 			// we can merge the cluster to closest neutral cluster, or just do nothing.
+			//auto cluster = veryCloseClusters.at(0);
+			//std::cout << "     \033[1;32m ======> merge neutral clusters: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
+			//	<< " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << "\033[0m" << std::endl;
 		}
 		else
 		{
-			for(int i = 0; i < veryCloseClusters.size(); ++i)
-			{
-				auto nearbyCloseCluster = veryCloseClusters.at(i);
-				// make sure everything is computed before...
-
-				// check closestDistance from main cluster hits
-				const pandora::CaloHitList&  clusterMainHits = pCluster->GetMainClusterHits();
-				const pandora::CaloHitList&  nearbyClusterMainHits = nearbyCloseCluster->GetMainClusterHits();
-
-				float closestDistanceOfMainHits;
-
-				try
-				{
-					ClusterHelper::GetClosestDistanceApproach(clusterMainHits, nearbyClusterMainHits, closestDistanceOfMainHits);
-				}
-				catch (pandora::StatusCodeException &)
-				{
-				}
-
-				// check direction (axes, COG)
-				auto axis = pCluster->GetAxis();
-				auto nearbyAxis = nearbyCloseCluster->GetAxis();
-
-				auto cog = pCluster->GetCentroid();
-				auto nearbyCog = nearbyCloseCluster->GetCentroid();
-				auto cogDiff = cog - nearbyCog;
-
-				float axisAngle1 = cogDiff.GetOpeningAngle(axis);
-				float axisAngle2 = cogDiff.GetOpeningAngle(nearbyAxis);
-
-				float axisAngle = std::min(axisAngle1, axisAngle2);
-
+#if 0
 				std::cout << "        --- closestDistanceOfMainHits : " << closestDistanceOfMainHits 
 					<< ", axisAngle: " << axisAngle << std::endl;
-
-				// check starting point ?
-				// seed on first layer
-			}
+#endif
 		}
 
+#if 0
 		for(int i = 0; i < otherClusters.size(); ++i)
 		{
 			auto& cluster = otherClusters.at(i);
@@ -481,11 +458,17 @@ namespace arbor_content
 			std::cout << "            === closestDistance: " << closestDistance << ", testClosestDistance: " << closestDistance
 				<< ", dv: " << dv.GetMagnitude() << ", angle: " << angle << std::endl;
 		}
-	}
 #endif
+	}
+		
+	MergeClusters(clustersMergingMap);
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
 
 
-#if 0
+  void ChargedFragmentsMergingAlgorithm3::MCClusterMerging(const pandora::ClusterList& clustersForMerging)
+  {
 	// Cluster merging test based on MC truth
 	std::map<const pandora::MCParticle* const, pandora::ClusterList> mcpClusterListMap;
 	
@@ -580,9 +563,83 @@ namespace arbor_content
 
 		}// end if
 	} // end for
-#endif
+  }
 
-    return pandora::STATUS_CODE_SUCCESS;
+  void ChargedFragmentsMergingAlgorithm3::MergeClusters(std::map<const pandora::Cluster*, pandora::ClusterList>& clustersMergingMap)
+  {
+	  for(auto& iter : clustersMergingMap)
+	  {
+		  auto mainCluster = iter.first;
+		  auto clustersToMerge = iter.second;
+
+		  for(auto& cluster : clustersToMerge)
+		  {
+			 bool isRight = true;
+			 bool isSameCharge = true;
+
+		     try
+		     {
+		     	auto mainClusterPID = pandora::MCParticleHelper::GetMainMCParticle(mainCluster)->GetParticleId();
+		     	auto mainClusterCharge = pandora::PdgTable::GetParticleCharge(mainClusterPID);
+
+		     	auto clusterPID = pandora::MCParticleHelper::GetMainMCParticle(cluster)->GetParticleId();
+		     	auto clusterCharge = pandora::PdgTable::GetParticleCharge(clusterPID);
+
+				if(mainClusterPID != clusterPID) isRight = false;
+				if(mainClusterCharge != clusterCharge) isSameCharge = false;
+
+				if(cluster->GetHadronicEnergy()>2.) continue;
+
+			    if(isRight || isSameCharge)
+			    {
+			        std::cout << "      \033[1;31m Merge clusters: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy()
+			       	 << " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << "\033[0m" << std::endl;
+			    }
+			    else
+			    {
+			        std::cout << "      \033[1;32m Merge clusters: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy()
+			       	 << " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << "\033[0m" << std::endl;
+			    }
+
+	            std::vector<float> vars;
+	            vars.push_back( float(mainCluster->GetHadronicEnergy()) );
+	            vars.push_back( float(cluster->GetHadronicEnergy()) );
+	            vars.push_back( float(mainClusterPID) );
+	            vars.push_back( float(clusterPID) );
+				vars.push_back( float(mainClusterCharge));
+				vars.push_back( float(clusterCharge) );
+
+				//std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
+
+		        HistogramManager::CreateFill("ChargedFragmentsMergingAlgorithm3_merging", 
+						"mainClusterEnergy:clusterEnergy:mainPID:PID:mainCharge:charge", vars);
+		     }
+		     catch(pandora::StatusCodeException &)
+		     {
+				 std::cout << "MCP issue" <<  std::endl;
+		     }
+
+			 ArborContentApi::MergeAndDeleteClusters(*this, mainCluster, cluster);
+		  }
+	  }
+  }
+
+  void ChargedFragmentsMergingAlgorithm3::FillClusters(std::map<const pandora::Cluster*, pandora::ClusterList>& clustersMergingMap, 
+		  pandora::Cluster* cluster, pandora::Cluster* clusterToMerge)
+  {
+	  auto mapIter = clustersMergingMap.find(cluster);
+	
+	  if(mapIter == clustersMergingMap.end())
+	  {
+		  pandora::ClusterList clusterList;
+		  clusterList.push_back(clusterToMerge);
+
+		  clustersMergingMap.insert(std::pair<const pandora::Cluster*, pandora::ClusterList>(cluster, clusterList));
+	  }
+	  else
+	  {
+		  mapIter->second.push_back(clusterToMerge);
+	  }
   }
 
   bool ChargedFragmentsMergingAlgorithm3::CheckNearbyClusterWithCharge(const arbor_content::ArborCluster* pCluster, std::vector<arbor_content::ArborCluster*>& nearbyClusters, int charge)

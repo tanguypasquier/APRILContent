@@ -71,6 +71,13 @@ private:
 		    std::vector<arbor_content::ArborCluster*>& allClusters,
 			std::vector<arbor_content::ArborCluster*>& properClusters,
 			std::vector<float>& distances);
+  
+	void FillClusters(std::map<const pandora::Cluster*, pandora::ClusterList>& clustersMergingMap, 
+		  pandora::Cluster* cluster, pandora::Cluster* clusterToMerge);
+  
+	void MCClusterMerging(const pandora::ClusterList& clustersForMerging);
+  
+	void MergeClusters(std::map<const pandora::Cluster*, pandora::ClusterList>& clustersMergingMap);
 
     pandora::StatusCode CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector);
 
