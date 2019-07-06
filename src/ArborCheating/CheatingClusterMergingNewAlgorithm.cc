@@ -140,6 +140,10 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 				bool firstClusterHasTrack = !(firstCluster->GetAssociatedTrackList().empty());
 				bool cluToMergeHasTrack = !(cluToMerge->GetAssociatedTrackList().empty());
 
+				// test
+				if(closestDistance>300.) continue;
+				if(!firstClusterHasTrack && !cluToMergeHasTrack) continue;
+
 	            std::vector<float> vars;
 	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	            vars.push_back( float(firstCluster->GetHadronicEnergy()) );
