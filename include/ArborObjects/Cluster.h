@@ -93,6 +93,7 @@ public:
 	std::vector<ArborCluster*>& GetMotherCluster();
 
     void  Reset();
+	void  ResetRelationShip();
     void  ClearMotherCluster();
 	const std::set<ArborCluster*>& GetClustersToMerge() const;
 	void  ClearClustersToMerge();
@@ -166,7 +167,7 @@ protected:
 	bool m_isFragment;
 
 	ArborCluster*              m_motherAtSearch;
-
+  
 	std::map<ArborCluster*, ClustersOrderParameter> m_orderWithMotherClusters;
 
 	pandora::OrderedCaloHitList m_mainOrderedClusterHits;

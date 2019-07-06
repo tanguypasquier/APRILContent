@@ -41,20 +41,24 @@ namespace arbor_content
   {
   }
 
-  void ArborCluster::Reset()
+  void ArborCluster::ResetRelationShip()
   {
 	m_motherCluster.clear();
-
 	m_clustersToMerge.clear();
 	m_nearbyClusters.clear();
-
 	m_orderWithMotherClusters.clear();
+
+	m_hasMotherAtSearch = false;
+	m_motherAtSearch = nullptr;
+  }
+
+  void ArborCluster::Reset()
+  {
+	ResetRelationShip();
 
 	m_isPhoton = false;
 	m_isRoot = false;
-	m_hasMotherAtSearch = false;
 	m_isFragment = false;
-	m_motherAtSearch = nullptr;
 
 	m_axis.SetValues(0., 0., 0.);
 	m_intercept.SetValues(0., 0., 0.);
