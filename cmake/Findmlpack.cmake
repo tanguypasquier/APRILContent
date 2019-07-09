@@ -2,7 +2,9 @@ IF(NOT DEFINED mlpack_DIR)
    MESSAGE(STATUS "Warning: it is mandorary to define mlpack_DIR.")
 ENDIF()
 
-SET(mlpack_INCLUDE_DIRS ${mlpack_DIR}/include)
+IF (NOT DEFINED mlpack_INCLUDE_DIRS)
+  SET(mlpack_INCLUDE_DIRS ${mlpack_DIR}/include)
+ENDIF()
 
 # Check mlpack core header file
 FIND_PATH(mlpack_CORE_HPP_DIR NAMES core.hpp HINTS ${mlpack_INCLUDE_DIRS}/mlpack)
