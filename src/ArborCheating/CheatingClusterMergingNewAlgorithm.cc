@@ -141,8 +141,14 @@ pandora::StatusCode CheatingClusterMergingNewAlgorithm::MergeClusters()
 				bool cluToMergeHasTrack = !(cluToMerge->GetAssociatedTrackList().empty());
 
 				// test
-				if(closestDistance>300.) continue;
-				if(!firstClusterHasTrack && !cluToMergeHasTrack) continue;
+				bool useStrictCut = true;
+
+				if(useStrictCut)
+				{
+					if(closestDistance>300.) continue;
+				    if(!firstClusterHasTrack && !cluToMergeHasTrack) continue;
+				    if(firstCluster->GetHadronicEnergy() > 5 && cluToMerge->GetHadronicEnergy() > 5) continue;
+				}
 
 	            std::vector<float> vars;
 	            vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
