@@ -90,6 +90,27 @@ namespace arbor_content
 			// fit with only connected calo hits; if not successful, with all calo hits.
 			pandora::StatusCode fitStatus;
 
+			// FIXME
+			// MC
+		    bool useHelpFromMC = false;
+
+		    if(useHelpFromMC)
+			{
+				try
+		        {
+			    	const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
+		        	auto clusterPID = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId();
+		        	//auto clusterCharge = pandora::PdgTable::GetParticleCharge( clusterPID );
+		        
+		        	bool isPhoton = (clusterPID == 22);
+			    	if(isPhoton) pCluster->SetPhoton(true);
+		        }
+		        catch(pandora::StatusCodeException &)
+		        {
+		        	std::cout << "MCP issue: " << std::endl;
+		        }
+			}
+
 			if(pCluster->IsPhoton())
 			{
 				// fit all connected calo hits
@@ -196,7 +217,7 @@ namespace arbor_content
 
 	// For test based on MC truth, which contains the charged clusters, the nearby clusters around
 	// a charged cluster, and clusters in the HCAL.
-	pandora::ClusterList clustersForMerging;
+	pandora::ClusterList clustersForMergingByMC;
 
 	// candidates to merge, drop the charged hadronic clusters and photon clusters
 	std::vector<ArborCluster*> clustersToMerge;
@@ -208,12 +229,35 @@ namespace arbor_content
 		const pandora::TrackList& associatedTrackList = pCluster->GetAssociatedTrackList();
 		if(!associatedTrackList.empty()) 
 		{
-			clustersForMerging.push_back(pCluster);
+			clustersForMergingByMC.push_back(pCluster);
 			continue;
 		}
 
 		bool isPhoton = pCluster->IsPhoton();
 		if(isPhoton) continue;
+
+		// FIXME
+		// MC
+		bool useHelpFromMC = false;
+
+		if(useHelpFromMC)
+		{
+			try
+		    {
+		    	const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(pCluster);
+		    	auto clusterPID = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu)->GetParticleId();
+		    	auto clusterCharge = pandora::PdgTable::GetParticleCharge( clusterPID );
+		    
+		    	bool isNeutral = (clusterCharge == 0);
+
+		    	if(isNeutral) continue;
+		    }
+		    catch(pandora::StatusCodeException &)
+		    {
+		    	std::cout << "MCP issue: " << std::endl;
+		    }
+		}
+		//////
 
 		clustersToMerge.push_back(pCluster);
 
@@ -244,7 +288,6 @@ namespace arbor_content
 				  << ", associatedTrackList size: " << pCluster->GetAssociatedTrackList().size() << std::endl;
 		}
 
-#if 1
 		auto clusterRegion = ClusterHelper::GetRegion(pCluster);
 
 		float clusterIPAngle = ClusterHelper::GetClusterAxisStartingPointAngle(pCluster);
@@ -296,7 +339,7 @@ namespace arbor_content
 
 		if(nearClusterHasTrack)
 		{
-			clustersForMerging.push_back(pCluster);
+			clustersForMergingByMC.push_back(pCluster);
 			continue;
 		}
 		/////////////////////////////////////////////////////////////////
@@ -324,32 +367,30 @@ namespace arbor_content
 	        	std::cout << "    clusterMCPID: " << clusterPID << ", clusterMCCharge: " << clusterCharge << std::endl;
 		}
 
-		if(innerLayer > 30 || energyRatio < 0.3)
+		if(innerLayer > 5.)
 		{
 			//std::cout << "    \033[1;31m ---> innerLayer: " << innerLayer << ", energyRatio: " << energyRatio << " \033[0m " << std::endl;
-			clustersForMerging.push_back(pCluster);
+			clustersForMergingByMC.push_back(pCluster);
 			continue;
 		}
-
-		//clustersForMerging.push_back(pCluster);
-
-		if(m_makeRecord)
-		{
-			// For efficiency and purity
-		    std::vector<float> vars;
-	        vars.push_back( float(hadEnergyInEcal) );
-	        vars.push_back( float(clusterCharge) );
-	        vars.push_back( float(clusterPID) );
-		    	    		
-		    HistogramManager::CreateFill("NewPhotonID_eff", "hadEnergyInEcal:mcCharge:mcPID", vars);
-		}
-#endif
-		
 	}
 
-
-	//std::cout << " clusters to merge: " << clustersToMerge.size() << std::endl;
 	std::map<const pandora::Cluster*, pandora::ClusterList> clustersMergingMap;
+	MakeMergingMap(clustersToMerge, clusterVector, clustersMergingMap);
+
+	MergeClusters(clustersMergingMap);
+
+	//MCClusterMerging(clustersForMergingByMC);
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+
+  void ChargedFragmentsMergingAlgorithm3::MakeMergingMap(std::vector<ArborCluster*>& clustersToMerge,
+		  std::vector<ArborCluster*>& clusterVector, std::map<const pandora::Cluster*, pandora::ClusterList>& clustersMergingMap)
+  {
+	//std::cout << " clusters to merge: " << clustersToMerge.size() << std::endl;
+	clustersMergingMap.clear();
 	
 	for(auto& pCluster : clustersToMerge)
 	{
@@ -365,21 +406,20 @@ namespace arbor_content
 			std::cout << " GetNearbyClusters error!" << std::endl;
 		}
 
-#if 1
+#if 0
 		std::cout << " === cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
 			<< ", layer: " << pCluster->GetInnerPseudoLayer() << std::endl;
 #endif
 
-		float maxDistance = 100.;
+		float maxDistance = 50.;
 		std::vector<arbor_content::ArborCluster*> veryCloseClusters;
-		std::vector<arbor_content::ArborCluster*> otherClusters;
 
 		for(int i = 0; i < nearbyClusters.size(); ++i)
 		{
 			auto& nearbyCluster = nearbyClusters.at(i);
 			float distance = distances.at(i);
 
-#if 1
+#if 0
 			std::cout << "     -> nearby cluster " << i << ": " << nearbyCluster
 				<< ", E: " << nearbyCluster->GetHadronicEnergy() 
 				<< ", track: " << nearbyCluster->GetAssociatedTrackList().size()
@@ -389,10 +429,6 @@ namespace arbor_content
 			if(distance < maxDistance)
 			{
 				veryCloseClusters.push_back(nearbyCluster);
-			}
-			else
-			{
-				otherClusters.push_back(nearbyCluster);
 			}
 		}
 
@@ -409,8 +445,11 @@ namespace arbor_content
 		if(veryCloseClusters.size() > 0 && chargedCluster == veryCloseClusters.size()) // if all the close clusters are charged
 		{
 			auto cluster = veryCloseClusters.at(0);
+
+#if 0
 			std::cout << "     \033[1;32m ======> merge charged clusters: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
 				<< " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << "\033[0m" << std::endl;
+#endif
 
 			FillClusters(clustersMergingMap, cluster, pCluster);
 
@@ -419,52 +458,25 @@ namespace arbor_content
 		else if(veryCloseClusters.size() > 0 && chargedCluster == 0) // if all the close clusters are neutral
 		{
 			// we can merge the cluster to closest neutral cluster, or just do nothing.
-			//auto cluster = veryCloseClusters.at(0);
-			//std::cout << "     \033[1;32m ======> merge neutral clusters: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
-			//	<< " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << "\033[0m" << std::endl;
 		}
 		else
 		{
-#if 0
-				std::cout << "        --- closestDistanceOfMainHits : " << closestDistanceOfMainHits 
-					<< ", axisAngle: " << axisAngle << std::endl;
-#endif
-		}
+			pandora::Cluster* cluster = nullptr;
 
-#if 0
-		for(int i = 0; i < otherClusters.size(); ++i)
-		{
-			auto& cluster = otherClusters.at(i);
-			std::cout << "         --- check track of cluster: " << cluster 
-				<< ", E: " << cluster->GetHadronicEnergy() << std::endl;
-				
-			float closestDistance = 1.e6;
-			float angle = 1.e6;
-			pandora::CartesianVector dv(0., 0., 0.);
-
-			try
+			for(int i = 0; i < veryCloseClusters.size(); ++i)
 			{
-				// use collected calo hits
-				ClusterHelper::GetClosestDistanceApproach(pCluster, cluster, closestDistance, dv);
-				angle = dv.GetOpeningAngle(pCluster->GetAxis());
-			}
-			catch (...)
-			{
-				// use all calo hits
-				ClusterHelper::GetClosestDistanceApproach(pCluster, cluster, closestDistance, dv, false);
-				angle = dv.GetOpeningAngle(pCluster->GetCentroid());
+				if(veryCloseClusters.at(i)->GetAssociatedTrackList().size() > 0)
+				{
+					cluster = veryCloseClusters.at(i);
+					break;
+				}
 			}
 
-			std::cout << "            === closestDistance: " << closestDistance << ", testClosestDistance: " << closestDistance
-				<< ", dv: " << dv.GetMagnitude() << ", angle: " << angle << std::endl;
+			if(cluster!=nullptr) FillClusters(clustersMergingMap, cluster, pCluster);
 		}
-#endif
 	}
-		
-	MergeClusters(clustersMergingMap);
-
-    return pandora::STATUS_CODE_SUCCESS;
   }
+		
 
 
   void ChargedFragmentsMergingAlgorithm3::MCClusterMerging(const pandora::ClusterList& clustersForMerging)
@@ -575,7 +587,7 @@ namespace arbor_content
 		  for(auto& cluster : clustersToMerge)
 		  {
 			 bool isRight = true;
-			 bool isSameCharge = true;
+			 bool isChargeRight = true;
 
 		     try
 		     {
@@ -585,39 +597,97 @@ namespace arbor_content
 		     	auto clusterPID = pandora::MCParticleHelper::GetMainMCParticle(cluster)->GetParticleId();
 		     	auto clusterCharge = pandora::PdgTable::GetParticleCharge(clusterPID);
 
-				if(mainClusterPID != clusterPID) isRight = false;
-				if(mainClusterCharge != clusterCharge) isSameCharge = false;
+				if(clusterPID != mainClusterPID) isRight = false;
+				if(abs(mainClusterCharge) != abs(clusterCharge)) isChargeRight = false;
 
-				if(cluster->GetHadronicEnergy()>2.) continue;
+				const float minClusterEnergyToMerge = 0.0;
+				const float maxClusterEnergyToMerge = 10.0;
+				const int maxClusterMergingLayer = 0;
 
-			    if(isRight || isSameCharge)
-			    {
-			        std::cout << "      \033[1;31m Merge clusters: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy()
-			       	 << " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << "\033[0m" << std::endl;
-			    }
-			    else
-			    {
-			        std::cout << "      \033[1;32m Merge clusters: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy()
-			       	 << " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << "\033[0m" << std::endl;
-			    }
+				bool toMerge = true;
 
-	            std::vector<float> vars;
-	            vars.push_back( float(mainCluster->GetHadronicEnergy()) );
-	            vars.push_back( float(cluster->GetHadronicEnergy()) );
-	            vars.push_back( float(mainClusterPID) );
-	            vars.push_back( float(clusterPID) );
-				vars.push_back( float(mainClusterCharge));
-				vars.push_back( float(clusterCharge) );
+				if(cluster->GetInnerPseudoLayer() < maxClusterMergingLayer)
+				{
+					toMerge = false;
+				}
 
-				//std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
+				if(cluster->GetHadronicEnergy() > maxClusterEnergyToMerge)
+				{
+					toMerge = false;
+				}
 
-		        HistogramManager::CreateFill("ChargedFragmentsMergingAlgorithm3_merging", 
-						"mainClusterEnergy:clusterEnergy:mainPID:PID:mainCharge:charge", vars);
+				if(cluster->GetHadronicEnergy() < minClusterEnergyToMerge)
+				{
+					toMerge = true;
+				}
+
+				/////////////////////////////////////////////////////////////////////////
+				if(!toMerge)
+				{
+	                std::vector<float> vars;
+	                vars.push_back( float(mainCluster->GetHadronicEnergy()) );
+	                vars.push_back( float(cluster->GetHadronicEnergy()) );
+	                vars.push_back( float(cluster->GetInnerPseudoLayer()) );
+	                vars.push_back( float(mainClusterPID) );
+	                vars.push_back( float(clusterPID) );
+				    vars.push_back( float(mainClusterCharge));
+				    vars.push_back( float(clusterCharge) );
+				    vars.push_back( float(isRight) );
+				    vars.push_back( float(isChargeRight) );
+
+				    //std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
+
+		            HistogramManager::CreateFill("ChargedFragmentsMergingAlgorithm3_nonMerging", 
+						"mainClusterEnergy:clusterEnergy:innerPseudoLayer:mainPID:PID:mainCharge:charge:isRight:isChargeRight", vars);
+
+					if(isRight)
+					{
+						std::cout << "      \033[1;31m Miss to merge clusters: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy()
+			       	    << " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << ", isRight: " << isRight << "\033[0m" << std::endl;
+					}
+
+					continue;
+				}
+				else
+				{
+					std::vector<float> vars;
+	                vars.push_back( float(mainCluster->GetHadronicEnergy()) );
+	                vars.push_back( float(cluster->GetHadronicEnergy()) );
+	                vars.push_back( float(cluster->GetInnerPseudoLayer()) );
+	                vars.push_back( float(mainClusterPID) );
+	                vars.push_back( float(clusterPID) );
+				    vars.push_back( float(mainClusterCharge));
+				    vars.push_back( float(clusterCharge) );
+				    vars.push_back( float(isRight) );
+				    vars.push_back( float(isChargeRight) );
+
+				    //std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
+
+		            HistogramManager::CreateFill("ChargedFragmentsMergingAlgorithm3_merging", 
+				    		"mainClusterEnergy:clusterEnergy:innerPseudoLayer:mainPID:PID:mainCharge:charge:isRight:isChargeRight", vars);
+
+					if(!isRight && !isChargeRight)
+					{
+						std::cout << "      \033[1;31m It's false to merge clusters: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy()
+			       	    << " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << ", isRight: " << isRight << "\033[0m" << std::endl;
+					}
+
+					if(!isRight && isChargeRight)
+					{
+						std::cout << "      \033[1;33m It's issue to merge clusters: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy()
+			       	    << " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() << ", isRight: " << isRight << "\033[0m" << std::endl;
+					}
+				}
 		     }
 		     catch(pandora::StatusCodeException &)
 		     {
 				 std::cout << "MCP issue" <<  std::endl;
 		     }
+
+
+			 std::cout << "      \033[1;32m Merge clusters: " << mainCluster << ", E: " << mainCluster->GetHadronicEnergy()
+			       	   << " --- " << cluster << ", E: " << cluster->GetHadronicEnergy() 
+					   << ", isRight: " << isRight << ", isChargeRight: " << isChargeRight << "\033[0m" << std::endl;
 
 			 ArborContentApi::MergeAndDeleteClusters(*this, mainCluster, cluster);
 		  }
@@ -971,7 +1041,7 @@ namespace arbor_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxStartingClusterDistance", m_maxStartingClusterDistance));
 
-	m_maxClosestClusterDistance = 300.;
+	m_maxClosestClusterDistance = 450.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxClosestClusterDistance", m_maxClosestClusterDistance));
 

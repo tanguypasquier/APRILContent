@@ -78,6 +78,9 @@ private:
 	void MCClusterMerging(const pandora::ClusterList& clustersForMerging);
   
 	void MergeClusters(std::map<const pandora::Cluster*, pandora::ClusterList>& clustersMergingMap);
+  
+	void MakeMergingMap(std::vector<ArborCluster*>& clustersToMerge, std::vector<ArborCluster*>& clusterVector, 
+			std::map<const pandora::Cluster*, pandora::ClusterList>& clustersMergingMap);
 
     pandora::StatusCode CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector);
 
