@@ -143,7 +143,7 @@ namespace arbor_content
 
 				float maxChi = -1.e6;
 				
-				if(trackEnergy < 4. )
+				if(trackEnergy < 2. )
 				{
 					maxChi = m_lowEnergyMaxChi;
 				}

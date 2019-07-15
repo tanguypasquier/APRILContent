@@ -474,6 +474,12 @@ namespace arbor_content
 
 				// TODO::
 				// check axes distance, track positon on ECAL (if between two seeds ?)
+				if(passCheck)
+				{
+					float clusterIPAngle = ClusterHelper::GetClusterAxisStartingPointAngle(pCluster);
+
+					if(clusterIPAngle > 1.) passCheck = false;
+				}
 				 
 				if(passCheck) 
 				{

@@ -234,11 +234,15 @@ namespace arbor_content
 		}
 
 		bool isPhoton = pCluster->IsPhoton();
-		if(isPhoton) continue;
+		if(isPhoton) 
+		{
+			std::cout << "   ---> photon: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+			continue;
+		}
 
 		// FIXME
 		// MC
-		bool useHelpFromMC = false;
+		bool useHelpFromMC = true;
 
 		if(useHelpFromMC)
 		{
@@ -250,7 +254,7 @@ namespace arbor_content
 		    
 		    	bool isNeutral = (clusterCharge == 0);
 
-		    	if(isNeutral) continue;
+		    	if(isNeutral && pCluster->GetHadronicEnergy() < 10.) continue;
 		    }
 		    catch(pandora::StatusCodeException &)
 		    {
@@ -411,7 +415,7 @@ namespace arbor_content
 			<< ", layer: " << pCluster->GetInnerPseudoLayer() << std::endl;
 #endif
 
-		float maxDistance = 50.;
+		float maxDistance = 50.; // TODO: diffent value for diffrent region
 		std::vector<arbor_content::ArborCluster*> veryCloseClusters;
 
 		for(int i = 0; i < nearbyClusters.size(); ++i)
@@ -620,11 +624,39 @@ namespace arbor_content
 				{
 					toMerge = true;
 				}
+			 
+				////////////////////////////////////////////////////
+				float oldChi = 1.e6;
+			    float newChi = 1.e6;
+			    float trackEnergy = 0.;
+
+			    bool m_useEnergyChi = true;
+
+			    if(m_useEnergyChi &&
+			       pandora::STATUS_CODE_SUCCESS != 
+			            ClusterHelper::GetChiClusterMerging(this->GetPandora(), mainCluster, cluster, trackEnergy, oldChi, newChi))
+			    {
+			    	std::cout << "      ===> GetChiClusterMerging issue..." << std::endl;
+			    }
+
+			    float m_maxChi = 4.5;
+
+			    if(m_useEnergyChi && newChi > m_maxChi) 
+			    {
+					std::cout << "     --- newChi: " << newChi << ", maxChi: " << m_maxChi << std::endl;
+			    	toMerge = false;
+			    }
+				////////////////////////////////////////////////////
+				
+
+				//////////////////////////////////////////////////// reject photon which is identified as that, or neutral hadronic cluster
+
 
 				/////////////////////////////////////////////////////////////////////////
 				if(!toMerge)
 				{
 	                std::vector<float> vars;
+	                vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	                vars.push_back( float(mainCluster->GetHadronicEnergy()) );
 	                vars.push_back( float(cluster->GetHadronicEnergy()) );
 	                vars.push_back( float(cluster->GetInnerPseudoLayer()) );
@@ -638,7 +670,7 @@ namespace arbor_content
 				    //std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
 
 		            HistogramManager::CreateFill("ChargedFragmentsMergingAlgorithm3_nonMerging", 
-						"mainClusterEnergy:clusterEnergy:innerPseudoLayer:mainPID:PID:mainCharge:charge:isRight:isChargeRight", vars);
+						"evtNum:mainClusterEnergy:clusterEnergy:innerPseudoLayer:mainPID:PID:mainCharge:charge:isRight:isChargeRight", vars);
 
 					if(isRight)
 					{
@@ -651,6 +683,7 @@ namespace arbor_content
 				else
 				{
 					std::vector<float> vars;
+	                vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	                vars.push_back( float(mainCluster->GetHadronicEnergy()) );
 	                vars.push_back( float(cluster->GetHadronicEnergy()) );
 	                vars.push_back( float(cluster->GetInnerPseudoLayer()) );
@@ -664,7 +697,7 @@ namespace arbor_content
 				    //std::cout << "  -> cluster energy to merge: " << cluToMerge->GetHadronicEnergy() << std::endl;
 
 		            HistogramManager::CreateFill("ChargedFragmentsMergingAlgorithm3_merging", 
-				    		"mainClusterEnergy:clusterEnergy:innerPseudoLayer:mainPID:PID:mainCharge:charge:isRight:isChargeRight", vars);
+				    		"evtNum:mainClusterEnergy:clusterEnergy:innerPseudoLayer:mainPID:PID:mainCharge:charge:isRight:isChargeRight", vars);
 
 					if(!isRight && !isChargeRight)
 					{
