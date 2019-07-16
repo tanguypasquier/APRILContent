@@ -9,6 +9,7 @@
 #include "Pandora/AlgorithmHeaders.h"
 
 #include "ArborPlugins/ShowerProfilePlugin.h"
+#include "TH1F.h"
 
 using namespace pandora;
 
@@ -39,6 +40,7 @@ ArborShowerProfilePlugin::ArborShowerProfilePlugin() :
 
 void ArborShowerProfilePlugin::CalculateShowerStartLayer(const Cluster *const pCluster, unsigned int &showerStartLayer) const
 {
+#if 0
     showerStartLayer = std::numeric_limits<unsigned int>::max();
 
     const unsigned int innerLayer(pCluster->GetInnerPseudoLayer()), outerLayer(pCluster->GetOuterPseudoLayer());
@@ -133,6 +135,58 @@ void ArborShowerProfilePlugin::CalculateShowerStartLayer(const Cluster *const pC
         if (0 == iLayer)
             return;
     }
+#endif
+
+    showerStartLayer = std::numeric_limits<unsigned int>::max();
+
+    const unsigned int innerLayer(pCluster->GetInnerPseudoLayer()), outerLayer(pCluster->GetOuterPseudoLayer());
+    const OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+
+    TH1F hist("h", "layer", outerLayer-innerLayer, innerLayer, outerLayer);	
+
+    for (unsigned int iLayer = innerLayer; iLayer <= outerLayer; ++iLayer)
+    {
+        OrderedCaloHitList::const_iterator iter = orderedCaloHitList.find(iLayer);
+        int nHits = iter->second->size();
+
+		hist.Fill(iLayer, nHits);
+	}
+
+    int maxBin = hist.GetMaximumBin();
+
+	if(hist.GetBinContent(maxBin) <= 4) showerStartLayer = 0;
+
+	int nHitsOn3Layer = hist.GetBinContent(maxBin-1) + hist.GetBinContent(maxBin) + hist.GetBinContent(maxBin+1);
+	if(float(nHitsOn3Layer)/3 < 6.) showerStartLayer = 0;
+
+	if(showerStartLayer != 0)
+	{   
+	    int start = 1; 
+	    int maxHits = 4;
+
+        for(int bin=maxBin-1; bin>0; --bin)
+        {   
+	    	bool passedCheck = true;
+
+	    	for(int checkBin = 1; checkBin <= bin; ++checkBin)
+	    	{
+	    		if(hist.GetBinContent(checkBin) > maxHits)
+	    		{
+	    			passedCheck = false;
+	    			break;
+	    		}
+	    	}
+
+            //if(hist.GetBinContent(bin-1)<6 && hist.GetBinContent(bin-2)<6 && hist.GetBinContent(bin-3)<6)
+            if(passedCheck)
+            {
+                start = bin;
+                break;
+            }
+        }   
+
+        showerStartLayer = start;
+	}
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
