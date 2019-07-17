@@ -169,7 +169,89 @@ namespace arbor_content
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
+  void ClusterHelper::GetShowerStartingLayer(const pandora::Cluster *const pCluster, int& showerStartLayer)
+  {
+	// code from shower plugin
+	
+    showerStartLayer = std::numeric_limits<unsigned int>::max();
 
+    const unsigned int innerLayer(pCluster->GetInnerPseudoLayer()), outerLayer(pCluster->GetOuterPseudoLayer());
+    const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+
+    TH1F hist("h", "layer", outerLayer-innerLayer, innerLayer, outerLayer);	
+
+    for (unsigned int iLayer = innerLayer; iLayer <= outerLayer; ++iLayer)
+    {
+		pandora::OrderedCaloHitList::const_iterator iter = orderedCaloHitList.find(iLayer);
+        int nHits = iter->second->size();
+
+		hist.Fill(iLayer, nHits);
+	}
+
+    int maxBin = hist.GetMaximumBin();
+
+	if(hist.GetBinContent(maxBin) <= 4) showerStartLayer = 0;
+
+	int nHitsOn3Layer = hist.GetBinContent(maxBin-1) + hist.GetBinContent(maxBin) + hist.GetBinContent(maxBin+1);
+	if(float(nHitsOn3Layer)/3 < 6.) showerStartLayer = 0;
+
+	if(showerStartLayer != 0)
+	{   
+	    int start = 1; 
+	    int maxHits = 4;
+
+        for(int bin=maxBin-1; bin>0; --bin)
+        {   
+	    	bool passedCheck = true;
+
+	    	for(int checkBin = 1; checkBin <= bin; ++checkBin)
+	    	{
+	    		if(hist.GetBinContent(checkBin) > maxHits)
+	    		{
+	    			passedCheck = false;
+	    			break;
+	    		}
+	    	}
+
+            if(passedCheck)
+            {
+                start = bin;
+                break;
+            }
+        }   
+
+        showerStartLayer = start;
+	}
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  void ClusterHelper::GetShowerStartingPoint(const pandora::Cluster *const pCluster, pandora::CartesianVector& startingPoint)
+  {
+      int showerStartingLayer = 0;
+	  GetShowerStartingLayer(pCluster, showerStartingLayer);
+
+	  startingPoint.SetValues(0., 0., 0.);
+
+	  if(showerStartingLayer==0) return;
+		
+      const pandora::OrderedCaloHitList &orderedCaloHitList(pCluster->GetOrderedCaloHitList());
+	  pandora::OrderedCaloHitList::const_iterator iterShowerStarting = orderedCaloHitList.find(showerStartingLayer);
+
+	  auto hits = iterShowerStarting->second;
+	  int nHits = 0;
+
+	  for(auto& hit : *hits)
+	  {
+		  startingPoint += hit->GetPositionVector();
+		  ++nHits;
+	  }
+
+	  float weight = 1./nHits;
+
+	  startingPoint *= weight;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
   float ClusterHelper::GetClusterAxisStartingPointAngle(const pandora::Cluster *const pCluster)
   {
 	  float angleAxisStartingPoint = 1.e6;

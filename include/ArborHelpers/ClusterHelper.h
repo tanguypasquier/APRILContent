@@ -158,6 +158,9 @@ public:
 	
     static float GetClusterAxisStartingPointAngle(const pandora::Cluster *const pCluster);
 
+    static void GetShowerStartingPoint(const pandora::Cluster *const pCluster, pandora::CartesianVector& startingPoint);
+    static void GetShowerStartingLayer(const pandora::Cluster *const pCluster, int& showerStartLayer);
+
 	/**
 	 *  @brief  Get the closest distance approach between all the hits of the clusters
 	 *
