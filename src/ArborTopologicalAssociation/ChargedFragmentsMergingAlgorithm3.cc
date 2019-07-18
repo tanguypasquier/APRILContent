@@ -49,6 +49,8 @@
 
 #include <algorithm>
 
+#define __DEBUG__
+
 namespace arbor_content
 {
   pandora::StatusCode ChargedFragmentsMergingAlgorithm3::Run()
@@ -149,9 +151,9 @@ namespace arbor_content
 		{
 		    pandora::ClusterFitResult clusterFitResult;
 
-			if(ClusterHelper::FitStart(pCluster, 3, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			if(ClusterHelper::FitStart(pCluster, 2, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
 			{
-				pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult);
+				pandora::ClusterFitHelper::FitStart(pCluster, 2, clusterFitResult);
 			}
 			
 			const pandora::CartesianVector& startingPoint = clusterFitResult.GetIntercept();
@@ -194,6 +196,13 @@ namespace arbor_content
 				    }
 				}
 			}
+			else
+			{
+#ifdef __DEBUG__
+				std::cout << "  ---> cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
+					<< ", Starting: " << startingPoint.GetX() << ", " << startingPoint.GetY() << ", " << startingPoint.GetZ() << std::endl;
+#endif
+			}
 		}
 		catch(pandora::StatusCodeException &)
 		{
@@ -230,19 +239,35 @@ namespace arbor_content
 		if(!associatedTrackList.empty()) 
 		{
 			clustersForMergingByMC.push_back(pCluster);
+    
+			int showerStartLayer = 0;
+			const pandora::Cluster *const pPandoraCluster = static_cast<const pandora::Cluster *const>(pCluster);
+			ClusterHelper::GetShowerStartingLayer(pPandoraCluster, showerStartLayer);
+
+			pandora::CartesianVector startingPoint(0., 0., 0.);
+			ClusterHelper::GetShowerStartingPoint(pPandoraCluster, startingPoint);
+
+#ifdef __DEBUG__
+			std::cout << "   ---> cluster: " << pPandoraCluster << ", E: " << pPandoraCluster->GetHadronicEnergy() 
+				<< ", showerStartingLayer: " << showerStartLayer 
+				<< ", pos: " << startingPoint.GetX() << ", " << startingPoint.GetY() << ", " << startingPoint.GetZ() << std::endl;
+#endif
+
 			continue;
 		}
 
 		bool isPhoton = pCluster->IsPhoton();
 		if(isPhoton) 
 		{
+#ifdef __DEBUG__
 			std::cout << "   ---> photon: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+#endif
 			continue;
 		}
 
 		// FIXME
 		// MC
-		bool useHelpFromMC = true;
+		bool useHelpFromMC = false;
 
 		if(useHelpFromMC)
 		{
@@ -415,7 +440,7 @@ namespace arbor_content
 			<< ", layer: " << pCluster->GetInnerPseudoLayer() << std::endl;
 #endif
 
-		float maxDistance = 50.; // TODO: diffent value for diffrent region
+		float maxDistance = 200.; // TODO: diffent value for diffrent region
 		std::vector<arbor_content::ArborCluster*> veryCloseClusters;
 
 		for(int i = 0; i < nearbyClusters.size(); ++i)
@@ -604,9 +629,10 @@ namespace arbor_content
 				if(clusterPID != mainClusterPID) isRight = false;
 				if(abs(mainClusterCharge) != abs(clusterCharge)) isChargeRight = false;
 
-				const float minClusterEnergyToMerge = 0.0;
-				const float maxClusterEnergyToMerge = 10.0;
-				const int maxClusterMergingLayer = 0;
+				const float minClusterEnergyToMerge = 0.55;
+				const float maxClusterEnergyToMerge = 6.0;
+				const int maxClusterMergingLayer = 1;
+
 
 				bool toMerge = true;
 
@@ -616,6 +642,11 @@ namespace arbor_content
 				}
 
 				if(cluster->GetHadronicEnergy() > maxClusterEnergyToMerge)
+				{
+					toMerge = false;
+				}
+
+				if(!CheckStartingPoints(mainCluster, cluster))
 				{
 					toMerge = false;
 				}
@@ -646,6 +677,12 @@ namespace arbor_content
 					std::cout << "     --- newChi: " << newChi << ", maxChi: " << m_maxChi << std::endl;
 			    	toMerge = false;
 			    }
+
+				// mc test
+#if 0
+				if(toMerge == false && isRight && cluster->GetHadronicEnergy() > 0.55 && cluster->GetHadronicEnergy() < 6.)
+					toMerge = true;
+#endif
 				////////////////////////////////////////////////////
 				
 
@@ -743,6 +780,107 @@ namespace arbor_content
 	  {
 		  mapIter->second.push_back(clusterToMerge);
 	  }
+  }
+				
+  bool ChargedFragmentsMergingAlgorithm3::CheckStartingPoints(const pandora::Cluster* chargedCluster, const pandora::Cluster* fragment)
+  {
+	  auto chClu = dynamic_cast<const arbor_content::ArborCluster*>(chargedCluster);
+	  auto frg = dynamic_cast<const arbor_content::ArborCluster*>(fragment);
+
+	  pandora::CartesianVector showerStartingPoint(0., 0., 0.);
+	  ClusterHelper::GetShowerStartingPoint(chargedCluster, showerStartingPoint);
+
+	  pandora::CartesianVector frgStartingPoint = frg->GetStartingPoint();
+	  float clusterIPAngle = ClusterHelper::GetClusterAxisStartingPointAngle(frg);
+
+#ifdef __DEBUG__
+	  std::cout << "   --- CheckStartingPoints --- " << endl
+		        << "   - chCluster: " << chargedCluster << ", E: " << chargedCluster->GetHadronicEnergy() << ", start: " 
+				<< showerStartingPoint.GetX() << ", " << showerStartingPoint.GetY() << ", " << showerStartingPoint.GetZ() << endl
+		        << "   - fragment: " << fragment << ", E: " << fragment->GetHadronicEnergy() << ", start: " 
+				<< frgStartingPoint.GetX() << ", " << frgStartingPoint.GetY() << ", " << frgStartingPoint.GetZ() << std::endl;
+#endif
+
+	  bool passCheck = false;
+
+	  if(showerStartingPoint.GetMagnitude() < 1.e-6) // no shower
+	  {
+		  // FIXME
+		  //passCheck = false;
+		  auto chEndPoint = chClu->GetEndpoint();
+		  auto cluterEndStartDistance = frgStartingPoint - chEndPoint;
+
+#ifdef __DEBUG__
+	          std::cout <<  "   - charged cluster : " << chClu << ", E: " << chClu->GetHadronicEnergy() << ", end: " 
+				        << chEndPoint.GetX() << ", " << chEndPoint.GetY() << ", " << chEndPoint.GetZ() << std::endl;
+#endif
+		  // FIXME: foward
+		  if(cluterEndStartDistance.GetMagnitude() < 50. && fragment->GetHadronicEnergy() < 3.)
+		  {
+			  std::cout << "    - distance: " << cluterEndStartDistance.GetMagnitude() << std::endl;
+			  passCheck = true;
+		  }
+		  else
+		  {
+			  std::cout << "    - distance: " << cluterEndStartDistance.GetMagnitude() << std::endl;
+		  }
+		    
+		  if(clusterIPAngle > 0.8) 
+		  {
+			  std::cout << "    - angle: " << clusterIPAngle << std::endl;
+			  passCheck = true;
+		  }
+		  else
+		  {
+			  std::cout << "    - angle: " << clusterIPAngle << std::endl;
+		  }
+
+		  if(passCheck == false)
+		  {
+			  float closestDistance = 1.e6;
+
+	          ClusterHelper::GetClosestDistanceApproach(chClu, frg, closestDistance, m_onlyUseConnectedHits);
+
+			  // TODO: check R
+			  if(closestDistance < 30. &&  fragment->GetHadronicEnergy() < 3.) 
+			  {
+				  passCheck = true;
+			  }
+		  }
+	  }
+	  else
+	  {
+		  auto startingPointDiff = frgStartingPoint - showerStartingPoint;
+
+		  if(startingPointDiff.GetMagnitude() < 30.)
+		  {
+			  passCheck = true;
+		  }
+
+		  if(passCheck == false)
+		  {
+#ifdef __DEBUG__
+	      std::cout <<  "   - fragment: " << fragment << ", E: " << fragment->GetHadronicEnergy() << ", clusterIPAngle: " 
+				    << clusterIPAngle << std::endl;
+#endif
+		      if(clusterIPAngle > 0.8) passCheck = true;
+		  }
+
+		  if(passCheck == false)
+		  {
+			  float closestDistance = 1.e6;
+
+	          ClusterHelper::GetClosestDistanceApproach(chClu, frg, closestDistance, m_onlyUseConnectedHits);
+
+			  // TODO: check R
+			  if(closestDistance < 10. &&  fragment->GetHadronicEnergy() < 2.5) 
+			  {
+				  passCheck = true;
+			  }
+		  }
+	  }
+
+	  return passCheck;
   }
 
   bool ChargedFragmentsMergingAlgorithm3::CheckNearbyClusterWithCharge(const arbor_content::ArborCluster* pCluster, std::vector<arbor_content::ArborCluster*>& nearbyClusters, int charge)

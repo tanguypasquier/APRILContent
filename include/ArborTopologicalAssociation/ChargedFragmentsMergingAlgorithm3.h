@@ -84,6 +84,8 @@ private:
 
     pandora::StatusCode CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector);
 
+    bool CheckStartingPoints(const pandora::Cluster* chargedCluster, const pandora::Cluster* fragment);
+
 	/**
 	 *  @brief  Get the eligible clusters for parent-daughter association
 	 *
