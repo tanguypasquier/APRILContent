@@ -193,7 +193,8 @@ namespace arbor_content
 	if(hist.GetBinContent(maxBin) <= 4) showerStartLayer = 0;
 
 	int nHitsOn3Layer = hist.GetBinContent(maxBin-1) + hist.GetBinContent(maxBin) + hist.GetBinContent(maxBin+1);
-	if(float(nHitsOn3Layer)/3 < 6.) showerStartLayer = 0;
+	// FIXME
+        if(float(nHitsOn3Layer)/3 < 5.) showerStartLayer = 0;
 
 	if(showerStartLayer != 0)
 	{   
