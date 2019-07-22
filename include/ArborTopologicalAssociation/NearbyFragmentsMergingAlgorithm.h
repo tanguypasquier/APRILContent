@@ -143,6 +143,7 @@ private:
 
 	bool                             m_mergePhotonClusters;
 	bool                             m_mergeChargedClusters;
+	bool                             m_cleanClusters;
 
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;

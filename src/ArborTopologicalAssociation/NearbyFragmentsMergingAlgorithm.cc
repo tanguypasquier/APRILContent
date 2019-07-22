@@ -180,7 +180,7 @@ namespace arbor_content
 	}
 
 	// clean clusters
-	CleanClusterForMerging(m_clustersToMerge);
+	if(m_cleanClusters) CleanClusterForMerging(m_clustersToMerge);
 #endif
 	
     return pandora::STATUS_CODE_SUCCESS;
@@ -1000,6 +1000,10 @@ namespace arbor_content
 	m_mergeChargedClusters = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MergeChargedClusters", m_mergeChargedClusters));
+
+	m_cleanClusters = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "CleanClusters", m_cleanClusters));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
