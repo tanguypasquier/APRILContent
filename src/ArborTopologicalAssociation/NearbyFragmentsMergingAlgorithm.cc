@@ -47,8 +47,9 @@
 
 #include <algorithm>
 
-#define __DEBUG__ 0
+#define __DEBUG0__ 0
 #define __DEBUG1__ 0
+#define __DEBUG__ 0
 #define __USEMCP__ 0
 
 namespace arbor_content
@@ -89,7 +90,7 @@ namespace arbor_content
 
 		pCluster->SetPhoton(false);
 
-#if __DEBUG__
+#if __DEBUG0__
 		std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
 			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << ", isPoton: " << isPhoton << std::endl;
 #endif
@@ -180,7 +181,31 @@ namespace arbor_content
 	}
 
 	// clean clusters
-	if(m_cleanClusters) CleanClusterForMerging(m_clustersToMerge);
+	if(m_cleanClusters) 
+	{
+		CleanClusterForMerging(m_clustersToMerge);
+	}
+	else
+	{
+#if __DEBUG0__
+		for(int i = 0; i < m_clustersToMerge.size(); ++i)
+	    {
+	    	auto& cluster = clusterVector.at(i);
+
+	    	auto& mothers = cluster->GetMotherCluster();
+
+	    	std::cout << " --- cluster " << cluster << ", E: " << cluster->GetHadronicEnergy() 
+				<< " mothers: " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
+
+			auto& clustersToMerge = cluster->GetClustersToMerge();
+
+			for(auto& toMerge : clustersToMerge)
+			{
+				std::cout << "     ---> cluster to merge: " << toMerge << ", E: " << toMerge->GetHadronicEnergy() << std::endl;
+			}
+	    }
+#endif
+	}
 #endif
 	
     return pandora::STATUS_CODE_SUCCESS;
@@ -350,164 +375,29 @@ namespace arbor_content
 		  //startingCluster->GetAxis();
 		  float angle = 1.e6;
 
-		  auto& nearbyClusterCOG = nearbyCluster->GetCentroid();
-		  auto& startingClusterCOG = startingCluster->GetCentroid();
-		  auto directionOfCentroids = nearbyClusterCOG - startingClusterCOG;
-
-		  if( directionOfCentroids.GetMagnitudeSquared() * startingClusterAxis.GetMagnitudeSquared() > std::numeric_limits<float>::epsilon() )
-		  {
-			  try
-			  {
-				  angle = directionOfCentroids.GetOpeningAngle(startingClusterAxis);
-			  }
-			  catch(pandora::StatusCodeException &)
-			  {
-				  std::cout << "GetOpeningAngle failed" << std::endl;
-			  }
-		  }
-
-		  auto& nearbyClusterAxis = nearbyCluster->GetAxis();
-		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
-		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
-
-		  std::vector<float> clusterParameters;
-		  clusterParameters.push_back(closestDistance);
-		  clusterParameters.push_back(angle); // axis angle
-		  clusterParameters.push_back(axisDistance);
-
-		  std::vector<float> parameterPowers;
-		  parameterPowers.push_back(5.);
-		  parameterPowers.push_back(3.);
-		  parameterPowers.push_back(1.);
-
-		  ClustersOrderParameter orderParameter(clusterParameters, parameterPowers);
-		  nearbyCluster->SetOrderParameterWithMother(startingCluster, orderParameter);
-
-		  clusterDistanceMap.insert( std::pair<float, ArborCluster*>(closestDistance, nearbyCluster) );
-      }
-		  
-	  for(auto it = clusterDistanceMap.begin(); it != clusterDistanceMap.end(); ++it)
-	  {
-		  auto nearbyCluster = it->second;
-
-		  properClusters.push_back(nearbyCluster);
-		  nearbyCluster->SetHasMotherAtSearch();
-	  }
-
-	  startingCluster->SetClustersToMerge(properClusters);
-  }
-
-  void NearbyFragmentsMergingAlgorithm::SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
-		  std::vector<arbor_content::ArborCluster*>& properClusters)
-  {
-	  
-#if __DEBUG__
-	  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
-	  float startCluEnergy = startingCluster->GetHadronicEnergy();
-
-	  auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
-	  std::cout << " SearchProperClusters for charged cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
-#endif
-
-	  std::vector<arbor_content::ArborCluster*> nearbyClusters;
-	  GetNearbyClusters(startingCluster, m_clustersToMerge, nearbyClusters);
-
-	  // map for sorting all nearby clusters by closest distance
-	  std::multimap<float, ArborCluster*> clusterDistanceMap;
-
-	  for(int i = 0; i < nearbyClusters.size(); ++i)
-	  {
-		  auto nearbyCluster = nearbyClusters.at(i);
-
-		  if(nearbyCluster->HasMotherAtSearch() || nearbyCluster == startingCluster || nearbyCluster->IsRoot() || nearbyCluster->IsPhoton()) 
-		  {
-			  continue;
-		  }
-
-#if 0
-		  // angle selection
-		  pandora::CartesianVector trackPointAtCalo = pTrack->GetTrackStateAtCalorimeter().GetPosition();
-		  pandora::CartesianVector trackMomentumAtCalo = pTrack->GetTrackStateAtCalorimeter().GetMomentum();
-
-		  pandora::CartesianVector trackPointAtCaloClusterDistance = nearbyCluster->GetCentroid() - trackPointAtCalo;
-
-		  float clusterTrackAngle = trackPointAtCaloClusterDistance.GetOpeningAngle(trackMomentumAtCalo);
-		  float m_maxClusterTrackAngle = 0.3;
-		  if(clusterTrackAngle > m_maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
-#endif
-
-#if __DEBUG__
-		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
-#endif
-
-
-		  // GetClustersDistance
-		  float closestDistance = 1.e6;
-
-		  try
-		  {
-			  ClusterHelper::GetClosestDistanceApproach(startingCluster, nearbyCluster, closestDistance, false);
-		  }
-          catch(pandora::StatusCodeException &)
-		  {
-			  std::cout << "GetClosestDistanceApproach failed" << std::endl;
-		  }
-
 		  // FIXME
-		  float emEnergyInECAL = ClusterHelper::GetElectromagneticEnergyInECAL(nearbyCluster);
-		  float emEnergyRatio  = emEnergyInECAL / nearbyCluster->GetElectromagneticEnergy();
-
-		  float m_maxClosestDistance = 1.e6;
-		  float meanDensity = 1.;
-
-		  if(emEnergyRatio > 0.6) 
+		  if( fabs((int)(startingCluster->GetInnerPseudoLayer()) - (int)(nearbyCluster->GetInnerPseudoLayer()))  <= 3 )
 		  {
-		      // mainly in ECAL 
-		      m_maxClosestDistance = 100.;
-
-			  ClusterHelper::GetMeanDensity(nearbyCluster, meanDensity);
-
-			  // seems a hadronic fragment
-			  if(meanDensity<0.3) m_maxClosestDistance = 200;
-		  }
-		  else
-		  {
-		      m_maxClosestDistance = 500.;
-		  }
-
-		  if(closestDistance > m_maxClosestDistance) 
-		  {
-#if __DEBUG__
-			  std::cout << "emEnergyRatio: " << emEnergyRatio << ", m_maxClosestDistance: " << m_maxClosestDistance 
-				  << ", meanDensity: " << meanDensity << ", closestDistance: " << closestDistance << std::endl;
+		      auto clusterStartingPoint = startingCluster->GetStartingPoint();
+		      auto nearbyClusterStartingPoint = nearbyCluster->GetStartingPoint();
+#if __DEBUG0__
+			  std::cout			  << "       starting point: " << clusterStartingPoint.GetX() << ", " << clusterStartingPoint.GetY() << ", " << clusterStartingPoint.GetZ() << ", layer: " << startingCluster->GetInnerPseudoLayer() << std::endl;
+			  std::cout			  << "       nearby point: " << nearbyClusterStartingPoint.GetX() << ", " << nearbyClusterStartingPoint.GetY() << ", " << nearbyClusterStartingPoint.GetZ() << ", layer: " << nearbyCluster->GetInnerPseudoLayer() << 
+				  ", point dist: " << (clusterStartingPoint - nearbyClusterStartingPoint).GetMagnitude() << ", layer diff: "
+			  << fabs((int)(startingCluster->GetInnerPseudoLayer()) - (int)(nearbyCluster->GetInnerPseudoLayer())) << std::endl;
 #endif
 
-			  continue;
+			  if( (clusterStartingPoint - nearbyClusterStartingPoint).GetMagnitude() > 40.) continue;
 		  }
-		
-#if __USEMCP__
-		  // help by MC truth
-		  try
+    
+		  auto clusterAxisStartingPointAngle = ClusterHelper::GetClusterAxisStartingPointAngle(startingCluster);
+		  auto nearbyClusterAxisStartingPointAngle = ClusterHelper::GetClusterAxisStartingPointAngle(nearbyCluster);
+
+		  if(clusterAxisStartingPointAngle < 0.5 && nearbyClusterAxisStartingPointAngle < 0.5 &&
+			 startingCluster->GetHadronicEnergy() > 1. && nearbyCluster->GetHadronicEnergy() > 1. ) 
 		  {
-			  const pandora::Cluster* const pandoraClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
-		      auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
-
-		      if( pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId()) == 0. && 
-		          nearbyCluster->GetHadronicEnergy() > 0. )
-		      {
-		        		continue;
-		      }
+			  if(startingCluster->GetInnerPseudoLayer() < 5 || nearbyCluster->GetInnerPseudoLayer() < 5) continue;
 		  }
-		  catch(pandora::StatusCodeException &)
-		  {
-		  }
-#endif
-
-		  //GetClustersDirection
-		  auto& startingClusterAxis = startingCluster->GetAxis();
-
-		  //startingCluster->GetAxis();
-		  float angle = 1.e6;
 
 		  auto& nearbyClusterCOG = nearbyCluster->GetCentroid();
 		  auto& startingClusterCOG = startingCluster->GetCentroid();
@@ -525,55 +415,26 @@ namespace arbor_content
 			  }
 		  }
 
-		  const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField( pandora::CartesianVector(0.f, 0.f, 0.f)));
-
-		  const pandora::Helix helix(pTrack->GetTrackStateAtCalorimeter().GetPosition(),
-		    	  pTrack->GetTrackStateAtCalorimeter().GetMomentum(), pTrack->GetCharge(), bField);
-		
-		  pandora::CartesianVector trackCluCentroidDistanceVec(0., 0., 0.);
-		  float genericTime = 0.;
-
-		  if(pandora::STATUS_CODE_SUCCESS != helix.GetDistanceToPoint(nearbyClusterCOG, trackCluCentroidDistanceVec, genericTime))
-		  {
-			std::cout << "helix.GetDistanceToPoint failed" << std::endl;
-		  	continue;
-		  }
-
-
-#if __DEBUG__
-		  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
-	      //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
-	      //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
-		  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
-
-		  std::cout << " --- clu: " << nearbyCluster << ", E: " << nearbyCluEnergy
-		   			<< ", trackCluCentroidDistance: " << trackCluCentroidDistance << ", angle: " << angle << std::endl;
-#endif
-
-#if 0
-		  bool isGoodAngle = (angle < 0.3) ;
-		  auto pseudoLayerPlugin = PandoraContentApi::GetPlugins(*this)->GetPseudoLayerPlugin();
-		  const unsigned int startingLayer1(pseudoLayerPlugin->GetPseudoLayer(startingCluster->GetStartingPoint()));
-		  const unsigned int startingLayer2(pseudoLayerPlugin->GetPseudoLayer(nearbyCluster->GetStartingPoint()));
-
-		  if(isGoodAngle) 
-		  if( (startingLayer1 < startingLayer2) && (trackCluCentroidDistance < 10. || isGoodAngle) ) 
-#endif
-
 		  auto& nearbyClusterAxis = nearbyCluster->GetAxis();
 		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
 		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
 
 		  std::vector<float> clusterParameters;
-
-		  clusterParameters.push_back(closestDistance);
 		  clusterParameters.push_back(angle); // axis angle
+		  clusterParameters.push_back(closestDistance);
 		  clusterParameters.push_back(axisDistance);
+
+#if __DEBUG0__
+		  std::cout << " --- clu: " << startingCluster << ", nearby clu: " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy()
+		   			<< ", angle: " << angle 
+					<< ", closestDistance: " << closestDistance 
+					<< ", axisDistance: " << axisDistance << std::endl;
+#endif
 
 		  std::vector<float> parameterPowers;
 		  parameterPowers.push_back(5.);
-		  parameterPowers.push_back(3.);
 		  parameterPowers.push_back(1.);
+		  parameterPowers.push_back(0.);
 
 		  ClustersOrderParameter orderParameter(clusterParameters, parameterPowers);
 		  nearbyCluster->SetOrderParameterWithMother(startingCluster, orderParameter);
@@ -590,21 +451,6 @@ namespace arbor_content
 	  }
 
 	  startingCluster->SetClustersToMerge(properClusters);
-		
-#if 0
-	  // search proper cluster's proper cluster
-	  for(int iClu = 0; iClu < properClusters.size(); ++iClu)
-	  {
-		  auto clu = properClusters.at(iClu);
-		  
-		  std::vector<ArborCluster*> clusters;
-		  SearchProperClusters(pTrack, clu, clusters);
-	  }
-#endif
-		  
-#if __DEBUG__
-	  std::cout << "-----------------------------------------------------------------------------------------------------------" << std::endl;
-#endif
   }
 
   void NearbyFragmentsMergingAlgorithm::GetNearbyClusters(pandora::Cluster* cluster, 
@@ -757,134 +603,14 @@ namespace arbor_content
       //  continue;
 
 	  auto arborCluster = ArborContentApi::Modifiable(dynamic_cast<const arbor_content::ArborCluster*>(pCluster));
-	  arborCluster->Reset();
+
+	  if(m_resetCluster) arborCluster->Reset();
+
       clusterVector.push_back(arborCluster);
     }
 
     // sort them by inner layer
     std::sort(clusterVector.begin(), clusterVector.end(), SortingHelper::SortClustersByInnerLayer);
-
-    return pandora::STATUS_CODE_SUCCESS;
-  }
-
-  //------------------------------------------------------------------------------------------------------------------------------------------
-
-  pandora::StatusCode NearbyFragmentsMergingAlgorithm::FindBestParentCluster(const pandora::Cluster *const pDaughterCluster, const pandora::ClusterVector &clusterVector,
-      const pandora::Cluster *&pBestParentCluster) const
-  {
-    pBestParentCluster = NULL;
-
-    if(NULL == pDaughterCluster)
-      return pandora::STATUS_CODE_INVALID_PARAMETER;
-
-    pandora::CartesianVector innerPosition(0.f, 0.f, 0.f), backwardDirection(0.f, 0.f, 0.f);
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->GetClusterBackwardDirection(pDaughterCluster, backwardDirection, innerPosition));
-    const unsigned int innerPseudoLayer(PandoraContentApi::GetPlugins(*this)->GetPseudoLayerPlugin()->GetPseudoLayer(innerPosition));
-
-    const pandora::Granularity granularity(this->GetPandora().GetGeometry()->GetHitTypeGranularity(pDaughterCluster->GetInnerLayerHitType()));
-    const float maxClusterDistance(granularity <= pandora::FINE ? m_maxBackwardDistanceFine : m_maxBackwardDistanceCoarse);
-    const unsigned int maxPseudoLayerDifference(m_maxBackwardPseudoLayer);
-    float bestClusterCosineAngle(std::numeric_limits<float>::min());
-
-    for(pandora::ClusterVector::const_reverse_iterator jIter = clusterVector.rbegin(), jEndIter = clusterVector.rend() ;
-        jEndIter != jIter ; ++jIter)
-    {
-      const pandora::Cluster *const pCluster(*jIter);
-
-      if(NULL == pCluster)
-        continue;
-
-      if(pCluster == pDaughterCluster)
-        continue;
-
-      if(pCluster->GetAssociatedTrackList().empty())
-        continue;
-	  else
-		  std::cout << "---cluster tracks: " << pCluster->GetAssociatedTrackList().size() << std::endl;
-
-      const pandora::Track *pTrack((*pCluster->GetAssociatedTrackList().begin()));
-      const pandora::CartesianVector trackMomentum(pTrack->GetTrackStateAtCalorimeter().GetMomentum());
-      const pandora::CartesianVector trackProjection(pTrack->GetTrackStateAtCalorimeter().GetPosition());
-      const float bField(PandoraContentApi::GetPlugins(*this)->GetBFieldPlugin()->GetBField(pandora::CartesianVector(0.f, 0.f, 0.f)));
-      const pandora::Helix helix(trackProjection, trackMomentum, pTrack->GetCharge(), bField);
-
-      // compute parent cluster end point using cluster fit
-      pandora::CartesianVector centroid(0.f, 0.f, 0.f);
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, centroid));
-
-      const pandora::CartesianVector outerCentroid(pCluster->GetCentroid(pCluster->GetOuterPseudoLayer()));
-      const unsigned int outerParentPseudoLayer(pCluster->GetOuterPseudoLayer());
-      const unsigned int innerParentPseudoLayer(pCluster->GetInnerPseudoLayer());
-      const unsigned int clusterPseudoLayerExtension(outerParentPseudoLayer-innerParentPseudoLayer);
-      const unsigned int nFitPseudoLayers(clusterPseudoLayerExtension >= m_nBackwardLayersFit ? m_nBackwardLayersFit : clusterPseudoLayerExtension);
-
-      pandora::ClusterFitResult clusterFitResult;
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult));
-      const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
-
-      pandora::CartesianVector clusterEndPoint(0.f, 0.f, 0.f);
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnLine(centroid, clusterDirection, outerCentroid, clusterEndPoint));
-
-      pandora::CartesianVector trackEndPointPosition(0.f, 0.f, 0.f), trackEndPointMomentum(0.f, 0.f, 0.f);
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnHelix(helix, clusterEndPoint, trackEndPointPosition));
-      trackEndPointMomentum = helix.GetExtrapolatedMomentum(trackEndPointPosition);
-
-      // possible parent if :
-      // 1) cluster distance if OK AND angle between fits is ok (cut on cosine)
-      // 2) cluster distance if OK AND angle between fits is compatible (cut relaxed) AND dca between fits is OK
-
-      // check pseudo layer cluster separation
-      const unsigned int endPseudoLayer(PandoraContentApi::GetPlugins(*this)->GetPseudoLayerPlugin()->GetPseudoLayer(clusterEndPoint));
-      const unsigned int pseudoLayerDifference(std::max(innerPseudoLayer, endPseudoLayer) - std::min(innerPseudoLayer, endPseudoLayer));
-
-      if(endPseudoLayer >= innerPseudoLayer || pseudoLayerDifference > maxPseudoLayerDifference)
-        continue;
-
-      // distance between clusters
-      const pandora::CartesianVector clusterDifferenceDirection(innerPosition-clusterEndPoint);
-      const float clusterDistance(clusterDifferenceDirection.GetMagnitude());
-
-      if(clusterDistance > maxClusterDistance)
-        continue;
-
-      // compute cluster-to-cluster properties
-      const float clusterFitCosineAngle(clusterDirection.GetCosOpeningAngle(backwardDirection * -1.));
-      const float clusterCosineAngle(trackEndPointMomentum.GetCosOpeningAngle(clusterDifferenceDirection));
-
-      float clusterFitDca(0.f);
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetClosestDistanceBetweenLines(clusterEndPoint, clusterDirection, innerPosition, backwardDirection, clusterFitDca));
-
-      bool possibleAssociation(false);
-
-      // contained in small angle
-      if(clusterFitCosineAngle > m_minClusterFitCosOpeningAngle2 && clusterCosineAngle > m_minClusterCosOpeningAngle)
-      {
-        possibleAssociation = true;
-      }
-      // contained in larger angle but short dca
-      else if(clusterFitDca < m_maxClusterFitDca && clusterFitCosineAngle > m_minClusterFitCosOpeningAngle && clusterCosineAngle > m_minClusterCosOpeningAngle)
-      {
-        possibleAssociation = true;
-      }
-
-      if(possibleAssociation)
-      {
-        float oldChi(0.f), newChi(0.f);
-		float trackEnergy(0.f);
-
-        if(pandora::STATUS_CODE_SUCCESS != ClusterHelper::GetChiClusterMerging(this->GetPandora(), pCluster, pDaughterCluster, trackEnergy, oldChi, newChi))
-          continue;
-
-        const bool angleTightened(clusterCosineAngle > bestClusterCosineAngle);
-        const bool chi2Compatible(newChi*newChi < oldChi*oldChi || newChi*newChi < m_chi2AssociationCut);
-
-        if(angleTightened && chi2Compatible)
-        {
-          bestClusterCosineAngle = clusterCosineAngle;
-          pBestParentCluster = pCluster;
-        }
-      }
-    }
 
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -1004,6 +730,10 @@ namespace arbor_content
 	m_cleanClusters = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "CleanClusters", m_cleanClusters));
+
+	m_resetCluster = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ResetCluster", m_resetCluster));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

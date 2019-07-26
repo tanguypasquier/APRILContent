@@ -68,9 +68,6 @@ private:
     void SearchProperClusters(ArborCluster* startingCluster, 
 		  std::vector<arbor_content::ArborCluster*>& properClusters);
 
-    void SearchProperClusters(const pandora::Track* pTrack, ArborCluster* startingCluster, 
-		  std::vector<arbor_content::ArborCluster*>& properClusters);
-
     pandora::StatusCode CleanClusterForMerging(std::vector<ArborCluster*>& clusterVector);
 
 	/**
@@ -96,16 +93,6 @@ private:
 	 *  @return  boolean
 	 */
 	bool CanMergeCluster(const pandora::Cluster *const pCluster) const;
-
-	/**
-	 *  @brief  Find the best parent cluster to merge a daughter one
-	 *
-	 *  @param  pDaughterCluster address of the daughter cluster
-	 *  @param  clusterVector a cluster vector
-	 *  @param  pBestParentCluster address of the best parent cluster to receive
-	 */
-	pandora::StatusCode FindBestParentCluster(const pandora::Cluster *const pDaughterCluster, const pandora::ClusterVector &clusterVector,
-			const pandora::Cluster *&pBestParentCluster) const;
 
 	/**
 	 *  @brief  Get the cluster backward direction and the inner cluster position using a cluster fit of the n first layers
@@ -144,6 +131,7 @@ private:
 	bool                             m_mergePhotonClusters;
 	bool                             m_mergeChargedClusters;
 	bool                             m_cleanClusters;
+	bool                             m_resetCluster;
 
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;
