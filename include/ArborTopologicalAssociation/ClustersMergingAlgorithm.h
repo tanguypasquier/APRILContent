@@ -68,6 +68,7 @@ private:
 	bool                m_useMCTruth;
 	bool                m_mergeIssue;
 	bool                m_mergeError;
+	bool                m_onlyMergeCharged;
 
 };
 

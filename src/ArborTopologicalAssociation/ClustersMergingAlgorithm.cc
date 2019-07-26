@@ -63,6 +63,7 @@ namespace arbor_content
 		auto& startingCluster = clusterVector.at(i);
 
 		if(!startingCluster->IsRoot()) continue;
+		if( m_onlyMergeCharged && startingCluster->GetAssociatedTrackList().size() == 0) continue;
 
 		std::set<ArborCluster*> allClustersToMerge;
 		startingCluster->GetAllClustersToMerge(allClustersToMerge);
@@ -123,12 +124,15 @@ namespace arbor_content
 			std::cout << " --- clusterToEnlarge:" << clusterToEnlarge << ", clusterToMerge: " << clusterToMerge << std::endl;
 #endif
 
+			bool mergeWithTrack = true;
+
 			if(m_useEnergyChi &&
 			   pandora::STATUS_CODE_SUCCESS != 
 			        ClusterHelper::GetChiClusterMerging(this->GetPandora(), clusterToEnlarge, clusterToMerge, trackEnergy, oldChi, newChi))
 			{
-				std::cout << "      ===> GetChiClusterMerging issue..." << std::endl;
-				continue;
+				//std::cout << "      ===> GetChiClusterMerging issue..." << std::endl;
+				mergeWithTrack = false;
+				//continue;
 			}
 
 			try
@@ -152,7 +156,7 @@ namespace arbor_content
 					maxChi = m_maxChi;
 				}
 
-				if( m_useEnergyChi && newChi > maxChi ) 
+				if( m_useEnergyChi && mergeWithTrack && newChi > maxChi ) 
 				{
 #if __DEBUG__	
 					std::cout << "      ===> no merging, newChi: " << newChi << ", m_maxChi: " << m_maxChi << std::endl;
@@ -216,10 +220,16 @@ namespace arbor_content
 				    		
 #if __DEBUG2__	
 					        auto clusterRegion = ClusterHelper::GetRegion(clusterToMerge);
+		  
+							auto clusterStartingPoint = clusterToEnlarge->GetStartingPoint();
+		                    auto nearbyClusterStartingPoint = clusterToMerge->GetStartingPoint();
 
 			        	    std::cout << "   \033[1;31m === merging ERROR" << std::endl
-							   	      << "       main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy() << std::endl
-			        		          << "       merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << std::endl
+							   	      << "       main cluster: " << clusterToEnlarge << ", E: " << clusterToEnlarge->GetHadronicEnergy() << ", layer: " << clusterToEnlarge->GetInnerPseudoLayer() << std::endl
+			        		          << "       merging cluster: " << clusterToMerge << ", E: " << clusterToMerge->GetHadronicEnergy() << ", layer: " << clusterToMerge->GetInnerPseudoLayer() << std::endl
+
+									  << "       starting point: " << clusterStartingPoint.GetX() << ", " << clusterStartingPoint.GetY() << ", " << clusterStartingPoint.GetZ() << std::endl
+									  << "       nearby point: " << nearbyClusterStartingPoint.GetX() << ", " << nearbyClusterStartingPoint.GetY() << ", " << nearbyClusterStartingPoint.GetZ() << ", point dist: " << (clusterStartingPoint - nearbyClusterStartingPoint).GetMagnitude() << std::endl
 									  << "       MC charge: " << pandora::PdgTable::GetParticleCharge(pClusterToMergeMCParticle->GetParticleId()) << std::endl
 									  << "       cluster region: " << clusterRegion << std::endl
 				    		          << "       oldChi: " << oldChi << ", newChi: " << newChi << "\033[0m" << std::endl;
@@ -322,6 +332,10 @@ namespace arbor_content
 	m_mergeError = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MergeError", m_mergeError));
+
+	m_onlyMergeCharged = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "OnlyMergeCharged", m_onlyMergeCharged));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
