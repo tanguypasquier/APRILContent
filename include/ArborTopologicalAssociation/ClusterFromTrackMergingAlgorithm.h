@@ -136,6 +136,8 @@ private:
 	float                            m_maxClusterTrackAngle;
 	float                            m_maxClusterDistanceToMerge;
 
+	bool                             m_resetCluster;
+
 	arma::mat m_clusterCentroidsMatrix;
 	std::vector<ArborCluster*> m_clustersToMerge;
 };

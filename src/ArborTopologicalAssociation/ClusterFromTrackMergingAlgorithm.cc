@@ -61,7 +61,7 @@ namespace arbor_content
 	{
 		auto pCluster = clusterVector.at(i);
 		
-		pCluster->Reset();
+		if(m_resetCluster) pCluster->Reset();
 
 		pandora::CartesianVector centroid(0., 0., 0);
 		ClusterHelper::GetCentroid(pCluster, centroid);
@@ -87,23 +87,68 @@ namespace arbor_content
 
 		pCluster->SetPhoton(isPhoton);
 
+		/////////////////////
 		try
 		{
 		    pandora::ClusterFitResult clusterFitResult;
-		    pandora::ClusterFitHelper::FitFullCluster(pCluster, clusterFitResult);
-		    const pandora::CartesianVector& cluDirection = clusterFitResult.GetDirection();
-		    const pandora::CartesianVector& cluIntercept = clusterFitResult.GetIntercept();
-		    //std::cout << "  *** direction_f: " << cluDirection.GetX() << ", " << cluDirection.GetY() << ", " << cluDirection.GetZ() << std::endl;
-		    //std::cout << "  *** intercept_f: " << cluIntercept.GetX() << ", " << cluIntercept.GetY() << ", " << cluIntercept.GetZ() << std::endl;
+
+			if(ClusterHelper::FitStart(pCluster, 2, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			{
+				pandora::ClusterFitHelper::FitStart(pCluster, 2, clusterFitResult);
+			}
 			
-			pCluster->SetAxis(cluDirection);
-			pCluster->SetIntercept(cluIntercept);
+			const pandora::CartesianVector& startingPoint = clusterFitResult.GetIntercept();
+
+			pCluster->SetStartingPoint(startingPoint);
+
+
+			// if cluster has connected with track, the intercept is taken as starting point and
+			// the direction is computed from the hits in first 6 layers.
+			const pandora::TrackList& associatedTrackList = pCluster->GetAssociatedTrackList();
+		    int nAssociatedTracks = associatedTrackList.size();
+
+			// re-compute axis and starting point for charged cluster
+			if(nAssociatedTracks > 0)
+			{
+				pCluster->SetIntercept(startingPoint);
+
+				if(nAssociatedTracks == 1)
+				{
+					const pandora::Track* associatedTrack = *( associatedTrackList.begin() );
+					const pandora::CartesianVector trackDirectionAtCalo = 
+						                           associatedTrack->GetTrackStateAtCalorimeter().GetMomentum().GetUnitVector();
+
+					pCluster->SetAxis(trackDirectionAtCalo);
+				}
+				else
+				{
+				    if(pCluster->GetOrderedCaloHitList().size()>6)
+				    {
+				    	pandora::ClusterFitResult clusterFitResultChg;
+
+				    	if(pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
+				    	{
+				    		pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg);
+				    	}
+
+		                const pandora::CartesianVector& axis = clusterFitResultChg.GetDirection();
+			
+				    	pCluster->SetAxis(axis);
+				    }
+				}
+			}
+			else
+			{
+#if __DEBUG__
+				std::cout << "  ---> cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() 
+					<< ", Starting: " << startingPoint.GetX() << ", " << startingPoint.GetY() << ", " << startingPoint.GetZ() << std::endl;
+#endif
+			}
 		}
 		catch(pandora::StatusCodeException &)
 		{
-			//std::cout << "Fit failed, cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
-			//continue;
 		}
+		/////////////////////
 
 		try
 		{
@@ -242,13 +287,19 @@ namespace arbor_content
 
 		  float clusterTrackAngle = trackPointAtCaloClusterDistance.GetOpeningAngle(trackMomentumAtCalo);
 
-		  float maxClusterTrackAngle = m_maxClusterTrackAngle;
-		  if(clusterTrackAngle > maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) continue;
-
 #if __DEBUG__
 		  std::cout << "nearbyClusters " << i << " : " << nearbyCluster 
 			  << ", E: " << nearbyCluster->GetHadronicEnergy() << ", angle: " << clusterTrackAngle << std::endl;
 #endif
+
+		  float maxClusterTrackAngle = m_maxClusterTrackAngle;
+		  if(clusterTrackAngle > maxClusterTrackAngle || clusterTrackAngle < 0. || isnan(clusterTrackAngle)) 
+		  {
+#if __DEBUG0__
+			  std::cout << "  --- angle is not proper ... " << std::endl;
+#endif
+			  continue;
+		  }
 
 		  try
 		  {
@@ -306,13 +357,10 @@ namespace arbor_content
 
 
 #if __DEBUG__
-		  float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
+		  //float trackCluCentroidDistance = trackCluCentroidDistanceVec.GetMagnitude();
 	      //const pandora::Cluster* const pandoraNearbyClu = dynamic_cast<const pandora::Cluster* const>(nearbyCluster);
 	      //auto nearbyClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraNearbyClu);
 		  float nearbyCluEnergy = nearbyCluster->GetHadronicEnergy();
-
-		  std::cout << " --- clu: " << nearbyCluster << ", E: " << nearbyCluEnergy
-		   			<< ", trackCluCentroidDistance: " << trackCluCentroidDistance << ", angle: " << angle << std::endl;
 #endif
 
 #if 0
@@ -329,9 +377,16 @@ namespace arbor_content
 		  auto directionsCrossProd = nearbyClusterAxis.GetCrossProduct(startingClusterAxis);
 		  float axisDistance = fabs(directionsCrossProd.GetDotProduct(directionOfCentroids)) / directionsCrossProd.GetMagnitude();
 
+#if __DEBUG__
+		  std::cout << " --- clu: " << nearbyCluster << ", E: " << nearbyCluEnergy
+		   			<< ", angle: " << angle 
+					<< ", closestDistance: " << closestDistance
+					<< ", axisDistance: " << axisDistance << std::endl;
+#endif
+
 		  std::vector<float> clusterParameters;
-		  clusterParameters.push_back(clusterTrackAngle);
 		  clusterParameters.push_back(angle);
+		  clusterParameters.push_back(closestDistance);
 		  clusterParameters.push_back(axisDistance);
 
 		  std::vector<float> parameterPowers;
@@ -461,15 +516,49 @@ namespace arbor_content
 
 		// find the best one
 		ClustersOrderParameter bestOrderParameter;
-		ArborCluster* bestCluster;
+		ArborCluster* bestCluster = nullptr;
 
 		for(int iMother = 0; iMother < mothers.size(); ++iMother)
 		{
 			auto mother = mothers.at(iMother);
 			ClustersOrderParameter orderParameter = cluster->GetOrderParameterWithMother(mother);
-
+			auto parameters = orderParameter.m_parameters;
+			    
 			if(orderParameter < bestOrderParameter)
 			{
+			    // FIXME
+				if(cluster->GetHadronicEnergy() < 0.6 && parameters.at(2) > 80.) continue;
+				if(cluster->GetHadronicEnergy() < 5. && parameters.at(2) > 150.) continue;
+				if(cluster->GetHadronicEnergy() < 10. && parameters.at(2) > 200.) continue;
+
+				if(bestOrderParameter.m_orderParameter < std::numeric_limits<float>::max())
+				{
+			        auto bestParameters = bestOrderParameter.m_parameters;
+
+				    float angleRatio = fabs( std::min(bestParameters.at(0), parameters.at(0)) / 
+							std::max(bestParameters.at(0), parameters.at(0)));
+
+				    float distRatio = fabs( std::min(bestParameters.at(1), parameters.at(1)) / 
+							std::max(bestParameters.at(1), parameters.at(1)));
+
+				    float axisDistRatio = fabs( std::min(bestParameters.at(2), parameters.at(2)) / 
+							std::max(bestParameters.at(2), parameters.at(2)));
+
+				    // FIXME
+				    if(axisDistRatio < 0.3 && angleRatio > 0.5 && distRatio > 0.5)
+				    {
+				    	// just compare the axes distance
+				    	if(parameters.at(2) > bestParameters.at(2)) continue;
+				    }
+					else
+					{
+#if __DEBUG__
+						std::cout << "   --- axisDistRatio: " << axisDistRatio << " = " << bestParameters.at(0) << "/" << parameters.at(0) 
+							<< std::endl;
+#endif
+					}
+				}
+
 				bestOrderParameter = orderParameter;
 				bestCluster = mother;
 			}
@@ -485,14 +574,49 @@ namespace arbor_content
 				if(mother != bestCluster)
 				{
 #if __DEBUG__
-				    std::cout << " !!! cluster: " << mother << " remove cluster to merge: " << cluster << std::endl;
+					auto orderParameter = cluster->GetOrderParameterWithMother(mother);
+					auto parameters = cluster->GetOrderParameterWithMother(mother).m_parameters;
+
+				    std::cout << " !!! cluster: " << mother << " remove cluster to merge: " << cluster 
+						<< ", para: " << orderParameter.m_orderParameter
+						<< ", para0: " << parameters.at(0)  
+						<< ", para1: " << parameters.at(1) 
+						<< ", para2: " << parameters.at(2) << std::endl;
 #endif
 					mother->RemoveFromClustersToMerge(cluster);
 				}
 			}
 
-			mothers.clear();
-			mothers.push_back(bestCluster);
+#if __DEBUG__
+			if(bestCluster != nullptr)
+			{
+				auto orderParameter = cluster->GetOrderParameterWithMother(bestCluster);
+			    auto parameters = cluster->GetOrderParameterWithMother(bestCluster).m_parameters;
+			    std::cout << " !!! best para: "  << ", para: " << orderParameter.m_orderParameter
+			    			<< ", para0: " << parameters.at(0)   // angle
+			    			<< ", para1: " << parameters.at(1)   // distance
+			    			<< ", para2: " << parameters.at(2) << std::endl;  // axes distance
+			}
+#endif
+
+
+		    mothers.clear();
+
+			if(bestCluster != nullptr)
+			{
+				mothers.push_back(bestCluster);
+			}
+		}
+		else if(mothers.size() == 1)
+		{
+			if(bestCluster == nullptr)
+	    	{
+				mothers.at(0)->RemoveFromClustersToMerge(cluster);
+				mothers.clear();
+			}
+#if __DEBUG__
+			std::cout << " --- cluster " << cluster << " mothers (after clean): " << mothers.size() << ", root?: " << cluster->IsRoot() << std::endl;
+#endif  
 		}
 	}
 
@@ -756,6 +880,10 @@ namespace arbor_content
 	m_maxClusterDistanceToMerge = 15.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinClusterDistanceToMerge", m_maxClusterDistanceToMerge));
+
+	m_resetCluster = true;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ResetCluster", m_resetCluster));
 
     return pandora::STATUS_CODE_SUCCESS;
   }
