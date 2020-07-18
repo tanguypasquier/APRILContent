@@ -84,7 +84,7 @@ IF( NOT COMPILER_SUPPORTS_CXX_FLAGS )
 ENDIF()
 
 if(APPLE)
-   SET( CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
+   SET( CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Wno-long-long -Wno-sign-compare -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
 else()
    SET( CMAKE_CXX_FLAGS "-Wall -Wextra -ansi -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
 endif()
@@ -122,6 +122,12 @@ ENDIF()
 FIND_PACKAGE( mlpack REQUIRED )
 INCLUDE_DIRECTORIES( SYSTEM ${mlpack_INCLUDE_DIRS} )
 LINK_LIBRARIES( ${mlpack_LIBRARIES} )
+
+FIND_PACKAGE( Boost REQUIRED )
+INCLUDE_DIRECTORIES( SYSTEM ${Boost_INCLUDE_DIRS} )
+
+FIND_PACKAGE( Armadillo REQUIRED )
+INCLUDE_DIRECTORIES( SYSTEM ${ARMADILLO_INCLUDE_DIRS} )
 
 # doc
 IF( INSTALL_DOC AND EXISTS "${PROJECT_SOURCE_DIR}/doc/CMakeLists.txt" )
