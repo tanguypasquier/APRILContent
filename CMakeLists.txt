@@ -1,12 +1,12 @@
 #################################################
-# cmake file for building ArborContent framework
+# cmake file for building APRILContent framework
 # @author Eté Rémi ,IPNL
 # Copyright (c) CNRS / IPNL
 CMAKE_MINIMUM_REQUIRED( VERSION 2.8.2 FATAL_ERROR )
 #################################################
 
 # project name
-PROJECT( ArborContent )
+PROJECT( APRILContent )
 
 SET( ${PROJECT_NAME}_VERSION_MAJOR 01 )
 SET( ${PROJECT_NAME}_VERSION_MINOR 05 )
@@ -31,8 +31,8 @@ INCLUDE( PandoraCMakeSettings )
 OPTION( PANDORA_MONITORING "Whether to use PandoraMonitoring (requires ROOT)" OFF )
 MESSAGE( STATUS "PANDORA_MONITORING : ${PANDORA_MONITORING}" )
 
-OPTION( ARBOR_PARALLEL "Whether to use multithreading (requires OpenMP)" OFF )
-MESSAGE( STATUS "ARBOR_PARALLEL : ${ARBOR_PARALLEL}" )
+OPTION( APRIL_PARALLEL "Whether to use multithreading (requires OpenMP)" OFF )
+MESSAGE( STATUS "APRIL_PARALLEL : ${APRIL_PARALLEL}" )
 
 OPTION( INSTALL_DOC "Set to OFF to skip build/install Documentation" OFF )
 MESSAGE( STATUS "INSTALL_DOC : ${INSTALL_DOC}" )
@@ -43,21 +43,21 @@ MESSAGE( STATUS "INSTALL_DOC : ${INSTALL_DOC}" )
 INCLUDE_DIRECTORIES( ./include )
 
 SET( INPUT_DIRS 
-     ArborApi ArborObjects ArborCheating ArborClustering ArborHelpers ArborMonitoring ArborPfoConstruction ArborParticleId 
-     ArborPlugins ArborReclustering ArborTools ArborTopologicalAssociation ArborTrackClusterAssociation ArborUtility )
+     APRILApi APRILObjects APRILCheating APRILClustering APRILHelpers APRILMonitoring APRILPfoConstruction APRILParticleId 
+     APRILPlugins APRILReclustering APRILTools APRILTopologicalAssociation APRILTrackClusterAssociation APRILUtility )
 
 FILE(GLOB INPUT_DIR_INCS ./include/*.h)
 SOURCE_GROUP("Header files" FILES ${INPUT_DIR_INCS} )
-LIST(APPEND ArborContent_INCS ${INPUT_DIR_INCS})
+LIST(APPEND APRILContent_INCS ${INPUT_DIR_INCS})
 
 FOREACH( INPUT_DIR ${INPUT_DIRS} )
     FILE(GLOB_RECURSE INPUT_DIR_INCS ./include/${INPUT_DIR}/*.h)
     SOURCE_GROUP("Header files\\${INPUT_DIR}" FILES ${INPUT_DIR_INCS} )
-    LIST(APPEND ArborContent_INCS ${INPUT_DIR_INCS})
+    LIST(APPEND APRILContent_INCS ${INPUT_DIR_INCS})
 
     FILE (GLOB_RECURSE INPUT_DIR_SRCS ./src/${INPUT_DIR}/*.cc )
     SOURCE_GROUP("Source files\\${INPUT_DIR}" FILES ${INPUT_DIR_SRCS} )
-    LIST(APPEND ArborContent_SRCS ${INPUT_DIR_SRCS})
+    LIST(APPEND APRILContent_SRCS ${INPUT_DIR_SRCS})
 ENDFOREACH()
 
 ### C++11 check #############################################################
@@ -112,10 +112,10 @@ IF( PANDORA_MONITORING )
 ENDIF()
 
 
-IF( ARBOR_PARALLEL )
+IF( APRIL_PARALLEL )
     FIND_PACKAGE( OpenMP REQUIRED )
     ADD_DEFINITIONS( ${OpenMP_CXX_FLAGS} )
-    ADD_DEFINITIONS( "-DARBOR_PARALLEL=1" )
+    ADD_DEFINITIONS( "-DAPRIL_PARALLEL=1" )
 ENDIF()
 
 # mlpack
@@ -140,10 +140,10 @@ ENDIF()
 ### LIBRARY #################################################################
 
 # add library
-ADD_LIBRARY( ${PROJECT_NAME} SHARED ${ArborContent_SRCS} ${ArborContent_INCS})
+ADD_LIBRARY( ${PROJECT_NAME} SHARED ${APRILContent_SRCS} ${APRILContent_INCS})
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
-IF( ARBOR_PARALLEL )
+IF( APRIL_PARALLEL )
     TARGET_LINK_LIBRARIES( ${PROJECT_NAME} gomp )
 ENDIF()
 
