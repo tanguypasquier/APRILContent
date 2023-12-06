@@ -234,6 +234,75 @@ namespace april_content
     float                       m_endcapP12;
   };
 
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  /**
+   *  @brief  ThetaNHitFunction class
+   */
+  class ThetaNHitFunction : public pandora::EnergyCorrectionPlugin
+  {
+  public:
+    /**
+     *  @brief  Default constructor
+     */
+    ThetaNHitFunction();
+
+    /**
+     *  @brief  Make energy correction on this given cluster
+     *
+     *  @param  pCluster the cluster address to correct the energy
+     *  @param  correctedEnergy the energy to correct
+     */
+    pandora::StatusCode MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const;
+
+    /**
+     *  @brief  Read settings from the xml handle
+     *
+     *  @param  xmlHandle the xml handle to read settings from
+     */
+    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+  private:
+    /**
+     *  @brief  Get cos theta with respect to z axis
+     */
+    float GetCosTheta(const pandora::Cluster *const pCluster) const;
+
+    /**
+     *  @brief  Get the corrected number of hits in the endcap region
+     *
+     *  @param  The number of hits to correct
+     *  @param  The cluster cos theta
+     *  @param  The cluster cos theta * aTheta for the second theta effect
+     */
+    float GetCorrectedHitNumber(int nHit, float cosTheta, float cosATheta) const;
+
+
+  private:
+    float                       m_lowEnergyCut;
+
+    float                       m_barrelP00;
+    float                       m_barrelP01;
+    float                       m_barrelP02;
+    float                       m_barrelP10;
+    float                       m_barrelP11;
+    float                       m_barrelP12;
+
+    float                       m_endcapP00;
+    float                       m_endcapP01;
+    float                       m_endcapP02;
+    float                       m_endcapP10;
+    float                       m_endcapP11;
+    float                       m_endcapP12;
+
+    pandora::FloatVector                m_sdhcalThresholds;             ///< The sdhcal threshold values
+    // pandora::FloatVector                m_energyConstantParameter;    ///< The energy constant parameters
+  };
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
     /**
      *   @brief  CleanCluster class. Correct cluster energy by searching for constituent calo hits with anomalously high energy.
      *           Corrections are made by examining the energy in adjacent layers of the cluster.

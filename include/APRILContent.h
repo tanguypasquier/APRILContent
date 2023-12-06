@@ -361,6 +361,9 @@ inline pandora::StatusCode APRILContent::RegisterEnergyCorrections(const pandora
       "ThetaEnergyFunction", pandora::HADRONIC, new april_content::ThetaEnergyFunction()));
 
   PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
+      "ThetaNHitFunction", pandora::HADRONIC, new april_content::ThetaNHitFunction()));
+
+  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
       "CleanClusters", pandora::HADRONIC, new april_content::CleanCluster()));
 
   return pandora::STATUS_CODE_SUCCESS;

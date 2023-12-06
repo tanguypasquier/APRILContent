@@ -24,8 +24,7 @@
  * @author Remi Ete
  * @copyright CNRS , IPNL
  */
-
-
+#include <fstream>
 #include "APRILPlugins/EnergyCorrectionPlugins.h"
 #include "APRILHelpers/ClusterHelper.h"
 #include "APRILPlugins/ParticleIdPlugins.h"
@@ -362,10 +361,10 @@ namespace april_content
 
   pandora::StatusCode ThetaEnergyFunction::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const
   {
-	//std::cout << "ThetaEnergyFunction::MakeEnergyCorrections" << std::endl;
+	std::cout << "ThetaEnergyFunction::MakeEnergyCorrections" << std::endl;
 
 	// FIXME: we should investigate this function ... 
-    return pandora::STATUS_CODE_SUCCESS;
+    //return pandora::STATUS_CODE_SUCCESS;
 
     if(pCluster->GetNCaloHits() == 0)
       return pandora::STATUS_CODE_SUCCESS;
@@ -373,13 +372,15 @@ namespace april_content
     if(correctedEnergy < m_lowEnergyCut)
       return pandora::STATUS_CODE_SUCCESS;
 
-	//std::cout << "the energy to correct: " << correctedEnergy << std::endl;
+	// std::cout << "the energy to correct: " << correctedEnergy << std::endl;
 
     unsigned int startingPseudoLayer(std::numeric_limits<unsigned int>::max());
 
+    //std::cout << "FLAG 1" << std::endl;
+ 
     const pandora::StatusCode statusCode(ParticleIdHelper::GetStartingPseudoLayer(this->GetPandora(), pCluster, ParticleIdHelper::StartingLayerSettings(), startingPseudoLayer));
 
-	//std::cout << "startingPseudoLayer: " << startingPseudoLayer << std::endl;
+	// std::cout << "startingPseudoLayer: " << startingPseudoLayer << std::endl;
 
     // do not apply energy corrections if starting layer not found
     if(pandora::STATUS_CODE_SUCCESS != statusCode)
@@ -393,6 +394,8 @@ namespace april_content
     float barrelEnergyFraction(0.f);
     float endcapEnergyFraction(0.f);
     bool noShowerHit(true);
+
+    //std::cout << "FLAG 2" << std::endl;
 
     for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
         endIter != iter ; ++iter)
@@ -424,6 +427,8 @@ namespace april_content
     if(noShowerHit)
       return pandora::STATUS_CODE_SUCCESS;
 
+    //std::cout << "FLAG 3" << std::endl;
+
     // evaluate corrected energy fraction of the main shower part
     // used in following computation since calibration of this correction is done
     // with kaon0L particles. This avoid to correct energy of mip like hadrons
@@ -439,7 +444,7 @@ namespace april_content
     endcapEnergyFraction /= clusterEnergy;
 
 	//std::cout << "barrelEnergyFraction: " << barrelEnergyFraction << " endcapEnergyFraction: " << endcapEnergyFraction << std::endl;
-
+    //std::cout << "FLAG 4" << std::endl;
     try
     {
       const float clusterCosTheta(this->GetCosTheta(pCluster));
@@ -530,6 +535,311 @@ namespace april_content
 
     return pandora::STATUS_CODE_SUCCESS;
   }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  ThetaNHitFunction::ThetaNHitFunction() :
+        m_lowEnergyCut(3.f),
+        m_barrelP00(-2.36284),
+        m_barrelP01(1.14627),
+        m_barrelP02(-0.00152029),
+        m_barrelP10(0.325533),
+        m_barrelP11(-0.126941),
+        m_barrelP12(0.000462463),
+        m_endcapP00(-2.16956),
+        m_endcapP01(0.801878),
+        m_endcapP02(1.27263e-05),
+        m_endcapP10(0.157559),
+        m_endcapP11(0.34754),
+        m_endcapP12(-0.00122559)
+  {
+        // std::cout << "--------------------------- INIT m_energy \n";
+        /* m_energyConstantParameters.push_back(0.0385315);
+        m_energyConstantParameters.push_back(4.22584e-05);
+        m_energyConstantParameters.push_back(-7.54657e-09);
+        m_energyConstantParameters.push_back(0.0784297);
+        m_energyConstantParameters.push_back(-5.69439e-05);
+        m_energyConstantParameters.push_back(-4.95924e-08);
+        m_energyConstantParameters.push_back(0.127212);
+        m_energyConstantParameters.push_back(4.56414e-05);
+        m_energyConstantParameters.push_back(1.41142e-08); */
+        //m_energyConstantParameter.resize(9);
+
+        m_sdhcalThresholds.push_back(1);
+        m_sdhcalThresholds.push_back(2);
+        m_sdhcalThresholds.push_back(3);
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode ThetaNHitFunction::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const
+  {
+    unsigned int NHadronicHit = 0;
+    unsigned int NHadronicHit1 = 0;
+    unsigned int NHadronicHit2 = 0;
+    unsigned int NHadronicHit3 = 0;
+  
+    unsigned int barrelNHadronicHit1 = 0;
+    unsigned int barrelNHadronicHit2 = 0;
+    unsigned int barrelNHadronicHit3 = 0;
+
+    unsigned int endcapNHadronicHit1 = 0;
+    unsigned int endcapNHadronicHit2 = 0; 
+    unsigned int endcapNHadronicHit3 = 0; 
+
+    float initialHadronic = 0;
+
+    if(pCluster->GetNCaloHits() == 0)
+      return pandora::STATUS_CODE_SUCCESS;
+
+    if(correctedEnergy < m_lowEnergyCut)
+      return pandora::STATUS_CODE_SUCCESS;
+
+    unsigned int startingPseudoLayer(std::numeric_limits<unsigned int>::max());
+ 
+    const pandora::StatusCode statusCode(ParticleIdHelper::GetStartingPseudoLayer(this->GetPandora(), pCluster, ParticleIdHelper::StartingLayerSettings(), startingPseudoLayer));
+
+    // do not apply energy corrections if starting layer not found
+    if(pandora::STATUS_CODE_SUCCESS != statusCode)
+      return pandora::STATUS_CODE_SUCCESS;
+
+    pandora::CaloHitList clusterCaloHitList;
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+    bool noShowerHit(true);
+
+    for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
+        endIter != iter ; ++iter)
+    {
+      const pandora::CaloHit *const pCaloHit(*iter);
+
+      if(pCaloHit->GetHitType() == pandora::HCAL)
+        {
+          if(pCaloHit->GetHitRegion() == pandora::BARREL)
+          {
+            if(fabs(m_sdhcalThresholds.at(0) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            {
+              barrelNHadronicHit1++;
+              initialHadronic+=pCaloHit->GetInputEnergy();
+            }
+            else if(fabs(m_sdhcalThresholds.at(1) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            {
+              barrelNHadronicHit2++;
+              initialHadronic+=pCaloHit->GetInputEnergy();
+            }
+            else if(fabs(m_sdhcalThresholds.at(2) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            {
+              barrelNHadronicHit3++;
+              initialHadronic+=pCaloHit->GetInputEnergy();
+            }
+          }
+          else if(pCaloHit->GetHitRegion() == pandora::ENDCAP)
+          {
+            if(fabs(m_sdhcalThresholds.at(0) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            { 
+              endcapNHadronicHit1++;
+              initialHadronic+=pCaloHit->GetInputEnergy();
+            }
+            else if(fabs(m_sdhcalThresholds.at(1) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            {
+              endcapNHadronicHit2++;
+              initialHadronic+=pCaloHit->GetInputEnergy();
+            }
+            else if(fabs(m_sdhcalThresholds.at(2) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            {
+              endcapNHadronicHit3++;
+              initialHadronic+=pCaloHit->GetInputEnergy();
+            }
+          }
+          noShowerHit = false;
+        }
+    }
+
+    if(noShowerHit)
+      return pandora::STATUS_CODE_SUCCESS;
+
+    correctedEnergy-=initialHadronic; // Pull the initial energy of the HCAL hits from the total energy to correct
+
+    /* std::cout << "NHadronicHit : " << NHadronicHit << std::endl;
+    std::cout << "barrelNHadronicHit1 : " << barrelNHadronicHit1 << std::endl;
+    std::cout << "barrelNHadronicHit2 : " << barrelNHadronicHit2 << std::endl;
+    std::cout << "barrelNHadronicHit3 : " << barrelNHadronicHit3 << std::endl;
+
+    std::cout << "endcapNHadronicHit1 : " << endcapNHadronicHit1 << std::endl;
+    std::cout << "endcapNHadronicHit2 : " << endcapNHadronicHit2 << std::endl;
+    std::cout << "endcapNHadronicHit3 : " << endcapNHadronicHit3 << std::endl;
+
+    std::cout << "emEnergy : " << emEnergy << std::endl;
+    std::cout << "otherEnergy : " << otherEnergy << std::endl; */
+
+    //Parameters for geometric theta correction
+    const float clusterCosTheta(this->GetCosTheta(pCluster)); //Cos theta for the endcap correction
+    const float thetaAngle(std::acos(clusterCosTheta)); //Theta angle
+    const float clusterSinTheta(std::sin(thetaAngle)); //Sin theta for the barrel correction
+    
+    //Parameters for Hector correction
+    const float aTheta(0.6562); //Value of aTheta coming from a fit of the multiplicity in Hector Garcia paper
+    const float clusterCosATheta(std::cos(aTheta*thetaAngle)); 
+    const float clusterSinATheta(std::sin(aTheta*thetaAngle));
+
+    //Sum the corrected number of hits for each tresholds
+    NHadronicHit1 = this->GetCorrectedHitNumber(barrelNHadronicHit1, clusterSinTheta, clusterSinATheta) + this->GetCorrectedHitNumber(endcapNHadronicHit1, clusterCosTheta, clusterCosATheta);
+    NHadronicHit2 = this->GetCorrectedHitNumber(barrelNHadronicHit2, clusterSinTheta, clusterSinATheta) + this->GetCorrectedHitNumber(endcapNHadronicHit2, clusterCosTheta, clusterCosATheta);
+    NHadronicHit3 = this->GetCorrectedHitNumber(barrelNHadronicHit3, clusterSinTheta, clusterSinATheta) + this->GetCorrectedHitNumber(endcapNHadronicHit3, clusterCosTheta, clusterCosATheta);
+
+    /* //Calculate the corrected total number of hits
+    NHadronicHit = NHadronicHit1 + NHadronicHit2 + NHadronicHit3;
+
+    //std::cout << "NHit corrected : " << NHadronicHit << std::endl;
+
+    pandora::FloatVector m_energyConstantParameters;
+
+    m_energyConstantParameters.push_back(0.0385315);
+    m_energyConstantParameters.push_back(4.22584e-05);
+    m_energyConstantParameters.push_back(-7.54657e-09);
+    m_energyConstantParameters.push_back(0.0784297);
+    m_energyConstantParameters.push_back(-5.69439e-05);
+    m_energyConstantParameters.push_back(-4.95924e-08);
+    m_energyConstantParameters.push_back(0.127212);
+    m_energyConstantParameters.push_back(4.56414e-05);
+    m_energyConstantParameters.push_back(1.41142e-08);
+
+    // Quadratic correction
+    const float alpha(m_energyConstantParameters.at(0) + m_energyConstantParameters.at(1)*NHadronicHit + m_energyConstantParameters.at(2)*NHadronicHit*NHadronicHit);
+    const float beta(m_energyConstantParameters.at(3) + m_energyConstantParameters.at(4)*NHadronicHit + m_energyConstantParameters.at(5)*NHadronicHit*NHadronicHit);
+    const float gamma(m_energyConstantParameters.at(6) + m_energyConstantParameters.at(7)*NHadronicHit + m_energyConstantParameters.at(8)*NHadronicHit*NHadronicHit);
+    const float hadEnergy(NHadronicHit1*alpha + NHadronicHit2*beta + NHadronicHit3*gamma); */
+
+    const float hadEnergy(NHadronicHit1*m_sdhcalThresholds.at(0) + NHadronicHit2*m_sdhcalThresholds.at(1) + NHadronicHit3*m_sdhcalThresholds.at(2)); //New linear hadronic energy 
+
+    correctedEnergy += hadEnergy; //Compute the corrected energy
+
+    //outputFile << "Energy after : " << correctedEnergy <<  " ; " << std::endl;
+
+    //outputFile.close();
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float ThetaNHitFunction::GetCosTheta(const pandora::Cluster *const pCluster) const
+  {
+    pandora::CartesianVector centroid(0.f, 0.f, 0.f);
+    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, centroid));
+
+    return fabs(centroid.GetCosOpeningAngle(pandora::CartesianVector(0.f, 0.f, 1.f)));
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float ThetaNHitFunction::GetCorrectedHitNumber(int nHit, float cosTheta, float cosATheta) const
+  {
+	  //std::cout << "nHit: " << nHit << ", cosTheta: " << cosTheta << std::endl;
+    //return nHit * (cosATheta / (cosTheta));
+    return nHit * (1 / (cosTheta));
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode ThetaNHitFunction::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+  {
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "LowEnergyCut", m_lowEnergyCut));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP00", m_barrelP00));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP01", m_barrelP01));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP02", m_barrelP02));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP10", m_barrelP10));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP11", m_barrelP11));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "BarrelP12", m_barrelP12));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP00", m_endcapP00));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP01", m_endcapP01));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP02", m_endcapP02));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP10", m_endcapP10));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP11", m_endcapP11));
+
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "EndcapP12", m_endcapP12));
+
+    pandora::FloatVector sdhcalThresholds;
+    pandora::StatusCode statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
+        "SdhcalThresholds", sdhcalThresholds);
+
+    if(statusCode == pandora::STATUS_CODE_SUCCESS)
+    {
+      m_sdhcalThresholds = sdhcalThresholds;
+    }
+    else if(statusCode != pandora::STATUS_CODE_NOT_FOUND)
+    {
+      return statusCode;
+    }
+
+    if(3 != m_sdhcalThresholds.size())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    return pandora::STATUS_CODE_SUCCESS;
+
+    /* pandora::FloatVector energyConstantParameter;
+    pandora::StatusCode statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
+        "EnergyConstantParameter", energyConstantParameter);
+
+    if(statusCode == pandora::STATUS_CODE_SUCCESS)
+    {
+      m_energyConstantParameter = energyConstantParameter;
+    }
+    else if(statusCode != pandora::STATUS_CODE_NOT_FOUND)
+    {
+      return statusCode;
+    }
+
+    if(9 != m_energyConstantParameter.size())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    pandora::FloatVector sdhcalThresholds;
+    statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
+        "SdhcalThresholds", sdhcalThresholds);
+
+    if(statusCode == pandora::STATUS_CODE_SUCCESS)
+    {
+      m_sdhcalThresholds = sdhcalThresholds;
+    }
+    else if(statusCode != pandora::STATUS_CODE_NOT_FOUND)
+    {
+      return statusCode;
+    }
+
+    if(3 != m_sdhcalThresholds.size())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    std::cout << "---------------------------------------------------------------- Return SUCCESS ::: ReadSettings() \n"; */
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------  
 
 CleanCluster::CleanCluster() :
     m_minCleanHitEnergy(0.5f),

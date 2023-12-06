@@ -40,6 +40,8 @@
 #include <mlpack/core/math/range.hpp>
 #include <mlpack/methods/range_search/range_search.hpp>
 
+#include <mlpack/namespace_compat.hpp>
+
 namespace pandora { class Algorithm; class CaloHit; class Track; }
 
 namespace april_content

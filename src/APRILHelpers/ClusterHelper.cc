@@ -299,26 +299,38 @@ namespace april_content
 	pandora::CartesianVector cluCentroid(0., 0., 0.);
 	pandora::CartesianVector cluCentroidWithConnector(0., 0., 0.);
 
-	for(auto caloHit : clusterCaloHitList)
+  for(auto caloHit : clusterCaloHitList)
 	{
-		const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *const>(caloHit));
-		cluCentroid += pCaloHit->GetPositionVector();
+    const pandora::CaloHit *const pCaloHit(caloHit); //works  
+		//const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *const>(caloHit)); //return nullptr
 
-		if(APRILContentApi::HasAnyConnection(pCaloHit))
+    /* //Test the pointer
+    if (pCaloHit != nullptr) {
+    // Le pointeur pCaloHit est correctement initialisé et non nul
+    // Vous pouvez accéder en toute sécurité aux membres de l'objet auquel il pointe.
+    std::cout << "Test de l'énergie du caloHit : " << pCaloHit->GetInputEnergy() << std::endl;
+    } else {
+    // Le pointeur pCaloHit est nul ou non initialisé
+    // Il est dangereux d'accéder aux membres de l'objet auquel il devrait pointer.
+    std::cerr << "Erreur : Le pointeur pCaloHit est nul ou non initialisé." << std::endl;
+    } */
+		cluCentroid += pCaloHit->GetPositionVector();
+  //Not truly coherent
+		/* if(APRILContentApi::HasAnyConnection(pCaloHit))
 		{
 			cluCentroidWithConnector += pCaloHit->GetPositionVector();
 			++nHits;
-		}
+		} */
 	}
 
-	if(nHits>=2)
+	/*if(nHits>=2)
 	{
 		centroid = cluCentroidWithConnector * (1./nHits);
 	}
 	else
-	{
+	{*/
 		centroid = cluCentroid * (1./clusterCaloHitList.size());
-	}
+	//}
 
     return pandora::STATUS_CODE_SUCCESS;
   }

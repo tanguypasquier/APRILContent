@@ -45,6 +45,8 @@
 
 #include <mlpack/methods/dbscan/dbscan.hpp>
 
+#include <mlpack/namespace_compat.hpp>
+
 namespace pandora { class Algorithm; class CaloHit; class Track; }
 
 namespace april_content
