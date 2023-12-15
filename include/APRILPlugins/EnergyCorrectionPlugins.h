@@ -274,9 +274,59 @@ namespace april_content
      *
      *  @param  The number of hits to correct
      *  @param  The cluster cos theta
-     *  @param  The cluster cos theta * aTheta for the second theta effect
      */
-    float GetCorrectedHitNumber(int nHit, float cosTheta, float cosATheta) const;
+    float GetCorrectedHitNumber(int nHit, float cosTheta) const;
+
+
+  private:
+    float                       m_lowEnergyCut;
+
+    pandora::FloatVector                m_sdhcalThresholds;             ///< The sdhcal threshold values
+    // pandora::FloatVector                m_energyConstantParameter;    ///< The energy constant parameters
+  };
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  /**
+   *  @brief  PhiNHitFunction class
+   */
+  class PhiNHitFunction : public pandora::EnergyCorrectionPlugin
+  {
+  public:
+    /**
+     *  @brief  Default constructor
+     */
+    PhiNHitFunction();
+
+    /**
+     *  @brief  Make energy correction on this given cluster
+     *
+     *  @param  pCluster the cluster address to correct the energy
+     *  @param  correctedEnergy the energy to correct
+     */
+    pandora::StatusCode MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const;
+
+    /**
+     *  @brief  Read settings from the xml handle
+     *
+     *  @param  xmlHandle the xml handle to read settings from
+     */
+    pandora::StatusCode ReadSettings(const pandora::TiXmlHandle xmlHandle);
+
+  private:
+    /**
+     *  @brief  Get cos phi with respect to x axis in the XY-plane
+     */
+    float GetCosPhi(const pandora::Cluster *const pCluster) const;
+
+    /**
+     *  @brief  Get the corrected number of hits
+     *
+     *  @param  The number of hits to correct
+     *  @param  The cluster cos theta
+     */
+    float GetCorrectedHitNumber(int nHit, float cosPhi) const;
 
 
   private:

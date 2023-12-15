@@ -656,25 +656,17 @@ namespace april_content
 
     std::cout << "endcapNHadronicHit1 : " << endcapNHadronicHit1 << std::endl;
     std::cout << "endcapNHadronicHit2 : " << endcapNHadronicHit2 << std::endl;
-    std::cout << "endcapNHadronicHit3 : " << endcapNHadronicHit3 << std::endl;
-
-    std::cout << "emEnergy : " << emEnergy << std::endl;
-    std::cout << "otherEnergy : " << otherEnergy << std::endl; */
+    std::cout << "endcapNHadronicHit3 : " << endcapNHadronicHit3 << std::endl; */
 
     //Parameters for geometric theta correction
     const float clusterCosTheta(this->GetCosTheta(pCluster)); //Cos theta for the endcap correction
     const float thetaAngle(std::acos(clusterCosTheta)); //Theta angle
     const float clusterSinTheta(std::sin(thetaAngle)); //Sin theta for the barrel correction
-    
-    //Parameters for Hector correction
-    const float aTheta(0.6562); //Value of aTheta coming from a fit of the multiplicity in Hector Garcia paper
-    const float clusterCosATheta(std::cos(aTheta*thetaAngle)); 
-    const float clusterSinATheta(std::sin(aTheta*thetaAngle));
 
     //Sum the corrected number of hits for each tresholds
-    NHadronicHit1 = this->GetCorrectedHitNumber(barrelNHadronicHit1, clusterSinTheta, clusterSinATheta) + this->GetCorrectedHitNumber(endcapNHadronicHit1, clusterCosTheta, clusterCosATheta);
-    NHadronicHit2 = this->GetCorrectedHitNumber(barrelNHadronicHit2, clusterSinTheta, clusterSinATheta) + this->GetCorrectedHitNumber(endcapNHadronicHit2, clusterCosTheta, clusterCosATheta);
-    NHadronicHit3 = this->GetCorrectedHitNumber(barrelNHadronicHit3, clusterSinTheta, clusterSinATheta) + this->GetCorrectedHitNumber(endcapNHadronicHit3, clusterCosTheta, clusterCosATheta);
+    NHadronicHit1 = this->GetCorrectedHitNumber(barrelNHadronicHit1, clusterSinTheta) + this->GetCorrectedHitNumber(endcapNHadronicHit1, clusterCosTheta);
+    NHadronicHit2 = this->GetCorrectedHitNumber(barrelNHadronicHit2, clusterSinTheta) + this->GetCorrectedHitNumber(endcapNHadronicHit2, clusterCosTheta);
+    NHadronicHit3 = this->GetCorrectedHitNumber(barrelNHadronicHit3, clusterSinTheta) + this->GetCorrectedHitNumber(endcapNHadronicHit3, clusterCosTheta);
 
     /* //Calculate the corrected total number of hits
     NHadronicHit = NHadronicHit1 + NHadronicHit2 + NHadronicHit3;
@@ -722,16 +714,239 @@ namespace april_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  float ThetaNHitFunction::GetCorrectedHitNumber(int nHit, float cosTheta, float cosATheta) const
+  float ThetaNHitFunction::GetCorrectedHitNumber(int nHit, float cosTheta) const
   {
 	  //std::cout << "nHit: " << nHit << ", cosTheta: " << cosTheta << std::endl;
-    //return nHit * (cosATheta / (cosTheta));
     return nHit * (1 / (cosTheta));
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   pandora::StatusCode ThetaNHitFunction::ReadSettings(const pandora::TiXmlHandle xmlHandle)
+  {
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "LowEnergyCut", m_lowEnergyCut));
+
+    pandora::FloatVector sdhcalThresholds;
+    pandora::StatusCode statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
+        "SdhcalThresholds", sdhcalThresholds);
+
+    if(statusCode == pandora::STATUS_CODE_SUCCESS)
+    {
+      m_sdhcalThresholds = sdhcalThresholds;
+    }
+    else if(statusCode != pandora::STATUS_CODE_NOT_FOUND)
+    {
+      return statusCode;
+    }
+
+    if(3 != m_sdhcalThresholds.size())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    return pandora::STATUS_CODE_SUCCESS;
+
+    /* pandora::FloatVector energyConstantParameter;
+    pandora::StatusCode statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
+        "EnergyConstantParameter", energyConstantParameter);
+
+    if(statusCode == pandora::STATUS_CODE_SUCCESS)
+    {
+      m_energyConstantParameter = energyConstantParameter;
+    }
+    else if(statusCode != pandora::STATUS_CODE_NOT_FOUND)
+    {
+      return statusCode;
+    }
+
+    if(9 != m_energyConstantParameter.size())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    pandora::FloatVector sdhcalThresholds;
+    statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
+        "SdhcalThresholds", sdhcalThresholds);
+
+    if(statusCode == pandora::STATUS_CODE_SUCCESS)
+    {
+      m_sdhcalThresholds = sdhcalThresholds;
+    }
+    else if(statusCode != pandora::STATUS_CODE_NOT_FOUND)
+    {
+      return statusCode;
+    }
+
+    if(3 != m_sdhcalThresholds.size())
+      return pandora::STATUS_CODE_INVALID_PARAMETER;
+
+    std::cout << "---------------------------------------------------------------- Return SUCCESS ::: ReadSettings() \n"; */
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  PhiNHitFunction::PhiNHitFunction() :
+       m_lowEnergyCut(3.f)
+  {
+        // std::cout << "--------------------------- INIT m_energy \n";
+        /* m_energyConstantParameters.push_back(0.0385315);
+        m_energyConstantParameters.push_back(4.22584e-05);
+        m_energyConstantParameters.push_back(-7.54657e-09);
+        m_energyConstantParameters.push_back(0.0784297);
+        m_energyConstantParameters.push_back(-5.69439e-05);
+        m_energyConstantParameters.push_back(-4.95924e-08);
+        m_energyConstantParameters.push_back(0.127212);
+        m_energyConstantParameters.push_back(4.56414e-05);
+        m_energyConstantParameters.push_back(1.41142e-08); */
+        //m_energyConstantParameter.resize(9);
+
+        m_sdhcalThresholds.push_back(1);
+        m_sdhcalThresholds.push_back(2);
+        m_sdhcalThresholds.push_back(3);
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode PhiNHitFunction::MakeEnergyCorrections(const pandora::Cluster *const pCluster, float &correctedEnergy) const
+  {
+    unsigned int NHadronicHit = 0;
+    unsigned int NHadronicHit1 = 0;
+    unsigned int NHadronicHit2 = 0;
+    unsigned int NHadronicHit3 = 0;
+  
+    unsigned int barrelNHadronicHit1 = 0;
+    unsigned int barrelNHadronicHit2 = 0;
+    unsigned int barrelNHadronicHit3 = 0; 
+
+    float initialBarrelHadronic = 0;
+
+    if(pCluster->GetNCaloHits() == 0)
+      return pandora::STATUS_CODE_SUCCESS;
+
+    if(correctedEnergy < m_lowEnergyCut)
+      return pandora::STATUS_CODE_SUCCESS;
+
+    unsigned int startingPseudoLayer(std::numeric_limits<unsigned int>::max());
+ 
+    const pandora::StatusCode statusCode(ParticleIdHelper::GetStartingPseudoLayer(this->GetPandora(), pCluster, ParticleIdHelper::StartingLayerSettings(), startingPseudoLayer));
+
+    // do not apply energy corrections if starting layer not found
+    if(pandora::STATUS_CODE_SUCCESS != statusCode)
+      return pandora::STATUS_CODE_SUCCESS;
+
+    pandora::CaloHitList clusterCaloHitList;
+    pCluster->GetOrderedCaloHitList().FillCaloHitList(clusterCaloHitList);
+
+    bool noShowerHit(true);
+
+    for(pandora::CaloHitList::const_iterator iter = clusterCaloHitList.begin(), endIter = clusterCaloHitList.end() ;
+        endIter != iter ; ++iter)
+    {
+      const pandora::CaloHit *const pCaloHit(*iter);
+
+      if(pCaloHit->GetHitType() == pandora::HCAL)
+        {
+          if(pCaloHit->GetHitRegion() == pandora::BARREL)
+          {
+            if(fabs(m_sdhcalThresholds.at(0) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            { 
+              barrelNHadronicHit1++;
+              initialBarrelHadronic+=pCaloHit->GetInputEnergy();
+            }
+            else if(fabs(m_sdhcalThresholds.at(1) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            {
+              barrelNHadronicHit2++;
+              initialBarrelHadronic+=pCaloHit->GetInputEnergy();
+            }
+            else if(fabs(m_sdhcalThresholds.at(2) - pCaloHit->GetInputEnergy()) < std::numeric_limits<float>::epsilon())
+            {
+              barrelNHadronicHit3++;
+              initialBarrelHadronic+=pCaloHit->GetInputEnergy();
+            }
+          }
+          noShowerHit = false;
+        }
+    }
+
+    if(noShowerHit)
+      return pandora::STATUS_CODE_SUCCESS;
+
+    correctedEnergy-=initialBarrelHadronic; // Pull the initial energy of the HCAL hits from the total energy to correct
+
+    /* std::cout << "NHadronicHit : " << NHadronicHit << std::endl;
+    std::cout << "barrelNHadronicHit1 : " << barrelNHadronicHit1 << std::endl;
+    std::cout << "barrelNHadronicHit2 : " << barrelNHadronicHit2 << std::endl;
+    std::cout << "barrelNHadronicHit3 : " << barrelNHadronicHit3 << std::endl;
+
+    std::cout << "endcapNHadronicHit1 : " << endcapNHadronicHit1 << std::endl;
+    std::cout << "endcapNHadronicHit2 : " << endcapNHadronicHit2 << std::endl;
+    std::cout << "endcapNHadronicHit3 : " << endcapNHadronicHit3 << std::endl; */
+
+    //Parameters for geometric phi correction
+    const float clusterCosPhi(this->GetCosPhi(pCluster)); //Cos theta for the endcap correction
+
+    //Sum the corrected number of hits for each tresholds
+    NHadronicHit1 = this->GetCorrectedHitNumber(barrelNHadronicHit1, clusterCosPhi);
+    NHadronicHit2 = this->GetCorrectedHitNumber(barrelNHadronicHit2, clusterCosPhi);
+    NHadronicHit3 = this->GetCorrectedHitNumber(barrelNHadronicHit3, clusterCosPhi);
+
+    /* //Calculate the corrected total number of hits
+    NHadronicHit = NHadronicHit1 + NHadronicHit2 + NHadronicHit3;
+
+    //std::cout << "NHit corrected : " << NHadronicHit << std::endl;
+
+    pandora::FloatVector m_energyConstantParameters;
+
+    m_energyConstantParameters.push_back(0.0385315);
+    m_energyConstantParameters.push_back(4.22584e-05);
+    m_energyConstantParameters.push_back(-7.54657e-09);
+    m_energyConstantParameters.push_back(0.0784297);
+    m_energyConstantParameters.push_back(-5.69439e-05);
+    m_energyConstantParameters.push_back(-4.95924e-08);
+    m_energyConstantParameters.push_back(0.127212);
+    m_energyConstantParameters.push_back(4.56414e-05);
+    m_energyConstantParameters.push_back(1.41142e-08);
+
+    // Quadratic correction
+    const float alpha(m_energyConstantParameters.at(0) + m_energyConstantParameters.at(1)*NHadronicHit + m_energyConstantParameters.at(2)*NHadronicHit*NHadronicHit);
+    const float beta(m_energyConstantParameters.at(3) + m_energyConstantParameters.at(4)*NHadronicHit + m_energyConstantParameters.at(5)*NHadronicHit*NHadronicHit);
+    const float gamma(m_energyConstantParameters.at(6) + m_energyConstantParameters.at(7)*NHadronicHit + m_energyConstantParameters.at(8)*NHadronicHit*NHadronicHit);
+    const float hadEnergy(NHadronicHit1*alpha + NHadronicHit2*beta + NHadronicHit3*gamma); */
+
+    const float correctedBarrelEnergy(NHadronicHit1*m_sdhcalThresholds.at(0) + NHadronicHit2*m_sdhcalThresholds.at(1) + NHadronicHit3*m_sdhcalThresholds.at(2)); //New barrel hadronic energy
+
+    correctedEnergy += correctedBarrelEnergy; //Compute the corrected energy
+
+    //outputFile << "Energy after : " << correctedEnergy <<  " ; " << std::endl;
+
+    //outputFile.close();
+
+    return pandora::STATUS_CODE_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float PhiNHitFunction::GetCosPhi(const pandora::Cluster *const pCluster) const
+  {
+    pandora::CartesianVector centroid(0.f, 0.f, 0.f);
+    pandora::CartesianVector zAxis(0.f, 0.f, 1.f);
+    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, centroid));
+    pandora::CartesianVector projectedCentroid(zAxis.GetCrossProduct(centroid.GetCrossProduct(zAxis))); //Project the postion vector of the cluster in the XY-plane 
+    float phiAngle = fmod(projectedCentroid.GetOpeningAngle(pandora::CartesianVector(1.f, 0.f, 0.f)),M_PI_4/2); //Initial angle with respect to x, modulo PI/8
+
+    return fabs(std::cos(phiAngle));
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float PhiNHitFunction::GetCorrectedHitNumber(int nHit, float cosPhi) const
+  {
+	  //std::cout << "nHit: " << nHit << ", cosTheta: " << cosTheta << std::endl;
+    return nHit * (1 / (cosPhi));
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  pandora::StatusCode PhiNHitFunction::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "LowEnergyCut", m_lowEnergyCut));
