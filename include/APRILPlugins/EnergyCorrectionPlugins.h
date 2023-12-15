@@ -270,7 +270,7 @@ namespace april_content
     float GetCosTheta(const pandora::Cluster *const pCluster) const;
 
     /**
-     *  @brief  Get the corrected number of hits in the endcap region
+     *  @brief  Get the corrected number of hits
      *
      *  @param  The number of hits to correct
      *  @param  The cluster cos theta
@@ -281,20 +281,6 @@ namespace april_content
 
   private:
     float                       m_lowEnergyCut;
-
-    float                       m_barrelP00;
-    float                       m_barrelP01;
-    float                       m_barrelP02;
-    float                       m_barrelP10;
-    float                       m_barrelP11;
-    float                       m_barrelP12;
-
-    float                       m_endcapP00;
-    float                       m_endcapP01;
-    float                       m_endcapP02;
-    float                       m_endcapP10;
-    float                       m_endcapP11;
-    float                       m_endcapP12;
 
     pandora::FloatVector                m_sdhcalThresholds;             ///< The sdhcal threshold values
     // pandora::FloatVector                m_energyConstantParameter;    ///< The energy constant parameters

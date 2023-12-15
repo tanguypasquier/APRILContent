@@ -540,19 +540,7 @@ namespace april_content
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   ThetaNHitFunction::ThetaNHitFunction() :
-        m_lowEnergyCut(3.f),
-        m_barrelP00(-2.36284),
-        m_barrelP01(1.14627),
-        m_barrelP02(-0.00152029),
-        m_barrelP10(0.325533),
-        m_barrelP11(-0.126941),
-        m_barrelP12(0.000462463),
-        m_endcapP00(-2.16956),
-        m_endcapP01(0.801878),
-        m_endcapP02(1.27263e-05),
-        m_endcapP10(0.157559),
-        m_endcapP11(0.34754),
-        m_endcapP12(-0.00122559)
+       m_lowEnergyCut(3.f)
   {
         // std::cout << "--------------------------- INIT m_energy \n";
         /* m_energyConstantParameters.push_back(0.0385315);
@@ -747,42 +735,6 @@ namespace april_content
   {
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "LowEnergyCut", m_lowEnergyCut));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelP00", m_barrelP00));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelP01", m_barrelP01));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelP02", m_barrelP02));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelP10", m_barrelP10));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelP11", m_barrelP11));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "BarrelP12", m_barrelP12));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapP00", m_endcapP00));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapP01", m_endcapP01));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapP02", m_endcapP02));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapP10", m_endcapP10));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapP11", m_endcapP11));
-
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "EndcapP12", m_endcapP12));
 
     pandora::FloatVector sdhcalThresholds;
     pandora::StatusCode statusCode = pandora::XmlHelper::ReadVectorOfValues(xmlHandle,
