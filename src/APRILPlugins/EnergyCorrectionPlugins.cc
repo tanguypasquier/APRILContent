@@ -929,9 +929,14 @@ namespace april_content
   {
     pandora::CartesianVector centroid(0.f, 0.f, 0.f);
     pandora::CartesianVector zAxis(0.f, 0.f, 1.f);
+  
     PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::GetCentroid(pCluster, centroid));
     pandora::CartesianVector projectedCentroid(zAxis.GetCrossProduct(centroid.GetCrossProduct(zAxis))); //Project the postion vector of the cluster in the XY-plane 
-    float phiAngle = fmod(projectedCentroid.GetOpeningAngle(pandora::CartesianVector(1.f, 0.f, 0.f)),M_PI_4/2); //Initial angle with respect to x, modulo PI/8
+    float phiAngle = projectedCentroid.GetOpeningAngle(pandora::CartesianVector(1.f, 0.f, 0.f));
+    while(phiAngle>M_PI_4/2) //Substract 45 degrees until the angle is between -22.5 and 22.5 degrees
+    {
+        phiAngle-=M_PI_4;
+    }
 
     return fabs(std::cos(phiAngle));
   }
