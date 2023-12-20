@@ -324,7 +324,7 @@ namespace april_content
      *  @brief  Get the corrected number of hits
      *
      *  @param  The number of hits to correct
-     *  @param  The cluster cos theta
+     *  @param  The cluster cos phi
      */
     float GetCorrectedHitNumber(int nHit, float cosPhi) const;
 
