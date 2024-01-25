@@ -5,3 +5,4 @@ cmake/CMakeCache.txt
 cmake/CMakeFiles/
 lib/
 src/.vscode/
+docs/
