@@ -1,3 +1,5 @@
+/// \file CaloMetric.h
+
 #ifndef CALOMETRIC_H
 #define CALOMETRIC_H
 

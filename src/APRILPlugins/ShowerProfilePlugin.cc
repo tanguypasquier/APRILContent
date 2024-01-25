@@ -1,5 +1,5 @@
 /**
- *  @file   APRILShowerProfilePlugin.cc
+ *  @file   ShowerProfilePlugin.cc
  * 
  *  @brief  Implementation of the shower profile plugin class.
  * 

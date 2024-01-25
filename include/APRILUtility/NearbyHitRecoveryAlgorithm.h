@@ -1,5 +1,5 @@
 /**
- *  @file   APRILContent/include/APRILCheating/NearbyHitRecoveryAlgorithm.h
+ *  @file   APRILContent/include/APRILUtility/NearbyHitRecoveryAlgorithm.h
  * 
  *  @brief  Header file for the cheating cluster cleaning algorithm class.
  * 

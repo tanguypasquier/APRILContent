@@ -1,3 +1,4 @@
+/// \file IsoHitRemovalAlgorithm.cc
 /**
  *
  * This algorithm is to remove isolated hits by creating clusters

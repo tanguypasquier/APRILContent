@@ -342,7 +342,7 @@ inline pandora::StatusCode APRILContent::RegisterBFieldPlugin(const pandora::Pan
 
 inline pandora::StatusCode APRILContent::RegisterEnergyCorrections(const pandora::Pandora &pandora)
 {
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
+  /* PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
       "SdhcalQuadraticEnergyFunction", pandora::HADRONIC, new april_content::SdhcalQuadraticEnergyFunction));
 
   PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
@@ -359,7 +359,7 @@ inline pandora::StatusCode APRILContent::RegisterEnergyCorrections(const pandora
 
   PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
       "ThetaEnergyFunction", pandora::HADRONIC, new april_content::ThetaEnergyFunction));
-
+ */
   /* PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
       "ThetaNHitFunction", pandora::HADRONIC, new april_content::ThetaNHitFunction()));
 

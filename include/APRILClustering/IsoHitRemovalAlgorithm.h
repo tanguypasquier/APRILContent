@@ -1,5 +1,5 @@
 /**
- *  @file   APRILContent/include/APRILCheating/IsoHitRemovalAlgorithm.h
+ *  @file   APRILContent/include/APRILClustering/IsoHitRemovalAlgorithm.h
  * 
  *  @brief  Header file for the cheating clustering algorithm class.
  * 

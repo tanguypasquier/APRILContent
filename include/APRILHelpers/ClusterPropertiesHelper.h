@@ -1,3 +1,4 @@
+/// \file ClusterPropertiesHelper.h
 /* ClusterPropertiesHelper.h
  *
  * Author: Bo Li (IPNL)

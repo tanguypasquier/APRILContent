@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCCheating/PerfectClusteringAlgorithmNew.cc
+ *  @file   APRILContent/src/APRILCheating/PerfectClusteringAlgorithmNew.cc
  * 
  *  @brief  Implementation of the perfect particle flow algorithm class
  * 

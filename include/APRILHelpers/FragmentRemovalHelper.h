@@ -1,3 +1,4 @@
+/// \file FragmentRemovalHelper.h
 /**
  * 
  *  @brief  Header file for the fragment removal helper class.

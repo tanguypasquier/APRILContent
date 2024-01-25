@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/include/LCTrackClusterAssociation/TrackClusterAssociationAlgorithm.h
+ *  @file   APRILContent/include/APRILTrackClusterAssociation/TrackClusterAssociationAlgorithm.h
  * 
  *  @brief  Header file for the track-cluster association algorithm class.
  * 

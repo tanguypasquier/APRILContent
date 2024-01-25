@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCTrackClusterAssociation/TrackRecoveryInteractionsAlgorithm.cc
+ *  @file   APRILContent/src/APRILTrackClusterAssociation/TrackRecoveryInteractionsAlgorithm.cc
  * 
  *  @brief  Implementation of the track recovery interactions algorithm class.
  * 

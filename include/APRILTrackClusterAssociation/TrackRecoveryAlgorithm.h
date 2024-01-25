@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/include/LCTrackClusterAssociation/TrackRecoveryAlgorithm.h
+ *  @file   APRILContent/include/APRILTrackClusterAssociation/TrackRecoveryAlgorithm.h
  * 
  *  @brief  Header file for the track recovery algorithm class.
  * 

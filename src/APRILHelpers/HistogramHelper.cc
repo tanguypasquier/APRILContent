@@ -1,3 +1,5 @@
+/// \file HistogramHelper.cc
+
 #include "APRILHelpers/HistogramHelper.h"
 
 #include "TDirectory.h"

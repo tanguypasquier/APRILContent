@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCUtility/ClusterPreparationAlgorithm.cc
+ *  @file   APRILContent/src/APRILUtility/ClusterPreparationAlgorithm.cc
  * 
  *  @brief  Implementation of the cluster preparation algorithm class.
  * 

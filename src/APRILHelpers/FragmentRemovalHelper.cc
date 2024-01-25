@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCHelpers/FragmentRemovalHelper.cc
+ *  @file   APRILContent/src/APRILHelpers/FragmentRemovalHelper.cc
  * 
  *  @brief  Implementation of the fragment removal helper class.
  * 

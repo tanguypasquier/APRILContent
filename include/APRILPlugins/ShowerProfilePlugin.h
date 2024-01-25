@@ -1,5 +1,5 @@
 /**
- *  @file   APRILShowerProfilePlugin.h
+ *  @file   ShowerProfilePlugin.h
  * 
  *  @brief  Header file for the shower profile plugin class.
  * 

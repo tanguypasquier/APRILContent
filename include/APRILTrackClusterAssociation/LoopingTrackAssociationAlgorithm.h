@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/include/LCTrackClusterAssociation/LoopingTrackAssociationAlgorithm.h
+ *  @file   APRILContent/include/APRILTrackClusterAssociation/LoopingTrackAssociationAlgorithm.h
  * 
  *  @brief  Header file for the looping track association algorithm class.
  * 

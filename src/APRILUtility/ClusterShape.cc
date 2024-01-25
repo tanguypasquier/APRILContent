@@ -1,3 +1,5 @@
+/// \file ClusterShape.cc
+
 #include <stdio.h>
 
 #include "APRILUtility/ClusterShape.h"

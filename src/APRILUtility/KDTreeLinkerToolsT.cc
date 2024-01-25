@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCUtility/KDTreeLinkerToolsT.cc
+ *  @file   APRILContent/src/APRILUtility/KDTreeLinkerToolsT.cc
  * 
  *  @brief  Implementation of the kd tree linker tools template class
  * 

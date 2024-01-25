@@ -1,4 +1,4 @@
-// file SingleClusterIdAlgorithm.cc
+/// \file SingleClusterIdAlgorithm.cc
 /* 
  * Author: Bo Li (IPNL)
  *

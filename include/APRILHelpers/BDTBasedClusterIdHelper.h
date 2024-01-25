@@ -1,4 +1,5 @@
-/* BDTBasedParticleIdAlgorithm.h
+/// \file BDTBasedClusterIdHelper.h
+/* BDTBasedClusterIdHelper.h
  *
  * Author: Bo Li (IPNL)
  * 

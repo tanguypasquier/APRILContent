@@ -1,5 +1,5 @@
 /**
- *  @file   APRILContent/include/APRILCheating/IsoHitClusteringAlgorithm.h
+ *  @file   APRILContent/include/APRILClustering/IsoHitClusteringAlgorithm.h
  *
  *  This algorithm is to remove part of isolated hits by clustering them
  * 

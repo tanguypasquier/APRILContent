@@ -1,3 +1,5 @@
+/// \file MeanShift.h
+
 #ifndef MEANSHIFT_H
 #define MEANSHIFT_H
 

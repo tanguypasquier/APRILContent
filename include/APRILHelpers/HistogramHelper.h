@@ -1,3 +1,5 @@
+/// \file HistogramHelper.h
+
 #ifndef HistogramManager_h 
 #define HistogramManager_h 
 
