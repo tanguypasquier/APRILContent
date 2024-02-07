@@ -88,7 +88,7 @@ namespace april_content
 		trackStartingClusters.push_back(mainCluster);
 
 		// ---------- make the record of track-cluster association
-
+        
 		if(m_makeRecord)
 		{
 			const pandora::MCParticle *pTrackMCParticle = nullptr;
@@ -128,6 +128,9 @@ namespace april_content
 
 	}
 
+	trackWithCaloHitsVector.clear(); //To prevent memory issues
+	trackCaloHits.clear();
+
     return pandora::STATUS_CODE_SUCCESS;
   }
 
@@ -135,13 +138,14 @@ namespace april_content
   {
       //get the cluster which contains most of calo hits in the vector
       std::map<april_content::APRILCluster*, int> clusterTimes;
-      
+
       for(int iHit = 0; iHit < caloHitVector.size(); ++iHit)
       {
       	const pandora::CaloHit* const pCaloHit = caloHitVector.at(iHit);
-      
+
         const april_content::CaloHit *const pAPRILCaloHit = dynamic_cast<const april_content::CaloHit *const>(pCaloHit);
-      	//std::cout << " --- calo hit: " << pAPRILCaloHit << ", cluster: " << pAPRILCaloHit->GetMother() << std::endl;
+       	// std::cout << " --- calo hit: " << pAPRILCaloHit << ", cluster: " << pAPRILCaloHit->GetMother() << std::endl;
+		 
       
 	    auto cluster = APRILContentApi::Modifiable(dynamic_cast<const april_content::APRILCluster*>(pAPRILCaloHit->GetMother()));
       
@@ -185,7 +189,7 @@ namespace april_content
     const pandora::ClusterList *pClusterList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pClusterList));
 
-	//std::cout << ">>>cluster number: " << pClusterList->size() << std::endl;
+	//std::cout << ">>>cluster number: " << pClusterList->size() << std::endl; 
 
     if(pClusterList->empty())
       return pandora::STATUS_CODE_SUCCESS;

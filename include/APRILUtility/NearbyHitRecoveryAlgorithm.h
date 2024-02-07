@@ -89,7 +89,9 @@ private:
 	float m_centroidDistance;
 	float m_closestDistance;
 	float m_meanDensity;
-	float m_surroundingEnergy;  
+	float m_surroundingEnergy; 
+
+	bool m_useMVA; 
 
 };
 
