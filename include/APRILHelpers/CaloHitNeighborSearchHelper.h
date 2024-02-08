@@ -63,7 +63,7 @@ class CaloHitNeighborSearchHelper
 {
 public:
 	// build 
-    static pandora::StatusCode BuildNeighborSearch(const pandora::CaloHitList *const pCaloHitList);
+    static pandora::StatusCode BuildNeighborSearch(const pandora::CaloHitList *const pCaloHitList, bool reBuild = false);
     static pandora::StatusCode BuildCaloNeighborSearch(const pandora::CaloHitVector& caloHitVector);
 	
     // search 
