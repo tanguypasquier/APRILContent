@@ -346,33 +346,6 @@ inline pandora::StatusCode APRILContent::RegisterBFieldPlugin(const pandora::Pan
 
 inline pandora::StatusCode APRILContent::RegisterEnergyCorrections(const pandora::Pandora &pandora)
 {
-  /* PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "SdhcalQuadraticEnergyFunction", pandora::HADRONIC, new april_content::SdhcalQuadraticEnergyFunction));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "SdhcalQuadraticEnergyFunction", pandora::ELECTROMAGNETIC, new april_content::SdhcalQuadraticEnergyFunction));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "AnalogicEnergyFunction", pandora::HADRONIC, new april_content::AnalogicEnergyFunction));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "AnalogicEnergyFunction", pandora::ELECTROMAGNETIC, new april_content::AnalogicEnergyFunction));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "BarrelGapEnergyFunction", pandora::HADRONIC, new april_content::BarrelGapEnergyFunction));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "ThetaEnergyFunction", pandora::HADRONIC, new april_content::ThetaEnergyFunction));
- */
-  /* PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "ThetaNHitFunction", pandora::HADRONIC, new april_content::ThetaNHitFunction()));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "PhiNHitFunction", pandora::HADRONIC, new april_content::PhiNHitFunction()));
- */
-  /* PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "CleanClusters", pandora::HADRONIC, new april_content::CleanCluster()));
- */
   return pandora::STATUS_CODE_SUCCESS;
 }
 

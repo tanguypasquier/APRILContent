@@ -168,7 +168,7 @@ namespace april_content
     {
       PANDORA_MONITORING_API(ViewEvent(this->GetPandora()));
     }
-
+    
     return pandora::STATUS_CODE_SUCCESS;
   }
 
