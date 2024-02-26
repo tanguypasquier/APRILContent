@@ -86,9 +86,7 @@
 #include "APRILParticleId/PhotonReconstructionAlgorithm.h"
 #include "APRILParticleId/SingleClusterIdAlgorithm.h"
 
-#include "APRILPlugins/APRILBFieldPlugin.h"
 #include "APRILPlugins/APRILPseudoLayerPlugin.h"
-#include "APRILPlugins/EnergyCorrectionPlugins.h"
 #include "APRILPlugins/ParticleIdPlugins.h"
 #include "APRILPlugins/ShowerProfilePlugin.h"
 
@@ -286,17 +284,6 @@ public:
   static pandora::StatusCode RegisterAPRILShowerProfilePlugin(const pandora::Pandora &pandora);
 
   /**
-   *  @brief  Register the b field plugin (note user side configuration) with pandora
-   *
-   *  @param  pandora the pandora instance with which to register content
-   *  @param  innerBField the bfield in the main tracker, ecal and hcal, units Tesla
-   *  @param  muonBarrelBField the bfield in the muon barrel, units Tesla
-   *  @param  muonEndCapBField the bfield in the muon endcap, units Tesla
-   */
-  static pandora::StatusCode RegisterBFieldPlugin(const pandora::Pandora &pandora, const float innerBField, const float muonBarrelBField,
-      const float muonEndCapBField);
-
-  /**
    *  @brief  Register the energy corrections with pandora
    *
    *  @param  pandora the pandora instance with which to register content
@@ -332,21 +319,6 @@ inline pandora::StatusCode APRILContent::RegisterAPRILPseudoLayerPlugin(const pa
 inline pandora::StatusCode APRILContent::RegisterAPRILShowerProfilePlugin(const pandora::Pandora &pandora)
 {
   return PandoraApi::SetShowerProfilePlugin(pandora, new april_content::APRILShowerProfilePlugin());
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline pandora::StatusCode APRILContent::RegisterBFieldPlugin(const pandora::Pandora &pandora, const float innerBField,
-    const float muonBarrelBField, const float muonEndCapBField)
-{
-  return PandoraApi::SetBFieldPlugin(pandora, new april_content::APRILBFieldPlugin(innerBField, muonBarrelBField, muonEndCapBField));
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline pandora::StatusCode APRILContent::RegisterEnergyCorrections(const pandora::Pandora &pandora)
-{
-  return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
