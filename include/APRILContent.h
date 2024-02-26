@@ -86,15 +86,15 @@
 #include "APRILParticleId/PhotonReconstructionAlgorithm.h"
 #include "APRILParticleId/SingleClusterIdAlgorithm.h"
 
-#include "APRILPlugins/APRILBFieldPlugin.h"
 #include "APRILPlugins/APRILPseudoLayerPlugin.h"
-#include "APRILPlugins/EnergyCorrectionPlugins.h"
 #include "APRILPlugins/ParticleIdPlugins.h"
 #include "APRILPlugins/ShowerProfilePlugin.h"
 
 #include "APRILReclustering/EnergyExcessReclusteringAlgorithm.h"
 #include "APRILReclustering/MissingEnergyReclusteringAlgorithm.h"
 #include "APRILReclustering/SplitTrackReclusteringAlgorithm.h"
+#include "APRILReclustering/ResolveTrackAssociationsAlg.h"
+#include "APRILReclustering/ForcedClusteringAlgorithm.h"
 #include "APRILReclustering/ForceSplitTrackAssociationsAlg.h"
 
 #include "APRILTools/ConnectorCleaningTool.h"
@@ -197,6 +197,8 @@ public:
     d("MissingEnergyReclustering",           april_content::MissingEnergyReclusteringAlgorithm::Factory) \
     d("SplitTrackReclustering",              april_content::SplitTrackReclusteringAlgorithm::Factory) \
     d("ForceSplitTrackAssociations",         april_content::ForceSplitTrackAssociationsAlg::Factory) \
+    d("ResolveTrackAssociations",            april_content::ResolveTrackAssociationsAlg::Factory) \
+    d("ForcedClustering",                    april_content::ForcedClusteringAlgorithm::Factory) \
     d("TopologicalAssociationParent",        april_content::TopologicalAssociationParentAlgorithm::Factory) \
     d("PointingClusterAssociation",          april_content::PointingClusterAssociationAlgorithm::Factory) \
     d("PointingClusterAssociationNew",       april_content::PointingClusterAssociationNewAlgorithm::Factory) \
@@ -282,17 +284,6 @@ public:
   static pandora::StatusCode RegisterAPRILShowerProfilePlugin(const pandora::Pandora &pandora);
 
   /**
-   *  @brief  Register the b field plugin (note user side configuration) with pandora
-   *
-   *  @param  pandora the pandora instance with which to register content
-   *  @param  innerBField the bfield in the main tracker, ecal and hcal, units Tesla
-   *  @param  muonBarrelBField the bfield in the muon barrel, units Tesla
-   *  @param  muonEndCapBField the bfield in the muon endcap, units Tesla
-   */
-  static pandora::StatusCode RegisterBFieldPlugin(const pandora::Pandora &pandora, const float innerBField, const float muonBarrelBField,
-      const float muonEndCapBField);
-
-  /**
    *  @brief  Register the energy corrections with pandora
    *
    *  @param  pandora the pandora instance with which to register content
@@ -328,42 +319,6 @@ inline pandora::StatusCode APRILContent::RegisterAPRILPseudoLayerPlugin(const pa
 inline pandora::StatusCode APRILContent::RegisterAPRILShowerProfilePlugin(const pandora::Pandora &pandora)
 {
   return PandoraApi::SetShowerProfilePlugin(pandora, new april_content::APRILShowerProfilePlugin());
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline pandora::StatusCode APRILContent::RegisterBFieldPlugin(const pandora::Pandora &pandora, const float innerBField,
-    const float muonBarrelBField, const float muonEndCapBField)
-{
-  return PandoraApi::SetBFieldPlugin(pandora, new april_content::APRILBFieldPlugin(innerBField, muonBarrelBField, muonEndCapBField));
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-inline pandora::StatusCode APRILContent::RegisterEnergyCorrections(const pandora::Pandora &pandora)
-{
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "SdhcalQuadraticEnergyFunction", pandora::HADRONIC, new april_content::SdhcalQuadraticEnergyFunction()));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "SdhcalQuadraticEnergyFunction", pandora::ELECTROMAGNETIC, new april_content::SdhcalQuadraticEnergyFunction()));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "AnalogicEnergyFunction", pandora::HADRONIC, new april_content::AnalogicEnergyFunction()));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "AnalogicEnergyFunction", pandora::ELECTROMAGNETIC, new april_content::AnalogicEnergyFunction()));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "BarrelGapEnergyFunction", pandora::HADRONIC, new april_content::BarrelGapEnergyFunction()));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "ThetaEnergyFunction", pandora::HADRONIC, new april_content::ThetaEnergyFunction()));
-
-  PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::RegisterEnergyCorrectionPlugin(pandora,
-      "CleanClusters", pandora::HADRONIC, new april_content::CleanCluster()));
-
-  return pandora::STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------

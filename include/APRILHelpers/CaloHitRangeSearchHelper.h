@@ -40,6 +40,8 @@
 #include <mlpack/core/math/range.hpp>
 #include <mlpack/methods/range_search/range_search.hpp>
 
+#include <mlpack/namespace_compat.hpp>
+
 namespace pandora { class Algorithm; class CaloHit; class Track; }
 
 namespace april_content
@@ -55,7 +57,7 @@ public:
 	// build 
     static pandora::StatusCode FillMatixByPoints(const std::vector<pandora::CartesianVector>& points, arma::mat& caloHitsMatrix);
 
-    static pandora::StatusCode BuildRangeSearch(const pandora::CaloHitList *const pCaloHitList);
+    static pandora::StatusCode BuildRangeSearch(const pandora::CaloHitList *const pCaloHitList, bool reBuild = false);
 	
     static pandora::StatusCode BuildHitCollectionOfLayers(const pandora::CaloHitList *const pCaloHitList);
 

@@ -1,3 +1,5 @@
+/// \file MeanShift.cc
+
 #include <stdio.h>
 #include <math.h>
 

@@ -1,3 +1,4 @@
+/// \file FragmentsFromIsoHitsMergingAlgorithm.cc
 /**
  *
  * This algorithm is to merge clusters created from isolated hits

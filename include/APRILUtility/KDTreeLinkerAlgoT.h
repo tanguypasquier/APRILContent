@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/include/LCUtility/KDTreeLinkerAlgoT.h
+ *  @file   APRILContent/include/APRILUtility/KDTreeLinkerAlgoT.h
  * 
  *  @brief  Header file for the kd tree linker algo template class
  * 

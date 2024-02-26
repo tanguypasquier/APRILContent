@@ -1,3 +1,5 @@
+/// \file ClusterShape.h
+
 #ifndef CLUSTERSHAPE_H
 #define CLUSTERSHAPE_H 
 

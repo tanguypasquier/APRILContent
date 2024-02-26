@@ -1,3 +1,5 @@
+/// \file dbscan.h
+
 #ifndef APRIL_DBSCAN_H
 #define APRIL_DBSCAN_H
 

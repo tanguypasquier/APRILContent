@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCTrackClusterAssociation/TrackClusterAssociationAlgorithm.cc
+ *  @file   APRILContent/src/APRILTrackClusterAssociation/TrackClusterAssociationAlgorithm.cc
  * 
  *  @brief  Implementation of the track-cluster association algorithm class.
  * 

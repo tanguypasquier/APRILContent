@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/include/LCUtility/KDTreeLinkerToolsT.h
+ *  @file   APRILContent/include/APRILUtility/KDTreeLinkerToolsT.h
  * 
  *  @brief  Header file for the kd tree linker tools template class
  * 

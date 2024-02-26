@@ -1,3 +1,5 @@
+/// \file dbscan.cc
+
 #include <iostream>
 #include "APRILUtility/dbscan.h"
 

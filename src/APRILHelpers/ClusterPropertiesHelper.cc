@@ -1,3 +1,5 @@
+/// \file ClusterPropertiesHelper.cc
+
 #include "APRILHelpers/ClusterPropertiesHelper.h"
 #include "APRILHelpers/ClusterHelper.h"
 #include "APRILObjects/CaloHit.h"

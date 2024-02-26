@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCFragmentRemoval/MainFragmentRemovalAlgorithm.cc
+ *  @file   APRILContent/src/APRILTopologicalAssociation/MainFragmentRemovalAlgorithm.cc
  * 
  *  @brief  Implementation of the main fragment removal algorithm class.
  * 

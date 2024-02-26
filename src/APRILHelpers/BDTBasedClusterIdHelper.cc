@@ -1,3 +1,5 @@
+/// \file BDTBasedClusterIdHelper.cc
+
 #include "APRILHelpers/BDTBasedClusterIdHelper.h"
 #include "APRILHelpers/ClusterHelper.h"
 #include "APRILHelpers/ClusterPropertiesHelper.h"

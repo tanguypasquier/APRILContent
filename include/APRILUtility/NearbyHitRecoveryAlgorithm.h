@@ -1,5 +1,5 @@
 /**
- *  @file   APRILContent/include/APRILCheating/NearbyHitRecoveryAlgorithm.h
+ *  @file   APRILContent/include/APRILUtility/NearbyHitRecoveryAlgorithm.h
  * 
  *  @brief  Header file for the cheating cluster cleaning algorithm class.
  * 
@@ -89,7 +89,9 @@ private:
 	float m_centroidDistance;
 	float m_closestDistance;
 	float m_meanDensity;
-	float m_surroundingEnergy;  
+	float m_surroundingEnergy; 
+
+	bool m_useMVA; 
 
 };
 

@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCPfoConstruction/PfoCreationAlgorithm.cc
+ *  @file   APRILContent/src/APRILPfoConstruction/PfoCreationAlgorithm.cc
  * 
  *  @brief  Implementation of the pfo creation algorithm class.
  * 

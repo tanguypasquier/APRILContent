@@ -1,5 +1,5 @@
 /**
- * @file LCContent/LCObjects/include/APRILTrack.h
+ * @file APRILContent/include/APRILObjects/APRILTrack.h
  *
  * @brief Header file for LC Track class
  *

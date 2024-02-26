@@ -64,29 +64,29 @@ ENDFOREACH()
 
 INCLUDE( CheckCXXCompilerFlag )
 
-UNSET( COMPILER_SUPPORTS_CXX11 CACHE )
-CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
+#UNSET( COMPILER_SUPPORTS_CXX11 CACHE )
+#CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
 
-IF( NOT CMAKE_CXX_FLAGS )
-    SET( CMAKE_CXX_FLAGS "-std=c++11" )
-    SET( PROCEED_WITHOUT_CXX_FLAGS ON )
-ENDIF()
+#IF( NOT CMAKE_CXX_FLAGS )
+#    SET( CMAKE_CXX_FLAGS "-std=c++11" )
+#    SET( PROCEED_WITHOUT_CXX_FLAGS ON )
+#ENDIF()
 
-UNSET( COMPILER_SUPPORTS_CXX_FLAGS CACHE )
-CHECK_CXX_COMPILER_FLAG( ${CMAKE_CXX_FLAGS} COMPILER_SUPPORTS_CXX_FLAGS )
-IF( NOT COMPILER_SUPPORTS_CXX_FLAGS )
-    MESSAGE( STATUS "The compiler ${CMAKE_CXX_COMPILER} does not support cxx flags ${CMAKE_CXX_FLAGS}" )
-    IF( NOT PROCEED_WITHOUT_CXX_FLAGS )
-        MESSAGE( FATAL_ERROR "CMake abort." )
-    ENDIF()
-    MESSAGE( STATUS "Proceed without cxx flags ${CMAKE_CXX_FLAGS}" )
-    UNSET( CMAKE_CXX_FLAGS )
-ENDIF()
+#UNSET( COMPILER_SUPPORTS_CXX_FLAGS CACHE )
+#CHECK_CXX_COMPILER_FLAG( ${CMAKE_CXX_FLAGS} COMPILER_SUPPORTS_CXX_FLAGS )
+#IF( NOT COMPILER_SUPPORTS_CXX_FLAGS )
+#    MESSAGE( STATUS "The compiler ${CMAKE_CXX_COMPILER} does not support cxx flags ${CMAKE_CXX_FLAGS}" )
+#    IF( NOT PROCEED_WITHOUT_CXX_FLAGS )
+#        MESSAGE( FATAL_ERROR "CMake abort." )
+#    ENDIF()
+#    MESSAGE( STATUS "Proceed without cxx flags ${CMAKE_CXX_FLAGS}" )
+#    UNSET( CMAKE_CXX_FLAGS )
+#ENDIF()
 
 if(APPLE)
-   SET( CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Wno-long-long -Wno-sign-compare -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
+   SET( CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Wno-long-long -Wno-sign-compare -fno-strict-aliasing -fopenmp ${CMAKE_CXX_FLAGS}" )
 else()
-   SET( CMAKE_CXX_FLAGS "-Wall -Wextra -ansi -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing ${CMAKE_CXX_FLAGS}" )
+   SET( CMAKE_CXX_FLAGS "-Wall -Wextra -ansi -pedantic -Wno-long-long -Wno-sign-compare -Wshadow -fno-strict-aliasing -fopenmp ${CMAKE_CXX_FLAGS}" )
 endif()
 
 
@@ -121,7 +121,7 @@ ENDIF()
 # mlpack
 FIND_PACKAGE( mlpack REQUIRED )
 INCLUDE_DIRECTORIES( SYSTEM ${mlpack_INCLUDE_DIRS} )
-LINK_LIBRARIES( ${mlpack_LIBRARIES} )
+#LINK_LIBRARIES( ${mlpack_LIBRARIES} )
 
 FIND_PACKAGE( Boost REQUIRED )
 INCLUDE_DIRECTORIES( SYSTEM ${Boost_INCLUDE_DIRS} )
@@ -155,7 +155,7 @@ INSTALL( TARGETS ${PROJECT_NAME} DESTINATION lib COMPONENT Runtime )
 
 # install header files
 INSTALL( DIRECTORY include/ DESTINATION include )
-INSTALL( FILES "ChangeLog.txt" DESTINATION "${PROJECT_SOURCE_DIR}/docs" OPTIONAL )
+#INSTALL( FILES "ChangeLog.txt" DESTINATION "${PROJECT_SOURCE_DIR}/docs" OPTIONAL )
 
 # display some variables and write them to cache
 PANDORA_DISPLAY_STD_VARIABLES()

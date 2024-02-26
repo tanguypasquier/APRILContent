@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCUtility/TrackPreparationAlgorithm.cc
+ *  @file   APRILContent/src/APRILUtility/TrackPreparationAlgorithm.cc
  * 
  *  @brief  Implementation of the track preparation algorithm class.
  * 

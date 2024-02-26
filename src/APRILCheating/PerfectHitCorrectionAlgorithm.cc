@@ -1,5 +1,5 @@
 /**
- *  @file   LCContent/src/LCCheating/PerfectHitCorrectionAlgorithm.cc
+ *  @file   APRILContent/src/APRILCheating/PerfectHitCorrectionAlgorithm.cc
  * 
  *  @brief  Implementation of the perfect particle flow algorithm class
  * 
