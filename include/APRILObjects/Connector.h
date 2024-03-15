@@ -65,6 +65,11 @@ public:
 	float GetLength() const;
 
 	/**
+	 *  @brief  Get the time duration between the two hits linked by the connector
+	 */
+	float GetTiming() const;
+
+	/**
 	 *  @brief  Get the reference length
 	 */
 	float GetReferenceLength() const;

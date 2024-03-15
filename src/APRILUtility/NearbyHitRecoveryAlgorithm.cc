@@ -17,6 +17,8 @@
 #include "APRILUtility/EventPreparationAlgorithm.h"
 #include "APRILApi/APRILContentApi.h"
 
+#include <fstream>
+
 namespace april_content
 {
 
@@ -108,7 +110,10 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::Run()
 		   ++nUnclusteredHits;
 		}
 	}
-
+	//Added by TP
+ std::ofstream fichier("/scratch/pasquier/Unclustered_sansTiming.txt", std::ios::app);
+ fichier<<nUnclusteredHits<<std::endl;
+ //End added by TP
 	std::cout << "===unClusteredHits size: " << nUnclusteredHits << std::endl;
 #endif
     

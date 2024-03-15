@@ -80,6 +80,13 @@ namespace april_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  float Connector::GetTiming() const
+  {
+    return fabs(this->GetFrom()->GetTime() - this->GetTo()->GetTime());
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   float Connector::GetReferenceLength() const
   {
     return m_referenceLength;

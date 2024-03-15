@@ -39,6 +39,9 @@
 
 #include "APRILUtility/EventPreparationAlgorithm.h"
 
+//Added by TP
+//#include <fstream>
+
 namespace april_content
 {
   float ConnectorOrderParameter::m_smallAngleRange(0.01);
@@ -138,8 +141,8 @@ namespace april_content
       if(NULL == pCaloHit) return pandora::STATUS_CODE_FAILURE;
 
       ConnectorList backwardConnectorList(APRILContentApi::GetConnectorList(pCaloHit, BACKWARD_DIRECTION));
-	  std::vector<const Connector*> backwardConnectorVector(backwardConnectorList.begin(), backwardConnectorList.end());
-	  std::sort(backwardConnectorVector.begin(), backwardConnectorVector.end(), SortingHelper::SortConnectorsByFromPosition);
+	    std::vector<const Connector*> backwardConnectorVector(backwardConnectorList.begin(), backwardConnectorList.end());
+	    std::sort(backwardConnectorVector.begin(), backwardConnectorVector.end(), SortingHelper::SortConnectorsByFromPosition);
 
       if(backwardConnectorList.size() < 2) continue;
 
@@ -151,13 +154,33 @@ namespace april_content
       ConnectorOrderParameter bestOrderParameter; 
       pandora::CaloHitList deleteConnectionCaloHitList;
 
+      //Added by TP
+      bool hasNonCausalConnector=false;
+
       // find the best connector with the smallest order parameter
 	  for(int iCon = 0; iCon < backwardConnectorVector.size(); ++iCon)
       {
         const Connector *pConnector = backwardConnectorVector.at(iCon);
         const CaloHit *pFromCaloHit = pConnector->GetFrom();
         const pandora::CartesianVector connectorVector = pConnector->GetVector(FORWARD_DIRECTION);
-        const float distance = pConnector->GetLength();
+        const float distance = pConnector->GetLength(); //In mm
+#if 0
+        //Added by TP
+        const float timing = pConnector->GetTiming() * 1e-6; //time in nanoseconds that we convert to have milliseconds
+        const float c = 2.99792458e8; //Lightspeed
+        const float beta = (distance/timing) / c;
+        //std::cout << "Beta : " << beta << std::endl;
+        //fichier << beta << std::endl;
+        //fichier.close();
+        if( beta > 1)
+        {
+          deleteConnectionCaloHitList.push_back(pFromCaloHit);
+          hasNonCausalConnector=true;
+          continue; //Add the connection to the list to delete and go to the next one
+        }
+
+        //End added by TP
+#endif
 
         const float angle = referenceVector.GetOpeningAngle(connectorVector);
 
@@ -193,7 +216,7 @@ namespace april_content
         }
       }
 
-      if(NULL != pBestCaloHit)
+      if(NULL != pBestCaloHit || hasNonCausalConnector) //Added by TP the condition to delete the connectors if hasNonCausalConnector is true even if no bestCaloHit found
         caloHitCleaningMap[pCaloHit] = deleteConnectionCaloHitList;
     }
 
