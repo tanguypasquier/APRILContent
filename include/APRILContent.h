@@ -153,6 +153,7 @@
 #include "APRILUtility/IsolatedHitClusteringAlgorithm.h"
 #include "APRILUtility/LoadEMClusterAlgorithm.h"
 #include "APRILUtility/NearbyHitRecoveryAlgorithm.h"
+#include "APRILUtility/DataExportAlgorithm.h"
 
 /** 
  * @brief  APRILContent class used to register april algorithms and plugins
@@ -178,7 +179,7 @@ public:
     d("APRILSimplePfoTest",                       april_content::SimplePfoTestAlgorithm::Factory) \
     d("APRILSemiPerfectPfoCreation",              april_content::SemiPerfectPfoCreationAlgorithm::Factory) \
     d("APRILCheatingTrackToClusterMatching",      april_content::CheatingTrackToClusterMatching::Factory) \
-    d("APRILClustering",                     april_content::APRILClusteringAlgorithm::Factory) \
+    d("APRILClustering",                          april_content::APRILClusteringAlgorithm::Factory) \
     d("APRILCheatingClusterCleaning",             april_content::CheatingClusterCleaningAlgorithm::Factory) \
     d("APRILCheatingClusterMerging",              april_content::CheatingClusterMergingAlgorithm::Factory) \
     d("APRILCheatingClusterMergingNew",           april_content::CheatingClusterMergingNewAlgorithm::Factory) \
@@ -193,6 +194,7 @@ public:
     d("APRILPhotonReconstruction",                april_content::PhotonReconstructionAlgorithm::Factory) \
     d("APRILSingleClusterId",                     april_content::SingleClusterIdAlgorithm::Factory) \
     d("APRILPfoCreation",                         april_content::PfoCreationAlgorithm::Factory) \
+    d("APRILDataExport",                          april_content::DataExportAlgorithm::Factory) \
     d("APRILEnergyExcessReclustering",            april_content::EnergyExcessReclusteringAlgorithm::Factory) \
     d("APRILMissingEnergyReclustering",           april_content::MissingEnergyReclusteringAlgorithm::Factory) \
     d("APRILSplitTrackReclustering",              april_content::SplitTrackReclusteringAlgorithm::Factory) \

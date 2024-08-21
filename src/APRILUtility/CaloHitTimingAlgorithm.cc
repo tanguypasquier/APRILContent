@@ -33,6 +33,9 @@
 #include "APRILObjects/CaloHit.h"
 #include "APRILHelpers/GeometryHelper.h"
 
+#include <fstream>
+
+
 
 namespace april_content
 {
@@ -56,6 +59,26 @@ namespace april_content
 			      << " time: " << pCaloHit->GetTime() << std::endl;
 	}
 #endif
+
+//Added by TP
+	//std::ofstream fichier("/scratch/pasquier/TimingLayer.txt", std::ios::app);
+
+	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
+        endIter != iter ; ++iter)
+    {
+        const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*iter));
+		if(pandora::HCAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits
+		{
+			float hitTime = (*iter)->GetTime(); //Gives time in nanoseconds
+			int timingLayer = hitTime / m_timeResolution;
+			APRILContentApi::Modifiable(pCaloHit)->SetTimingLayer(timingLayer);
+			//fichier << "Timing Layer : " << pCaloHit->GetTimingLayer() << " " << std::endl; 
+		}
+		else
+			continue;
+	}
+	//fichier.close();
+//End added by TP
 
 	if(m_timing) 
 	{
@@ -130,13 +153,17 @@ namespace april_content
 
   pandora::StatusCode CaloHitTimingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
-	m_timing = true;
+	m_timing = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ApplyTiming", m_timing));
 
     m_timeCut = 100.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "TimeCut", m_timeCut));
+
+	m_timeResolution = 0.1f; //in nanoseconds
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "TimeResolution", m_timeResolution));
 
     return pandora::STATUS_CODE_SUCCESS;
   }

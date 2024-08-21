@@ -32,13 +32,14 @@ namespace april_content
 {
 
   CaloHit::CaloHit(const PandoraApi::CaloHit::Parameters &parameters) :
-      pandora::CaloHit(parameters),
-      m_surroundingEnergy(0.f),
-      m_density(0.f),
-	  m_motherCluster(nullptr)
-  {
-    m_pCaloHitMetaData = new CaloHitMetaData(this);
-  }
+    pandora::CaloHit(parameters),
+    m_surroundingEnergy(0.f),
+    m_density(0.f),
+	  m_motherCluster(nullptr),
+    m_timingLayer(0)
+    {
+      m_pCaloHitMetaData = new CaloHitMetaData(this);
+    }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -47,8 +48,8 @@ namespace april_content
       pandora::CaloHit(parameters),
       m_surroundingEnergy(0.f),
       m_density(0.f),
-	  m_motherCluster(nullptr)
-
+	    m_motherCluster(nullptr),
+      m_timingLayer(0)
   {
     const CaloHit *const pCaloHitCopy = dynamic_cast<const CaloHit *const>(parameters.m_pOriginalCaloHit);
 
@@ -59,6 +60,7 @@ namespace april_content
     m_hitTagMap = pCaloHitCopy->m_hitTagMap;
     m_surroundingEnergy = pCaloHitCopy->m_surroundingEnergy;
     m_density = pCaloHitCopy->m_density;
+    m_timingLayer = pCaloHitCopy->m_timingLayer;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -85,6 +87,13 @@ namespace april_content
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  unsigned int CaloHit::GetTimingLayer() const
+  {
+    return m_timingLayer;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   const pandora::Cluster* CaloHit::GetMother() const
   {
 	  return m_motherCluster;
@@ -95,6 +104,13 @@ namespace april_content
   void CaloHit::SetMother(const pandora::Cluster* cluster)
   {
 	  m_motherCluster = cluster;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  void CaloHit::SetTimingLayer(unsigned int timingLayer)
+  {
+	  m_timingLayer = timingLayer;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

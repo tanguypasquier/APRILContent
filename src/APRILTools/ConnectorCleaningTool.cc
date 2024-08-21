@@ -166,17 +166,20 @@ namespace april_content
         const float distance = pConnector->GetLength(); //In mm
 #if 0
         //Added by TP
-        const float timing = pConnector->GetTiming() * 1e-6; //time in nanoseconds that we convert to have milliseconds
-        const float c = 2.99792458e8; //Lightspeed
-        const float beta = (distance/timing) / c;
-        //std::cout << "Beta : " << beta << std::endl;
-        //fichier << beta << std::endl;
-        //fichier.close();
-        if( beta > 1)
+        if(pandora::HCAL == pFromCaloHit->GetHitType())
         {
-          deleteConnectionCaloHitList.push_back(pFromCaloHit);
-          hasNonCausalConnector=true;
-          continue; //Add the connection to the list to delete and go to the next one
+          const float timing = pConnector->GetTiming() * 1e-6; //time in nanoseconds that we convert to have milliseconds
+          const float c = 2.99792458e8; //Lightspeed
+          const float beta = (distance/timing) / c;
+          //std::cout << "Beta : " << beta << std::endl;
+          //fichier << beta << std::endl;
+          //fichier.close();
+          if( beta > 1)
+          {
+            deleteConnectionCaloHitList.push_back(pFromCaloHit);
+            hasNonCausalConnector=true;
+            continue; //Add the connection to the list to delete and go to the next one
+          }
         }
 
         //End added by TP

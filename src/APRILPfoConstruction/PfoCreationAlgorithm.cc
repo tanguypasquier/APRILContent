@@ -32,6 +32,8 @@ PfoCreationAlgorithm::PfoCreationAlgorithm() :
 
 StatusCode PfoCreationAlgorithm::Run()
 {
+    //PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, ExportClustersData());
+
     const PfoList *pPfoList = NULL; std::string pfoListName;
     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::CreateTemporaryListAndSetCurrent(*this, pPfoList, pfoListName));
 
@@ -358,4 +360,4 @@ StatusCode PfoCreationAlgorithm::ReadSettings(const TiXmlHandle xmlHandle)
     return STATUS_CODE_SUCCESS;
 }
 
-} // namespace lc_content
+} // namespace april_content
