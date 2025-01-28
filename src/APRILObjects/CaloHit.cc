@@ -36,7 +36,8 @@ namespace april_content
     m_surroundingEnergy(0.f),
     m_density(0.f),
 	  m_motherCluster(nullptr),
-    m_timingLayer(0)
+    m_timingLayer(0),
+    m_smearedTime(0.f)
     {
       m_pCaloHitMetaData = new CaloHitMetaData(this);
     }
@@ -61,6 +62,7 @@ namespace april_content
     m_surroundingEnergy = pCaloHitCopy->m_surroundingEnergy;
     m_density = pCaloHitCopy->m_density;
     m_timingLayer = pCaloHitCopy->m_timingLayer;
+    m_smearedTime = pCaloHitCopy->m_smearedTime;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -92,6 +94,13 @@ namespace april_content
     return m_timingLayer;
   }
 
+   //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float CaloHit::GetSmearedTime() const
+  {
+    return m_smearedTime;
+  }
+
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   const pandora::Cluster* CaloHit::GetMother() const
@@ -111,6 +120,13 @@ namespace april_content
   void CaloHit::SetTimingLayer(unsigned int timingLayer)
   {
 	  m_timingLayer = timingLayer;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  void CaloHit::SetSmearedTime(float smearedTime)
+  {
+	  m_smearedTime = smearedTime;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

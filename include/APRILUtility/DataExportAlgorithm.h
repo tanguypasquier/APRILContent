@@ -65,6 +65,14 @@ private:
      */
     pandora::StatusCode ExportClustersData() const;
 
+    /**
+     *  @brief  Make energy correction on this given cluster
+     *
+     *  @param  pCluster the cluster address to correct the energy
+     *  @param  correctedEnergy the energy to correct
+     */
+    pandora::StatusCode ComputeClusterEnergy(const pandora::Cluster *const pCluster, float &correctedEnergy) const;
+
 
 };
 

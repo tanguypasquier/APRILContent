@@ -35,7 +35,7 @@
 
 #include <fstream>
 
-
+#include <random>
 
 namespace april_content
 {
@@ -63,15 +63,32 @@ namespace april_content
 //Added by TP
 	//std::ofstream fichier("/scratch/pasquier/TimingLayer.txt", std::ios::app);
 
+	std::default_random_engine generator;
+
 	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
         endIter != iter ; ++iter)
     {
         const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*iter));
 		if(pandora::HCAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits
 		{
-			float hitTime = (*iter)->GetTime(); //Gives time in nanoseconds
+			float hitTime = pCaloHit->GetTime(); //Gives "true" time in nanoseconds
 			int timingLayer = hitTime / m_timeResolution;
-			APRILContentApi::Modifiable(pCaloHit)->SetTimingLayer(timingLayer);
+
+			auto *modifiableCaloHit = APRILContentApi::Modifiable(pCaloHit); //To call the Set methods
+
+			modifiableCaloHit->SetTimingLayer(timingLayer);
+
+			std::normal_distribution<float> distribution(hitTime, m_timeResolution); //Smearing of the true time with the detector resolution
+			//pCaloHit->SetSmearedTime(distribution(generator));
+
+			const float smearedTime = (hitTime != 0) ? distribution(generator) : 0.0f; //Make sure that the true time isn't 0 (LCAL and LHCAL)
+		
+			modifiableCaloHit->SetSmearedTime(smearedTime);
+		
+			std::cout << "HCAL True time : " << pCaloHit->GetTime() << " ; " << "SmearedTime : " << pCaloHit->GetSmearedTime() << std::endl;
+			
+
+			//float timing = distribution(generator) * 1e-6; //Smeared timing converted in milliseconds
 			//fichier << "Timing Layer : " << pCaloHit->GetTimingLayer() << " " << std::endl; 
 		}
 		else
@@ -153,15 +170,15 @@ namespace april_content
 
   pandora::StatusCode CaloHitTimingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
-	m_timing = false;
+	m_timing = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ApplyTiming", m_timing));
 
-    m_timeCut = 100.f;
+    m_timeCut = 150.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "TimeCut", m_timeCut));
 
-	m_timeResolution = 0.1f; //in nanoseconds
+	m_timeResolution = 0.150f; //in nanoseconds
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "TimeResolution", m_timeResolution));
 

@@ -70,6 +70,11 @@ public:
 	float GetTiming() const;
 
 	/**
+	 *  @brief  Get the time duration (smeared by the detector resolution) between the two hits linked by the connector
+	 */
+	float GetSmearedTiming() const;
+
+	/**
 	 *  @brief  Get the reference length
 	 */
 	float GetReferenceLength() const;

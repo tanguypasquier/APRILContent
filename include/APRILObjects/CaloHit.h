@@ -62,19 +62,32 @@ public:
 	 */
 	float GetDensity() const;
 
+	
+
+	const pandora::Cluster* GetMother() const;
+	void  SetMother(const pandora::Cluster* cluster);
+
+	//Timing parameters added by TP
+
 	/**
 	 *  @brief  Get the hit timing layer
 	 */
 	unsigned int GetTimingLayer() const;
 
-	const pandora::Cluster* GetMother() const;
-	void  SetMother(const pandora::Cluster* cluster);
-//Added by TP
-
 	/**
 	 *  @brief  Set the hit timing layer
 	 */
 	void  SetTimingLayer(unsigned int timingLayer);
+
+	/**
+	 *  @brief  Get the hit smeared time
+	 */
+	float GetSmearedTime() const;
+
+	/**
+	 *  @brief  Set the hit smeared time
+	 */
+	void  SetSmearedTime(float smearedTime);
 
 private:
 	/**
@@ -131,7 +144,9 @@ protected:
 
 	const pandora::Cluster*                 m_motherCluster;
 
+	//Timing parameters added by TP
 	unsigned int 							m_timingLayer;
+	float 									m_smearedTime;
 
     friend class CaloHitFactory;
     friend class ::APRILContentApi;

@@ -42,6 +42,8 @@
 //Added by TP
 //#include <fstream>
 
+#include <random>
+
 namespace april_content
 {
   float ConnectorOrderParameter::m_smallAngleRange(0.01);
@@ -156,6 +158,7 @@ namespace april_content
 
       //Added by TP
       bool hasNonCausalConnector=false;
+      std::default_random_engine generator;
 
       // find the best connector with the smallest order parameter
 	  for(int iCon = 0; iCon < backwardConnectorVector.size(); ++iCon)
@@ -166,19 +169,27 @@ namespace april_content
         const float distance = pConnector->GetLength(); //In mm
 #if 0
         //Added by TP
-        if(pandora::HCAL == pFromCaloHit->GetHitType())
+        if(pandora::HCAL == pFromCaloHit->GetHitType() && pandora::HCAL == pConnector->GetTo()->GetHitType()) //Make sure that we a pure HCAL connector to use timing with
         {
-          const float timing = pConnector->GetTiming() * 1e-6; //time in nanoseconds that we convert to have milliseconds
-          const float c = 2.99792458e8; //Lightspeed
-          const float beta = (distance/timing) / c;
-          //std::cout << "Beta : " << beta << std::endl;
-          //fichier << beta << std::endl;
-          //fichier.close();
-          if( beta > 1)
+          //const float timing = pConnector->GetTiming() * 1e-6; //perfect time in nanoseconds that we convert to have milliseconds
+          //std::cout << "Perfect timing in nanoseconds : " << pConnector->GetTiming() << std::endl;
+          //std::normal_distribution<double> distribution(pConnector->GetTiming(),150e-3);
+
+          if(pFromCaloHit->GetTime() != 0 &&  pConnector->GetTo()->GetTime() != 0) //Make sure that both hits have a registered timing
           {
-            deleteConnectionCaloHitList.push_back(pFromCaloHit);
-            hasNonCausalConnector=true;
-            continue; //Add the connection to the list to delete and go to the next one
+            float timing = pConnector->GetSmearedTiming() * 1e-6; //Smeared timing converted in milliseconds
+          
+            const float c = 2.99792458e8; //Lightspeed
+            const float beta = (distance/timing) / c;
+            //std::cout << "Beta : " << beta << std::endl;
+            //fichier << beta << std::endl;
+            //fichier.close();
+            if( beta > 1)
+            {
+              deleteConnectionCaloHitList.push_back(pFromCaloHit);
+              hasNonCausalConnector=true;
+              continue; //Add the connection to the list to delete and go to the next one
+            }
           }
         }
 
