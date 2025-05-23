@@ -99,6 +99,7 @@
 
 #include "APRILTools/ConnectorCleaningTool.h"
 #include "APRILTools/ConnectorSeedingTool.h"
+#include "APRILTools/ConnectorTimingSeedingTool.h"
 #include "APRILTools/ConnectorPlusTool.h"
 #include "APRILTools/NearbyHitsConnectingTool.h"
 #include "APRILTools/ConnectorAlignmentTool.h"
@@ -257,6 +258,7 @@ public:
 #define APRIL_ALGORITHM_TOOL_LIST(d) \
     d("APRILConnectorCleaning",                   april_content::ConnectorCleaningTool::Factory) \
     d("APRILConnectorSeeding",                    april_content::ConnectorSeedingTool::Factory) \
+    d("APRILConnectorTimingSeeding",              april_content::ConnectorTimingSeedingTool::Factory) \
     d("APRILConnectorPlus",                       april_content::ConnectorPlusTool::Factory) \
     d("APRILNearbyHitsConnecting",                april_content::NearbyHitsConnectingTool::Factory) \
     d("APRILTrackDrivenSeeding",                  april_content::TrackDrivenSeedingTool::Factory) \

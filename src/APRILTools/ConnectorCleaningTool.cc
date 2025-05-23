@@ -169,13 +169,14 @@ namespace april_content
         const float distance = pConnector->GetLength(); //In mm
 #if 0
         //Added by TP
-        if(pandora::HCAL == pFromCaloHit->GetHitType() && pandora::HCAL == pConnector->GetTo()->GetHitType()) //Make sure that we a pure HCAL connector to use timing with
+        //if(pandora::HCAL == pFromCaloHit->GetHitType() && pandora::HCAL == pConnector->GetTo()->GetHitType()) //Make sure that we have a pure HCAL connector to use timing with
+        if((pandora::HCAL == pFromCaloHit->GetHitType() || pandora::ECAL == pFromCaloHit->GetHitType()) && (pandora::HCAL == pConnector->GetTo()->GetHitType() || pandora::ECAL == pConnector->GetTo()->GetHitType())) //Make sure that we have ECAL or HCAL hits
         {
           //const float timing = pConnector->GetTiming() * 1e-6; //perfect time in nanoseconds that we convert to have milliseconds
           //std::cout << "Perfect timing in nanoseconds : " << pConnector->GetTiming() << std::endl;
           //std::normal_distribution<double> distribution(pConnector->GetTiming(),150e-3);
 
-          if(pFromCaloHit->GetTime() != 0 &&  pConnector->GetTo()->GetTime() != 0) //Make sure that both hits have a registered timing
+          if(pFromCaloHit->GetSmearedTime() != 0 &&  pConnector->GetTo()->GetSmearedTime() != 0) //Make sure that both hits have a registered timing
           {
             float timing = pConnector->GetSmearedTiming() * 1e-6; //Smeared timing converted in milliseconds
           
@@ -230,7 +231,8 @@ namespace april_content
         }
       }
 
-      if(NULL != pBestCaloHit || hasNonCausalConnector) //Added by TP the condition to delete the connectors if hasNonCausalConnector is true even if no bestCaloHit found
+      //if(NULL != pBestCaloHit || hasNonCausalConnector) //Added by TP the condition to delete the connectors if hasNonCausalConnector is true even if no bestCaloHit found
+      if(NULL != pBestCaloHit)
         caloHitCleaningMap[pCaloHit] = deleteConnectionCaloHitList;
     }
 

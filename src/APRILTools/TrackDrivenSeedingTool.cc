@@ -535,7 +535,7 @@ namespace april_content
 			    {
 					const float maxLocalTransversDistance = maxTransverseDistance;
 
-			    	const pandora::CartesianVector fromHitDirection = GetFromHitDirection(pCaloHit);
+			    const pandora::CartesianVector fromHitDirection = GetFromHitDirection(pCaloHit);
 					const float localCaloHitsAngle = caloHitsVector.GetOpeningAngle(fromHitDirection);
                     const float localTransversDistance = caloHitsVector.GetMagnitude()*sin(localCaloHitsAngle);
 
@@ -559,6 +559,39 @@ namespace april_content
 			// z component: 3D distance magnitude
             if(distanceToHelix.GetZ() > maxDistanceToTrack)
               continue;
+
+            //Added by TP
+            /* if(pCaloHit->GetHitType() == pandora::HCAL && pTestCaloHit->GetHitType() == pandora::HCAL)
+            {
+              if(pCaloHit->GetSmearedTime()!=0 && pTestCaloHit->GetSmearedTime()!=0)
+              {
+                const float dt = fabs(pTestCaloHit->GetSmearedTime() - pCaloHit->GetSmearedTime()); //nanoseconds
+
+                const float c = 2.99792458e8; //Lightspeed
+                //const float beta = (caloHitsVector.GetMagnitude() / (dt * 1e-6)) / c;
+
+                const float resolution = 0.050f; //nanoseconds
+                const float time_tolerance = 2*sqrt(2)*resolution;
+                const float dist_tolerance = 10.0f; //Due to spreading of charge and cell size, in mm
+                const float dt_min = ( (caloHitsVector.GetMagnitude() - dist_tolerance) / c) * 1e6;
+
+                float dt_max = 10.0f; //Threshold for dt to exclude late hits and hits that are too far away time wise, in nanoseconds
+
+                if(dt == 0)
+                  continue;
+
+                // if(dt - tolerance > dt_max) //Time span between the two hits is too big
+                //   continue; 
+
+                if(dt + time_tolerance < dt_min) //Hits are not causally linkable
+                  continue;
+
+                // if(beta > 1) //Hits are not causally linkable
+                //   continue;
+
+              }
+            } */
+            //End added by TP
 
             unsigned int creationStage = m_connectorCreationStage;
             PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, APRILContentApi::Connect(pCaloHit, pTestCaloHit, april_content::FORWARD_DIRECTION, 1., creationStage));

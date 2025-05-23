@@ -64,13 +64,18 @@ namespace april_content
 
     	try
     	{
-			float hitPurity = -1.e6;
+			/* float hitPurity = -1.e6;
 			float energyPurity = -1.e6;
-			float ordClusterHit = -1e6;
+			float ordClusterHit = -1e6; */
+
+			float hitPurity = 0;
+			float energyPurity = 0;
+			float ordClusterHit = 0;
 
 			//PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GetPurity(cluster, hitPurity, energyPurity, ordClusterHit));
 			GetPurity(cluster, hitPurity, energyPurity, ordClusterHit);
 
+#if 0
 			if(energyPurity < 0.1) 
 			{
 				std::cout << "====== dumping cluster with low purity" << std::endl;
@@ -78,6 +83,7 @@ namespace april_content
 			    //PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GetPurity(cluster, hitPurity, energyPurity, ordClusterHit, true));
 			    GetPurity(cluster, hitPurity, energyPurity, ordClusterHit, true);
 			}
+#endif
 
 			float clusterSize = cluster->GetNCaloHits();
 			float clusterEnergy = cluster->GetHadronicEnergy();
@@ -244,11 +250,11 @@ namespace april_content
          const pandora::CaloHit* caloHit = *caloHitIter;
 		 const april_content::CaloHit *const pAPRILCaloHit = dynamic_cast<const april_content::CaloHit *const>(caloHit);
 	  
-		 if(pAPRILCaloHit->GetMother() != cluster ) 
+		 /* if(pAPRILCaloHit->GetMother() != cluster ) 
 		 {
 		     std::cout << " hit mother is set to: " << pAPRILCaloHit->GetMother() << ", but it is inside the cluster: " << cluster << std::endl;
 			 return pandora::STATUS_CODE_INVALID_PARAMETER;
-		 }
+		 } */
 	
 		 const pandora::MCParticle* caloHitMCP = NULL;
 

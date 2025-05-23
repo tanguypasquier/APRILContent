@@ -598,6 +598,8 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 		   const pandora::Cluster* clusterToAdd = nullptr;
 		   float hitsDistance = 0.;
 
+		   //int index = 0;
+
 		   for(auto& caloHit : neighborHits)
 		   {
 			   auto& hitPos = caloHit->GetPositionVector();
@@ -610,11 +612,49 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 			   //std::cout << "     the nearby hit distance: " << dist
 				 //  << ", pos: " << hitPos.GetX() << ", " << hitPos.GetY() << ", " << hitPos.GetZ() 
 				   //<< ", cluster: " << pAPRILCaloHit->GetMother() << std::endl;
-
-			   //if(pAPRILCaloHit != nullptr && clusterToAdd == nullptr)
+				   
+			   if(pAPRILCaloHit != nullptr && clusterToAdd == nullptr)
 			   {
-				   clusterToAdd = pAPRILCaloHit->GetMother();
-				   hitsDistance = (hitPos - testPosition).GetMagnitude();
+
+					hitsDistance = (hitPos - testPosition).GetMagnitude();
+
+					//Timing added by TP
+					/* if(pAPRILCaloHit->GetHitType() == pandora::HCAL && pCaloHit->GetHitType() == pandora::HCAL)
+					{
+						if(pAPRILCaloHit->GetSmearedTime()!=0 && pCaloHit->GetSmearedTime()!=0)
+						{
+							//Dynamic cast to have the SmearedTime info
+							const april_content::CaloHit *const pHitToRecover = reinterpret_cast<const april_content::CaloHit *const>(pCaloHit);
+							if(pAPRILCaloHit->GetSmearedTime() == 0 && pHitToRecover->GetSmearedTime() == 0) continue;
+
+							const float dt = fabs(pAPRILCaloHit->GetSmearedTime() - pHitToRecover->GetSmearedTime()); //nanoseconds
+			
+							const float c = 2.99792458e8; //Lightspeed
+			
+							const float resolution = 0.050f; //nanoseconds
+							const float time_tolerance = 2*sqrt(2)*resolution;
+							const float dist_tolerance = 10.0f; //Due to spreading of charge and cell size, in mm
+							const float dt_min = ( (hitsDistance - dist_tolerance) / c) * 1e6;
+			
+							float dt_max = 10.0f; //Threshold for dt to exclude late hits and hits that are too far away time wise, in nanoseconds
+			
+							if(dt == 0)
+								continue;
+			
+							if(dt + time_tolerance < dt_min) //Hits are not causally linkable
+								continue;
+
+							// if(dt - tolerance > dt_max) //Time span between the two hits is too big
+							// 	continue; 
+						}
+					} */
+					//End added by TP
+
+				    clusterToAdd = pAPRILCaloHit->GetMother(); //Initial thing
+				   
+				   //std::cout << "Voisin " << index << " a distance " << hitsDistance << " mm" << std::endl; 
+
+				   //index++;
 			   }
 		   }
 

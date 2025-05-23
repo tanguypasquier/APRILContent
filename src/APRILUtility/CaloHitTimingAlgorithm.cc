@@ -47,7 +47,7 @@ namespace april_content
     const pandora::CaloHitList *pCaloHitList = NULL;
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList));
 
-	std::cout << "  ---> CaloHit list size: " << pCaloHitList->size() << std::endl;
+	std::cout << "  ---> CaloHit list size before time cut: " << pCaloHitList->size() << std::endl;
 
 #if 0
     for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
@@ -65,37 +65,46 @@ namespace april_content
 
 	std::default_random_engine generator;
 
+	//std::cout << "HITS AVANT COUPURE : " << std::endl;
+
 	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
         endIter != iter ; ++iter)
     {
         const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*iter));
+		//if(pandora::HCAL == pCaloHit->GetHitType() || pandora::ECAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits AND ECAL HITS
 		if(pandora::HCAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits
 		{
 			float hitTime = pCaloHit->GetTime(); //Gives "true" time in nanoseconds
-			int timingLayer = hitTime / m_timeResolution;
 
 			auto *modifiableCaloHit = APRILContentApi::Modifiable(pCaloHit); //To call the Set methods
-
-			modifiableCaloHit->SetTimingLayer(timingLayer);
 
 			std::normal_distribution<float> distribution(hitTime, m_timeResolution); //Smearing of the true time with the detector resolution
 			//pCaloHit->SetSmearedTime(distribution(generator));
 
-			const float smearedTime = (hitTime != 0) ? distribution(generator) : 0.0f; //Make sure that the true time isn't 0 (LCAL and LHCAL)
+			//const float smearedTime = (hitTime != 0) ? distribution(generator) : 0.0f; //Make sure that the true time isn't 0 (LCAL and LHCAL)
+
+			const float smearedTime = hitTime;
 		
 			modifiableCaloHit->SetSmearedTime(smearedTime);
+
+			unsigned int timingLayer = smearedTime / m_timeLayerDuration;
+
+			modifiableCaloHit->SetTimingLayer(timingLayer);
 		
-			std::cout << "HCAL True time : " << pCaloHit->GetTime() << " ; " << "SmearedTime : " << pCaloHit->GetSmearedTime() << std::endl;
+			//std::cout << "HCAL True time : " << pCaloHit->GetTime() << " ; " << "SmearedTime : " << pCaloHit->GetSmearedTime() << std::endl;
 			
 
 			//float timing = distribution(generator) * 1e-6; //Smeared timing converted in milliseconds
 			//fichier << "Timing Layer : " << pCaloHit->GetTimingLayer() << " " << std::endl; 
+			//std::cout << "Timing Layer : " << pCaloHit->GetTimingLayer() << std::endl; 
 		}
 		else
 			continue;
 	}
 	//fichier.close();
 //End added by TP
+
+#if 0
 
 	if(m_timing) 
 	{
@@ -108,11 +117,14 @@ namespace april_content
 
 		for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(); iter != pCaloHitList->end(); ++iter)
 		{
-			float hitTime = (*iter)->GetTime();
+			const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*iter));
+
+			//float hitTime = (*iter)->GetTime();
+			float hitTime = pCaloHit->GetSmearedTime();
 			const pandora::CartesianVector& hitPos  = (*iter)->GetPositionVector();
-#if 0
+//#if 0
 			std::cout << "hit time: " << hitTime << std::endl;
-#endif
+//#endif
 
 			caloHitsMonitor->Fill(hitPos.GetX(), hitPos.GetY(), hitPos.GetZ(), hitTime);
 
@@ -132,14 +144,42 @@ namespace april_content
 
 		std::string caloHitName("HitsAfterTiming");
 		PandoraContentApi::SaveList<pandora::CaloHitList>(*this, caloHitList, caloHitName);
-		PandoraContentApi::ReplaceCurrentList<pandora::CaloHit>(*this, caloHitName);
 
 		std::string caloLateHitName("LateHits");
 		PandoraContentApi::SaveList<pandora::CaloHitList>(*this, caloLateHitList, caloLateHitName);
+
+		if(!m_secondClustering)
+			PandoraContentApi::ReplaceCurrentList<pandora::CaloHit>(*this, caloHitName);
+		else 
+			{
+				PandoraContentApi::ReplaceCurrentList<pandora::CaloHit>(*this, caloLateHitName);
+				std::cout << "############ SECOND CLUSTERING ############" << std::endl;
+			}
+			
     
 		PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraContentApi::GetCurrentList(*this, pCaloHitList)); 
 		std::cout << "  ---> CaloHit list size after timing: " << pCaloHitList->size() << std::endl;
+
+		
+
+		/* //Just to compare list of hits before and after cut
+		std::cout << "HITS APRES COUPURE : " << std::endl;
+
+		for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
+        endIter != iter ; ++iter)
+		{
+			const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*iter));
+			if(pandora::HCAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits
+			{
+
+				std::cout << "HCAL True time : " << pCaloHit->GetTime() << " ; " << "SmearedTime : " << pCaloHit->GetSmearedTime() << std::endl;
+			}
+			else
+				continue;
+		} */
 	}
+
+#endif
 
     return pandora::STATUS_CODE_SUCCESS;
   }
@@ -174,14 +214,21 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ApplyTiming", m_timing));
 
-    m_timeCut = 150.f;
+    m_timeCut = 100.f; //in nanoseconds
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "TimeCut", m_timeCut));
 
-	m_timeResolution = 0.150f; //in nanoseconds
+	m_timeResolution = 0.050f; //in nanoseconds
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "TimeResolution", m_timeResolution));
 
+	m_timeLayerDuration = 0.150f; //in nanoseconds
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "TimeLayerDuration", m_timeLayerDuration));
+	
+	m_secondClustering = false;
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "SecondClustering", m_secondClustering));
     return pandora::STATUS_CODE_SUCCESS;
   }
 

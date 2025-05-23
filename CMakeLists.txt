@@ -83,6 +83,8 @@ INCLUDE( CheckCXXCompilerFlag )
 #    UNSET( CMAKE_CXX_FLAGS )
 #ENDIF()
 
+add_compile_options(-w)
+
 if(APPLE)
    SET( CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Wno-long-long -Wno-sign-compare -fno-strict-aliasing -fopenmp ${CMAKE_CXX_FLAGS}" )
 else()

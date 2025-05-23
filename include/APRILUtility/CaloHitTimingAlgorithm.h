@@ -61,9 +61,11 @@ private:
 	pandora::StatusCode	Initialize();
 
     bool                            m_timing;
+    bool                            m_secondClustering;
 
     float                           m_timeCut;
     float                           m_timeResolution;
+    float                           m_timeLayerDuration;
 
 	TNtupleD*                       caloHitsMonitor;
 };

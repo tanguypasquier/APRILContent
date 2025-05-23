@@ -33,6 +33,7 @@
 #include "APRILHelpers/CaloHitHelper.h"
 #include "APRILTools/ConnectorAlgorithmTool.h"
 #include "APRILTools/ConnectorSeedingTool.h"
+#include "APRILTools/ConnectorTimingSeedingTool.h"
 #include "APRILHelpers/CaloHitRangeSearchHelper.h"
 #include "APRILHelpers/CaloHitNeighborSearchHelper.h"
 

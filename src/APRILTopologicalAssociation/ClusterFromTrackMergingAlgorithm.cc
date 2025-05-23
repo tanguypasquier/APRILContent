@@ -82,6 +82,7 @@ namespace april_content
 		}
 		catch(pandora::StatusCodeException &)
 		{
+			//std::cout << "FLAG 1" << std::endl;
 		}
 #endif
 
@@ -147,6 +148,7 @@ namespace april_content
 		}
 		catch(pandora::StatusCodeException &)
 		{
+			//std::cout << "FLAG 2" << std::endl;
 		}
 		/////////////////////
 
