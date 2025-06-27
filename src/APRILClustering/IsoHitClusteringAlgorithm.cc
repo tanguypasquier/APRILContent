@@ -160,13 +160,14 @@ namespace april_content
 		return;
 	}
 
-	float clusterEnergy = pCluster->GetHadronicEnergy();
+	//float clusterEnergy = pCluster->GetHadronicEnergy(); //Comment by TP
+	float clusterEnergy = pCluster->GetCorrectedHadronicEnergy();
 	std::cout << "cluster energy: " << clusterEnergy << std::endl;
 
 	// FIXME
 	if(clusterEnergy<0.0001)
 	{
-		std::cout << " |=====>  a cluster with energy: " << pCluster->GetHadronicEnergy() 
+		std::cout << " |=====>  a cluster with energy: " << pCluster->GetCorrectedHadronicEnergy() 
 			      << ", hit size: " << pCaloHitList->size() << ", not created ..." << std::endl;
 
 		PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraContentApi::Delete(*this, pCluster));
@@ -185,7 +186,7 @@ namespace april_content
         }
 
 #if 1
-		std::cout << " |------>  created a cluster with PID: " << pid << ", energy: " << pCluster->GetHadronicEnergy() 
+		std::cout << " |------>  created a cluster with PID: " << pid << ", energy: " << pCluster->GetCorrectedHadronicEnergy() 
 			      << ", hit size: " << pCaloHitList->size() << std::endl;
 #endif
 	}

@@ -31,6 +31,8 @@
 
 #include "APRILTools/ConnectorAlgorithmTool.h"
 
+#include <memory>
+
 namespace april_content
 {
 

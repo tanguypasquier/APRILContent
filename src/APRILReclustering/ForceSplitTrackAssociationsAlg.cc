@@ -99,7 +99,8 @@ StatusCode ForceSplitTrackAssociationsAlg::Run()
                     PANDORA_RETURN_RESULT_IF(STATUS_CODE_SUCCESS, !=, helix.GetDistanceToPoint(hitPosition, helixSeparation));
 
                     const float distanceToTrack(helixSeparation.GetMagnitude());
-                    const float clusterEnergy(pCluster->GetHadronicEnergy());
+                    //const float clusterEnergy(pCluster->GetHadronicEnergy()); //Comment by TP
+                    const float clusterEnergy(pCluster->GetCorrectedHadronicEnergy()); 
 
                     if ((distanceToTrack < minDistanceToTrack) || ((distanceToTrack == minDistanceToTrack) && (clusterEnergy > bestClusterEnergy)))
                     {

@@ -505,7 +505,8 @@ namespace april_content
 		return;
 	}
 
-	float clusterEnergy = pCluster->GetHadronicEnergy();
+	//float clusterEnergy = pCluster->GetHadronicEnergy(); //Comment by TP
+  float clusterEnergy = pCluster->GetCorrectedHadronicEnergy();
 	std::cout << "cluster energy: " << clusterEnergy << std::endl;
 
 	// FIXME

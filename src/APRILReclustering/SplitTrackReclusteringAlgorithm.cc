@@ -78,7 +78,7 @@ namespace april_content
 	  }
 	  else
 	  {
-		  std::cout << "Warning: A cluster with energy " << pOriginalCluster->GetHadronicEnergy() << " has " 
+		  std::cout << "Warning: A cluster with energy " << pOriginalCluster->GetCorrectedHadronicEnergy() << " has " 
 			        << nTracks << " tracks associated!!! " << std::endl; 
 	  }
 

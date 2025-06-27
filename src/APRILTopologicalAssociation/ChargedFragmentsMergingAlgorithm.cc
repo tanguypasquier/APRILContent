@@ -87,7 +87,8 @@ namespace april_content
 
 		if(m_debugOutput)
 		{
-			std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() 
+			//std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetHadronicEnergy() //Comment by TP
+			std::cout << " --- cluster : " << pCluster << ", energy: " << pCluster->GetCorrectedHadronicEnergy() 
 			      << ", COG: " << centroid.GetX() << ", " << centroid.GetY() << ", " << centroid.GetZ() << ", isPoton: " << isPhoton 
 				  << ", associatedTrackList size: " << pCluster->GetAssociatedTrackList().size() << std::endl;
 		}
@@ -114,7 +115,8 @@ namespace april_content
 			{
 	            if(m_debugOutput2)
 				{
-					std::cout << " ---> fit all hits for cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+					//std::cout << " ---> fit all hits for cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl; //Comment by TP
+					std::cout << " ---> fit all hits for cluster " << pCluster << ", E: " << pCluster->GetCorrectedHadronicEnergy() << std::endl;
 				}
 				pandora::ClusterFitHelper::FitFullCluster(pCluster, clusterFitResult);
 			}
@@ -129,7 +131,8 @@ namespace april_content
 		{
 	        if(m_debugOutput2)
 			{
-				std::cout << " ---> fitting cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << " failed." << std::endl;
+				//std::cout << " ---> fitting cluster " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << " failed." << std::endl; //Comment by TP
+				std::cout << " ---> fitting cluster " << pCluster << ", E: " << pCluster->GetCorrectedHadronicEnergy() << " failed." << std::endl;
 			}
 		}
 
@@ -282,7 +285,8 @@ namespace april_content
 	  if(m_debugOutput)
 	  {
 		  const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(startingCluster);
-	      float startCluEnergy = startingCluster->GetHadronicEnergy();
+	      //float startCluEnergy = startingCluster->GetHadronicEnergy(); //Comment by TP
+		  float startCluEnergy = startingCluster->GetCorrectedHadronicEnergy();
 
 	      auto pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(pandoraTrackStartClu);
 	      std::cout << " SearchProperClusters for charged cluster: " << startingCluster << ", Ehad: " << startCluEnergy << ", MCP: " << pClusterMCParticle << std::endl;
@@ -305,7 +309,8 @@ namespace april_content
 
 		  if(m_debugOutput)
 		  {
-			  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
+			//   std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl; //Comment by TP
+			  std::cout << "nearbyClusters " << i << " : " << nearbyCluster << ", E: " << nearbyCluster->GetCorrectedHadronicEnergy() << std::endl;
 		  }
 
 		  // GetClustersDistance
@@ -328,7 +333,7 @@ namespace april_content
 		          auto pandoraCluMCP = pandora::MCParticleHelper::GetMainMCParticle(pandoraClu);
 
 		          if( pandora::PdgTable::GetParticleCharge(pandoraCluMCP->GetParticleId()) == 0. && 
-		              nearbyCluster->GetHadronicEnergy() > 0. )
+		              nearbyCluster->GetCorrectedHadronicEnergy() > 0. )
 		          {
 		            		continue;
 		          }
@@ -351,7 +356,7 @@ namespace april_content
 		  {
 			  if(m_debugOutput2)
 			  {
-				  std::cout << "    === Axis error, cluster " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl;
+				  std::cout << "    === Axis error, cluster " << nearbyCluster << ", E: " << nearbyCluster->GetCorrectedHadronicEnergy() << std::endl;
 			  }
 		  }
 
@@ -363,8 +368,8 @@ namespace april_content
 	      if(m_debugOutput2)
 		  {
 			  std::cout << " @_@ Check clusters @_@: " << std::endl
-		      << "  startingCluster: " << startingCluster << ", E: " << startingCluster->GetHadronicEnergy() << std::endl
-		      << "  nearbyCluster: " << nearbyCluster << ", E: " << nearbyCluster->GetHadronicEnergy() << std::endl
+		      << "  startingCluster: " << startingCluster << ", E: " << startingCluster->GetCorrectedHadronicEnergy() << std::endl
+		      << "  nearbyCluster: " << nearbyCluster << ", E: " << nearbyCluster->GetCorrectedHadronicEnergy() << std::endl
 		      << "  closestDistance: " << closestDistance << ", angle: " << angle 
 			  << ", axesDistance: " << axesDistance << ", isAxesCompatible: " << isAxesCompatible << std::endl;
 		  }
@@ -462,7 +467,7 @@ namespace april_content
 	  if(m_debugOutput2)
 	  {
 		  std::cout << "       === ClusterAxesDistance === " << std::endl
-		        << " E1: " << startingCluster->GetHadronicEnergy() << ", E2: " << nearbyCluster->GetHadronicEnergy() << std::endl
+		        << " E1: " << startingCluster->GetCorrectedHadronicEnergy() << ", E2: " << nearbyCluster->GetCorrectedHadronicEnergy() << std::endl
 		        << " cluster1Axis: " << cluster1Axis.GetX() << ", " << cluster1Axis.GetY() << ", " << cluster1Axis.GetZ() << std::endl
 		        << " cluster2Axis: " << cluster2Axis.GetX() << ", " << cluster2Axis.GetY() << ", " << cluster2Axis.GetZ() << std::endl
 				<< " COG1: " << cog1.GetX() << ", " << cog1.GetY() << ", " << cog1.GetZ() << std::endl
