@@ -81,8 +81,19 @@ namespace april_content
     {
       const pandora::Cluster *const pCluster(*clusterIter);
 
-      if(pCluster->PassPhotonId(this->GetPandora()))
+      // not enough hits or energy for a 'real' cluster ?
+      if(pCluster->GetNCaloHits() < m_maxNHitsForAutomaticRemoval || pCluster->GetHadronicEnergy() < m_maxEnergyForAutomaticRemoval)
+      {
+        removalClusterVector.push_back(pCluster);
         continue;
+      }
+
+      if(pCluster->PassPhotonId(this->GetPandora()))
+      {
+        //std::cout << "FLAG PHOTON" << std::endl;
+        continue;
+      }
+
 
       // discriminate charged particles
       if(!pCluster->GetAssociatedTrackList().empty())
@@ -95,13 +106,6 @@ namespace april_content
       if(pCluster->GetNCaloHits() > m_maxNHitsNonFragments || pCluster->GetHadronicEnergy() > m_maxEnergyNonFragments)
       {
         nonFragmentsClusterVector.push_back(pCluster);
-        continue;
-      }
-
-      // too less hits or energy for a 'real' cluster ?
-      if(pCluster->GetNCaloHits() < m_maxNHitsForAutomaticRemoval || pCluster->GetHadronicEnergy() < m_maxEnergyForAutomaticRemoval)
-      {
-        removalClusterVector.push_back(pCluster);
         continue;
       }
 
@@ -119,7 +123,7 @@ namespace april_content
         continue;
       }
 
-      // Real neutral fragments should escaping from showers should
+      // Real neutral fragments escaping from showers should
       // have been merged by topological association before this step.
       // What remains is 'cloudy' structures.
       // Play with cluster mean density and similar variables to discriminate
