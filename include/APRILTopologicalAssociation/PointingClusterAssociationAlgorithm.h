@@ -118,6 +118,10 @@ private:
 	float                            m_minClusterCosOpeningAngle;
 	float                            m_minClusterFitCosOpeningAngle;
 	float                            m_minClusterFitCosOpeningAngle2;
+	float 							 m_maxCrossDca;
+    float 							 m_maxCloseDistance;
+    float 							 m_maxBaryProjDistance;
+    float 							 m_maxBaryProjAngle;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
