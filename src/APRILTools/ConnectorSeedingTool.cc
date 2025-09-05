@@ -200,7 +200,7 @@ namespace april_content
                 const float c = 2.99792458e8; //Lightspeed
                 //const float beta = (difference/(dt * 1e-6)) / c;
 
-                const float resolution = 0.050f; //nanoseconds
+                const float resolution = 0.500f; //nanoseconds
                 const float time_tolerance = 2*sqrt(2)*resolution; //Due to time resolution, in nanoseconds
                 const float dist_tolerance = 10.0f; //Due to spreading of charge and cell size, in mm
                 const float dt_min = ( (difference - dist_tolerance) / c) * 1e6;

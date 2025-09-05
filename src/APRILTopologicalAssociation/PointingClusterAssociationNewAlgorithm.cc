@@ -81,8 +81,8 @@ namespace april_content
 		}
 		catch(pandora::StatusCodeException &)
 		{
-			//std::cout << "Fit failed, cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
-			//continue;
+			std::cout << "Fit failed, cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+			continue;
 		}
 
 		try
@@ -97,8 +97,8 @@ namespace april_content
 		}
 		catch(pandora::StatusCodeException &)
 		{
-			//std::cout << "Fit failed, cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
-			//continue;
+			std::cout << "Fit failed, cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+			continue;
 		}
 
 		try
@@ -113,7 +113,7 @@ namespace april_content
 		}
 		catch(pandora::StatusCodeException &)
 		{
-			//std::cout << "Fit failed, cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
+			std::cout << "Fit failed, cluster: " << pCluster << ", E: " << pCluster->GetHadronicEnergy() << std::endl;
 			continue;
 		}
 	}
@@ -957,7 +957,7 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxBackwardAngle", m_maxBackwardAngle));
 
-    m_maxBackwardDistanceFine = 300.f;
+    m_maxBackwardDistanceFine = 1000.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxBackwardDistanceFine", m_maxBackwardDistanceFine));
 
@@ -965,7 +965,7 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxBackwardDistanceCoarse", m_maxBackwardDistanceCoarse));
 
-    m_maxBackwardPseudoLayer = 20;
+    m_maxBackwardPseudoLayer = 50;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxBackwardPseudoLayer", m_maxBackwardPseudoLayer));
 

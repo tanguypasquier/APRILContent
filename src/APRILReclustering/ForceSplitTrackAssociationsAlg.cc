@@ -100,7 +100,7 @@ StatusCode ForceSplitTrackAssociationsAlg::Run()
 
                     const float distanceToTrack(helixSeparation.GetMagnitude());
                     //const float clusterEnergy(pCluster->GetHadronicEnergy()); //Comment by TP
-                    const float clusterEnergy(pCluster->GetCorrectedHadronicEnergy()); 
+                    const float clusterEnergy(pCluster->GetHadronicEnergy()); 
 
                     if ((distanceToTrack < minDistanceToTrack) || ((distanceToTrack == minDistanceToTrack) && (clusterEnergy > bestClusterEnergy)))
                     {

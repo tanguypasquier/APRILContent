@@ -91,7 +91,7 @@ namespace april_content
           // hadronic shower
           else
           {
-            const float clusterEnergy((*iter)->GetCorrectedHadronicEnergy(this->GetPandora()));
+            const float clusterEnergy((*iter)->GetHadronicEnergy());
             clusterEnergySum += clusterEnergy;
           }
         }

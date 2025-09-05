@@ -561,7 +561,7 @@ namespace april_content
               continue;
 
             //Added by TP
-            /* if(pCaloHit->GetHitType() == pandora::HCAL && pTestCaloHit->GetHitType() == pandora::HCAL)
+           /*  if(pCaloHit->GetHitType() == pandora::HCAL && pTestCaloHit->GetHitType() == pandora::HCAL)
             {
               if(pCaloHit->GetSmearedTime()!=0 && pTestCaloHit->GetSmearedTime()!=0)
               {
@@ -570,7 +570,7 @@ namespace april_content
                 const float c = 2.99792458e8; //Lightspeed
                 //const float beta = (caloHitsVector.GetMagnitude() / (dt * 1e-6)) / c;
 
-                const float resolution = 0.050f; //nanoseconds
+                const float resolution = 0.500f; //nanoseconds
                 const float time_tolerance = 2*sqrt(2)*resolution;
                 const float dist_tolerance = 10.0f; //Due to spreading of charge and cell size, in mm
                 const float dt_min = ( (caloHitsVector.GetMagnitude() - dist_tolerance) / c) * 1e6;

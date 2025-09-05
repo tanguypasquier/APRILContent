@@ -490,7 +490,7 @@ namespace april_content
   
           std::stringstream sstr;
           //sstr << starter << "Cluster\nEem(corr)=" << pCluster->GetElectromagneticEnergy() << "\nEhad(corr)=" << pCluster->GetHadronicEnergy() //Comment by TP
-          sstr << starter << "Cluster\nEem(corr)=" << pCluster->GetElectromagneticEnergy() << "\nEhad(corr)=" << pCluster->GetCorrectedHadronicEnergy() 
+          sstr << starter << "Cluster\nEem(corr)=" << pCluster->GetElectromagneticEnergy() << "\nEhad(corr)=" << pCluster->GetCorrectedHadronicEnergy(this->GetPandora()) 
               << "\nNHits=" << pCluster->GetNCaloHits()
 			  << "\nInnerHitType=" << GetHitTypeString(pCluster->GetInnerLayerHitType())
               << "\nOuterHitType=" << GetHitTypeString(pCluster->GetOuterLayerHitType());
@@ -777,7 +777,7 @@ namespace april_content
 
       std::stringstream sstr;
 	  // sstr << "Direction of cluster, Ehad=" << pCluster->GetHadronicEnergy(); //Comment by TP
-    sstr << "Direction of cluster, Ehad=" << pCluster->GetCorrectedHadronicEnergy();
+    sstr << "Direction of cluster, Ehad=" << pCluster->GetCorrectedHadronicEnergy(this->GetPandora());
 
 	  std::string directionTitle(sstr.str());
 

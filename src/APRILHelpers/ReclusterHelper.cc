@@ -156,7 +156,7 @@ namespace april_content
     {
       const pandora::Cluster *const pCluster = *iter;
 
-      const float clusterEnergy(pCluster->GetCorrectedHadronicEnergy(pandora));
+      const float clusterEnergy(pCluster->GetHadronicEnergy());
       const pandora::TrackList &trackList(pCluster->GetAssociatedTrackList());
       const unsigned int nTracks(trackList.size());
 

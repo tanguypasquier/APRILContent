@@ -621,17 +621,15 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 					//Timing added by TP
 					/* if(pAPRILCaloHit->GetHitType() == pandora::HCAL && pCaloHit->GetHitType() == pandora::HCAL)
 					{
-						if(pAPRILCaloHit->GetSmearedTime()!=0 && pCaloHit->GetSmearedTime()!=0)
+						//Dynamic cast to have the SmearedTime info
+						const april_content::CaloHit *const pHitToRecover = reinterpret_cast<const april_content::CaloHit *const>(pCaloHit);
+						if(pAPRILCaloHit->GetSmearedTime()!=0 && pHitToRecover->GetSmearedTime()!=0)
 						{
-							//Dynamic cast to have the SmearedTime info
-							const april_content::CaloHit *const pHitToRecover = reinterpret_cast<const april_content::CaloHit *const>(pCaloHit);
-							if(pAPRILCaloHit->GetSmearedTime() == 0 && pHitToRecover->GetSmearedTime() == 0) continue;
-
 							const float dt = fabs(pAPRILCaloHit->GetSmearedTime() - pHitToRecover->GetSmearedTime()); //nanoseconds
 			
 							const float c = 2.99792458e8; //Lightspeed
 			
-							const float resolution = 0.050f; //nanoseconds
+							const float resolution = 0.500f; //nanoseconds
 							const float time_tolerance = 2*sqrt(2)*resolution;
 							const float dist_tolerance = 10.0f; //Due to spreading of charge and cell size, in mm
 							const float dt_min = ( (hitsDistance - dist_tolerance) / c) * 1e6;
@@ -677,7 +675,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 
               try
               {
-              	 pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(clusterToAdd);
+              	 /* pClusterMCParticle = pandora::MCParticleHelper::GetMainMCParticle(clusterToAdd);
            	  
 		         const pandora::MCParticle* pMCHitParticle = nullptr;
 				 pMCHitParticle = pandora::MCParticleHelper::GetMainMCParticle(pCaloHit);
@@ -700,7 +698,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 	             //vars.push_back( mvaValue );
 
 		         HistogramManager::CreateFill("AddNearbyHitToCluster", 
-			     "evtNumber:hitsDistance:isRight:hitPDG:clusterPDG:hitMCPCharge:clusterMCPCharge", vars);
+			     "evtNumber:hitsDistance:isRight:hitPDG:clusterPDG:hitMCPCharge:clusterMCPCharge", vars); */
 			  }
               catch (pandora::StatusCodeException &)
               {

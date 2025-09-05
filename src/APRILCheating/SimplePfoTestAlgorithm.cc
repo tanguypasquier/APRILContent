@@ -239,7 +239,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 					{
                         const pandora::MCParticle *const pCluMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pClu));
                         const bool isPhoton(pandora::PHOTON == pCluMCParticle->GetParticleId());
-                        float clusterEnergy(isPhoton ? pClu->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pClu->GetCorrectedHadronicEnergy(this->GetPandora()));
+                        float clusterEnergy(isPhoton ? pClu->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pClu->GetHadronicEnergy());
 
 					    std::cout << "Add cluster energy" << std::endl;
 					    pfoTargetNeutralEnergy += clusterEnergy;
@@ -271,7 +271,7 @@ void SimplePfoTestAlgorithm::PfoTargetEnergy() const
 
                     const pandora::MCParticle *const pCluMCParticle(pandora::MCParticleHelper::GetMainMCParticle(pCluster));
                     const bool isPhoton(pandora::PHOTON == pCluMCParticle->GetParticleId());
-                    float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetCorrectedHadronicEnergy(this->GetPandora()));
+                    float clusterEnergy(isPhoton ? pCluster->GetCorrectedElectromagneticEnergy(this->GetPandora()) : pCluster->GetHadronicEnergy());
 
 					pfoTargetNeutralEnergy += clusterEnergy;
 
