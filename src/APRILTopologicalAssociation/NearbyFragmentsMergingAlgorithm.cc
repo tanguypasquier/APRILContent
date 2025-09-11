@@ -541,7 +541,7 @@ namespace april_content
 #endif
 
 		// find the best one
-		ClustersOrderParameter bestOrderParameter;
+		ClustersOrderParameter bestOrderParameter; //Default constructor on +inf
 		APRILCluster* bestCluster;
 
 		for(int iMother = 0; iMother < mothers.size(); ++iMother)
@@ -707,7 +707,7 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MinClusterFitCosOpeningAngle2", m_minClusterFitCosOpeningAngle2));
 
-    m_maxStartingClusterDistance = 2000.;
+    m_maxStartingClusterDistance = 750.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxStartingClusterDistance", m_maxStartingClusterDistance));
 

@@ -109,7 +109,7 @@ namespace april_content
 
   pandora::StatusCode SurroundingHitsMergingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
-    m_shouldMergeIsolatedHits = false;
+    m_shouldMergeIsolatedHits = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ShouldMergeIsolatedHits", m_shouldMergeIsolatedHits));
 
