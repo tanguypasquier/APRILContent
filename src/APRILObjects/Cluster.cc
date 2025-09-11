@@ -27,6 +27,7 @@
 
 
 #include "APRILObjects/Cluster.h"
+#include "APRILObjects/CaloHit.h"
 
 namespace april_content
 {
@@ -83,6 +84,132 @@ namespace april_content
 	  }
 
 	  return hadronicEnergy;
+  }
+
+  float APRILCluster::GetMeanSmearedTime() const
+  {
+    float meanSmearedTime = 0.;
+    unsigned int nHits = 0;
+
+    for (pandora::OrderedCaloHitList::const_iterator ochIter = m_orderedCaloHitList.begin();  ochIter != m_orderedCaloHitList.end(); ++ochIter)
+    {
+      for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
+      {
+        const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
+        if (pCaloHit)
+        {
+          meanSmearedTime += pCaloHit->GetSmearedTime();
+          ++nHits;
+        }
+      }
+    }
+
+    if(nHits > 0)
+      meanSmearedTime /= nHits;
+
+    return meanSmearedTime;
+  }
+
+  float APRILCluster::GetMeanSmearedTimeStart(unsigned int nLayers) const
+  {
+    float meanSmearedTime = 0.;
+    unsigned int nHits = 0;
+    unsigned int layerCounter = 0;
+
+    for (pandora::OrderedCaloHitList::const_iterator ochIter = m_orderedCaloHitList.begin();  ochIter != m_orderedCaloHitList.end(); ++ochIter, ++layerCounter)
+    {
+      if (layerCounter >= nLayers)
+            break;
+
+      for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
+      {
+        const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
+        if (pCaloHit)
+        {
+          meanSmearedTime += pCaloHit->GetSmearedTime();
+          ++nHits;
+        }
+      }
+    }
+
+    if(nHits > 0)
+      meanSmearedTime /= nHits;
+
+    return meanSmearedTime;
+  }
+
+  float APRILCluster::GetMeanSmearedTimeEnd(unsigned int nLayers) const
+  {
+    float meanSmearedTime = 0.;
+    unsigned int nHits = 0;
+    unsigned int layerCounter = 0;
+
+    for (pandora::OrderedCaloHitList::const_reverse_iterator ochIter = m_orderedCaloHitList.rbegin(); ochIter != m_orderedCaloHitList.rend(); ++ochIter, ++layerCounter)
+    {
+      if (layerCounter >= nLayers)
+            break;
+
+      for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
+      {
+        const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
+        if (pCaloHit)
+        {
+          meanSmearedTime += pCaloHit->GetSmearedTime();
+          ++nHits;
+        }
+      }
+    }
+
+    if(nHits > 0)
+      meanSmearedTime /= nHits;
+
+    return meanSmearedTime;
+  }
+
+  float APRILCluster::GetEarliestHitTime() const
+  {
+    float meanSmearedTime = 0.;
+    float earliestTime = std::numeric_limits<float>::max();
+
+    for (pandora::OrderedCaloHitList::const_iterator ochIter = m_orderedCaloHitList.begin();  ochIter != m_orderedCaloHitList.end(); ++ochIter)
+    {
+      for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
+      {
+        const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
+        if (pCaloHit)
+        {
+          if(pCaloHit->GetSmearedTime() < earliestTime)
+          {
+            earliestTime = pCaloHit->GetSmearedTime();
+          }
+        }
+      }
+    }
+
+    return earliestTime;
+  }
+
+  float APRILCluster::GetLatestHitTime() const
+  {
+    float meanSmearedTime = 0.;
+    float latestTime = 0.;
+
+    for (pandora::OrderedCaloHitList::const_iterator ochIter = m_orderedCaloHitList.begin();  ochIter != m_orderedCaloHitList.end(); ++ochIter)
+    {
+      for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
+      {
+        const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
+        if (pCaloHit)
+        {
+          if(pCaloHit->GetSmearedTime() > latestTime)
+          {
+            latestTime = pCaloHit->GetSmearedTime();
+          }
+        }
+      }
+    }
+
+    return latestTime;
   }
 
   std::vector<APRILCluster*>& APRILCluster::GetMotherCluster()

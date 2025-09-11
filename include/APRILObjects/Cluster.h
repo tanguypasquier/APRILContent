@@ -91,6 +91,14 @@ class APRILCluster : public pandora::Cluster
 public:
 	float GetMergedHadronicEnergy();
 
+	//Added by TP : Timing methods
+	float GetMeanSmearedTime() const;
+	float GetEarliestHitTime() const;
+	float GetLatestHitTime() const;
+	float GetMeanSmearedTimeStart(unsigned int nLayers) const;
+	float GetMeanSmearedTimeEnd(unsigned int nLayers) const;
+	//End added by TP
+
 	std::vector<APRILCluster*>& GetMotherCluster();
 
     void  Reset();
