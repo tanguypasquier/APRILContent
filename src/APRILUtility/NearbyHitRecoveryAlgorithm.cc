@@ -605,6 +605,9 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 			   auto& hitPos = caloHit->GetPositionVector();
                const april_content::CaloHit *const pAPRILCaloHit = reinterpret_cast<const april_content::CaloHit *const>(caloHit);
 
+				if (pAPRILCaloHit->GetHitType() != pCaloHit->GetHitType())
+       				continue; //Only merge HCAL with HCAL and ECAL with ECAL
+
 			   //float dist = (hitPos - testPosition).GetMagnitude();
 			   //if(!isfinite(dist)) continue;
 			   if(pAPRILCaloHit->GetMother() == nullptr) continue;
