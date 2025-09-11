@@ -84,6 +84,8 @@ namespace april_content
 
   bool PointingClusterAssociationAlgorithm::CanMergeCluster(const pandora::Cluster *const pCluster) const
   {
+    std::cout << "Potentielle fille energie : " << pCluster->GetHadronicEnergy() << std::endl;
+
     if(NULL == pCluster)
       return false;
 
@@ -101,6 +103,7 @@ namespace april_content
     if(m_discriminatePhotonPid && pCluster->PassPhotonId(this->GetPandora()))
       return false;
 
+    std::cout << "CanMergeClusters OK" << std::endl;
     return true;
   }
 
@@ -114,7 +117,10 @@ namespace april_content
       const pandora::Cluster *const pDaughterCluster = *iter;
 
       if( ! pDaughterCluster->GetAssociatedTrackList().empty() )
+      {
+        std::cout << "TRACK DETECTED" << std::endl;
         continue;
+      }
 
       const pandora::Cluster *pBestParentCluster = NULL;
 
@@ -136,6 +142,14 @@ namespace april_content
       const pandora::Cluster *&pBestParentCluster) const
   {
     pBestParentCluster = NULL;
+
+    const april_content::APRILCluster* const pAPRILDaughterCluster = dynamic_cast<const april_content::APRILCluster *const>(pDaughterCluster);
+
+    /* std::cout << "TIMING DE LA DAUGHTER : " << pAPRILDaughterCluster->GetMeanSmearedTime() << " ns" << std::endl;
+    std::cout << "EarliestHit : " <<  pAPRILDaughterCluster->GetEarliestHitTime() << " ns" << std::endl;
+    std::cout << "LatestHit : " <<  pAPRILDaughterCluster->GetLatestHitTime() << " ns" << std::endl;
+    std::cout << "Mean time start layers : " << pAPRILDaughterCluster->GetMeanSmearedTimeStart(2) << " ns" << std::endl;
+    std::cout << "Mean time end layers : " << pAPRILDaughterCluster->GetMeanSmearedTimeEnd(2) << " ns" << std::endl; */
 
     if(NULL == pDaughterCluster)
       return pandora::STATUS_CODE_INVALID_PARAMETER;
@@ -192,9 +206,14 @@ namespace april_content
       // check pseudo layer cluster separation
       const unsigned int endPseudoLayer(PandoraContentApi::GetPlugins(*this)->GetPseudoLayerPlugin()->GetPseudoLayer(clusterEndPoint));
       const unsigned int pseudoLayerDifference(std::max(innerPseudoLayer, endPseudoLayer) - std::min(innerPseudoLayer, endPseudoLayer));
+      const unsigned int allowedOverlap = 0; // Tolerance of overlapping for parent cluster ending on the same first layers as daughter cluster begin
 
-      if(endPseudoLayer >= innerPseudoLayer || pseudoLayerDifference > maxPseudoLayerDifference)
+      if(endPseudoLayer > innerPseudoLayer + allowedOverlap || pseudoLayerDifference > maxPseudoLayerDifference)
+      {
+        std::cout << "CONFLIT DE PSEUDO LAYER" << std::endl;
         continue;
+      }
+        
 
       // distance between clusters
       const float clusterDistance((innerPosition-clusterEndPoint).GetMagnitude());
@@ -214,7 +233,7 @@ namespace april_content
       float dClose(0.f);
       PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetClosestDistanceToLine(innerPosition, backwardDirection, clusterEndPoint, dClose));
 
-      const bool possibleAxisAxis = (dCross < m_maxCrossDca) || (dClose < m_maxCloseDistance);
+      const bool possibleAxisAxis = (dCross < m_maxCrossDca) && (dClose < m_maxCloseDistance);
 
       if (possibleAxisAxis)
       {
@@ -337,7 +356,7 @@ namespace april_content
     const pandora::CartesianVector innerCentroid(pCluster->GetCentroid(pCluster->GetInnerPseudoLayer()));
 
     pandora::ClusterFitResult clusterFitResult;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, ClusterHelper::FitStart(pCluster, m_nBackwardLayersFit, clusterFitResult));
+    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitStart(pCluster, m_nBackwardLayersFit, clusterFitResult));
     const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnLine(centroid, clusterDirection, innerCentroid, innerPosition));
