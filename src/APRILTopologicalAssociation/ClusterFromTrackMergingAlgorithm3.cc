@@ -131,7 +131,11 @@ namespace april_content
 		try
 		{
 		    pandora::ClusterFitResult clusterFitResult;
-			pandora::ClusterFitHelper::FitEnd(pCluster, 3, clusterFitResult);
+			//pandora::ClusterFitHelper::FitEnd(pCluster, 3, clusterFitResult);
+			if(ClusterHelper::FitEnd(pCluster, 3, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			{
+				pandora::ClusterFitHelper::FitEnd(pCluster, 3, clusterFitResult);
+			}
 		    const pandora::CartesianVector& endpoint = clusterFitResult.GetIntercept();
 
 		    //std::cout << "  *** endpoint: " << endpoint.GetX() << ", " << endpoint.GetY() << ", " << endpoint.GetZ() << std::endl;
@@ -816,7 +820,11 @@ namespace april_content
       const unsigned int nFitPseudoLayers(clusterPseudoLayerExtension >= m_nBackwardLayersFit ? m_nBackwardLayersFit : clusterPseudoLayerExtension);
 
       pandora::ClusterFitResult clusterFitResult;
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult));
+      //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult));
+	  if(ClusterHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+	  {
+        PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult));
+	  }
       const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
 
       pandora::CartesianVector clusterEndPoint(0.f, 0.f, 0.f);

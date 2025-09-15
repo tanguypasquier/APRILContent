@@ -185,7 +185,7 @@ namespace april_content
 				    {
 				    	pandora::ClusterFitResult clusterFitResultChg;
 
-				    	if(pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
+				    	if(ClusterHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
 				    	{
 				    		pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg);
 				    	}
@@ -211,7 +211,11 @@ namespace april_content
 		try
 		{
 		    pandora::ClusterFitResult clusterFitResult;
-			pandora::ClusterFitHelper::FitEnd(pCluster, 3, clusterFitResult);
+			//pandora::ClusterFitHelper::FitEnd(pCluster, 3, clusterFitResult);
+			if(ClusterHelper::FitEnd(pCluster, 3, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			{
+				pandora::ClusterFitHelper::FitEnd(pCluster, 3, clusterFitResult);
+			}
 		    const pandora::CartesianVector& endpoint = clusterFitResult.GetIntercept();
 
 			pCluster->SetEndpoint(endpoint);

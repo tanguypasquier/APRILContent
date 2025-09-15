@@ -197,7 +197,11 @@ namespace april_content
       const pandora::OrderedCaloHitList &orderedCaloHitList = pCluster->GetOrderedCaloHitList();
 
       pandora::ClusterFitResult clusterFitResult;
-      PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult));
+      //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult));
+      if(ClusterHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			{
+				PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitEnd(pCluster, nFitPseudoLayers, clusterFitResult));
+			}
       const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
 
       pandora::CartesianVector clusterEndPoint(0.f, 0.f, 0.f);
