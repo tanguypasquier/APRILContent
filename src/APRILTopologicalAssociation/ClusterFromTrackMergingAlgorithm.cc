@@ -127,7 +127,7 @@ namespace april_content
 				    {
 				    	pandora::ClusterFitResult clusterFitResultChg;
 
-				    	if(pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
+				    	if(ClusterHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
 				    	{
 				    		pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg);
 				    	}
@@ -155,7 +155,11 @@ namespace april_content
 		try
 		{
 		    pandora::ClusterFitResult clusterFitResult;
-			pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult);
+
+			if(ClusterHelper::FitStart(pCluster, 3, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			{
+				pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult);
+			}
 		    const pandora::CartesianVector& startingPoint = clusterFitResult.GetIntercept();
 
 		    //std::cout << "  *** startingPoint: " << startingPoint.GetX() << ", " << startingPoint.GetY() << ", " << startingPoint.GetZ() << std::endl;
@@ -790,7 +794,11 @@ namespace april_content
     const pandora::CartesianVector innerCentroid(pCluster->GetCentroid(pCluster->GetInnerPseudoLayer()));
 
     pandora::ClusterFitResult clusterFitResult;
-    PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitStart(pCluster, m_nBackwardLayersFit, clusterFitResult));
+	if(ClusterHelper::FitStart(pCluster, m_nBackwardLayersFit, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+	{
+		pandora::ClusterFitHelper::FitStart(pCluster, m_nBackwardLayersFit, clusterFitResult);
+	}
+    //PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, pandora::ClusterFitHelper::FitStart(pCluster, m_nBackwardLayersFit, clusterFitResult));
     const pandora::CartesianVector clusterDirection(clusterFitResult.GetDirection());
 
     PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, GeometryHelper::GetProjectionOnLine(centroid, clusterDirection, innerCentroid, innerPosition));

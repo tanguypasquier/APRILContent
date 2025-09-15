@@ -112,7 +112,11 @@ namespace april_content
 		try
 		{
 		    pandora::ClusterFitResult clusterFitResult;
-			pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult);
+			//pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult);
+			if(ClusterHelper::FitStart(pCluster, 3, clusterFitResult) != pandora::STATUS_CODE_SUCCESS)
+			{
+				pandora::ClusterFitHelper::FitStart(pCluster, 3, clusterFitResult);
+			}
 		    const pandora::CartesianVector& startingPoint = clusterFitResult.GetIntercept();
 
 		    //std::cout << "  *** startingPoint: " << startingPoint.GetX() << ", " << startingPoint.GetY() << ", " << startingPoint.GetZ() << std::endl;

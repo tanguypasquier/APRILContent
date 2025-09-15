@@ -603,7 +603,10 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 		   for(auto& caloHit : neighborHits)
 		   {
 			   auto& hitPos = caloHit->GetPositionVector();
-               const april_content::CaloHit *const pAPRILCaloHit = reinterpret_cast<const april_content::CaloHit *const>(caloHit);
+               //const april_content::CaloHit *const pAPRILCaloHit = reinterpret_cast<const april_content::CaloHit *const>(caloHit); //Old version
+
+			   const april_content::CaloHit *const pAPRILCaloHit = dynamic_cast<const april_content::CaloHit *const>(caloHit);
+			   if (pAPRILCaloHit == nullptr) continue;
 
 				if (pAPRILCaloHit->GetHitType() != pCaloHit->GetHitType())
        				continue; //Only merge HCAL with HCAL and ECAL with ECAL
@@ -625,7 +628,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 					/* if(pAPRILCaloHit->GetHitType() == pandora::HCAL && pCaloHit->GetHitType() == pandora::HCAL)
 					{
 						//Dynamic cast to have the SmearedTime info
-						const april_content::CaloHit *const pHitToRecover = reinterpret_cast<const april_content::CaloHit *const>(pCaloHit);
+						const april_content::CaloHit *const pHitToRecover = dynamic_cast<const april_content::CaloHit *const>(pCaloHit);
 						if(pAPRILCaloHit->GetSmearedTime()!=0 && pHitToRecover->GetSmearedTime()!=0)
 						{
 							const float dt = fabs(pAPRILCaloHit->GetSmearedTime() - pHitToRecover->GetSmearedTime()); //nanoseconds

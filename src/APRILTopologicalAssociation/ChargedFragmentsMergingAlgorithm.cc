@@ -174,7 +174,7 @@ namespace april_content
 				    {
 				    	pandora::ClusterFitResult clusterFitResultChg;
 
-				    	if(pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
+				    	if(ClusterHelper::FitStart(pCluster, 6, clusterFitResultChg) != pandora::STATUS_CODE_SUCCESS)
 				    	{
 				    		pandora::ClusterFitHelper::FitStart(pCluster, 6, clusterFitResultChg);
 				    	}
