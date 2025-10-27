@@ -66,6 +66,14 @@ namespace april_content
       {
         const pandora::Cluster *const pCluster(*clusterIter);
 
+        if(m_activatedTiming)
+        {
+          if( ! pCluster->GetAssociatedTrackList().empty() )
+          {
+            continue; //If timing activated, only late hits remain at this stage -> merging with neutral clusters only -> skip charged clusters
+          }
+        }
+
         // Get calo hit closest distance approach
         float caloHitDistance(std::numeric_limits<float>::max());
 
@@ -147,6 +155,10 @@ namespace april_content
     m_maxCaloHitDistanceCoarse = 500.f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxCaloHitDistanceCoarse", m_maxCaloHitDistanceCoarse));
+
+    m_activatedTiming = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ActivatedTiming", m_activatedTiming));
 
     pandora::StringVector stringVector;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadVectorOfValues(xmlHandle,

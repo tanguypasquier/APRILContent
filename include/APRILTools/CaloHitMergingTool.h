@@ -103,6 +103,7 @@ private:
  	float                                    m_maxCaloHitDistanceCoarse;     ///< The max distance to merge a hit in a cluster (coarse granularity)
  	PidToDistanceMap                         m_maxCaloHitDistanceFineMap;    ///< The map of cluster pid -> max distance to merge a hit in a cluster (fine granularity)
  	PidToDistanceMap                         m_maxCaloHitDistanceCoarseMap;  ///< The map of cluster pid -> max distance to merge a hit in a cluster (coarse granularity)
+	bool                                     m_activatedTiming; 			 ///< To choose if timing is activated or not
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
