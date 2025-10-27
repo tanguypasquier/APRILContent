@@ -561,36 +561,29 @@ namespace april_content
               continue;
 
             //Added by TP
-           /*  if(pCaloHit->GetHitType() == pandora::HCAL && pTestCaloHit->GetHitType() == pandora::HCAL)
+            if(m_activatedTiming)
             {
-              if(pCaloHit->GetSmearedTime()!=0 && pTestCaloHit->GetSmearedTime()!=0)
+              if(pCaloHit->GetHitType() == pandora::HCAL && pTestCaloHit->GetHitType() == pandora::HCAL)
               {
-                const float dt = fabs(pTestCaloHit->GetSmearedTime() - pCaloHit->GetSmearedTime()); //nanoseconds
+                if(pCaloHit->GetSmearedTime()!=0 && pTestCaloHit->GetSmearedTime()!=0)
+                {
+                  const float dt = fabs(pTestCaloHit->GetSmearedTime() - pCaloHit->GetSmearedTime()); //nanoseconds
+                  const float time_tolerance = 2*sqrt(2)*m_resolution;
+                  const float dt_min = ( (caloHitsVector.GetMagnitude() - m_distTolerance) / m_lightSpeed) * 1e6;
 
-                const float c = 2.99792458e8; //Lightspeed
-                //const float beta = (caloHitsVector.GetMagnitude() / (dt * 1e-6)) / c;
+                  if(dt == 0)
+                    continue;
 
-                const float resolution = 0.500f; //nanoseconds
-                const float time_tolerance = 2*sqrt(2)*resolution;
-                const float dist_tolerance = 10.0f; //Due to spreading of charge and cell size, in mm
-                const float dt_min = ( (caloHitsVector.GetMagnitude() - dist_tolerance) / c) * 1e6;
+                  if(dt + time_tolerance < dt_min) //Hits are not causally linkable
+                    continue;
 
-                float dt_max = 10.0f; //Threshold for dt to exclude late hits and hits that are too far away time wise, in nanoseconds
+                  // if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+                  //   continue; 
 
-                if(dt == 0)
-                  continue;
-
-                // if(dt - tolerance > dt_max) //Time span between the two hits is too big
-                //   continue; 
-
-                if(dt + time_tolerance < dt_min) //Hits are not causally linkable
-                  continue;
-
-                // if(beta > 1) //Hits are not causally linkable
-                //   continue;
-
+                }
               }
-            } */
+            }
+            
             //End added by TP
 
             unsigned int creationStage = m_connectorCreationStage;
@@ -615,6 +608,26 @@ namespace april_content
 
   pandora::StatusCode TrackDrivenSeedingTool::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+    m_activatedTiming = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ActivatedTiming", m_activatedTiming));
+
+    m_resolution = 0.050f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "TimeResolution", m_resolution));
+
+	  m_distTolerance = 10.0f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DistanceTolerance", m_distTolerance));
+
+	  m_dtMax = 1.5f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DtMax", m_dtMax));
+
+    m_lightSpeed = 2.99792458e8;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "LightSpeed", m_lightSpeed));
+
     m_initialHitSearchRange = 100.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "InitialHitSearchRange", m_initialHitSearchRange));

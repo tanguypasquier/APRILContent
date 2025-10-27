@@ -625,33 +625,30 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 					hitsDistance = (hitPos - testPosition).GetMagnitude();
 
 					//Timing added by TP
-					/* if(pAPRILCaloHit->GetHitType() == pandora::HCAL && pCaloHit->GetHitType() == pandora::HCAL)
+					if(m_activatedTiming)
 					{
-						//Dynamic cast to have the SmearedTime info
-						const april_content::CaloHit *const pHitToRecover = dynamic_cast<const april_content::CaloHit *const>(pCaloHit);
-						if(pAPRILCaloHit->GetSmearedTime()!=0 && pHitToRecover->GetSmearedTime()!=0)
+						if(pAPRILCaloHit->GetHitType() == pandora::HCAL && pCaloHit->GetHitType() == pandora::HCAL)
 						{
-							const float dt = fabs(pAPRILCaloHit->GetSmearedTime() - pHitToRecover->GetSmearedTime()); //nanoseconds
-			
-							const float c = 2.99792458e8; //Lightspeed
-			
-							const float resolution = 0.500f; //nanoseconds
-							const float time_tolerance = 2*sqrt(2)*resolution;
-							const float dist_tolerance = 10.0f; //Due to spreading of charge and cell size, in mm
-							const float dt_min = ( (hitsDistance - dist_tolerance) / c) * 1e6;
-			
-							float dt_max = 10.0f; //Threshold for dt to exclude late hits and hits that are too far away time wise, in nanoseconds
-			
-							if(dt == 0)
-								continue;
-			
-							if(dt + time_tolerance < dt_min) //Hits are not causally linkable
-								continue;
+							//Dynamic cast to have the SmearedTime info
+							const april_content::CaloHit *const pHitToRecover = dynamic_cast<const april_content::CaloHit *const>(pCaloHit);
+							if(pAPRILCaloHit->GetSmearedTime()!=0 && pHitToRecover->GetSmearedTime()!=0)
+							{
+								const float dt = fabs(pAPRILCaloHit->GetSmearedTime() - pHitToRecover->GetSmearedTime()); //nanoseconds
+								const float time_tolerance = 2*sqrt(2)*m_resolution;
+								const float dt_min = ( (hitsDistance - m_distTolerance) / m_lightSpeed) * 1e6;
+				
+								if(dt == 0)
+									continue;
+				
+								if(dt + time_tolerance < dt_min) //Hits are not causally linkable
+									continue;
 
-							// if(dt - tolerance > dt_max) //Time span between the two hits is too big
-							// 	continue; 
+								//if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+								// 	continue;  
+							}
 						}
-					} */
+					}
+					
 					//End added by TP
 
 				    clusterToAdd = pAPRILCaloHit->GetMother(); //Initial thing
@@ -818,6 +815,26 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::AddHitToCluster(ClusterCaloHitLi
 
 pandora::StatusCode NearbyHitRecoveryAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
 {
+	m_activatedTiming = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ActivatedTiming", m_activatedTiming));
+
+	m_resolution = 0.050f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "TimeResolution", m_resolution));
+
+	m_distTolerance = 10.0f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DistanceTolerance", m_distTolerance));
+
+	m_dtMax = 1.5f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DtMax", m_dtMax));
+
+	m_lightSpeed = 2.99792458e8;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "LightSpeed", m_lightSpeed));
+	
     m_nNeighborHits = 10;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "NeighborHitsNumber", m_nNeighborHits));
