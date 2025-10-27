@@ -170,7 +170,8 @@ namespace april_content
 #if 0
         //Added by TP
         //if(pandora::HCAL == pFromCaloHit->GetHitType() && pandora::HCAL == pConnector->GetTo()->GetHitType()) //Make sure that we have a pure HCAL connector to use timing with
-        if((pandora::HCAL == pFromCaloHit->GetHitType() || pandora::ECAL == pFromCaloHit->GetHitType()) && (pandora::HCAL == pConnector->GetTo()->GetHitType() || pandora::ECAL == pConnector->GetTo()->GetHitType())) //Make sure that we have ECAL or HCAL hits
+        //if((pandora::HCAL == pFromCaloHit->GetHitType() || pandora::ECAL == pFromCaloHit->GetHitType()) && (pandora::HCAL == pConnector->GetTo()->GetHitType() || pandora::ECAL == pConnector->GetTo()->GetHitType())) //Make sure that we have ECAL or HCAL hits
+        if(pandora::HCAL == pFromCaloHit->GetHitType() && pandora::HCAL == pConnector->GetTo()->GetHitType()) //Make sure that we have a pure HCAL connector to use timing with
         {
           //const float timing = pConnector->GetTiming() * 1e-6; //perfect time in nanoseconds that we convert to have milliseconds
           //std::cout << "Perfect timing in nanoseconds : " << pConnector->GetTiming() << std::endl;
