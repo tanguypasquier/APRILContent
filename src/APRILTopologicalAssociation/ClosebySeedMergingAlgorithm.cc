@@ -163,6 +163,34 @@ namespace april_content
         if(seedDistance > maxSeedDistance || seedTransverseDistance > maxSeedTransverseDistance)
           continue;
 
+        //Timing Added by TP
+        if(m_activatedTiming)
+        {
+          if(pSeedCaloHitI->GetHitType() == pandora::HCAL && pSeedCaloHitJ->GetHitType() == pandora::HCAL)
+          {
+            if(pSeedCaloHitI->GetSmearedTime()!=0 && pSeedCaloHitJ->GetSmearedTime()!=0)
+            {
+            
+            #if 0
+              std::cout << "I ptr: " << pSeedCaloHitI << ", J ptr: " << pSeedCaloHitJ << std::endl;
+              std::cout << "I pos: " << pSeedCaloHitI->GetPositionVector() << std::endl;
+              std::cout << "J pos: " << pSeedCaloHitJ->GetPositionVector() << std::endl;
+              std::cout << "Timing seed I : " << pSeedCaloHitI->GetSmearedTime() << std::endl;
+              std::cout << "Timing seed J : " << pSeedCaloHitJ->GetSmearedTime() << std::endl;
+            #endif
+            
+              const float dt = fabs(pSeedCaloHitI->GetSmearedTime() - pSeedCaloHitJ->GetSmearedTime()); //nanoseconds
+              const float time_tolerance = 2*sqrt(2)*m_resolution;
+            #if 0
+              std::cout << "Temps entre les seeds : " << dt << " ns" << std::endl;
+            #endif
+
+              if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+                continue; 
+            }
+          }
+        }
+
         // replace the cluster that will be deleted by the one that will be enlarge
         PANDORA_RETURN_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, this->ReplaceClusterEntryInSeedMap(pClusterJ, pClusterI, caloHitSeedToClusterMap));
 
@@ -203,6 +231,18 @@ namespace april_content
 
   pandora::StatusCode ClosebySeedMergingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+    m_activatedTiming = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ActivatedTiming", m_activatedTiming));
+
+    m_resolution = 0.050f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "TimeResolution", m_resolution));
+
+	  m_dtMax = 0.2f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DtMax", m_dtMax));
+
     m_discriminateSeedLeafHits = true;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DiscriminateSeedLeafHits", m_discriminateSeedLeafHits));

@@ -84,7 +84,7 @@ namespace april_content
 
   bool PointingClusterAssociationAlgorithm::CanMergeCluster(const pandora::Cluster *const pCluster) const
   {
-    std::cout << "Potentielle fille energie : " << pCluster->GetHadronicEnergy() << std::endl;
+    //std::cout << "Potentielle fille energie : " << pCluster->GetHadronicEnergy() << std::endl;
 
     if(NULL == pCluster)
       return false;
@@ -103,7 +103,7 @@ namespace april_content
     if(m_discriminatePhotonPid && pCluster->PassPhotonId(this->GetPandora()))
       return false;
 
-    std::cout << "CanMergeClusters OK" << std::endl;
+    //std::cout << "CanMergeClusters OK" << std::endl;
     return true;
   }
 
@@ -214,7 +214,7 @@ namespace april_content
 
       if(endPseudoLayer > innerPseudoLayer + allowedOverlap || pseudoLayerDifference > maxPseudoLayerDifference)
       {
-        std::cout << "CONFLIT DE PSEUDO LAYER" << std::endl;
+        //std::cout << "CONFLIT DE PSEUDO LAYER" << std::endl;
         continue;
       }
         
@@ -272,6 +272,8 @@ namespace april_content
 
       const bool possibleBaryAxis = (dProj < m_maxBaryProjDistance) && (theta < m_maxBaryProjAngle);
 
+#if 0
+ 
       std::cout << "Daughter ID : " << pDaughterCluster << std::endl;
       std::cout << "Daughter had energy : " << pDaughterCluster->GetHadronicEnergy() << std::endl;
       std::cout << "Mother had energy : " << pCluster->GetHadronicEnergy() << std::endl;
@@ -284,6 +286,8 @@ namespace april_content
       std::cout << "possibleBaryAxis : " << possibleBaryAxis << std::endl;
       std::cout << "dProj = " << dProj << std::endl;
       std::cout << "BaryProjAngle = " << theta << std::endl << std::endl;
+
+#endif
 
       if (possibleBaryAxis)
       {
