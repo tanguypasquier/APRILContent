@@ -97,6 +97,8 @@ public:
 	float GetLatestHitTime() const;
 	float GetMeanSmearedTimeStart(unsigned int nLayers) const;
 	float GetMeanSmearedTimeEnd(unsigned int nLayers) const;
+
+	const pandora::CartesianVector GetCentroid(const unsigned int pseudoLayer) const;
 	//End added by TP
 
 	std::vector<APRILCluster*>& GetMotherCluster();
