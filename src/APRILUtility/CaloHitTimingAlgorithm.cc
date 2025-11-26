@@ -81,9 +81,9 @@ namespace april_content
 			std::normal_distribution<float> distribution(hitTime, m_timeResolution); //Smearing of the true time with the detector resolution
 			//pCaloHit->SetSmearedTime(distribution(generator));
 
-			//const float smearedTime = (hitTime != 0) ? distribution(generator) : 0.0f; //Make sure that the true time isn't 0 (LCAL and LHCAL)
+			const float smearedTime = (hitTime != 0) ? distribution(generator) : 0.0f; //Make sure that the true time isn't 0 (LCAL and LHCAL)
 
-			const float smearedTime = hitTime;
+			//const float smearedTime = hitTime;
 		
 			modifiableCaloHit->SetSmearedTime(smearedTime);
 
