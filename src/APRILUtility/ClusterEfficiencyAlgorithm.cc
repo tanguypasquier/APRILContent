@@ -34,6 +34,8 @@
 #include "APRILHelpers/GeometryHelper.h"
 #include "APRILHelpers/ReclusterHelper.h"
 
+#include "APRILUtility/EventPreparationAlgorithm.h"
+
 #include "APRILHelpers/HistogramHelper.h"
 using namespace pandora;
 
@@ -216,6 +218,7 @@ namespace april_content
 		float clusterCharge = pandora::PdgTable::GetParticleCharge(mcp->GetParticleId());
 
 	    std::vector<float> vars;
+		vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
 	    vars.push_back( clusterSize );
 	    vars.push_back( pid );
 		vars.push_back( clusterCharge );
@@ -225,7 +228,7 @@ namespace april_content
 	    vars.push_back( siblingClusterNumber );
 	
 		HistogramManager::CreateFill("ClusterEfficiency", 
-				"clusterSize:pid:clusterCharge:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency:siblingClusterNumber", vars);
+				"eventNumber:clusterSize:pid:clusterCharge:clusterEnergy:clusterSizeEfficiency:clusterEnergyEfficiency:siblingClusterNumber", vars);
 	}
 
     return pandora::STATUS_CODE_SUCCESS;

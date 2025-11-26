@@ -172,6 +172,44 @@ namespace april_content
 					continue;
 				}
 
+				//Added by TP
+				if(m_activatedTiming)
+				{
+				  if(ClusterHelper::ContainsHitType(clusterToEnlarge, pandora::HCAL) && ClusterHelper::ContainsHitType(clusterToMerge, pandora::HCAL))
+				  {
+					const unsigned int parentOuterLayer = clusterToEnlarge->GetOuterPseudoLayer();
+					const unsigned int daughterInnerLayer = clusterToMerge->GetInnerPseudoLayer();
+					const float time_tolerance = 2*sqrt(2)*m_resolution;
+
+					if(daughterInnerLayer > parentOuterLayer) //ClusterToMerge needs to be causally linked to clusterToEnlarge
+					{
+					  const unsigned int nLayersTime = 1;
+					  const float dl = (clusterToMerge->GetCentroid(daughterInnerLayer) - clusterToEnlarge->GetCentroid(parentOuterLayer)).GetMagnitude(); //Distance between parent outer layer centroid and daughter inner layer centroid
+					  const float dt = fabs(clusterToMerge->GetMeanSmearedTimeStart(nLayersTime) - clusterToEnlarge->GetMeanSmearedTimeEnd(nLayersTime)); //nanoseconds
+					  const float dt_min = ( (dl - m_distTolerance) / m_lightSpeed) * 1e6;
+					  const float dt_max = ( (dl + m_distTolerance) / 0.01*m_lightSpeed) * 1e6;
+	
+					  if(dt == 0)
+						continue;
+	
+					  if(dt + time_tolerance < dt_min) //Clusters are not causally linkable
+						continue;
+	
+					  if(dt - time_tolerance > dt_max) //Time span between the two clusters is too big
+					    continue; 
+	
+					}
+					else //Clusters can be side by side -> Only constraint is on dt_max
+					{
+					  const float dt = fabs(clusterToMerge->GetMeanSmearedTime() - clusterToEnlarge->GetMeanSmearedTime()); //nanoseconds
+
+					  if(dt - time_tolerance > m_dtMax) //Time span between the two clusters is too big
+					    continue; 
+					}
+				  }
+				}
+				//End added by TP
+
 				if(m_useMCTruth)
 				{
 					const pandora::Cluster* const pandoraTrackStartClu = dynamic_cast<const pandora::Cluster* const>(clusterToEnlarge);
@@ -305,6 +343,26 @@ namespace april_content
 
   pandora::StatusCode ClustersMergingAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle )
   {
+	m_activatedTiming = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ActivatedTiming", m_activatedTiming));
+
+    m_resolution = 0.050f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "TimeResolution", m_resolution));
+
+	m_distTolerance = 10.0f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DistanceTolerance", m_distTolerance));
+
+	m_dtMax = 0.5f;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "DtMax", m_dtMax));
+
+    m_lightSpeed = 2.99792458e8;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "LightSpeed", m_lightSpeed));
+
 	m_maxChi = 1.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "MaxChi", m_maxChi));

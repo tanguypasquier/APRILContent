@@ -70,6 +70,12 @@ private:
 	bool                m_mergeError;
 	bool                m_onlyMergeCharged;
 
+	bool                            m_activatedTiming; 			 ///< To choose if timing is activated or not
+	float 							m_resolution; 				 ///< Timing resolution, in nanoseconds
+	float 							m_distTolerance; 			 ///< Tolerance on the distance between hits due to spreading of charge and cell size, in mm			
+	float 							m_dtMax; 					 ///< Threshold for dt to exclude late hits and hits that are too far away time wise, in nanoseconds
+	float 							m_lightSpeed; 
+
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
