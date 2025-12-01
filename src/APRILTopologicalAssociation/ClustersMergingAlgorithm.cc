@@ -187,7 +187,7 @@ namespace april_content
 					  const float dl = (clusterToMerge->GetCentroid(daughterInnerLayer) - clusterToEnlarge->GetCentroid(parentOuterLayer)).GetMagnitude(); //Distance between parent outer layer centroid and daughter inner layer centroid
 					  const float dt = fabs(clusterToMerge->GetMeanSmearedTimeStart(nLayersTime) - clusterToEnlarge->GetMeanSmearedTimeEnd(nLayersTime)); //nanoseconds
 					  const float dt_min = ( (dl - m_distTolerance) / m_lightSpeed) * 1e6;
-					  const float dt_max = ( (dl + m_distTolerance) / 0.01*m_lightSpeed) * 1e6;
+					  const float dt_max = ( (dl + m_distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 	
 					  if(dt == 0)
 						continue;
@@ -355,7 +355,7 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DistanceTolerance", m_distTolerance));
 
-	m_dtMax = 0.5f;
+	m_dtMax = 1.0f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DtMax", m_dtMax));
 

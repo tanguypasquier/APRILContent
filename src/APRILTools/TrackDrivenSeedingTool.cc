@@ -577,8 +577,8 @@ namespace april_content
                   if(dt + time_tolerance < dt_min) //Hits are not causally linkable
                     continue;
 
-                  // if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
-                  //   continue; 
+                  if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+                    continue; 
 
                 }
               }
