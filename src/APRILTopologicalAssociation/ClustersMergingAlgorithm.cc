@@ -175,19 +175,35 @@ namespace april_content
 				//Added by TP
 				if(m_activatedTiming)
 				{
-				  if(ClusterHelper::ContainsHitType(clusterToEnlarge, pandora::HCAL) && ClusterHelper::ContainsHitType(clusterToMerge, pandora::HCAL))
+				  //if(ClusterHelper::ContainsHitType(clusterToEnlarge, pandora::HCAL) && ClusterHelper::ContainsHitType(clusterToMerge, pandora::HCAL)) //If HCAL only
 				  {
 					const unsigned int parentOuterLayer = clusterToEnlarge->GetOuterPseudoLayer();
 					const unsigned int daughterInnerLayer = clusterToMerge->GetInnerPseudoLayer();
-					const float time_tolerance = 2*sqrt(2)*m_resolution;
 
 					if(daughterInnerLayer > parentOuterLayer) //ClusterToMerge needs to be causally linked to clusterToEnlarge
 					{
 					  const unsigned int nLayersTime = 1;
+
+					  //Uncertainty on dt
+					  const float sigmaParent = clusterToEnlarge->GetTimeResolutionEnd(nLayersTime);
+					  const float sigmaDaughter = clusterToMerge->GetTimeResolutionStart(nLayersTime);
+					  const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
+
+					  const float time_tolerance = 2*combinedResolution;
+
+					  //Tolerance on dl
+					  const float rmsParent = clusterToEnlarge->ComputeLayerSpatialRMS(parentOuterLayer);
+					  const float rmsDaughter = clusterToMerge->ComputeLayerSpatialRMS(daughterInnerLayer);
+					  const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
+					  const float distTolerance = 2 * sigma_dl;
+
+					  std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
+
+					  //Compute dl, dt, and limits 
 					  const float dl = (clusterToMerge->GetCentroid(daughterInnerLayer) - clusterToEnlarge->GetCentroid(parentOuterLayer)).GetMagnitude(); //Distance between parent outer layer centroid and daughter inner layer centroid
 					  const float dt = fabs(clusterToMerge->GetMeanSmearedTimeStart(nLayersTime) - clusterToEnlarge->GetMeanSmearedTimeEnd(nLayersTime)); //nanoseconds
-					  const float dt_min = ( (dl - m_distTolerance) / m_lightSpeed) * 1e6;
-					  const float dt_max = ( (dl + m_distTolerance) / (0.1*m_lightSpeed)) * 1e6;
+					  const float dt_min = ( (dl - distTolerance) / m_lightSpeed) * 1e6;
+					  const float dt_max = ( (dl + distTolerance) / (0.5*m_lightSpeed)) * 1e6;
 	
 					  if(dt == 0)
 						continue;
@@ -197,11 +213,16 @@ namespace april_content
 	
 					  if(dt - time_tolerance > dt_max) //Time span between the two clusters is too big
 					    continue; 
-	
 					}
 					else //Clusters can be side by side -> Only constraint is on dt_max
 					{
 					  const float dt = fabs(clusterToMerge->GetMeanSmearedTime() - clusterToEnlarge->GetMeanSmearedTime()); //nanoseconds
+
+					  const float sigmaParent = clusterToEnlarge->GetTimeResolution();
+					  const float sigmaDaughter = clusterToMerge->GetTimeResolution();
+					  const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
+
+					  const float time_tolerance = 2*combinedResolution;
 
 					  if(dt - time_tolerance > m_dtMax) //Time span between the two clusters is too big
 					    continue; 
@@ -346,10 +367,6 @@ namespace april_content
 	m_activatedTiming = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ActivatedTiming", m_activatedTiming));
-
-    m_resolution = 0.050f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "TimeResolution", m_resolution));
 
 	m_distTolerance = 10.0f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

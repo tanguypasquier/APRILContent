@@ -71,14 +71,29 @@ namespace april_content
         endIter != iter ; ++iter)
     {
         const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*iter));
-		//if(pandora::HCAL == pCaloHit->GetHitType() || pandora::ECAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits AND ECAL HITS
-		if(pandora::HCAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits
+
+		//if(pandora::HCAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits
+		if(pandora::HCAL == pCaloHit->GetHitType() || pandora::ECAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits AND ECAL HITS
 		{
 			float hitTime = pCaloHit->GetTime(); //Gives "true" time in nanoseconds
 
 			auto *modifiableCaloHit = APRILContentApi::Modifiable(pCaloHit); //To call the Set methods
 
-			std::normal_distribution<float> distribution(hitTime, m_timeResolution); //Smearing of the true time with the detector resolution
+			float timeResolution;
+
+			if(pandora::ECAL == pCaloHit->GetHitType())
+			{
+				timeResolution = m_timeResolutionECAL;
+				//std::cout << "HIT ECAL" << std::endl; 
+			}
+
+			if(pandora::HCAL == pCaloHit->GetHitType())
+			{
+				timeResolution = m_timeResolutionHCAL;
+				//std::cout << "HIT HCAL" << std::endl; 
+			}
+
+			std::normal_distribution<float> distribution(hitTime, timeResolution); //Smearing of the true time with the detector resolution
 			//pCaloHit->SetSmearedTime(distribution(generator));
 
 			const float smearedTime = (hitTime != 0) ? distribution(generator) : 0.0f; //Make sure that the true time isn't 0 (LCAL and LHCAL)
@@ -87,11 +102,13 @@ namespace april_content
 		
 			modifiableCaloHit->SetSmearedTime(smearedTime);
 
+			modifiableCaloHit->SetTimeResolution(timeResolution);
+
 			unsigned int timingLayer = smearedTime / m_timeLayerDuration;
 
 			modifiableCaloHit->SetTimingLayer(timingLayer);
 		
-			//std::cout << "HCAL True time : " << pCaloHit->GetTime() << " ; " << "SmearedTime : " << pCaloHit->GetSmearedTime() << std::endl;
+			//std::cout << "Hit True time : " << pCaloHit->GetTime() << " ; " << "SmearedTime : " << pCaloHit->GetSmearedTime() << " ; " << "Resolution : " << pCaloHit->GetTimeResolution() << std::endl;
 			
 
 			//float timing = distribution(generator) * 1e-6; //Smeared timing converted in milliseconds
@@ -218,9 +235,13 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "TimeCut", m_timeCut));
 
-	m_timeResolution = 0.050f; //in nanoseconds
+	m_timeResolutionECAL = 0.050f; //in nanoseconds
+	PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+		"TimeResolutionECAL", m_timeResolutionECAL));
+
+	m_timeResolutionHCAL = 0.100f; //in nanoseconds
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "TimeResolution", m_timeResolution));
+        "TimeResolutionHCAL", m_timeResolutionHCAL));
 
 	m_timeLayerDuration = 0.150f; //in nanoseconds
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

@@ -309,6 +309,120 @@ namespace april_content
       }
     }
 
+    //Added by TP
+    if(m_activatedTiming)
+    {
+      if(pBestAxisAxisCluster)
+      {
+        const april_content::APRILCluster* pAPRILParentAxisAxis = dynamic_cast<const april_content::APRILCluster*>(pBestAxisAxisCluster);
+        const april_content::APRILCluster* pAPRILDaughter = dynamic_cast<const april_content::APRILCluster*>(pDaughterCluster);
+        //std::cout << "Pointeur mere : " << pAPRILParentAxisAxis << " ; Pointeur fille : " << pAPRILDaughter << std::endl;
+
+        if(pAPRILParentAxisAxis && pAPRILDaughter) //To prevent crash in case of failed dynamic cast
+        {
+          const unsigned int parentOuterLayer = pAPRILParentAxisAxis->GetOuterPseudoLayer();
+          const unsigned int daughterInnerLayer = pAPRILDaughter->GetInnerPseudoLayer();
+
+          const unsigned int nLayersTime = 1;
+
+          //Uncertainty on dt
+          const float sigmaParent = pAPRILParentAxisAxis->GetTimeResolutionEnd(nLayersTime);
+          const float sigmaDaughter = pAPRILDaughter->GetTimeResolutionStart(nLayersTime);
+          const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
+
+          const float time_tolerance = 2*combinedResolution;
+
+          //Tolerance on dl
+          const float rmsParent = pAPRILParentAxisAxis->ComputeLayerSpatialRMS(parentOuterLayer);
+          const float rmsDaughter = pAPRILDaughter->ComputeLayerSpatialRMS(daughterInnerLayer);
+          const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
+          const float distTolerance = 2 * sigma_dl;
+
+          //std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
+
+          //Compute dl, dt, and limits 
+          const float dl = (pAPRILDaughter->GetCentroid(daughterInnerLayer) - pAPRILParentAxisAxis->GetCentroid(parentOuterLayer)).GetMagnitude(); //Distance between parent outer layer centroid and daughter inner layer centroid
+          const float dt = fabs(pAPRILDaughter->GetMeanSmearedTimeStart(nLayersTime) - pAPRILParentAxisAxis->GetMeanSmearedTimeEnd(nLayersTime)); //nanoseconds
+          const float dt_min = ( (dl - distTolerance) / m_lightSpeed) * 1e6;
+          const float dt_max = ( (dl + distTolerance) / (0.5*m_lightSpeed)) * 1e6;
+
+          if(dt == 0)
+          {
+            pBestAxisAxisCluster = nullptr;
+            //std::cout << "PAS BON : TIMING SIMILAIRE" << std::endl;
+          }
+            
+          else if(dt + time_tolerance < dt_min) //Clusters are not causally linkable
+          {
+            pBestAxisAxisCluster = nullptr;
+            //std::cout << "PAS BON : TIMING TROP COURT" << std::endl;
+          }
+            
+          else if(dt - time_tolerance > dt_max) //Time span between the two clusters is too big
+          {
+            pBestAxisAxisCluster = nullptr;
+            //std::cout << "PAS BON : TIMING TROP LENT" << std::endl;
+          }
+        }
+
+        
+      }
+      if(pBestBaryAxisCluster)
+      {
+        const april_content::APRILCluster* pAPRILParentBaryAxis = dynamic_cast<const april_content::APRILCluster*>(pBestAxisAxisCluster);
+        const april_content::APRILCluster* pAPRILDaughter = dynamic_cast<const april_content::APRILCluster*>(pDaughterCluster);
+        //std::cout << "Pointeur mere : " << pAPRILParentBaryAxis << " ; Pointeur fille : " << pAPRILDaughter << std::endl;
+
+        if(pAPRILParentBaryAxis && pAPRILDaughter) //To prevent crash in case of failed dynamic cast
+        {
+          const unsigned int parentOuterLayer = pAPRILParentBaryAxis->GetOuterPseudoLayer();
+          const unsigned int daughterInnerLayer = pAPRILDaughter->GetInnerPseudoLayer();
+
+          const unsigned int nLayersTime = 1;
+
+          //Uncertainty on dt
+          const float sigmaParent = pAPRILParentBaryAxis->GetTimeResolutionEnd(nLayersTime);
+          const float sigmaDaughter = pAPRILDaughter->GetTimeResolutionStart(nLayersTime);
+          const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
+
+          const float time_tolerance = 2*combinedResolution;
+
+          //Tolerance on dl
+          const float rmsParent = pAPRILParentBaryAxis->ComputeLayerSpatialRMS(parentOuterLayer);
+          const float rmsDaughter = pAPRILDaughter->ComputeLayerSpatialRMS(daughterInnerLayer);
+          const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
+          const float distTolerance = 2 * sigma_dl;
+
+          //std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
+
+          //Compute dl, dt, and limits 
+          const float dl = (pAPRILDaughter->GetCentroid(daughterInnerLayer) - pAPRILParentBaryAxis->GetCentroid(parentOuterLayer)).GetMagnitude(); //Distance between parent outer layer centroid and daughter inner layer centroid
+          const float dt = fabs(pAPRILDaughter->GetMeanSmearedTimeStart(nLayersTime) - pAPRILParentBaryAxis->GetMeanSmearedTimeEnd(nLayersTime)); //nanoseconds
+          const float dt_min = ( (dl - distTolerance) / m_lightSpeed) * 1e6;
+          const float dt_max = ( (dl + distTolerance) / (0.5*m_lightSpeed)) * 1e6;
+
+          if(dt == 0)
+          {
+            pBestBaryAxisCluster = nullptr;
+            //std::cout << "PAS BON : TIMING SIMILAIRE" << std::endl;
+          }
+
+          else if(dt + time_tolerance < dt_min) //Clusters are not causally linkable
+          {
+            pBestBaryAxisCluster = nullptr;
+            //std::cout << "PAS BON : TIMING TROP COURT" << std::endl;
+          }
+            
+          else if(dt - time_tolerance > dt_max) //Time span between the two clusters is too big
+          {
+            pBestBaryAxisCluster = nullptr;
+            //std::cout << "PAS BON : TIMING TROP LENT" << std::endl;
+          }
+        }
+      }
+    }
+    //End added by TP    
+
     //-----------------------------------------------------------
     // COMPARISON OF THE TWO METHODS
     //-----------------------------------------------------------
@@ -349,6 +463,10 @@ namespace april_content
     {
       pBestParentCluster = pBestBaryAxisCluster;
     }
+    else
+    {
+      pBestParentCluster = nullptr; // No valid parent
+    }
 
 
     return pandora::STATUS_CODE_SUCCESS;
@@ -381,6 +499,14 @@ namespace april_content
 
   pandora::StatusCode PointingClusterAssociationAlgorithm::ReadSettings(const pandora::TiXmlHandle xmlHandle)
   {
+    m_activatedTiming = false;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "ActivatedTiming", m_activatedTiming));
+
+    m_lightSpeed = 2.99792458e8;
+    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
+        "LightSpeed", m_lightSpeed));
+
     m_discriminatePhotonPid = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=,
         pandora::XmlHelper::ReadValue(xmlHandle, "DiscriminatePhotonPid", m_discriminatePhotonPid));

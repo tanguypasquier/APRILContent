@@ -85,9 +85,19 @@ public:
 	float GetSmearedTime() const;
 
 	/**
+	 *  @brief  Get the hit time resolution
+	 */
+	 float GetTimeResolution() const;
+
+	/**
 	 *  @brief  Set the hit smeared time
 	 */
 	void  SetSmearedTime(float smearedTime);
+
+	/**
+	 *  @brief  Set the hit time resolution
+	 */
+	void  SetTimeResolution(float timeResolution);
 
 private:
 	/**
@@ -147,6 +157,7 @@ protected:
 	//Timing parameters added by TP
 	unsigned int 							m_timingLayer;
 	float 									m_smearedTime;
+	float 									m_timeResolution;
 
     friend class CaloHitFactory;
     friend class ::APRILContentApi;

@@ -166,7 +166,8 @@ namespace april_content
         //Timing Added by TP
         if(m_activatedTiming)
         {
-          if(pSeedCaloHitI->GetHitType() == pandora::HCAL && pSeedCaloHitJ->GetHitType() == pandora::HCAL)
+          
+          if((pSeedCaloHitI->GetHitType() == pandora::HCAL || pSeedCaloHitI->GetHitType() == pandora::ECAL) && (pSeedCaloHitJ->GetHitType() == pandora::HCAL || pSeedCaloHitJ->GetHitType() == pandora::ECAL)) //Timing in ECAL and HCAL
           {
             if(pSeedCaloHitI->GetSmearedTime()!=0 && pSeedCaloHitJ->GetSmearedTime()!=0)
             {
@@ -178,9 +179,14 @@ namespace april_content
               std::cout << "Timing seed I : " << pSeedCaloHitI->GetSmearedTime() << std::endl;
               std::cout << "Timing seed J : " << pSeedCaloHitJ->GetSmearedTime() << std::endl;
             #endif
+
+              const float sigma1 = pSeedCaloHitI->GetTimeResolution();
+              const float sigma2 = pSeedCaloHitJ->GetTimeResolution();
+
+              const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
             
               const float dt = fabs(pSeedCaloHitI->GetSmearedTime() - pSeedCaloHitJ->GetSmearedTime()); //nanoseconds
-              const float time_tolerance = 2*sqrt(2)*m_resolution;
+              const float time_tolerance = 2*combinedResolution;
             #if 0
               std::cout << "Temps entre les seeds : " << dt << " ns" << std::endl;
             #endif
@@ -235,11 +241,7 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ActivatedTiming", m_activatedTiming));
 
-    m_resolution = 0.050f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "TimeResolution", m_resolution));
-
-	  m_dtMax = 0.2f;
+	  m_dtMax = 0.5f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DtMax", m_dtMax));
 

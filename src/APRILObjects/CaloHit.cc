@@ -37,7 +37,8 @@ namespace april_content
     m_density(0.f),
 	  m_motherCluster(nullptr),
     m_timingLayer(0),
-    m_smearedTime(0.f)
+    m_smearedTime(0.f),
+    m_timeResolution(0.f)
     {
       m_pCaloHitMetaData = new CaloHitMetaData(this);
     }
@@ -63,6 +64,7 @@ namespace april_content
     m_density = pCaloHitCopy->m_density;
     m_timingLayer = pCaloHitCopy->m_timingLayer;
     m_smearedTime = pCaloHitCopy->m_smearedTime;
+    m_timeResolution = pCaloHitCopy->m_timeResolution;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -94,11 +96,18 @@ namespace april_content
     return m_timingLayer;
   }
 
-   //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
 
   float CaloHit::GetSmearedTime() const
   {
     return m_smearedTime;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  float CaloHit::GetTimeResolution() const
+  {
+    return m_timeResolution;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -127,6 +136,13 @@ namespace april_content
   void CaloHit::SetSmearedTime(float smearedTime)
   {
 	  m_smearedTime = smearedTime;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  void CaloHit::SetTimeResolution(float timeResolution)
+  {
+    m_timeResolution = timeResolution;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

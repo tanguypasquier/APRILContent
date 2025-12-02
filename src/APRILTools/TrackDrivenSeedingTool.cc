@@ -563,13 +563,21 @@ namespace april_content
             //Added by TP
             if(m_activatedTiming)
             {
-              if(pCaloHit->GetHitType() == pandora::HCAL && pTestCaloHit->GetHitType() == pandora::HCAL)
+              //if(pCaloHit->GetHitType() == pandora::HCAL && pTestCaloHit->GetHitType() == pandora::HCAL) //Only HCAL
+              if((pCaloHit->GetHitType() == pandora::HCAL || pCaloHit->GetHitType() == pandora::ECAL) && (pTestCaloHit->GetHitType() == pandora::HCAL || pTestCaloHit->GetHitType() == pandora::ECAL)) //Timing in ECAL and HCAL
               {
                 if(pCaloHit->GetSmearedTime()!=0 && pTestCaloHit->GetSmearedTime()!=0)
                 {
+                  //const float resolution = std::max(pCaloHit->GetTimeResolution(),pTestCaloHit->GetTimeResolution()); //Take the worst resolution 
+                  const float sigma1 = pCaloHit->GetTimeResolution();
+                  const float sigma2 = pTestCaloHit->GetTimeResolution();
+
+                  const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
+
                   const float dt = fabs(pTestCaloHit->GetSmearedTime() - pCaloHit->GetSmearedTime()); //nanoseconds
-                  const float time_tolerance = 2*sqrt(2)*m_resolution;
+                  const float time_tolerance = 2*combinedResolution;
                   const float dt_min = ( (caloHitsVector.GetMagnitude() - m_distTolerance) / m_lightSpeed) * 1e6;
+                  const float dt_max = ( (caloHitsVector.GetMagnitude() + m_distTolerance) / (0.5*m_lightSpeed)) * 1e6;
 
                   if(dt == 0)
                     continue;
@@ -577,7 +585,7 @@ namespace april_content
                   if(dt + time_tolerance < dt_min) //Hits are not causally linkable
                     continue;
 
-                  if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+                  if(dt - time_tolerance > dt_max) //Time span between the two hits is too big
                     continue; 
 
                 }
@@ -612,10 +620,6 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ActivatedTiming", m_activatedTiming));
 
-    m_resolution = 0.050f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "TimeResolution", m_resolution));
-
 	  m_distTolerance = 10.0f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DistanceTolerance", m_distTolerance));
@@ -640,7 +644,7 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "HitSearchRangeCoarse", m_hitSearchRangeCoarse));
 
-	m_hitSearchRangeAtBoundary = 200.;
+	  m_hitSearchRangeAtBoundary = 200.;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "HitSearchRangeAtBoundary", m_hitSearchRangeAtBoundary));
 

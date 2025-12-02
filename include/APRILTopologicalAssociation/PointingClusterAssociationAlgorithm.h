@@ -122,6 +122,9 @@ private:
     float 							 m_maxCloseDistance;
     float 							 m_maxBaryProjDistance;
     float 							 m_maxBaryProjAngle;
+
+	bool                            m_activatedTiming; 			 ///< To choose if timing is activated or not
+	float 							m_lightSpeed; 
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------

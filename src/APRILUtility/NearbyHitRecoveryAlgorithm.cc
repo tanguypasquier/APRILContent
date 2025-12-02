@@ -627,16 +627,22 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 					//Timing added by TP
 					if(m_activatedTiming)
 					{
-						if(pAPRILCaloHit->GetHitType() == pandora::HCAL && pCaloHit->GetHitType() == pandora::HCAL)
+						//if(pAPRILCaloHit->GetHitType() == pandora::HCAL && pCaloHit->GetHitType() == pandora::HCAL)
+						if((pAPRILCaloHit->GetHitType() == pandora::HCAL || pAPRILCaloHit->GetHitType() == pandora::ECAL) && (pCaloHit->GetHitType() == pandora::HCAL || pCaloHit->GetHitType() == pandora::ECAL)) //Timing in ECAL and HCAL
 						{
 							//Dynamic cast to have the SmearedTime info
 							const april_content::CaloHit *const pHitToRecover = dynamic_cast<const april_content::CaloHit *const>(pCaloHit);
 							if(pAPRILCaloHit->GetSmearedTime()!=0 && pHitToRecover->GetSmearedTime()!=0)
 							{
+								const float sigma1 = pAPRILCaloHit->GetTimeResolution();
+                  				const float sigma2 = pHitToRecover->GetTimeResolution();
+
+                  				const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
+
 								const float dt = fabs(pAPRILCaloHit->GetSmearedTime() - pHitToRecover->GetSmearedTime()); //nanoseconds
-								const float time_tolerance = 2*sqrt(2)*m_resolution;
+								const float time_tolerance = 2*combinedResolution;
 								const float dt_min = ( (hitsDistance - m_distTolerance) / m_lightSpeed) * 1e6;
-								const float dt_max = ( (hitsDistance + m_distTolerance) / (0.1*m_lightSpeed)) * 1e6;
+								const float dt_max = ( (hitsDistance + m_distTolerance) / (0.5*m_lightSpeed)) * 1e6;
 				
 								if(dt == 0)
 									continue;
@@ -819,10 +825,6 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::ReadSettings(const pandora::TiXm
 	m_activatedTiming = false;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "ActivatedTiming", m_activatedTiming));
-
-	m_resolution = 0.050f;
-    PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
-        "TimeResolution", m_resolution));
 
 	m_distTolerance = 10.0f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,

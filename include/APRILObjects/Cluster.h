@@ -97,6 +97,11 @@ public:
 	float GetLatestHitTime() const;
 	float GetMeanSmearedTimeStart(unsigned int nLayers) const;
 	float GetMeanSmearedTimeEnd(unsigned int nLayers) const;
+	float GetTimeResolution() const;
+	float GetTimeResolutionStart(unsigned int nLayers) const;
+	float GetTimeResolutionEnd(unsigned int nLayers) const;
+	float ComputeLayerSpatialRMS(unsigned int pseudoLayer) const;
+
 
 	const pandora::CartesianVector GetCentroid(const unsigned int pseudoLayer) const;
 	//End added by TP

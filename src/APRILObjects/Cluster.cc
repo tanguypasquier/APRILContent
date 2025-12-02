@@ -96,7 +96,7 @@ namespace april_content
       for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
       {
         const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
-        if (pCaloHit && pCaloHit->GetHitType() == pandora::HCAL)
+        if (pCaloHit && pCaloHit->GetSmearedTime() != 0)
         {
           meanSmearedTime += pCaloHit->GetSmearedTime();
           ++nHits;
@@ -124,7 +124,7 @@ namespace april_content
       for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
       {
         const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
-        if (pCaloHit && pCaloHit->GetHitType() == pandora::HCAL)
+        if (pCaloHit && pCaloHit->GetSmearedTime() != 0)
         {
           meanSmearedTime += pCaloHit->GetSmearedTime();
           ++nHits;
@@ -152,7 +152,7 @@ namespace april_content
       for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
       {
         const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
-        if (pCaloHit && pCaloHit->GetHitType() == pandora::HCAL)
+        if (pCaloHit && pCaloHit->GetSmearedTime() != 0)
         {
           meanSmearedTime += pCaloHit->GetSmearedTime();
           ++nHits;
@@ -176,7 +176,7 @@ namespace april_content
       for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
       {
         const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
-        if (pCaloHit && pCaloHit->GetHitType() == pandora::HCAL)
+        if (pCaloHit && pCaloHit->GetSmearedTime() != 0)
         {
           if(pCaloHit->GetSmearedTime() < earliestTime)
           {
@@ -199,7 +199,7 @@ namespace april_content
       for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
       {
         const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*hIter));
-        if (pCaloHit && pCaloHit->GetHitType() == pandora::HCAL)
+        if (pCaloHit)
         {
           if(pCaloHit->GetSmearedTime() > latestTime)
           {
@@ -211,6 +211,133 @@ namespace april_content
 
     return latestTime;
   }
+
+  float APRILCluster::GetTimeResolution() const
+  {
+    double sumSigma2 = 0.0;
+    unsigned int nHits = 0;
+
+    for (pandora::OrderedCaloHitList::const_iterator ochIter = m_orderedCaloHitList.begin(); ochIter != m_orderedCaloHitList.end(); ++ochIter)
+    {
+      for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
+      {
+        const april_content::CaloHit *const pCaloHit = dynamic_cast<const april_content::CaloHit *>(*hIter);
+
+        if (pCaloHit && pCaloHit->GetSmearedTime() != 0)
+        {
+          const float sigma = pCaloHit->GetTimeResolution();
+          sumSigma2 += sigma * sigma;
+          ++nHits;
+        }
+      }
+    }
+
+    if (nHits == 0)
+        return 0;
+
+    return std::sqrt(sumSigma2) / nHits;
+  }
+
+  float APRILCluster::GetTimeResolutionStart(unsigned int nLayers) const
+  {
+    double sumSigma2 = 0.0;
+    unsigned int nHits = 0;
+    unsigned int layerCounter = 0;
+
+    for (pandora::OrderedCaloHitList::const_iterator ochIter = m_orderedCaloHitList.begin(); ochIter != m_orderedCaloHitList.end(); ++ochIter, ++layerCounter)
+    {
+      if (layerCounter >= nLayers)
+        break;
+
+      for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
+      {
+        const april_content::CaloHit *const pCaloHit = dynamic_cast<const april_content::CaloHit *>(*hIter);
+
+        if (pCaloHit && pCaloHit->GetSmearedTime() != 0)
+        {
+          const float sigma = pCaloHit->GetTimeResolution();
+          sumSigma2 += sigma * sigma;
+          ++nHits;
+        }
+      }
+    }
+
+    if (nHits == 0)
+      return 0;
+
+    return std::sqrt(sumSigma2) / nHits;
+  }
+
+  float APRILCluster::GetTimeResolutionEnd(unsigned int nLayers) const
+  {
+    double sumSigma2 = 0.0;
+    unsigned int nHits = 0;
+    unsigned int layerCounter = 0;
+  
+    for (pandora::OrderedCaloHitList::const_reverse_iterator ochIter = m_orderedCaloHitList.rbegin(); ochIter != m_orderedCaloHitList.rend(); ++ochIter, ++layerCounter)
+    {
+      if (layerCounter >= nLayers)
+        break;
+  
+      for (pandora::CaloHitList::const_iterator hIter = ochIter->second->begin(); hIter != ochIter->second->end(); ++hIter)
+      {
+        const april_content::CaloHit *const pCaloHit = dynamic_cast<const april_content::CaloHit *>(*hIter);
+  
+        if (pCaloHit && pCaloHit->GetSmearedTime() != 0)
+        {
+          const float sigma = pCaloHit->GetTimeResolution();
+          sumSigma2 += sigma * sigma;
+          ++nHits;
+        }
+      }
+    }
+  
+    if (nHits == 0)
+      return 0;
+  
+    return std::sqrt(sumSigma2) / nHits;
+  }
+
+
+  float APRILCluster::ComputeLayerSpatialRMS(unsigned int pseudoLayer) const
+  {
+    const pandora::OrderedCaloHitList orderedCaloHitList = this->GetOrderedCaloHitList();
+
+    pandora::OrderedCaloHitList::const_iterator it = orderedCaloHitList.find(pseudoLayer);
+    if (it == orderedCaloHitList.end())
+      return 0.f;
+
+    const pandora::CaloHitList &hitList = *(it->second);
+    const unsigned int nHits = hitList.size();
+
+    if (nHits == 0)
+      return 0.f;
+
+    const pandora::CartesianVector centroid = GetCentroid(pseudoLayer);
+
+    float variance = 0.f;
+
+    pandora::CaloHitList::const_iterator hitIter;
+    for (hitIter = hitList.begin(); hitIter != hitList.end(); ++hitIter)
+    {
+      const april_content::CaloHit *const pCaloHit = dynamic_cast<const april_content::CaloHit *>(*hitIter);
+
+        
+      if (pCaloHit && pCaloHit->GetSmearedTime() != 0.f)
+      {
+        const pandora::CartesianVector diff = pCaloHit->GetPositionVector() - centroid;
+
+        variance += diff.GetMagnitudeSquared();
+      }
+    }
+
+    variance /= static_cast<float>(nHits);
+
+    float rms = std::sqrt(variance);
+
+    return rms;
+  }
+  
 
   std::vector<APRILCluster*>& APRILCluster::GetMotherCluster()
   {
