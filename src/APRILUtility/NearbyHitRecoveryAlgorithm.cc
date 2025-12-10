@@ -640,7 +640,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
                   				const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
 
 								const float dt = fabs(pAPRILCaloHit->GetSmearedTime() - pHitToRecover->GetSmearedTime()); //nanoseconds
-								const float time_tolerance = 2*combinedResolution;
+								const float time_tolerance = 3*combinedResolution;
 								const float dt_min = ( (hitsDistance - m_distTolerance) / m_lightSpeed) * 1e6;
 								const float dt_max = ( (hitsDistance + m_distTolerance) / (0.5*m_lightSpeed)) * 1e6;
 				
@@ -650,8 +650,8 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 								if(dt + time_tolerance < dt_min) //Hits are not causally linkable
 									continue;
 
-								if(dt - time_tolerance > dt_max) //Time span between the two hits is too big
-									continue;  
+								/* if(dt - time_tolerance > dt_max) //Time span between the two hits is too big
+									continue;   */
 							}
 						}
 					}

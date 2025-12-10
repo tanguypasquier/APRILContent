@@ -330,13 +330,13 @@ namespace april_content
           const float sigmaDaughter = pAPRILDaughter->GetTimeResolutionStart(nLayersTime);
           const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-          const float time_tolerance = 2*combinedResolution;
+          const float time_tolerance = 3*combinedResolution;
 
           //Tolerance on dl
           const float rmsParent = pAPRILParentAxisAxis->ComputeLayerSpatialRMS(parentOuterLayer);
           const float rmsDaughter = pAPRILDaughter->ComputeLayerSpatialRMS(daughterInnerLayer);
           const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
-          const float distTolerance = 2 * sigma_dl;
+          const float distTolerance = 3 * sigma_dl;
 
           //std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
 
@@ -358,11 +358,11 @@ namespace april_content
             //std::cout << "PAS BON : TIMING TROP COURT" << std::endl;
           }
             
-          else if(dt - time_tolerance > dt_max) //Time span between the two clusters is too big
+          /* else if(dt - time_tolerance > dt_max) //Time span between the two clusters is too big
           {
             pBestAxisAxisCluster = nullptr;
             //std::cout << "PAS BON : TIMING TROP LENT" << std::endl;
-          }
+          } */
         }
 
         
@@ -385,13 +385,13 @@ namespace april_content
           const float sigmaDaughter = pAPRILDaughter->GetTimeResolutionStart(nLayersTime);
           const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-          const float time_tolerance = 2*combinedResolution;
+          const float time_tolerance = 3*combinedResolution;
 
           //Tolerance on dl
           const float rmsParent = pAPRILParentBaryAxis->ComputeLayerSpatialRMS(parentOuterLayer);
           const float rmsDaughter = pAPRILDaughter->ComputeLayerSpatialRMS(daughterInnerLayer);
           const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
-          const float distTolerance = 2 * sigma_dl;
+          const float distTolerance = 3 * sigma_dl;
 
           //std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
 
@@ -413,11 +413,11 @@ namespace april_content
             //std::cout << "PAS BON : TIMING TROP COURT" << std::endl;
           }
             
-          else if(dt - time_tolerance > dt_max) //Time span between the two clusters is too big
+          /* else if(dt - time_tolerance > dt_max) //Time span between the two clusters is too big
           {
             pBestBaryAxisCluster = nullptr;
             //std::cout << "PAS BON : TIMING TROP LENT" << std::endl;
-          }
+          } */
         }
       }
     }

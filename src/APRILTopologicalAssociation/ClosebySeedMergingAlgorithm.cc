@@ -186,13 +186,13 @@ namespace april_content
               const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
             
               const float dt = fabs(pSeedCaloHitI->GetSmearedTime() - pSeedCaloHitJ->GetSmearedTime()); //nanoseconds
-              const float time_tolerance = 2*combinedResolution;
+              const float time_tolerance = 3*combinedResolution;
             #if 0
               std::cout << "Temps entre les seeds : " << dt << " ns" << std::endl;
             #endif
 
-              if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
-                continue; 
+              /* if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+                continue;  */
             }
           }
         }
