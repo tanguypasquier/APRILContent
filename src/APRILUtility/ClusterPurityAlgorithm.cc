@@ -107,6 +107,7 @@ namespace april_content
 			HistogramManager::CreateFill("ClusterPurity", 
 					"eventNumber:clusterSize:pid:clusterCharge:orderedClusterHit:clusterEnergy:hitPurity:energyPurity:averageTime", vars);
 
+
 			//std::cout << "cluster energy: " << clusterEnergy << ", purity: " << clusterPurity << ", size: " << clusterSize 
 			//	      << std::endl;
     	}

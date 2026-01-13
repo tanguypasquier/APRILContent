@@ -330,13 +330,13 @@ namespace april_content
           const float sigmaDaughter = pAPRILDaughter->GetTimeResolutionStart(nLayersTime);
           const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-          const float time_tolerance = 3*combinedResolution;
+          const float time_tolerance = 5*combinedResolution;
 
           //Tolerance on dl
           const float rmsParent = pAPRILParentAxisAxis->ComputeLayerSpatialRMS(parentOuterLayer);
           const float rmsDaughter = pAPRILDaughter->ComputeLayerSpatialRMS(daughterInnerLayer);
           const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
-          const float distTolerance = 3 * sigma_dl;
+          const float distTolerance = 5*sigma_dl;
 
           //std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
 
@@ -344,7 +344,7 @@ namespace april_content
           const float dl = (pAPRILDaughter->GetCentroid(daughterInnerLayer) - pAPRILParentAxisAxis->GetCentroid(parentOuterLayer)).GetMagnitude(); //Distance between parent outer layer centroid and daughter inner layer centroid
           const float dt = fabs(pAPRILDaughter->GetMeanSmearedTimeStart(nLayersTime) - pAPRILParentAxisAxis->GetMeanSmearedTimeEnd(nLayersTime)); //nanoseconds
           const float dt_min = ( (dl - distTolerance) / m_lightSpeed) * 1e6;
-          const float dt_max = ( (dl + distTolerance) / (0.5*m_lightSpeed)) * 1e6;
+          const float dt_max = ( (dl + distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 
           if(dt == 0)
           {
@@ -385,13 +385,13 @@ namespace april_content
           const float sigmaDaughter = pAPRILDaughter->GetTimeResolutionStart(nLayersTime);
           const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-          const float time_tolerance = 3*combinedResolution;
+          const float time_tolerance = 5*combinedResolution;
 
           //Tolerance on dl
           const float rmsParent = pAPRILParentBaryAxis->ComputeLayerSpatialRMS(parentOuterLayer);
           const float rmsDaughter = pAPRILDaughter->ComputeLayerSpatialRMS(daughterInnerLayer);
           const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
-          const float distTolerance = 3 * sigma_dl;
+          const float distTolerance = 5*sigma_dl;
 
           //std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
 
@@ -399,7 +399,7 @@ namespace april_content
           const float dl = (pAPRILDaughter->GetCentroid(daughterInnerLayer) - pAPRILParentBaryAxis->GetCentroid(parentOuterLayer)).GetMagnitude(); //Distance between parent outer layer centroid and daughter inner layer centroid
           const float dt = fabs(pAPRILDaughter->GetMeanSmearedTimeStart(nLayersTime) - pAPRILParentBaryAxis->GetMeanSmearedTimeEnd(nLayersTime)); //nanoseconds
           const float dt_min = ( (dl - distTolerance) / m_lightSpeed) * 1e6;
-          const float dt_max = ( (dl + distTolerance) / (0.5*m_lightSpeed)) * 1e6;
+          const float dt_max = ( (dl + distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 
           if(dt == 0)
           {

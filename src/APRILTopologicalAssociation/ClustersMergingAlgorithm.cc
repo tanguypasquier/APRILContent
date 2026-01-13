@@ -189,13 +189,13 @@ namespace april_content
 					  const float sigmaDaughter = clusterToMerge->GetTimeResolutionStart(nLayersTime);
 					  const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-					  const float time_tolerance = 3*combinedResolution;
+					  const float time_tolerance = 5*combinedResolution;
 
 					  //Tolerance on dl
 					  const float rmsParent = clusterToEnlarge->ComputeLayerSpatialRMS(parentOuterLayer);
 					  const float rmsDaughter = clusterToMerge->ComputeLayerSpatialRMS(daughterInnerLayer);
 					  const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
-					  const float distTolerance = 3 * sigma_dl;
+					  const float distTolerance = 5*sigma_dl;
 
 					  std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
 
@@ -203,7 +203,7 @@ namespace april_content
 					  const float dl = (clusterToMerge->GetCentroid(daughterInnerLayer) - clusterToEnlarge->GetCentroid(parentOuterLayer)).GetMagnitude(); //Distance between parent outer layer centroid and daughter inner layer centroid
 					  const float dt = fabs(clusterToMerge->GetMeanSmearedTimeStart(nLayersTime) - clusterToEnlarge->GetMeanSmearedTimeEnd(nLayersTime)); //nanoseconds
 					  const float dt_min = ( (dl - distTolerance) / m_lightSpeed) * 1e6;
-					  const float dt_max = ( (dl + distTolerance) / (0.5*m_lightSpeed)) * 1e6;
+					  const float dt_max = ( (dl + distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 	
 					  if(dt == 0)
 						continue;
@@ -222,7 +222,7 @@ namespace april_content
 					  const float sigmaDaughter = clusterToMerge->GetTimeResolution();
 					  const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-					  const float time_tolerance = 3*combinedResolution;
+					  const float time_tolerance = 5*combinedResolution;
 
 					  /* if(dt - time_tolerance > m_dtMax) //Time span between the two clusters is too big
 					    continue;  */
@@ -372,7 +372,7 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DistanceTolerance", m_distTolerance));
 
-	m_dtMax = 1.0f;
+	m_dtMax = 2.0f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DtMax", m_dtMax));
 

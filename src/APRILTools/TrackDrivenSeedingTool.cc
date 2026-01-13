@@ -575,9 +575,9 @@ namespace april_content
                   const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
 
                   const float dt = fabs(pTestCaloHit->GetSmearedTime() - pCaloHit->GetSmearedTime()); //nanoseconds
-                  const float time_tolerance = 3*combinedResolution;
+                  const float time_tolerance = 5*combinedResolution;
                   const float dt_min = ( (caloHitsVector.GetMagnitude() - m_distTolerance) / m_lightSpeed) * 1e6;
-                  const float dt_max = ( (caloHitsVector.GetMagnitude() + m_distTolerance) / (0.5*m_lightSpeed)) * 1e6;
+                  const float dt_max = ( (caloHitsVector.GetMagnitude() + m_distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 
                   if(dt == 0)
                     continue;
@@ -587,6 +587,9 @@ namespace april_content
 
                   /* if(dt - time_tolerance > dt_max) //Time span between the two hits is too big
                     continue;  */
+
+                  if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+                    continue; 
 
                 }
               }
@@ -624,7 +627,7 @@ namespace april_content
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DistanceTolerance", m_distTolerance));
 
-	  m_dtMax = 1.5f;
+	  m_dtMax = 20.0f;
     PANDORA_RETURN_RESULT_IF_AND_IF(pandora::STATUS_CODE_SUCCESS, pandora::STATUS_CODE_NOT_FOUND, !=, pandora::XmlHelper::ReadValue(xmlHandle,
         "DtMax", m_dtMax));
 
