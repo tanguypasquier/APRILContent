@@ -49,6 +49,7 @@ public:
 	ConnectorOrderParameter()
 	: m_distance(std::numeric_limits<float>::max()),
 	  m_openingAngle(std::numeric_limits<float>::max()),
+	  m_timing(1.f),
 	  m_nConnectons(0),
 	  m_creationStage(-1),
 	  m_fromHitPos(0., 0., 0.),
@@ -61,6 +62,7 @@ public:
 	ConnectorOrderParameter(float distance, float openingAngle, unsigned int nConnections, unsigned int creationStage, pandora::CartesianVector formHitPos) 
 	: m_distance(distance), 
 	  m_openingAngle(openingAngle),
+	  m_timing(1.f),
 	  m_nConnectons(nConnections),
 	  m_creationStage(creationStage),
 	  m_fromHitPos(formHitPos)
@@ -69,11 +71,27 @@ public:
 			               std::pow(m_distance, m_orderParameterDistancePower);
 	}
 
+	//Added by TP
+	ConnectorOrderParameter(float distance, float openingAngle, float timing, unsigned int nConnections, unsigned int creationStage, pandora::CartesianVector formHitPos) 
+	: m_distance(distance), 
+	  m_openingAngle(openingAngle),
+	  m_timing(timing),
+	  m_nConnectons(nConnections),
+	  m_creationStage(creationStage),
+	  m_fromHitPos(formHitPos)
+	{
+        m_orderParameter = std::pow(m_openingAngle, m_orderParameterAnglePower) * 
+			               std::pow(m_distance, m_orderParameterDistancePower) * 
+						   std::pow(m_timing, m_orderParameterTimingPower);
+	}
+	//End added by TP
+
 	bool operator==(ConnectorOrderParameter& a) const
 	{
 		if( m_creationStage == a.m_creationStage &&
 		    m_openingAngle == a.m_openingAngle &&
 			m_distance == a.m_distance &&
+			m_timing == a.m_timing &&
 			m_nConnectons == a.m_nConnectons &&
 			m_fromHitPos == a.m_fromHitPos )
 		{
@@ -130,6 +148,7 @@ public:
 
 	float                     m_distance;
 	float                     m_openingAngle;
+	float 					  m_timing;
 	unsigned int              m_nConnectons;
 	unsigned int              m_creationStage;
 	pandora::CartesianVector  m_fromHitPos;
@@ -138,6 +157,7 @@ public:
 	static float              m_smallAngleRange;
 	static float              m_orderParameterAnglePower;
 	static float              m_orderParameterDistancePower;
+	static float			  m_orderParameterTimingPower;
 };
 
 class ConnectorCleaningTool : public ConnectorAlgorithmTool
@@ -209,6 +229,7 @@ private:
 	pandora::StatusCode CleanCaloHits(const pandora::OrderedCaloHitList &orderedCaloHitList) const;
 
 private:
+	bool                       m_activatedTiming; ///< To choose if timing is activated or not
 	unsigned int               m_strategy;
 	float                      m_backwardConnectorWeight;
 	float                      m_forwardConnectorWeight;
@@ -216,6 +237,7 @@ private:
 	unsigned int               m_forwardReferenceDirectionDepth;
 	float                      m_orderParameterAnglePower;
 	float                      m_orderParameterDistancePower;
+	float 					   m_orderParameterTimingPower;
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------
