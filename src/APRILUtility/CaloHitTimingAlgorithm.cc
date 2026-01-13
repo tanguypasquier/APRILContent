@@ -32,6 +32,11 @@
 #include "APRILApi/APRILContentApi.h"
 #include "APRILObjects/CaloHit.h"
 #include "APRILHelpers/GeometryHelper.h"
+#include "APRILHelpers/HistogramHelper.h"
+
+#include "APRILUtility/EventPreparationAlgorithm.h"
+
+// #include "APRILCheating/PerfectClusteringAlgorithmNew.h"
 
 #include <fstream>
 
@@ -119,6 +124,41 @@ namespace april_content
 			continue;
 	}
 	//fichier.close();
+
+	//HISTOGRAM FILLING TIMING ANALYSIS
+	for(pandora::CaloHitList::const_iterator iter = pCaloHitList->begin(), endIter = pCaloHitList->end() ;
+        endIter != iter ; ++iter)
+    {
+		const pandora::MCParticle *const pMCParticle(pandora::MCParticleHelper::GetMainMCParticle(*iter));
+
+		float pID = pMCParticle->GetParticleId();
+
+		//std::cout << "pID du hit : " << pID << std::endl;
+
+		const april_content::CaloHit *const pCaloHit(dynamic_cast<const april_content::CaloHit *>(*iter));
+
+		//if(pandora::HCAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits
+		if(pandora::HCAL == pCaloHit->GetHitType() || pandora::ECAL == pCaloHit->GetHitType()) //Only apply timing for HCAL hits AND ECAL HITS
+		{
+			float hitTime = pCaloHit->GetTime(); //Gives "true" time in nanoseconds
+		
+			if(pandora::ECAL == pCaloHit->GetHitType())
+			{
+				//std::cout<< "ECAL hit type = " << pCaloHit->GetHitType() << std::endl;
+			}
+
+			std::vector<float> vars;
+			vars.push_back( float(EventPreparationAlgorithm::GetEventNumber()) );
+			vars.push_back( hitTime );
+			vars.push_back( pID );
+			vars.push_back( float(pCaloHit->GetHitType()) );
+
+			HistogramManager::CreateFill("TimingHisto", 
+					"eventNumber:hitTime:pid:hitType", vars);
+		}
+		else
+			continue;
+	}
 //End added by TP
 
 #if 0
