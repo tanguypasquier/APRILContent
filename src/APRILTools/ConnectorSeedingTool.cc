@@ -205,7 +205,7 @@ namespace april_content
                   const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
 
                   const float dt = fabs(pCaloHitJ->GetSmearedTime() - pCaloHitI->GetSmearedTime()); //nanoseconds
-                  const float time_tolerance = 5*combinedResolution; //Due to time resolution, in nanoseconds
+                  const float time_tolerance = 3*combinedResolution; //Due to time resolution, in nanoseconds
                   const float dt_min = ( (difference - m_distTolerance) / m_lightSpeed) * 1e6;
                   const float dt_max = ( (difference + m_distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 
