@@ -575,7 +575,7 @@ namespace april_content
                   const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
 
                   const float dt = fabs(pTestCaloHit->GetSmearedTime() - pCaloHit->GetSmearedTime()); //nanoseconds
-                  const float time_tolerance = 3*combinedResolution;
+                  const float time_tolerance = 1*combinedResolution;
                   const float dt_min = ( (caloHitsVector.GetMagnitude() - m_distTolerance) / m_lightSpeed) * 1e6;
                   const float dt_max = ( (caloHitsVector.GetMagnitude() + m_distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 
@@ -588,8 +588,8 @@ namespace april_content
                   /* if(dt - time_tolerance > dt_max) //Time span between the two hits is too big
                     continue;  */
 
-                  if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
-                    continue; 
+                 /*  if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+                    continue;  */
 
                 }
               }

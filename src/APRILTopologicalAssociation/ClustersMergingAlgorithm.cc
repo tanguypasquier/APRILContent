@@ -189,13 +189,13 @@ namespace april_content
 					  const float sigmaDaughter = clusterToMerge->GetTimeResolutionStart(nLayersTime);
 					  const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-					  const float time_tolerance = 3*combinedResolution;
+					  const float time_tolerance = 1*combinedResolution;
 
 					  //Tolerance on dl
 					  const float rmsParent = clusterToEnlarge->ComputeLayerSpatialRMS(parentOuterLayer);
 					  const float rmsDaughter = clusterToMerge->ComputeLayerSpatialRMS(daughterInnerLayer);
 					  const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
-					  const float distTolerance = 5*sigma_dl;
+					  const float distTolerance = 1*sigma_dl;
 
 					  std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
 
@@ -222,7 +222,7 @@ namespace april_content
 					  const float sigmaDaughter = clusterToMerge->GetTimeResolution();
 					  const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-					  const float time_tolerance = 3*combinedResolution;
+					  const float time_tolerance = 1*combinedResolution;
 
 					  /* if(dt - time_tolerance > m_dtMax) //Time span between the two clusters is too big
 					    continue;  */

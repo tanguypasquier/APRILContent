@@ -634,8 +634,8 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
 							const april_content::CaloHit *const pHitToRecover = dynamic_cast<const april_content::CaloHit *const>(pCaloHit);
 							if(pAPRILCaloHit->GetSmearedTime()!=0 && pHitToRecover->GetSmearedTime()!=0)
 							{
-								if((pAPRILCaloHit->GetMother())->GetAssociatedTrackList().size() != 0 && pHitToRecover->GetSmearedTime() > 30) //Do not put late hits in charged clusters
-									continue;
+								/* if((pAPRILCaloHit->GetMother())->GetAssociatedTrackList().size() != 0 && pHitToRecover->GetSmearedTime() > 30) //Do not put late hits in charged clusters
+									continue; */
 
 								const float sigma1 = pAPRILCaloHit->GetTimeResolution();
                   				const float sigma2 = pHitToRecover->GetTimeResolution();
@@ -643,7 +643,7 @@ pandora::StatusCode NearbyHitRecoveryAlgorithm::MakeClusterHitsAssociation(Clust
                   				const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
 
 								const float dt = fabs(pAPRILCaloHit->GetSmearedTime() - pHitToRecover->GetSmearedTime()); //nanoseconds
-								const float time_tolerance = 3*combinedResolution;
+								const float time_tolerance = 1*combinedResolution;
 								const float dt_min = ( (hitsDistance - m_distTolerance) / m_lightSpeed) * 1e6;
 								//const float dt_max = ( (hitsDistance + m_distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 				

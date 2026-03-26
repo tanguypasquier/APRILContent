@@ -330,13 +330,13 @@ namespace april_content
           const float sigmaDaughter = pAPRILDaughter->GetTimeResolutionStart(nLayersTime);
           const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-          const float time_tolerance = 5*combinedResolution;
+          const float time_tolerance = 3*combinedResolution;
 
           //Tolerance on dl
           const float rmsParent = pAPRILParentAxisAxis->ComputeLayerSpatialRMS(parentOuterLayer);
           const float rmsDaughter = pAPRILDaughter->ComputeLayerSpatialRMS(daughterInnerLayer);
           const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
-          const float distTolerance = 5*sigma_dl;
+          const float distTolerance = 3*sigma_dl;
 
           //std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
 
@@ -385,13 +385,13 @@ namespace april_content
           const float sigmaDaughter = pAPRILDaughter->GetTimeResolutionStart(nLayersTime);
           const float combinedResolution = std::sqrt(sigmaParent * sigmaParent + sigmaDaughter * sigmaDaughter);
 
-          const float time_tolerance = 5*combinedResolution;
+          const float time_tolerance = 3*combinedResolution;
 
           //Tolerance on dl
           const float rmsParent = pAPRILParentBaryAxis->ComputeLayerSpatialRMS(parentOuterLayer);
           const float rmsDaughter = pAPRILDaughter->ComputeLayerSpatialRMS(daughterInnerLayer);
           const float sigma_dl = std::sqrt(rmsParent * rmsParent + rmsDaughter * rmsDaughter);
-          const float distTolerance = 5*sigma_dl;
+          const float distTolerance = 3*sigma_dl;
 
           //std::cout << "Distance tolerance sur dl entre les clusters : " << distTolerance << " mm" << std::endl;
 

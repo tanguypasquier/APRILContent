@@ -76,6 +76,23 @@ namespace april_content
         if(NULL == pCaloHitI)
           continue;
 
+        //DEBUG
+
+        /* if(pCaloHitI->GetHitType() == pandora::HCAL)
+          std::cout << "HIT HCAL" << std::endl;
+
+        if(pCaloHitI->GetHitType() == pandora::ECAL)
+          std::cout << "HIT ECAL" << std::endl;
+
+        std::cout << "Resolution : " << pCaloHitI->GetTimeResolution() << std::endl;
+
+        std::cout << "True Time : " << pCaloHitI->GetTime() << std::endl;
+        
+        std::cout << "Smeared Time : " << pCaloHitI->GetSmearedTime() << std::endl;
+       
+        std::cout << "PseudoLayer : " << pCaloHitI->GetPseudoLayer() << std::endl << std::endl; */
+
+
         // check for availability
         if(m_connectOnlyAvailable && !PandoraContentApi::IsAvailable<pandora::CaloHit>(algorithm, pCaloHitI))
           continue;
@@ -205,7 +222,7 @@ namespace april_content
                   const float combinedResolution = std::sqrt(sigma1 * sigma1 + sigma2 * sigma2);
 
                   const float dt = fabs(pCaloHitJ->GetSmearedTime() - pCaloHitI->GetSmearedTime()); //nanoseconds
-                  const float time_tolerance = 3*combinedResolution; //Due to time resolution, in nanoseconds
+                  const float time_tolerance = 1*combinedResolution; //Due to time resolution, in nanoseconds
                   const float dt_min = ( (difference - m_distTolerance) / m_lightSpeed) * 1e6;
                   const float dt_max = ( (difference + m_distTolerance) / (0.1*m_lightSpeed)) * 1e6;
 
@@ -218,8 +235,8 @@ namespace april_content
                   /* if(dt - time_tolerance > dt_max) //Time span between the two hits is too big
                     continue; */
 
-                  if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
-                    continue;
+                  /* if(dt - time_tolerance > m_dtMax) //Time span between the two hits is too big
+                    continue; */
                 }
               }
             }
